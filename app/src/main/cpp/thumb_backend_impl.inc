@@ -201,7 +201,7 @@ int render_dovi(Handle *h, const uint8_t *const src[4], const int src_ls[4], int
     if (!h->have_dovi) return AVERROR(EINVAL);
     AVFrame *f = h->frame;
     h->sws = g_api.sws_getCachedContext(h->sws, f->width, src_h, static_cast<AVPixelFormat>(f->format),
-                                        dw, dh, AV_PIX_FMT_YUV444P16LE, SWS_BILINEAR, nullptr, nullptr, nullptr);
+                                        dw, dh, AV_PIX_FMT_YUV444P16LE, SWS_BICUBIC, nullptr, nullptr, nullptr);
     if (!h->sws) return AVERROR(ENOMEM);
     const size_t plane = static_cast<size_t>(dw) * dh;
     const size_t need = plane * 2 * 6;                     // YUV444P16 in + GBRP16 out
@@ -251,7 +251,7 @@ int b_render(void *handle, uint8_t *pixels, int stride, int dw, int dh, bool rgb
     const bool hdr = transfer == 1 || transfer == 2;
     const AVPixelFormat dst_fmt = hdr ? AV_PIX_FMT_GBRP16LE : (rgb565 ? AV_PIX_FMT_RGB565LE : AV_PIX_FMT_RGBA);
     h->sws = g_api.sws_getCachedContext(h->sws, f->width, src_h, static_cast<AVPixelFormat>(f->format),
-                                        dw, dh, dst_fmt, SWS_BILINEAR, nullptr, nullptr, nullptr);
+                                        dw, dh, dst_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
     if (!h->sws) return AVERROR(ENOMEM);
     const int cs = bt2020 ? SWS_CS_BT2020 : (f->height > 576 ? SWS_CS_ITU709 : SWS_CS_ITU601);
     g_api.sws_setColorspaceDetails(h->sws, g_api.sws_getCoefficients(cs), fullRange ? 1 : 0,

@@ -125,7 +125,61 @@ internal object MkvIndexReader {
     fun looksLikeMatroska(head: ByteArray): Boolean =
         head.size >= 4 && Ebml.uint(head, 0, 4) == ID_EBML
 
+    private class Top(val segData: Int, val seek: Map<Long, Long>, val info: ByteArray?, val tracks: ByteArray?, val cues: ByteArray?)
+
+    /** Length and video track from Info and Tracks alone, before any Cues are read. */
+    class Peek(val durationUs: Long, val video: VideoTrack)
+
+    fun peek(reader: RangeReader, head: ByteArray): Peek {
+        val t = top(head)
+        val info = t.info ?: t.seek[ID_INFO]?.let { fetchElement(reader, it, ID_INFO, MAX_META_ELEMENT) }
+        val tracks = t.tracks ?: t.seek[ID_TRACKS]?.let { fetchElement(reader, it, ID_TRACKS, MAX_META_ELEMENT) }
+        if (info == null || tracks == null) throw UnsupportedMediaException("Info/Tracks not found")
+        val (tcScale, duration) = infoValues(info)
+        return Peek((duration * tcScale / 1000.0).toLong(), parseVideoTrack(tracks))
+    }
+
+    private fun infoValues(info: ByteArray): Pair<Long, Double> {
+        var tcScale = 1_000_000L
+        var duration = 0.0
+        for (el in Ebml.children(info, 0, info.size)) {
+            if (el.id == ID_TCSCALE) tcScale = Ebml.uint(info, el.dataStart, el.dataEnd)
+            else if (el.id == ID_DURATION) duration = Ebml.float(info, el.dataStart, el.dataEnd)
+        }
+        return tcScale to duration
+    }
+
     fun read(reader: RangeReader, head: ByteArray): MediaIndex {
+        val t = top(head)
+        val segData = t.segData
+        val seek = t.seek
+        var info = t.info
+        var tracks = t.tracks
+        var cues = t.cues
+        if (info == null) info = seek[ID_INFO]?.let { fetchElement(reader, it, ID_INFO, MAX_META_ELEMENT) }
+        if (tracks == null) tracks = seek[ID_TRACKS]?.let { fetchElement(reader, it, ID_TRACKS, MAX_META_ELEMENT) }
+        if (info == null || tracks == null) throw UnsupportedMediaException("Info/Tracks not found")
+        if (cues == null) {
+            cues = seek[ID_CUES]?.let { fetchElement(reader, it, ID_CUES, MAX_CUES) }
+                ?: throw UnsupportedMediaException("no Cues referenced by the SeekHead")
+        }
+
+        val (tcScale, duration) = infoValues(info)
+        val video = parseVideoTrack(tracks)
+        val kf = parseCues(cues, segData.toLong(), tcScale, video.trackNumber)
+        if (kf.count < 2) throw UnsupportedMediaException("too few video cues (${kf.count})")
+        return MediaIndex(
+            kind = ContainerKind.MATROSKA,
+            fileLength = reader.totalLength,
+            durationUs = (duration * tcScale / 1000.0).toLong(),
+            video = video,
+            keyframes = kf,
+            segmentDataStart = segData.toLong(),
+            timecodeScaleNs = tcScale,
+        )
+    }
+
+    private fun top(head: ByteArray): Top {
         val ebml = Ebml.readId(head, 0) ?: throw UnsupportedMediaException("short header")
         if (ebml[0] != ID_EBML) throw UnsupportedMediaException("not Matroska")
         val ebmlSize = Ebml.readSize(head, ebml[1].toInt()) ?: throw UnsupportedMediaException("short header")
@@ -163,32 +217,7 @@ internal object MkvIndexReader {
             }
             if (el.id == ID_CLUSTER) break
         }
-        if (info == null) info = seek[ID_INFO]?.let { fetchElement(reader, it, ID_INFO, MAX_META_ELEMENT) }
-        if (tracks == null) tracks = seek[ID_TRACKS]?.let { fetchElement(reader, it, ID_TRACKS, MAX_META_ELEMENT) }
-        if (info == null || tracks == null) throw UnsupportedMediaException("Info/Tracks not found")
-        if (cues == null) {
-            cues = seek[ID_CUES]?.let { fetchElement(reader, it, ID_CUES, MAX_CUES) }
-                ?: throw UnsupportedMediaException("no Cues referenced by the SeekHead")
-        }
-
-        var tcScale = 1_000_000L
-        var duration = 0.0
-        for (el in Ebml.children(info, 0, info.size)) {
-            if (el.id == ID_TCSCALE) tcScale = Ebml.uint(info, el.dataStart, el.dataEnd)
-            else if (el.id == ID_DURATION) duration = Ebml.float(info, el.dataStart, el.dataEnd)
-        }
-        val video = parseVideoTrack(tracks)
-        val kf = parseCues(cues, segData.toLong(), tcScale, video.trackNumber)
-        if (kf.count < 2) throw UnsupportedMediaException("too few video cues (${kf.count})")
-        return MediaIndex(
-            kind = ContainerKind.MATROSKA,
-            fileLength = reader.totalLength,
-            durationUs = (duration * tcScale / 1000.0).toLong(),
-            video = video,
-            keyframes = kf,
-            segmentDataStart = segData.toLong(),
-            timecodeScaleNs = tcScale,
-        )
+        return Top(segData, seek, info, tracks, cues)
     }
 
     private fun fetchElement(reader: RangeReader, pos: Long, expectedId: Long, cap: Int): ByteArray {

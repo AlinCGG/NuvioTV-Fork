@@ -2,7 +2,9 @@ package com.nuvio.tv.core.player.thumbnail
 
 import com.nuvio.tv.core.player.thumbnail.PrepareHandover.Reason
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** When the generating screen stops waiting and playback starts. */
@@ -42,5 +44,28 @@ class PrepareHandoverTest {
     @Test fun doneOrFinishedIsNeverAHandover() {
         assertNull(reason(done = 105, rateLimited = true))
         assertNull(reason(finished = true, rateLimited = true, sinceProgressMs = 30_000L))
+    }
+
+    @Test fun aHeldStartOrRebuildBehindTheScreenDoesNotStopThumbnails() {
+        assertFalse(PrepareHandover.waitsForBuffering(buffering = true, screenUp = true, playWhenReady = false, small4K = false))
+        assertFalse(PrepareHandover.waitsForBuffering(buffering = false, screenUp = false, playWhenReady = true, small4K = false))
+    }
+
+    @Test fun aRebufferTheViewerSeesStillWaits() {
+        assertTrue(PrepareHandover.waitsForBuffering(buffering = true, screenUp = false, playWhenReady = false, small4K = false))
+        assertTrue(PrepareHandover.waitsForBuffering(buffering = true, screenUp = true, playWhenReady = true, small4K = false))
+        assertTrue(PrepareHandover.waitsForBuffering(buffering = true, screenUp = true, playWhenReady = false, small4K = true))
+    }
+
+    @Test fun aDolbyVisionStartRefusedBeforeItsFirstFrameIsAskedAgain() {
+        // The Mummy: refused at 0 s, first frame 0.6 s later, then a 2 s display switch hold with nothing played.
+        assertTrue(PrepareHandover.retriesHold(sinceRefusedMs = 600L, playedMs = 0L))
+        assertTrue(PrepareHandover.retriesHold(sinceRefusedMs = 2_600L, playedMs = 0L))
+        assertTrue(PrepareHandover.retriesHold(sinceRefusedMs = 11_999L, playedMs = 3_000L))
+    }
+
+    @Test fun aLateFirstFrameOrAStartAlreadyWatchedIsLeftPlaying() {
+        assertFalse(PrepareHandover.retriesHold(sinceRefusedMs = 12_000L, playedMs = 0L))
+        assertFalse(PrepareHandover.retriesHold(sinceRefusedMs = 4_000L, playedMs = 3_001L))
     }
 }

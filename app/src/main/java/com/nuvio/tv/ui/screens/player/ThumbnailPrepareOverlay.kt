@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -205,6 +206,7 @@ private fun GeneratingScreen(ui: PrepareUi.Generating?, ready: PrepareUi.Ready?)
         else -> ui.done.toFloat() / ui.total
     }
     val progress by animateFloatAsState(target, tween(700), label = "progress")
+    val startNowAlpha by animateFloatAsState(if (ready == null) 1f else 0f, tween(250), label = "startNowAlpha")
     // Ring and texts sit in the upper part; the row, timeline, button and hint sit at the bottom edge.
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -260,14 +262,16 @@ private fun GeneratingScreen(ui: PrepareUi.Generating?, ready: PrepareUi.Ready?)
                     if (ui != null) CoverageTimeline(ui.coverage, ui.spacingMs, accent)
                 }
             }
-            if (ready == null) {
-                PlayerOverlayButton(
-                    text = stringResource(R.string.seek_thumbnails_start_now),
-                    onClick = { if (SystemClock.uptimeMillis() - shownAt >= 700L) SeekThumbnails.startWatchingNow() },
-                    primary = true,
-                    modifier = Modifier.focusRequester(startNow)
-                )
-            }
+            // Faded rather than removed, so the screen does not shift when the thumbnails are ready.
+            PlayerOverlayButton(
+                text = stringResource(R.string.seek_thumbnails_start_now),
+                onClick = { if (SystemClock.uptimeMillis() - shownAt >= 700L) SeekThumbnails.startWatchingNow() },
+                primary = true,
+                enabled = ready == null,
+                modifier = Modifier
+                    .focusRequester(startNow)
+                    .graphicsLayer { alpha = startNowAlpha }
+            )
             Text(stringResource(R.string.seek_thumbnails_settings_hint), style = type.bodySmall, color = colors.TextTertiary)
         }
         Spacer(Modifier.height(NuvioTheme.spacing.xxl))

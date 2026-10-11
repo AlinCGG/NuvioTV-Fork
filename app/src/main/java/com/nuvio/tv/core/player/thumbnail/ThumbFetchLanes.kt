@@ -8,41 +8,40 @@ internal object ThumbFetchLanes {
     const val MAX = 8
     private const val PLAYBACK_MAX = 3
     private const val SMALL_BOX_4K_MAX = 2
-    /** Connections TorBox allows one user; playback's own come off it. */
-    private const val CAPPED_SOURCE_CONNECTIONS = 4
 
     /**
-     * Sources with a per-user connection limit: TorBox links and add-on links that resolve through TorBox. Also asked
-     * of the address a link redirects to, since an add-on link only shows TorBox there.
-     */
-    fun isConnectionCapped(url: String): Boolean {
-        val lower = url.lowercase()
-        val host = lower.substringAfter("://").substringBefore('/')
-        return host.startsWith("tb-cdn.") || ".tb-cdn." in host || host.contains("torbox") || "/torbox/" in lower
-    }
-
-    /**
-     * [playbackConnections] is what the player opens to the stream (1 without parallel connections).
-     * A rate limit or dropped connection seen in the session means one at a time from then on.
+     * [ledgerCap] is the most thumbnail requests the server's [ConnectionLedger] entry allows at once; the ledger also
+     * holds each request until playback leaves it room. A rate limit or dropped connection seen in the session means
+     * one at a time from then on.
      */
     fun limit(
         phase: FetchPhase,
         rateLimited: Boolean,
-        playbackConnections: Int,
         smallBox4K: Boolean,
-        connectionCapped: Boolean = false
+        ledgerCap: Int = MAX,
     ): Int {
         if (rateLimited) return 1
-        val playerConnections = playbackConnections.coerceAtLeast(1)
-        val lanes = when {
-            phase == FetchPhase.PLAYER_CLOSED -> if (connectionCapped) CAPPED_SOURCE_CONNECTIONS else MAX
-            connectionCapped -> CAPPED_SOURCE_CONNECTIONS - playerConnections
-            phase == FetchPhase.GENERATING -> MAX
+        val lanes = when (phase) {
+            FetchPhase.PLAYER_CLOSED, FetchPhase.GENERATING -> MAX
             // Small boxes pace 4K decodes while playing: a second fetch would only wait.
-            smallBox4K -> 1
-            else -> PLAYBACK_MAX
+            FetchPhase.PLAYBACK -> if (smallBox4K) 1 else PLAYBACK_MAX
         }
-        return (if (smallBox4K) minOf(lanes, SMALL_BOX_4K_MAX) else lanes).coerceIn(1, MAX)
+        val capped = minOf(lanes, ledgerCap)
+        return (if (smallBox4K) minOf(capped, SMALL_BOX_4K_MAX) else capped).coerceIn(1, MAX)
+    }
+
+    enum class State { NOT_STARTED, RUNNING, READY, FAILED }
+
+    /**
+     * The coverage slot to make next from [ahead] (planned order, head first): the head, unless its fetch is still
+     * running while a later one already came in, so one slow request does not hold up the ones behind it.
+     * -1: the head is still running and nothing behind it is ready, so wait for whichever fetch finishes first.
+     */
+    fun nextReady(ahead: List<Int>, state: (Int) -> State): Int {
+        val head = ahead.firstOrNull() ?: return -1
+        if (state(head) != State.RUNNING) return head
+        for (i in 1 until ahead.size) if (state(ahead[i]) == State.READY) return ahead[i]
+        return -1
     }
 
     /** The next keyframes to start, in [wanted]'s order: each once, none already under way, at most [room]. */

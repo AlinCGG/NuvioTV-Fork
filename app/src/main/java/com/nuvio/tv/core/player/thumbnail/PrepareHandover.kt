@@ -10,6 +10,24 @@ internal object PrepareHandover {
     const val JUDGE_MS = 10_000L
     const val MAX_LEFT_S = 240
 
+    /**
+     * A start refused before its first frame (Dolby Vision, tunnelling) is asked again once the frame is up: a display
+     * rate switch can delay that frame by a few seconds. Past that, or once more than a moment has played, it stays off.
+     */
+    const val HOLD_RETRY_WAIT_MS = 12_000L
+    const val HOLD_RETRY_MAX_PLAYED_MS = 3_000L
+    const val HOLD_RETRY_POLL_MS = 200L
+
+    fun retriesHold(sinceRefusedMs: Long, playedMs: Long): Boolean =
+        sinceRefusedMs < HOLD_RETRY_WAIT_MS && playedMs <= HOLD_RETRY_MAX_PLAYED_MS
+
+    /**
+     * Whether thumbnails wait for a buffering player. Behind the generating screen playback is held, so a start or a
+     * player rebuild (e.g. after the sound output refused a format) is not a rebuffer anyone sees.
+     */
+    fun waitsForBuffering(buffering: Boolean, screenUp: Boolean, playWhenReady: Boolean, small4K: Boolean): Boolean =
+        buffering && (!screenUp || playWhenReady || small4K)
+
     /** Null while the screen should keep waiting. A rate-limited source fetches one at a time: it never keeps up. */
     fun reason(
         nowMs: Long,

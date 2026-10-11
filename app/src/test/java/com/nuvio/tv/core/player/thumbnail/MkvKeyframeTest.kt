@@ -122,6 +122,19 @@ class MkvKeyframeTest {
         assertEquals(30_000_000L, idx.durationUs)
     }
 
+    @Test
+    fun peekReadsLengthAndPictureWithoutCues() {
+        val m = build(withRelPos = true)
+        val full = BytesReader(m.bytes)
+        val head = full.read(0, 4096)
+        val r = BytesReader(m.bytes)
+        val p = MkvIndexReader.peek(r, head)
+        assertEquals(30_000_000L, p.durationUs)
+        assertEquals(3840, p.video.width)
+        assertEquals(2160, p.video.height)
+        assertEquals(0, r.reads)
+    }
+
     private fun expectedAnnexB(k: Int): ByteArray {
         val sc = byteArrayOf(0, 0, 0, 1)
         val ps = sc + byteArrayOf(0x42, 0x01, 0x11, 0x22)

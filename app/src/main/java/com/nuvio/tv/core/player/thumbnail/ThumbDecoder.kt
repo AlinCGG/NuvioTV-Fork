@@ -59,7 +59,7 @@ internal class DecodedFrame(
 )
 
 internal object ThumbGeometry {
-    const val MAX_WIDTH = 320
+    const val MAX_WIDTH = 480
 
     /** Output size from the display aspect (container first, then the bitstream's SAR). Never upscaled, even height. */
     fun outputSize(frameW: Int, frameH: Int, sarNum: Int, sarDen: Int, containerAspect: Double): IntArray {
@@ -128,11 +128,14 @@ internal class FfmpegThumbDecoder : Closeable {
         )
     }
 
-    /** Renders the last decoded frame into a new bitmap. */
-    fun render(frame: DecodedFrame, decision: ColourDecision, outW: Int, outH: Int, rgb565: Boolean): Bitmap? {
+    /**
+     * Renders the last decoded frame into a new full-colour bitmap (stored as WebP from full colour, so no banding is
+     * saved). Every other source row is skipped only for 4K-sized sources.
+     */
+    fun render(frame: DecodedFrame, decision: ColourDecision, outW: Int, outH: Int): Bitmap? {
         if (handle == 0L) return null
-        val bmp = Bitmap.createBitmap(outW, outH, if (rgb565) Bitmap.Config.RGB_565 else Bitmap.Config.ARGB_8888)
-        val rowSkip = frame.height >= 4 * outH
+        val bmp = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
+        val rowSkip = frame.height >= 6 * outH
         val r = ThumbNative.nativeRender(
             handle, bmp, decision.transfer.nativeCode, decision.bt2020, decision.fullRange,
             decision.peakNits, rowSkip,
@@ -166,6 +169,8 @@ internal class DecoderLane {
     private var busy = false
     private var closeWhenFree = false
     private var trimWhenFree = false
+
+    val inUse: Boolean get() = synchronized(this) { busy }
 
     fun acquire() {
         synchronized(this) { busy = true }

@@ -22,3 +22,10 @@ internal fun isThumbnailSource(url: String?, mimeType: String? = null): Boolean 
     val path = url.substringBefore('#').substringBefore('?').trimEnd('/').lowercase()
     return ADAPTIVE_PATH_SUFFIXES.none { path.endsWith(it) }
 }
+
+/**
+ * Whether a restarted session gives back the player its generating screen paused. A new stream or
+ * engine starts with its own autoplay, and the player there may still be opening its first frame.
+ */
+internal fun handsPlayerBackOnRestart(previous: Pair<String?, Boolean>?, url: String?, onMpv: Boolean): Boolean =
+    previous == null || (previous.first == url && previous.second == onMpv)

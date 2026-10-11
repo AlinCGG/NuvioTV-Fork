@@ -19,6 +19,18 @@ internal object ThumbRateLimit {
         if (hitsInRow <= 0) return 0L
         return (FIRST_BACKOFF_MS shl (hitsInRow - 1).coerceAtMost(20)).coerceAtMost(MAX_BACKOFF_MS)
     }
+
+    const val PLAYBACK_QUIET_MS = 60_000L
+
+    /**
+     * Thumbnails wait for playback's own rate limit: [PLAYBACK_QUIET_MS] after its last hit, and while its depth clamp
+     * is [latched]. Only playback's reads clear the latch, so a paused or held player (or none) is not waited on for it.
+     */
+    fun waitsForPlayback(latched: Boolean, lastHitAtMs: Long, nowMs: Long, playing: Boolean, playerClosed: Boolean): Boolean {
+        if (playerClosed) return false
+        if (lastHitAtMs > 0L && nowMs - lastHitAtMs < PLAYBACK_QUIET_MS) return true
+        return latched && playing
+    }
 }
 
 /**

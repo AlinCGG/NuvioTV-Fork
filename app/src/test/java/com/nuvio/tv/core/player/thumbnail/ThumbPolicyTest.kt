@@ -67,19 +67,19 @@ class ThumbPolicyTest {
         assertFalse(ColourClassifier.classify(none, frame(8, 1, 1), null).fullRange)
     }
 
-    @Test fun uhdTo320x180() = assertEquals(listOf(320, 180), ThumbGeometry.outputSize(3840, 2160, 1, 1, 0.0).toList())
+    @Test fun uhdTo480x270() = assertEquals(listOf(480, 270), ThumbGeometry.outputSize(3840, 2160, 1, 1, 0.0).toList())
 
-    @Test fun scopeAspect() = assertEquals(listOf(320, 116), ThumbGeometry.outputSize(1920, 696, 1, 1, 0.0).toList())
+    @Test fun scopeAspect() = assertEquals(listOf(480, 174), ThumbGeometry.outputSize(1920, 696, 1, 1, 0.0).toList())
 
     /** 696x472 with SAR 472:533 displays ~4:3. */
     @Test fun anamorphicSd() {
         val s = ThumbGeometry.outputSize(696, 472, 472, 533, 0.0)
-        assertEquals(320, s[0])
-        assertEquals(244, s[1])
+        assertEquals(480, s[0])
+        assertEquals(368, s[1])
     }
 
     @Test fun containerAspectWins() =
-        assertEquals(listOf(320, 180), ThumbGeometry.outputSize(1440, 1080, 1, 1, 16.0 / 9.0).toList())
+        assertEquals(listOf(480, 270), ThumbGeometry.outputSize(1440, 1080, 1, 1, 16.0 / 9.0).toList())
 
     @Test fun neverUpscale() {
         val s = ThumbGeometry.outputSize(240, 136, 1, 1, 0.0)
@@ -88,7 +88,7 @@ class ThumbPolicyTest {
     }
 
     @Test fun sillyAspectFallsBack() {
-        assertEquals(listOf(320, 180), ThumbGeometry.outputSize(1920, 1080, 1, 0, 0.0).toList())
+        assertEquals(listOf(480, 270), ThumbGeometry.outputSize(1920, 1080, 1, 0, 0.0).toList())
     }
 
     @Test fun meminfoParse() {

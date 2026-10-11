@@ -29,4 +29,7 @@ interface PlaybackBufferReserve {
     fun giveBack(): Long
 
     fun release()
+
+    /** Generating screen: true while it is up (renewed, see [PlaybackYield]), false lets playback load again at once. */
+    fun yieldLoading(on: Boolean)
 }

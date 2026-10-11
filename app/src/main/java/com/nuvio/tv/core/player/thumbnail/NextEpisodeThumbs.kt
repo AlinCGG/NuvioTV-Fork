@@ -7,7 +7,6 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.nuvio.tv.data.local.ImagePerformancePreferences
 import com.nuvio.tv.ui.screens.player.ParallelRangeDataSource
-import com.nuvio.tv.ui.screens.player.PlayerPlaybackNetworking
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +28,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 internal object NextEpisodeThumbs {
     private const val TAG = "ThumbNext"
     private const val SPACING_MS = SeekThumbnails.SPACING_MS
+    /** The 30 s grid only: the 10 s pass runs when the episode plays. */
     private val STRIDES_1080P = listOf(30, 6, 3)
     private val STRIDES_4K_WEB = listOf(30, 6, 3)
     private val STRIDES_4K_REMUX = listOf(30, 12, 6)
@@ -128,8 +128,9 @@ internal object NextEpisodeThumbs {
         val t0 = SystemClock.elapsedRealtime()
         if (!withContext(Dispatchers.IO) { ThumbNative.available }) return
         MemoryGovernor.init(context)
+        withContext(Dispatchers.IO) { ConnectionLedger.app.attach(PrefsLedgerMemory(context)) }
         val rgb565 = runCatching { ImagePerformancePreferences(context).rgb565Enabled }.getOrDefault(true)
-        val r = HttpRangeReader(source.url, source.headers, PlayerPlaybackNetworking.createHttpClient(source.headers))
+        val r = HttpRangeReader(source.url, source.headers, thumbnailHttpClient(source.headers))
         reader = r
         if (!awaitHealthy(playerProvider, small4KCurrentBlocks = true, aheadMs = HEALTHY_AHEAD_MS, deadline = t0 + MAX_RUN_MS)) {
             Log.i(TAG, "gave up waiting (${source.identity})")
@@ -144,7 +145,7 @@ internal object NextEpisodeThumbs {
         }
         ThumbStore.markBusy(store.key)
         try {
-            pass(context, source, allow4K, playerProvider, r, head, fileLength, store, rgb565, t0)
+            pass(context, source, allow4K, playerProvider, r, head, fileLength, store, t0)
         } finally {
             ThumbStore.unmarkBusy(store.key)
         }
@@ -152,7 +153,7 @@ internal object NextEpisodeThumbs {
 
     private suspend fun pass(
         context: Context, source: ThumbSource, allow4K: Boolean, playerProvider: () -> ExoPlayer?,
-        r: HttpRangeReader, head: ByteArray, fileLength: Long, store: ThumbStore, rgb565: Boolean, t0: Long,
+        r: HttpRangeReader, head: ByteArray, fileLength: Long, store: ThumbStore, t0: Long,
     ) {
         val cached = store.cachedKeyframeIndex()?.let(KeyframeIndexCodec::decode)?.takeIf { it.fileLength == fileLength }
         val idx = cached ?: when {
@@ -171,6 +172,7 @@ internal object NextEpisodeThumbs {
         }
         val durationMs = idx.durationUs / 1000L
         if (durationMs <= 0L) return
+        store.noteDuration(durationMs)
         val bps = fileLength * 8_000L / durationMs
         val strides = when {
             !fourK -> STRIDES_1080P
@@ -235,6 +237,9 @@ internal object NextEpisodeThumbs {
                     RateLimitedHosts.appSession.note(e)
                     Log.i(TAG, "rate limited - stopping")
                     break
+                } catch (e: ConnectionLedger.NoSlotException) {
+                    Log.i(TAG, "no connection free on the server - stopping")
+                    break
                 } ?: continue
                 val frame = atBackground { decoder.decode(au, idx.video, threads = 1) } ?: continue
                 if (idx.video.dolbyVision?.profile == 5 && !frame.colour.doviIpt) {
@@ -243,7 +248,7 @@ internal object NextEpisodeThumbs {
                 }
                 val decision = ColourClassifier.classify(idx.video.colour, frame.colour, idx.video.dolbyVision)
                 val size = ThumbGeometry.outputSize(frame.width, frame.height, frame.sarNum, frame.sarDen, idx.video.displayAspect)
-                val bmp = atBackground { decoder.render(frame, decision, size[0], size[1], rgb565) } ?: continue
+                val bmp = atBackground { decoder.render(frame, decision, size[0], size[1]) } ?: continue
                 val slots = kfSlots[kf] ?: mutableListOf(slot)
                 store.put(LongArray(slots.size) { slots[it].toLong() * SPACING_MS * 1000L }, idx.keyframes.ptsUs[kf], bmp)
                 made++
@@ -274,7 +279,16 @@ internal object NextEpisodeThumbs {
                 (ParallelRangeDataSource.hudClampLastHitAtMs > 0 &&
                     SystemClock.uptimeMillis() - ParallelRangeDataSource.hudClampLastHitAtMs < PLAYBACK_429_QUIET_MS)
             val ok = !playback429 && withContext(Dispatchers.Main) {
-                val p = playerProvider() ?: return@withContext true
+                val p = playerProvider()
+                val buffering = p?.playbackState == Player.STATE_BUFFERING
+                ConnectionLedger.app.notePlaybackState(
+                    healthy = p == null || ConnectionLedger.healthy(
+                        p.isPlaying, buffering, p.bufferedPosition - p.currentPosition,
+                        p.duration > 0 && p.bufferedPosition >= p.duration - 1_000L,
+                    ),
+                    quiet = p == null || (!p.isPlaying && !buffering),
+                )
+                if (p == null) return@withContext true
                 if (p.playbackState == Player.STATE_BUFFERING) return@withContext false
                 if (!p.isPlaying) return@withContext true
                 if (small4KCurrentBlocks && !MemoryGovernor.isStrongBox) {

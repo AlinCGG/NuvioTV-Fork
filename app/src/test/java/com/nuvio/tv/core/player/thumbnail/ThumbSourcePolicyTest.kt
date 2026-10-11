@@ -46,4 +46,20 @@ class ThumbSourcePolicyTest {
         assertFalse(isThumbnailSource("httpx://host/file.mkv"))
         assertFalse(isThumbnailSource("file:///sdcard/file.mkv"))
     }
+
+    @Test
+    fun aRestartOnTheSameStreamGivesThePlayerBack() {
+        val url = "https://cdn.example.com/dl/Film.2160p.mkv"
+        assertTrue(handsPlayerBackOnRestart(null, url, onMpv = false))
+        assertTrue(handsPlayerBackOnRestart(url to false, url, onMpv = false))
+    }
+
+    @Test
+    fun aNewSourceOrEngineIsNeverStartedByTheOldSession() {
+        val failed = "https://cdn.example.com/dl/Film.2160p.mkv"
+        val next = "https://other.example.com/dl/Film.2160p.REMUX.mkv"
+        assertFalse(handsPlayerBackOnRestart(failed to false, next, onMpv = false))
+        assertFalse(handsPlayerBackOnRestart(failed to false, null, onMpv = false))
+        assertFalse(handsPlayerBackOnRestart(failed to false, failed, onMpv = true))
+    }
 }

@@ -26,15 +26,19 @@ internal class RateLimitedException(
 /**
  * Bounded Range reads over the playback OkHttp client, so a title's thumbnail fetches reuse keep-alive connections.
  * Safe for reads from several threads at once. Never open-ended; a 200 (Range ignored) is refused without reading
- * the body. Never log URLs or headers.
+ * the body. Never log URLs or headers. Each read takes a slot in the [ConnectionLedger] first.
  */
 internal class HttpRangeReader(
     private val url: String,
     private val headers: Map<String, String>,
     private val client: OkHttpClient,
+    private val ledger: ConnectionLedger = ConnectionLedger.app,
+    /** How long a read waits for a free connection in the [ConnectionLedger]. */
+    @Volatile var slotWaitMs: Long = ConnectionLedger.SLOT_WAIT_MS,
 ) : RangeReader {
     private companion object {
         val RESOLVED_URL_FAILURES = setOf(401, 403, 404, 410)
+        const val TOO_MANY_PEEK_BYTES = 512L
     }
 
     @Volatile
@@ -58,7 +62,12 @@ internal class HttpRangeReader(
     val requests: Int get() = requestCount.get()
     val bytes: Long get() = byteCount.get()
 
+    /** Reads waiting for a ledger slot when [cancel] runs give up too. */
+    @Volatile
+    private var cancels = 0
+
     fun cancel() {
+        cancels++
         for (call in inFlight) call.cancel()
     }
 
@@ -84,7 +93,7 @@ internal class HttpRangeReader(
         }
     }
 
-    private class HttpStatusException(val code: Int) : IOException("HTTP $code")
+    class HttpStatusException(val code: Int, val tooMany: Boolean) : IOException("HTTP $code")
 
     private fun readFrom(target: String, offset: Long, length: Int): ByteArray {
         val builder = Request.Builder().url(target)
@@ -96,12 +105,19 @@ internal class HttpRangeReader(
             .header("Accept-Encoding", "identity")
             .build()
         if (closed) throw IOException("closed")
-        val call = client.newCall(request)
-        inFlight.add(call)
-        if (closed) call.cancel()
-        requestCount.incrementAndGet()
+        val cancels0 = cancels
+        var slot: ConnectionLedger.Slot? = null
+        var call: Call? = null
         try {
-            call.execute().use { resp ->
+            val held = ledger.acquire(target, slotWaitMs) { closed || cancels != cancels0 }
+            slot = held
+            val c = client.newCall(request)
+            call = c
+            inFlight.add(c)
+            if (closed) c.cancel()
+            requestCount.incrementAndGet()
+            c.execute().use { resp ->
+                held.moveTo(resp.request.url.toString())
                 when (resp.code) {
                     206 -> Unit
                     416 -> return ByteArray(0)
@@ -111,7 +127,8 @@ internal class HttpRangeReader(
                         resp.request.url.toString(),
                     )
                     200 -> throw UnsupportedMediaException("server ignored Range")
-                    else -> throw HttpStatusException(resp.code)
+                    else -> throw HttpStatusException(resp.code, ConnectionLedger.saysTooMany(
+                        runCatching { resp.peekBody(TOO_MANY_PEEK_BYTES).string() }.getOrNull()))
                 }
                 resp.header("Content-Range")?.substringAfterLast('/')?.toLongOrNull()?.let { totalLength = it }
                 val finalUrl = resp.request.url.toString()
@@ -127,10 +144,23 @@ internal class HttpRangeReader(
                     }
                 }
                 byteCount.addAndGet(n.toLong())
+                held.succeeded()
                 return if (n == length) out else out.copyOf(n)
             }
+        } catch (e: IOException) {
+            val refusal = ConnectionLedger.refusalOf(e) ?: (e as? HttpStatusException)?.let {
+                when {
+                    it.tooMany -> Refusal.TOO_MANY
+                    // A 403 from a short-lived redirect target is an expired link, retried from the original.
+                    it.code == 403 && target == url -> Refusal.CONNECTION
+                    else -> null
+                }
+            }
+            refusal?.let { slot?.refused(it) }
+            throw e
         } finally {
-            inFlight.remove(call)
+            slot?.close()
+            call?.let { inFlight.remove(it) }
         }
     }
 }

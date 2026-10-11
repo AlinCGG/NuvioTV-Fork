@@ -2,18 +2,27 @@ package com.nuvio.tv.core.player.thumbnail
 
 import android.content.Context
 import androidx.annotation.StringRes
+import androidx.datastore.core.DataMigration
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.nuvio.tv.R
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 
 // Device-wide (the thumbnail store is per device), so not part of the per-profile player settings.
-private val Context.seekThumbnailDataStore by preferencesDataStore(name = "seek_thumbnails")
+private val Context.seekThumbnailDataStore by preferencesDataStore(
+    name = "seek_thumbnails",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+    produceMigrations = { listOf(SeekThumbnailPreferences.copyDefaultMigration) }
+)
 
 /** When 4K thumbnails are made is not a user choice; the engine decides per device and free memory. */
 enum class SeekThumbMode(@StringRes val label: Int, @StringRes val description: Int) {
@@ -36,17 +45,23 @@ object SeekThumbnailPreferences {
     private val legacyEnabledKey = booleanPreferencesKey("seek_thumbnails_enabled")
     private val legacyFourKKey = stringPreferencesKey("seek_thumbnails_4k_mode")
 
-    private fun modeOf(prefs: Preferences): SeekThumbMode {
-        prefs[modeKey]?.let { v -> SeekThumbMode.entries.firstOrNull { it.name == v } }?.let { return it }
-        return when {
-            prefs[legacyEnabledKey] != true -> SeekThumbMode.OFF
-            prefs[legacyFourKKey] == "OFF" -> SeekThumbMode.HD
-            else -> SeekThumbMode.ALL
+    internal fun modeOf(prefs: Preferences): SeekThumbMode {
+        prefs[modeKey]?.let { v -> return SeekThumbMode.entries.firstOrNull { it.name == v } ?: SeekThumbMode.OFF }
+        return when (prefs[legacyEnabledKey]) {
+            null -> SeekThumbMode.ALL
+            false -> SeekThumbMode.OFF
+            else -> if (prefs[legacyFourKKey] == "OFF") SeekThumbMode.HD else SeekThumbMode.ALL
         }
     }
 
+    /** A store that cannot be read counts as Off, with no copies. */
+    private fun <T> Flow<Preferences>.readOr(fallback: T, read: (Preferences) -> T): Flow<T> =
+        map(read).catch { if (it is IOException) emit(fallback) else throw it }
+
+    internal fun modeFlow(data: Flow<Preferences>): Flow<SeekThumbMode> = data.readOr(SeekThumbMode.OFF, ::modeOf)
+
     fun modeFlow(context: Context): Flow<SeekThumbMode> =
-        context.applicationContext.seekThumbnailDataStore.data.map(::modeOf)
+        modeFlow(context.applicationContext.seekThumbnailDataStore.data)
 
     /** True unless the mode is Off (the player starts a session only then). */
     fun enabledFlow(context: Context): Flow<Boolean> = modeFlow(context).map { it != SeekThumbMode.OFF }
@@ -55,16 +70,48 @@ object SeekThumbnailPreferences {
 
     private val prepareKey = stringPreferencesKey("seek_thumbnails_prepare")
 
-    fun prepareModeFlow(context: Context): Flow<ThumbPrepareMode> =
-        context.applicationContext.seekThumbnailDataStore.data.map { prefs ->
+    internal fun prepareModeFlow(data: Flow<Preferences>): Flow<ThumbPrepareMode> =
+        data.readOr(ThumbPrepareMode.OFF) { prefs ->
             (prefs[prepareKey]?.let { v -> ThumbPrepareMode.entries.firstOrNull { it.name == v } } ?: ThumbPrepareMode.OFF)
                 .let { if (it == ThumbPrepareMode.ASK) ThumbPrepareMode.ALWAYS else it }
         }
+
+    fun prepareModeFlow(context: Context): Flow<ThumbPrepareMode> =
+        prepareModeFlow(context.applicationContext.seekThumbnailDataStore.data)
 
     suspend fun prepareMode(context: Context): ThumbPrepareMode = prepareModeFlow(context).first()
 
     suspend fun setPrepareMode(context: Context, mode: ThumbPrepareMode) {
         context.applicationContext.seekThumbnailDataStore.edit { prefs -> prefs[prepareKey] = mode.name }
+    }
+
+    private val copyKey = booleanPreferencesKey("seek_thumbnails_from_copy")
+
+    /**
+     * Stores the copy choice once: off for a store with no thumbnail choice yet, on for one that has
+     * a choice (the old default). After that the key is always present.
+     */
+    internal val copyDefaultMigration = object : DataMigration<Preferences> {
+        override suspend fun shouldMigrate(currentData: Preferences): Boolean = copyKey !in currentData
+
+        override suspend fun migrate(currentData: Preferences): Preferences {
+            if (copyKey in currentData) return currentData
+            val chosen = modeKey in currentData || legacyEnabledKey in currentData
+            return currentData.toMutablePreferences().apply { this[copyKey] = chosen }.toPreferences()
+        }
+
+        override suspend fun cleanUp() = Unit
+    }
+
+    /** 4K thumbnails from a smaller copy of the same title; off until switched on. */
+    internal fun copyFlow(data: Flow<Preferences>): Flow<Boolean> = data.readOr(false) { it[copyKey] ?: false }
+
+    fun copyFlow(context: Context): Flow<Boolean> = copyFlow(context.applicationContext.seekThumbnailDataStore.data)
+
+    suspend fun copyEnabled(context: Context): Boolean = copyFlow(context).first()
+
+    suspend fun setCopy(context: Context, on: Boolean) {
+        context.applicationContext.seekThumbnailDataStore.edit { prefs -> prefs[copyKey] = on }
     }
 
     suspend fun setMode(context: Context, mode: SeekThumbMode) {

@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -34,10 +37,13 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
+import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -61,6 +67,9 @@ internal object SeekBarAnchor {
 }
 
 private val BarGap = 12.dp
+
+/** The paused hint keeps the screen on only while its percentage still moves. */
+private const val KEEP_SCREEN_ON_STALL_MS = 5L * 60 * 1000
 
 /** Lays [content] out over the seek bar's width, bottom edge [BarGap] above the bar. */
 @Composable
@@ -121,8 +130,9 @@ private fun croppedPainter(shown: SeekThumbnails.Shown?): BitmapPainter? {
 }
 
 /**
- * Thumbnails above the seek bar while a held seek is pending: a strip once the title's coverage is stored,
- * a single picture until then. A tap (one step, then the commit) shows nothing.
+ * Thumbnails above the seek bar while a seek key is held: a strip once the title's coverage is stored, a single
+ * picture until then. A tap shows nothing. The centre picture follows the glide's published position (a few
+ * times a second); the strip slides with the cursor every frame.
  */
 @Composable
 fun SeekThumbnailOverlayHost(
@@ -132,41 +142,32 @@ fun SeekThumbnailOverlayHost(
 ) {
     val timeline by viewModel.playbackTimeline.collectAsState()
     val tick by SeekThumbnails.tick
+    val gliding = ScrubGlide.active
     val seekPositionMs = uiState.previewThumbPositionMs
-        ?.takeIf { uiState.pendingPreviewSeekPosition != null }
+        ?.takeIf { gliding && uiState.pendingPreviewSeekPosition != null }
     val durationMs = timeline.duration
     val restingMs = seekPositionMs ?: timeline.currentPosition
-    val glide = tween<Float>(PlayerScrubRates.STEP_INTERVAL_MS.toInt(), easing = LinearEasing)
     val fraction by animateFloatAsState(
         targetValue = if (durationMs > 0L) (restingMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f,
-        animationSpec = glide,
+        animationSpec = tween(PlayerScrubRates.GLIDE_PUBLISH_MS.toInt(), easing = LinearEasing),
         label = "thumbFraction"
     )
-    val glidePos by animateFloatAsState(targetValue = restingMs.toFloat(), animationSpec = glide, label = "stripPos")
-    // [0] last target, [1] size of the last step, [2] steps in this seek, [3] size of the step before.
-    val steps = remember { longArrayOf(-1L, 0L, 0L, 0L) }
-    if (seekPositionMs == null || durationMs <= 0L) {
-        steps[0] = -1L
-        steps[1] = 0L
-        steps[2] = 0L
-        steps[3] = 0L
-        return
-    }
-    if (seekPositionMs != steps[0]) {
-        if (steps[0] >= 0L) {
-            steps[3] = steps[1]
-            steps[1] = abs(seekPositionMs - steps[0])
-        }
-        steps[0] = seekPositionMs
-        steps[2]++
-    }
-    if (steps[2] < 2L) return
+    if (seekPositionMs == null || durationMs <= 0L) return
 
     val stripSpacing = remember(tick) { SeekThumbnails.stripSpacingMs() }
     if (stripSpacing != null) {
         val aspect = SeekThumbnails.frameAspect() ?: (16f / 9f)
-        val multiple = SeekStripLayout.multiple(steps[1], steps[3], stripSpacing)
-        SeekThumbnailStrip({ glidePos }, seekPositionMs, durationMs, stripSpacing, multiple, aspect, tick, modifier)
+        // Re-spaced only when the speed crosses a step, and never back down while the glide stands still.
+        val lastMultiple = remember { longArrayOf(1L) }
+        val multiple by remember(stripSpacing) {
+            derivedStateOf {
+                val speed = ScrubGlide.speed
+                if (speed > 0f) lastMultiple[0] = SeekStripLayout.multipleForSpeed(speed, stripSpacing)
+                lastMultiple[0]
+            }
+        }
+        SeekThumbnailStrip({ ScrubGlide.positionMs.toFloat() }, seekPositionMs, durationMs, stripSpacing, multiple,
+            aspect, tick, modifier)
         return
     }
 
@@ -234,7 +235,6 @@ private fun SeekThumbnailStrip(
             val t = SeekStripLayout.pictureMs(tileMs, baseSpacingMs)
             if (t < 0L || t > durationMs) continue
             val rel = (tileMs - posMs).toFloat()
-            if (abs(rel) < spacingMs * 0.5f) continue
             val xAtTarget = centreX + rel * pxPerMs - tileWPx / 2f
             if (xAtTarget + tileWPx < -stridePx || xAtTarget > widthPx + stridePx) continue
             key(t) {
@@ -247,6 +247,7 @@ private fun SeekThumbnailStrip(
                             val x = centreX + (tileMs - glidePosMs()).toFloat() * pxPerMs - tileWPx / 2f
                             IntOffset(x.toInt(), -liftPx)
                         }
+                        .graphicsLayer { alpha = if (abs(tileMs - glidePosMs()) < spacingMs * 0.5) 0f else 1f }
                         .height(tileH)
                         .width(tileW)
                         .thumbnailSurface(tileShape)
@@ -284,6 +285,21 @@ fun SeekThumbnailProgressHint(
     val paused = !uiState.isPlaying && !uiState.isBuffering && uiState.pendingPreviewSeekPosition == null &&
         uiState.error == null
     val percent = remember(tick, paused) { if (paused) SeekThumbnails.progressPercent() else null } ?: return
+    // The screensaver counts as away and would stop the paused pass; the screen stays on while it still counts.
+    var stalled by remember { mutableStateOf(false) }
+    LaunchedEffect(percent) {
+        stalled = false
+        delay(KEEP_SCREEN_ON_STALL_MS)
+        stalled = true
+    }
+    if (!stalled) {
+        val view = LocalView.current
+        DisposableEffect(view) {
+            val before = view.keepScreenOn
+            view.keepScreenOn = true
+            onDispose { view.keepScreenOn = before }
+        }
+    }
     val shape = RoundedCornerShape(NuvioTheme.radii.sm)
     AboveSeekBar(modifier, anchored = uiState.showControls, contentAlignment = Alignment.BottomEnd) {
         Box(

@@ -3,9 +3,9 @@ package com.nuvio.tv.core.player.thumbnail
 import android.app.ActivityManager
 import android.content.ComponentCallbacks2
 import android.content.Context
-import android.content.res.Configuration
 import android.os.Process
 import android.util.Log
+import com.nuvio.tv.core.player.MemoryPressure
 import java.io.File
 
 /** Decode cost classes: resident memory and address space one software decode takes. */
@@ -19,6 +19,7 @@ internal data class GovernorVerdict(val allowed: Boolean, val reason: String)
 /** Live-headroom gate in front of every decode: thumbnails only take memory the box can spare right now. */
 internal object MemoryGovernor {
     private const val TAG = "ThumbMem"
+    private const val MB = 1024L * 1024L
     private const val LOW_RAM_TOTAL_BYTES = 2_300L * 1024 * 1024   // matches MemoryBudget's 2.3 GB tier edge
     private const val FLOOR_LOW_RAM_MB = 200L
     private const val FLOOR_DEFAULT_MB = 300L
@@ -55,31 +56,42 @@ internal object MemoryGovernor {
         lowRam = am == null || am.isLowRamDevice || info.totalMem in 1 until LOW_RAM_TOTAL_BYTES
         is64Bit = Process.is64Bit()
         totalMemBytes = info.totalMem
-        app.registerComponentCallbacks(object : ComponentCallbacks2 {
-            override fun onTrimMemory(level: Int) {
-                // RUNNING_LOW and above while visible, or anything once in the background.
-                if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-                    Log.i(TAG, "onTrimMemory level=$level: trimming thumbnail memory")
-                    trimListeners.forEach { runCatching { it(level) } }
-                }
-            }
-
-            override fun onConfigurationChanged(newConfig: Configuration) = Unit
-
-            @Deprecated("Deprecated in Java")
-            override fun onLowMemory() {
-                trimListeners.forEach { runCatching { it(ComponentCallbacks2.TRIM_MEMORY_COMPLETE) } }
-            }
-        })
+        MemoryPressure.register(app)
+        // RUNNING_LOW and above while visible, or anything once in the background.
+        MemoryPressure.addListener(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) { level ->
+            Log.i(TAG, "onTrimMemory level=$level: trimming thumbnail memory")
+            trimListeners.forEach { runCatching { it(level) } }
+        }
         registered = true
         Log.i(TAG, "init lowRam=$lowRam process64=$is64Bit strongBox=$isStrongBox totalMb=${totalMemBytes / (1024 * 1024)}")
     }
 
-    /** Worst case shown in settings: the memory LRU at 320x240 plus the largest permitted decode tier. Display only. */
-    fun displayChargeMb(rgb565: Boolean, fourK: Boolean): Int {
+    private const val PRELOAD_STRONG_BYTES = 32L * 1024 * 1024
+    private const val PRELOAD_SMALL_BYTES = 6L * 1024 * 1024
+
+    /** Saved pictures held compressed in memory at play start. */
+    fun preloadBytes(): Long = if (isStrongBox) PRELOAD_STRONG_BYTES else PRELOAD_SMALL_BYTES
+
+    /**
+     * Worst case shown in settings, for this box class: the memory LRU at 4:3, the full-colour centre picture, the
+     * saved pictures preloaded and the largest permitted decode tier; or the server thumbnails' caps when larger.
+     * Display only.
+     */
+    fun displayChargeMb(rgb565: Boolean, fourK: Boolean): Int =
+        displayChargeMb(rgb565, fourK, isStrongBox)
+
+    internal fun displayChargeMb(rgb565: Boolean, fourK: Boolean, strong: Boolean): Int {
         val tier = if (fourK) DecodeTier.SW_4K else DecodeTier.SW_UP_TO_1080P
-        val lruBytes = ThumbStore.MEM_FRAMES.toLong() * ThumbGeometry.MAX_WIDTH * 240 * (if (rgb565) 2 else 4)
-        return tier.rssMb + ((lruBytes + (1 shl 20) - 1) shr 20).toInt()
+        val pixels = ThumbGeometry.MAX_WIDTH.toLong() * (ThumbGeometry.MAX_WIDTH * 3 / 4)
+        val frames = if (strong) ThumbStore.MEM_FRAMES_STRONG else ThumbStore.MEM_FRAMES_SMALL
+        val preload = if (strong) PRELOAD_STRONG_BYTES else PRELOAD_SMALL_BYTES
+        val own = tier.rssMb * MB + frames * pixels * (if (rgb565) 2 else 4) + pixels * 4 + preload
+        val server = if (strong) {
+            ServerThumbSet.STRONG_CAP_BYTES + ServerThumbSet.STRONG_DECODED_BYTES
+        } else {
+            ServerThumbSet.SMALL_CAP_BYTES + ServerThumbSet.SMALL_DECODED_BYTES
+        }
+        return ((maxOf(own, server) + MB - 1) / MB).toInt()
     }
 
     fun addTrimListener(l: (Int) -> Unit) = trimListeners.add(l)
@@ -91,11 +103,14 @@ internal object MemoryGovernor {
     /**
      * [decoderWarm]: the working set is already inside MemAvailable, so only a cold decoder is charged the tier's RSS.
      * [funded]: playback's read-ahead is held back for this decode, so the funded floor applies and the swap floor
-     * does not (SwapFree sits at 0-141 MB during 4K remux playback on the Fire TV Stick).
+     * does not (SwapFree sits at 0-141 MB during 4K remux playback on the Fire TV Stick). [addressSpace]: a second
+     * decoder next to the session's also checks the 32-bit address space.
      */
-    fun allow(tier: DecodeTier, decoderWarm: Boolean = false, funded: Boolean = false): GovernorVerdict {
+    fun allow(
+        tier: DecodeTier, decoderWarm: Boolean = false, funded: Boolean = false, addressSpace: Boolean = tier == DecodeTier.SW_4K,
+    ): GovernorVerdict {
         // When 4K may decode is the scheduler's rule, this only checks that it is affordable.
-        if (tier == DecodeTier.SW_4K && !is64Bit && !decoderWarm) {
+        if (addressSpace && !is64Bit && !decoderWarm) {
             val vm = readVmSizeMb()
             if (vm != null && vm + tier.addressSpaceMb > VA_CEILING_32BIT_MB) {
                 return GovernorVerdict(false, "32-bit address space ${vm} MB + ${tier.addressSpaceMb} > $VA_CEILING_32BIT_MB")
