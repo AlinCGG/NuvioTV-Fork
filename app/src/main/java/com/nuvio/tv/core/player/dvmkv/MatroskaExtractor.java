@@ -22,6 +22,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
+import android.os.SystemClock;
 import android.util.Pair;
 import android.util.SparseArray;
 import androidx.annotation.CallSuper;
@@ -59,6 +60,7 @@ import androidx.media3.extractor.TrueHdSampleRechunker;
 import androidx.media3.extractor.text.SubtitleParser;
 import androidx.media3.extractor.text.SubtitleTranscodingExtractorOutput;
 import com.google.common.collect.ImmutableList;
+import com.nuvio.tv.core.util.TtffTrace;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -639,6 +641,9 @@ public class MatroskaExtractor implements Extractor {
   // Cue related elements.
   private final SparseArray<List<MatroskaSeekMap.CuePointData>> perTrackCues;
   private boolean inCuesElement;
+  private long cuesStartMs = C.TIME_UNSET;
+  private long cuesStartReads;
+  private long cuesContentSize;
   private long currentCueTimeUs = C.TIME_UNSET;
   private int currentCueTrackNumber = C.INDEX_UNSET;
   private long currentCueClusterPosition = C.INDEX_UNSET;
@@ -1151,6 +1156,9 @@ public class MatroskaExtractor implements Extractor {
       case ID_CUES:
         if (!sentSeekMap) {
           inCuesElement = true;
+          cuesStartMs = SystemClock.elapsedRealtime();
+          cuesStartReads = TtffTrace.sourceReads;
+          cuesContentSize = contentSize;
         }
         break;
       case ID_CUE_POINT:
@@ -1211,6 +1219,35 @@ public class MatroskaExtractor implements Extractor {
       default:
         break;
     }
+  }
+
+  private void logIndexRead() {
+    if (cuesStartMs == C.TIME_UNSET) {
+      return;
+    }
+    int points = 0;
+    for (int i = 0; i < perTrackCues.size(); i++) {
+      points += perTrackCues.valueAt(i).size();
+    }
+    TtffTrace.INSTANCE.mirror(
+        indexReadLine(
+            cuesContentSize,
+            points,
+            SystemClock.elapsedRealtime() - cuesStartMs,
+            TtffTrace.sourceReads - cuesStartReads));
+    cuesStartMs = C.TIME_UNSET;
+  }
+
+  static String indexReadLine(long indexBytes, int cuePoints, long elapsedMs, long sourceReads) {
+    return "[mkv_index] "
+        + (indexBytes / 1024)
+        + " KB, "
+        + cuePoints
+        + " cue points, "
+        + elapsedMs
+        + " ms, "
+        + sourceReads
+        + " source reads";
   }
 
   /**
@@ -1277,6 +1314,7 @@ public class MatroskaExtractor implements Extractor {
           }
           sentSeekMap = true;
           inCuesElement = false;
+          logIndexRead();
           for (int i = 0; i < tracks.size(); i++) {
             Track track = tracks.valueAt(i);
             track.maybeAddThumbnailMetadata(

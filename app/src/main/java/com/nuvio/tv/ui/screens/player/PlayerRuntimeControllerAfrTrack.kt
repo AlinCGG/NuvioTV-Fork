@@ -124,6 +124,7 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
     // the finally re-enables exactly what was disabled and can never latch a
     // muted state on an unrelated exit path.
     var audioQuiesced = false
+    var displayModeSwitched = false
     var switchStartElapsedMs = 0L
 
     scope.launch {
@@ -214,6 +215,7 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
                         )
                     }
                     if (switchedDisplayMode) {
+                        displayModeSwitched = true
                         Log.d(
                             PlayerRuntimeController.TAG,
                             "Track AFR: display mode switched; holding playback start ${TRACK_AFR_SETTLE_HOLD_MS}ms"
@@ -242,6 +244,7 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
             // stream's start-hold (and could start held playback early).
             if (afrTrackGeneration == startGeneration) {
                 afrTrackSwitchInFlight = false
+                if (displayModeSwitched) noteOutputChangeForTunnelWatch()
                 // Symmetric re-enable. Only touch audio if we disabled
                 // it above; runs on every exit path (success, deadline, reset).
                 if (audioQuiesced) {

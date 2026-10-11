@@ -43,6 +43,9 @@ object FrameRateUtils {
     /** Below this the reported rate is not real content; never switch the panel for it. */
     private const val MIN_AFR_SWITCH_FPS = 20f
     private const val RESOLUTION_MATCH_MIN_SHORT_SIDE = 720
+    private val CLEAN_REFRESH_MULTIPLES = listOf(3f, 4f, 5f, 6f)
+    private const val REFRESH_ERROR_SLACK = 0.0001f
+    private const val TIMESTAMP_REORDER_MARGIN = 16
 
     data class DisplayModeSwitchResult(
         val appliedMode: Display.Mode
@@ -320,6 +323,11 @@ object FrameRateUtils {
         return if (matchesTargetRefresh(closest.refreshRate, target)) closest else null
     }
 
+    private fun refreshError(refreshRate: Float, target: Float): Float = abs(refreshRate - target) / target
+
+    private fun multipleError(refreshRate: Float, frameRate: Float): Float =
+        CLEAN_REFRESH_MULTIPLES.minOf { refreshError(refreshRate, frameRate * it) }
+
     private fun refreshWeight(refresh: Float, fps: Float): Float {
         if (fps <= 0f || refresh <= 0f) return Float.MAX_VALUE
         val div = refresh / fps
@@ -400,16 +408,16 @@ object FrameRateUtils {
 
     /**
      * How well a chosen mode actually serves the content's frame rate.
-     * EXACT and DOUBLE are clean cadences; PULLDOWN is 2:3 judder that merely
-     * happens to divide evenly; FALLBACK is the least-bad of a bad set.
-     * Callers use it to tell a clean match from a judder-inducing one.
+     * EXACT, DOUBLE and MULTIPLE (3x to 6x, such as 24 fps at 120 Hz) are clean cadences;
+     * PULLDOWN is 2:3 judder that merely happens to divide evenly; FALLBACK is the
+     * least-bad of a bad set. Callers use it to tell a clean match from a judder-inducing one.
      */
-    internal enum class ModeMatchQuality { EXACT, DOUBLE, PULLDOWN, FALLBACK }
+    internal enum class ModeMatchQuality { EXACT, DOUBLE, MULTIPLE, PULLDOWN, FALLBACK }
 
     internal data class ModeChoice(val mode: DisplayModeSpec, val quality: ModeMatchQuality)
 
     /** True for cadences worth giving up a resolution match to obtain. */
-    private fun ModeMatchQuality.isCleanCadence() =
+    private fun ModeMatchQuality.isExactOrDouble() =
         this == ModeMatchQuality.EXACT || this == ModeMatchQuality.DOUBLE
 
     /** 25 and 30 fps look smoother at 50 and 60 Hz on most TVs: each frame shown twice, same motion. */
@@ -431,7 +439,17 @@ object FrameRateUtils {
         pickBestForTarget(modes, frameRate * 2f)?.let {
             return ModeChoice(it, ModeMatchQuality.DOUBLE)
         }
-        pickBestForTarget(modes, frameRate * 2.5f)?.let {
+        val pulldown = pickBestForTarget(modes, frameRate * 2.5f)
+        val pulldownError = pulldown?.let { refreshError(it.refreshRate, frameRate * 2.5f) } ?: Float.MAX_VALUE
+        // A clean multiple only wins when it matches the frame rate at least as closely as pulldown.
+        CLEAN_REFRESH_MULTIPLES.firstNotNullOfOrNull { multiple ->
+            val target = frameRate * multiple
+            pickBestForTarget(modes, target)
+                ?.takeIf { refreshError(it.refreshRate, target) <= pulldownError + REFRESH_ERROR_SLACK }
+        }?.let {
+            return ModeChoice(it, ModeMatchQuality.MULTIPLE)
+        }
+        pulldown?.let {
             return ModeChoice(it, ModeMatchQuality.PULLDOWN)
         }
         val modeFallback = modes.minByOrNull { refreshWeight(it.refreshRate, frameRate) }
@@ -528,18 +546,19 @@ object FrameRateUtils {
                 )
                 return DisplayModePlan(null, 0)
             }
-            // Frame rate first: the smallest size that shows the rate cleanly (exact or doubled).
-            for (group in sizeGroups) {
-                val choice = chooseBestModeForFrameRate(activeMode, group, frameRate)
-                if (choice.quality.isCleanCadence()) return DisplayModePlan(choice, group.size)
+            // Frame rate first: the smallest size that shows the rate exactly or doubled.
+            val groupChoices = sizeGroups.map { group ->
+                chooseBestModeForFrameRate(activeMode, group, frameRate) to group.size
             }
-            // An exact or double frame-rate match beats a resolution match; a pulldown or
-            // fallback match does not. So when no size that fits the video can serve the
-            // cadence cleanly, look at every size above the floor before settling.
-            val nearest = chooseBestModeForFrameRate(activeMode, sizeGroups.first(), frameRate)
+            groupChoices.firstOrNull { (choice, _) -> choice.quality.isExactOrDouble() }
+                ?.let { (choice, count) -> return DisplayModePlan(choice, count) }
+            // An exact or double frame-rate match beats a resolution match; a multiple,
+            // pulldown or fallback match does not. So when no size that fits the video can
+            // serve the cadence that way, look at every size above the floor before settling.
+            val nearest = groupChoices.first().first
             val eligible = floorEligibleModes(modes)
             val wider = chooseBestModeForFrameRate(activeMode, eligible, frameRate)
-            if (wider.quality.isCleanCadence()) {
+            if (wider.quality.isExactOrDouble()) {
                 Log.d(
                     TAG,
                     "Resolution-matched modes offer only a ${nearest.quality} match for " +
@@ -549,6 +568,17 @@ object FrameRateUtils {
                 )
                 return DisplayModePlan(wider, eligible.size)
             }
+            // Then the smallest fitting size with a clean multiple, before 3:2 pulldown,
+            // when it is as exact as the pulldown at the video size.
+            val pulldownError = if (nearest.quality == ModeMatchQuality.PULLDOWN) {
+                refreshError(nearest.mode.refreshRate, frameRate * 2.5f)
+            } else {
+                Float.MAX_VALUE
+            }
+            groupChoices.firstOrNull { (choice, _) ->
+                choice.quality == ModeMatchQuality.MULTIPLE &&
+                    multipleError(choice.mode.refreshRate, frameRate) <= pulldownError + REFRESH_ERROR_SLACK
+            }?.let { (choice, count) -> return DisplayModePlan(choice, count) }
             return DisplayModePlan(nearest, sizeGroups.first().size)
         }
 
@@ -763,6 +793,18 @@ object FrameRateUtils {
             formatFrameRate in 59.97f..60.1f -> 60f
             else -> formatFrameRate
         }
+    }
+
+    // Samples come in decode order. With B-frames that is not presentation order, and the newest samples
+    // of any read can be ahead of frames that were never read, so sort and leave those out.
+    // skipFirst drops the lowest timestamps after sorting, not the first samples decoded.
+    internal fun averageSampleDurationUs(timestampsUs: List<Long>, skipFirst: Int, skipLast: Int): Float? {
+        val sorted = timestampsUs.sorted()
+        val last = sorted.size - 1 - skipLast
+        val intervals = last - skipFirst
+        if (intervals < 30) return null
+        val average = (sorted[last] - sorted[skipFirst]).toFloat() / intervals
+        return average.takeIf { it > 0f }
     }
 
     private fun snapProbeRateByFrameDuration(measuredFps: Float, averageFrameDurationUs: Float): Float {
@@ -1817,18 +1859,8 @@ object FrameRateUtils {
                 if (!extractor.advance()) break
             }
 
-            if (timestamps.size <= ignoreSamples + 1) return null
-
-            var totalFrameDurationUs = 0L
-            for (i in (ignoreSamples + 1) until timestamps.size) {
-                totalFrameDurationUs += (timestamps[i] - timestamps[i - 1])
-            }
-
-            val sampleCount = (timestamps.size - ignoreSamples - 1).coerceAtLeast(1)
-            if (sampleCount < 30) return null
-
-            val averageFrameDurationUs = totalFrameDurationUs.toFloat() / sampleCount.toFloat()
-            if (averageFrameDurationUs <= 0f) return null
+            val averageFrameDurationUs =
+                averageSampleDurationUs(timestamps, ignoreSamples, TIMESTAMP_REORDER_MARGIN) ?: return null
 
             val measured = 1_000_000f / averageFrameDurationUs
             if (!isValidVideoFrameRate(measured)) return null

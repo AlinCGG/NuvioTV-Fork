@@ -71,19 +71,17 @@ internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
     url: String,
     headers: Map<String, String>,
     frameRateMatchingMode: FrameRateMatchingMode,
-    resolutionMatchingEnabled: Boolean
+    resolutionMatchingEnabled: Boolean,
+    preflightToken: Long = afrPreflightGate.token()
 ) {
+    fun isStale() = !afrPreflightGate.isCurrent(preflightToken)
+    if (isStale()) return
     mpvDelayStartAfterAfrSwitch = false
     exoDelayStartAfterAfrSwitch = false
 
     if (frameRateMatchingMode == FrameRateMatchingMode.OFF) {
         _uiState.update {
-            it.copy(
-                detectedFrameRateRaw = 0f,
-                detectedFrameRate = 0f,
-                detectedFrameRateSource = null,
-                afrProbeRunning = false
-            )
+            it.clearFrameRateDetection().copy(afrProbeRunning = false)
         }
         return
     }
@@ -131,6 +129,7 @@ internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
         null
     }
 
+    if (isStale()) return
     val result = FrameRateUtils.matchFrameRateAndWait(
         activity = activity,
         frameRate = targetFrameRate,
@@ -138,6 +137,7 @@ internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
         videoHeight = cached.videoHeight,
         resolutionMatchingEnabled = resolutionMatchingEnabled
     )
+    if (isStale()) return
 
     if (result != null) {
         val switchedDisplayMode = initialDisplayModeId != null &&
@@ -161,24 +161,28 @@ internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
     }
 }
 
+/** A stream switch or a player release: a preflight still running for the old stream stands down. */
+internal fun PlayerRuntimeController.cancelAfrPreflight() {
+    afrPreflightGate.cancel()
+    _uiState.update { it.copy(afrProbeRunning = false) }
+}
+
 internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
     url: String,
     headers: Map<String, String>,
     frameRateMatchingMode: FrameRateMatchingMode,
     resolutionMatchingEnabled: Boolean,
-    mimeType: String? = null
+    mimeType: String? = null,
+    preflightToken: Long = afrPreflightGate.token()
 ) {
+    fun isStale() = !afrPreflightGate.isCurrent(preflightToken)
+    if (isStale()) return
     mpvDelayStartAfterAfrSwitch = false
     exoDelayStartAfterAfrSwitch = false
 
     if (frameRateMatchingMode == FrameRateMatchingMode.OFF) {
         _uiState.update {
-            it.copy(
-                detectedFrameRateRaw = 0f,
-                detectedFrameRate = 0f,
-                detectedFrameRateSource = null,
-                afrProbeRunning = false
-            )
+            it.clearFrameRateDetection().copy(afrProbeRunning = false)
         }
         return
     }
@@ -195,12 +199,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
     }
 
     _uiState.update {
-        it.copy(
-            detectedFrameRateRaw = 0f,
-            detectedFrameRate = 0f,
-            detectedFrameRateSource = null,
-            afrProbeRunning = true
-        )
+        it.clearFrameRateDetection().copy(afrProbeRunning = true)
     }
 
     // Original stream headers (without Range) – used for NextLib bypass decision.
@@ -240,6 +239,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
                 null
             }
 
+            if (isStale()) return
             val result = FrameRateUtils.matchFrameRateAndWait(
                 activity = activity,
                 frameRate = targetFrameRate,
@@ -247,6 +247,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
                 videoHeight = cached.videoHeight,
                 resolutionMatchingEnabled = resolutionMatchingEnabled
             )
+            if (isStale()) return
 
             if (result != null) {
                 val switchedDisplayMode = initialDisplayModeId != null &&
@@ -281,7 +282,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
                         headers = streamHeaders,
                         mimeType = effectiveMimeType,
                         filename = filename,
-                        isCancelled = { probeJob?.isActive != true }
+                        isCancelled = { probeJob?.isActive != true || isStale() }
                     )
                 }
             }
@@ -289,6 +290,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             null
         }
 
+        if (isStale()) return
         val detection = if (okHttpDetection != null) {
             Log.d(PlayerRuntimeController.TAG, "AFR preflight: OkHttp probe succeeded! FPS=${okHttpDetection.snapped}")
             okHttpDetection
@@ -311,6 +313,8 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             }
             if (nextLibDetection != null) {
                 nextLibDetection
+            } else if (isStale()) {
+                return
             } else {
                 val fallbackBudget = minOf(AFR_PREFLIGHT_FALLBACK_TIMEOUT_MS, remainingMs())
                 if (fallbackBudget < AFR_PREFLIGHT_MIN_STAGE_MS) {
@@ -346,6 +350,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
         }
 
         FrameRateUtils.cacheFrameRate(url, headers, detection, currentFilename)
+        if (isStale()) return
 
         _uiState.update {
             it.copy(
@@ -369,6 +374,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             null
         }
 
+        if (isStale()) return
         val result = FrameRateUtils.matchFrameRateAndWait(
             activity = activity,
             frameRate = targetFrameRate,
@@ -376,6 +382,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             videoHeight = detection.videoHeight,
             resolutionMatchingEnabled = resolutionMatchingEnabled
         )
+        if (isStale()) return
 
         if (result != null) {
             val switchedDisplayMode = initialDisplayModeId != null &&
@@ -395,8 +402,11 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             }
         }
     } finally {
-        withContext(NonCancellable) {
-            _uiState.update { it.copy(afrProbeRunning = false) }
+        // A switch or release already cleared the flag and a newer preflight may own it now.
+        if (!isStale()) {
+            withContext(NonCancellable) {
+                _uiState.update { it.copy(afrProbeRunning = false) }
+            }
         }
     }
 }
