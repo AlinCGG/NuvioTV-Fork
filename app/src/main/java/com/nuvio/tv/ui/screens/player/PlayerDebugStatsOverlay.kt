@@ -65,6 +65,7 @@ internal data class PlayerSnapshot(
     val durationMs: Long,
     val droppedFrames: Int?,
     val fileSizeBytes: Long?,
+    val skippedFrames: Int? = null,
     val allocatorBytes: Long? = null,
     val tunnelled: Boolean = false,
     val transfer: PlaybackTransferRate? = null
@@ -103,6 +104,7 @@ internal fun PlayerDebugStatsOverlay(
                     audioBitrate = runCatching { it.audioFormat?.bitrate }.getOrNull() ?: -1,
                     durationMs = runCatching { it.duration }.getOrNull() ?: -1L,
                     droppedFrames = viewModel.sampleDroppedFrames(presentation).count,
+                    skippedFrames = viewModel.sampleSkippedFrames(presentation)?.count,
                     tunnelled = presentation.isTunnelled,
                     fileSizeBytes = transfer.contentLength,
                     allocatorBytes = viewModel.getPlayerSampleAllocatorBytes(),
@@ -284,7 +286,9 @@ private class DebugStatsSampler(context: Context) {
     private fun droppedStat(snapshot: PlayerSnapshot?): DebugStat {
         val dropped = snapshot?.droppedFrames ?: return DebugStat("dropped", UNAVAILABLE)
         val scope = if (snapshot.tunnelled) "renderer source only (tunnelled)" else "buffers · current renderer"
-        return DebugStat("dropped", "$dropped · $scope", warn = dropped > 0)
+        val skipped = snapshot.skippedFrames?.takeUnless { snapshot.tunnelled }
+        val skippedText = skipped?.let { " · skipped $it" }.orEmpty()
+        return DebugStat("dropped", "$dropped$skippedText · $scope", warn = dropped > 0 || (skipped ?: 0) > 0)
     }
 
     // Headroom is normalised so 1.00 is the throttling point; the status line only matters once it trips.

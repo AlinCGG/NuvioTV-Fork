@@ -12,6 +12,20 @@ import java.util.Locale
  */
 internal object PlaybackStatsDv {
 
+    enum class Dv7Layers { RPU_BL_EL, BL_RPU, BL_ONLY }
+
+    /** True when the last video decoder was the Amlogic dual-layer port (native FEL route), not a fallback. */
+    fun isNativeFelDecoder(decoderName: String?): Boolean =
+        decoderName?.startsWith(com.nuvio.tv.core.player.amlfel.AmlDvFelVideoRenderer.DECODER_NAME) == true
+
+    /** Which layers of a Profile 7 stream reached the picture, or null when the playback does not say. */
+    fun dv7LayersUsed(modeEffective: String?, decoderName: String?, converted: Boolean): Dv7Layers? = when {
+        modeEffective == "NATIVE_FEL" && isNativeFelDecoder(decoderName) -> Dv7Layers.RPU_BL_EL
+        modeEffective == "DV81_LIBDOVI" && converted -> Dv7Layers.BL_RPU
+        modeEffective == "HDR10_BASE_LAYER" || modeEffective == "STRIP_DV" -> Dv7Layers.BL_ONLY
+        else -> null
+    }
+
     /** Level digits of a Dolby Vision codecs string ("dvhe.07.06" -> 6), or null. */
     fun levelFromCodecs(codecs: String?): Int? {
         val c = codecs?.lowercase(Locale.ROOT) ?: return null

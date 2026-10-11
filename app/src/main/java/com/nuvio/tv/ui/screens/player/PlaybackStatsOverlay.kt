@@ -82,7 +82,7 @@ private val STATS_GROUP_BY_LABEL: Map<String, StatsGroup> = buildMap {
         .forEach { put(it, StatsGroup.AUDIO) }
     listOf("Buffer", "Speed", "Ping", "Request", "Rate limit", "Hedge", "Load errors", "Loaded", "Rebuffers", "Pos. freeze", "Server latency", "Mux estimate")
         .forEach { put(it, StatsGroup.NETWORK) }
-    listOf("App CPU", "Memory", "SoC temp", "CPU clock")
+    listOf("App CPU", "Memory", CHIP_TEMP_LABEL, DEVICE_TEMP_LABEL, "CPU clock")
         .forEach { put(it, StatsGroup.SYSTEM) }
 }
 
@@ -164,7 +164,7 @@ internal object PlaybackStatsThresholds {
     // ladder (light 65 / moderate 75 / severe 95 / emergency 105 / shutdown 120 C; such
     // a box idles around 66 C, so "light" is normal operation): amber at moderate, red
     // at severe. Headroom is normalised by the framework so 1.0 = severe on whatever
-    // device this runs on; amber when within 10% of it. The degree pair can differ per device.
+    // device this runs on (0.1 = 3 C); amber within 3 C of it. The degree pair can differ per device.
     // Audio-clock jitter: deviation of reported audio position from wall clock. A healthy
     // passthrough clock tracks within a few ms; a failing TrueHD passthrough clock can jump
     // ~50-57 ms about 30 times a second while every other counter reads clean.
