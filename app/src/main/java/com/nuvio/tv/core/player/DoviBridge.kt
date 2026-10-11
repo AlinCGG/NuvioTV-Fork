@@ -262,6 +262,7 @@ object DoviBridge {
          * always available.
          */
         fun toDiagnosticLine(): String {
+            if (maxCll == 0 && maxFall == 0) return "CLL/FALL not set · MDL ${pqCodeToNits(sourceMaxPq)} nits"
             val parts = ArrayList<String>(3)
             // A present L6 block with a zero content-light value means "unknown"
             // (common in WEB-DL masters), not literally zero nits - show a dash

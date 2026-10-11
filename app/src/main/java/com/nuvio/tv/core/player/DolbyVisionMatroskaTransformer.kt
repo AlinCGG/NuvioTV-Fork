@@ -47,6 +47,8 @@ internal class DolbyVisionMatroskaTransformer(
 
     // Reused across samples; grows to the largest frame once.
     private val scratch = ExposedByteArrayOutputStream(64 * 1024)
+    // HDR10+ stripping reads from scratch's array, so it writes into its own.
+    private val hdr10PlusScratch = ExposedByteArrayOutputStream(64 * 1024)
 
     // Cached per-stream once resolved. SEI carrying mastering-display/CLL info
     // is typically only sent on keyframes, so we keep checking each sample
@@ -332,7 +334,7 @@ internal class DolbyVisionMatroskaTransformer(
     /**
      * Applies HDR10+ SEI stripping to [data] if [stripHdr10PlusSei] is enabled.
      * Returns null when the feature is off or no HDR10+ was found; otherwise
-     * returns the stripped bytes and updates [lastTransformedLength].
+     * returns a reused buffer holding the stripped bytes and updates [lastTransformedLength].
      */
     private fun stripHdr10PlusIfEnabled(
         data: ByteArray,
@@ -340,12 +342,11 @@ internal class DolbyVisionMatroskaTransformer(
         nalLengthFieldLength: Int
     ): ByteArray? {
         if (!stripHdr10PlusSei) return null
-        val stripped = HevcHdr10PlusStripper.stripHdr10PlusLengthDelimited(data, len, nalLengthFieldLength)
-        if (stripped != null) {
-            lastTransformedLength = stripped.size
-            return stripped
+        if (!HevcHdr10PlusStripper.stripHdr10PlusLengthDelimited(data, len, nalLengthFieldLength, hdr10PlusScratch)) {
+            return null
         }
-        return null
+        lastTransformedLength = hdr10PlusScratch.size()
+        return hdr10PlusScratch.backingArray()
     }
 
     /**

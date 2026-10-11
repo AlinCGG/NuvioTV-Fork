@@ -259,8 +259,8 @@ internal class DolbyVisionStatsSession {
 /**
  * Drives the per-stream conversion decision. Mirrors the auto-pick used by the
  * extractor hook installer: profile-7 AUTO = mode 1 (ToMel); profile-7 manual
- * Convert-to-DV8.1 = mode 2; profile 5 = mode 2; a [forcedMode] in 0..4
- * overrides all of it.
+ * Convert-to-DV8.1, or AUTO with [autoMode2], = mode 2; profile 5 = mode 2; a
+ * [forcedMode] in 0..4 overrides all of it.
  */
 internal data class DolbyVisionConversionConfig(
     val active: Boolean,
@@ -269,10 +269,12 @@ internal data class DolbyVisionConversionConfig(
     /** True when the user explicitly chose "Convert to DV8.1" (not AUTO). */
     val manualDv81: Boolean = false,
     val nativeProfile7: Boolean = false,
+    /** AUTO converting profile 7 the way manual Convert to DV8.1 does (mode 2, fallback to 1). */
+    val autoMode2: Boolean = false,
     val stats: DolbyVisionStatsSession = DolbyVisionConversionStats.session
 ) {
-    /** Manual mode-2 default with per-RPU fallback to mode 1 (not for AUTO / forced). */
-    val allowMode2Fallback: Boolean get() = manualDv81 && forcedMode !in 0..4
+    /** Mode-2 default with per-RPU fallback to mode 1 (not for a forced mode). */
+    val allowMode2Fallback: Boolean get() = (manualDv81 || autoMode2) && forcedMode !in 0..4
 
     /**
      * DV5 via the toggle is signal-only (codec rewritten to 8.1, profile-5 RPU kept). A
@@ -307,7 +309,7 @@ internal data class DolbyVisionConversionConfig(
         if (forcedMode in 0..4) return forcedMode
         return when {
             profile == 5 -> 2
-            manualDv81 -> 2 // manual Convert to DV8.1 prefers mode 2 (falls back to 1)
+            manualDv81 || autoMode2 -> 2 // prefers mode 2 (falls back to 1)
             else -> 1       // AUTO convert stays on mode 1
         }
     }
