@@ -1887,6 +1887,7 @@ internal fun PlayerRuntimeController.cancelNextEpisodePreload() {
 internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = false) {
     val nextVideo = nextEpisodeVideo ?: return
     val type = contentType ?: return
+    nextEpisodePreloadTriggered = false
 
     // Stamps the press so the addon scrape and the bounded
     // streamAutoPlayTimeoutSeconds wait before resolving_debrid can be timed.

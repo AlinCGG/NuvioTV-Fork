@@ -1,5 +1,8 @@
 package com.nuvio.tv.ui.screens.addon
 
+import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
+import com.nuvio.tv.ui.screens.settings.SettingsDialogActionButton
+import com.nuvio.tv.ui.screens.settings.SettingsDialogActionRow
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.screens.settings.SettingsPageAtmosphere
 import com.nuvio.tv.ui.screens.settings.settingsItemColor
@@ -81,6 +84,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -392,7 +400,9 @@ fun AddonManagerScreen(
                                         installButtonFocusRequester.requestFocus()
                                     },
                                     enabled = !uiState.isInstalling,
-                                    modifier = Modifier.focusRequester(installButtonFocusRequester),
+                                    modifier = Modifier
+                                        .focusRequester(installButtonFocusRequester)
+                                        .semantics { role = Role.Button },
                                     colors = ButtonDefaults.colors(
                                         containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
                                         contentColor = NuvioTheme.colors.TextPrimary,
@@ -602,14 +612,12 @@ fun AddonManagerScreen(
 
         // Confirmation dialog overlay
         if (uiState.pendingChange != null) {
-            Popup(properties = PopupProperties(focusable = true)) {
-                uiState.pendingChange?.let { pending ->
-                    ConfirmAddonChangesDialog(
-                        pendingChange = pending,
-                        onConfirm = viewModel::confirmPendingChange,
-                        onReject = viewModel::rejectPendingChange
-                    )
-                }
+            uiState.pendingChange?.let { pending ->
+                ConfirmAddonChangesDialog(
+                    pendingChange = pending,
+                    onConfirm = viewModel::confirmPendingChange,
+                    onReject = viewModel::rejectPendingChange
+                )
             }
         }
 
@@ -626,7 +634,9 @@ fun AddonManagerScreen(
                 ) {
                     Button(
                         onClick = { addonUrlPendingDeletion = null },
-                        modifier = Modifier.focusRequester(deleteDialogFocusRequester)
+                        modifier = Modifier
+                            .focusRequester(deleteDialogFocusRequester)
+                            .semantics { role = Role.Button }
                     ) {
                         Text(stringResource(R.string.addon_delete_no))
                     }
@@ -634,7 +644,8 @@ fun AddonManagerScreen(
                         onClick = {
                             viewModel.removeAddon(addonUrl)
                             addonUrlPendingDeletion = null
-                        }
+                        },
+                        modifier = Modifier.semantics { role = Role.Button }
                     ) {
                         Text(stringResource(R.string.addon_delete_yes))
                     }
@@ -711,7 +722,8 @@ private fun ManageFromPhoneCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth().settingsSubmenuSurface()
-            .onFocusChanged { isFocused = it.isFocused },
+            .onFocusChanged { isFocused = it.isFocused }
+            .semantics { role = Role.Button },
         colors = ClickableSurfaceDefaults.colors(
             containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
             focusedContainerColor = NuvioTheme.colors.FocusBackground
@@ -772,7 +784,8 @@ private fun CatalogOrderEntryCard(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth().settingsSubmenuSurface()
-            .onFocusChanged { isFocused = it.isFocused },
+            .onFocusChanged { isFocused = it.isFocused }
+            .semantics { role = Role.Button },
         colors = ClickableSurfaceDefaults.colors(
             containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
             focusedContainerColor = NuvioTheme.colors.FocusBackground
@@ -833,7 +846,8 @@ private fun CollectionsEntryCard(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth().settingsSubmenuSurface()
-            .onFocusChanged { isFocused = it.isFocused },
+            .onFocusChanged { isFocused = it.isFocused }
+            .semantics { role = Role.Button },
         colors = ClickableSurfaceDefaults.colors(
             containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
             focusedContainerColor = NuvioTheme.colors.FocusBackground
@@ -898,7 +912,8 @@ private fun RefreshAddonsEntryCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth().settingsSubmenuSurface()
-            .onFocusChanged { isFocused = it.isFocused },
+            .onFocusChanged { isFocused = it.isFocused }
+            .semantics { role = Role.Button },
         colors = ClickableSurfaceDefaults.colors(
             containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
             focusedContainerColor = NuvioTheme.colors.FocusBackground
@@ -1012,7 +1027,9 @@ internal fun QrCodeOverlay(
 
             Surface(
                 onClick = onClose,
-                modifier = Modifier.focusRequester(focusRequester),
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .semantics { role = Role.Button },
                 colors = ClickableSurfaceDefaults.colors(
                     containerColor = NuvioTheme.colors.Surface,
                     focusedContainerColor = NuvioTheme.colors.FocusBackground
@@ -1059,277 +1076,191 @@ internal fun ConfirmAddonChangesDialog(
     val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+        focusRequester.requestFocusAfterFrames()
     }
 
-    BackHandler { onReject() }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f)),
-        contentAlignment = Alignment.Center
+    NuvioDialog(
+        onDismiss = onReject,
+        title = stringResource(R.string.addon_confirm_title),
+        subtitle = stringResource(R.string.addon_confirm_subtitle),
+        width = 560.dp
     ) {
-        Surface(
-            onClick = { },
+        Box(
             modifier = Modifier
-                .width(560.dp)
-                .heightIn(max = 640.dp),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = NuvioTheme.colors.SurfaceVariant
-            ),
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(NuvioTheme.radii.xl))
+                .fillMaxWidth()
+                .heightIn(max = 320.dp)
+                .background(
+                    color = NuvioTheme.colors.Surface,
+                    shape = settingsItemShape(NuvioTheme.radii.md)
+                )
         ) {
             Column(
-                modifier = Modifier.padding(NuvioTheme.spacing.xl),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(NuvioTheme.spacing.md)
+                    .verticalScroll(scrollState)
             ) {
-                Text(
-                    text = stringResource(R.string.addon_confirm_title),
-                    style = MaterialTheme.typography.headlineSmall.copy(textDirection = TextDirection.Content),
-                    color = NuvioTheme.colors.TextPrimary,
-                )
-
-                Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
-
-                Text(
-                    text = stringResource(R.string.addon_confirm_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = NuvioTheme.colors.TextSecondary
-                )
-
-                Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 320.dp)
-                        .background(
-                            color = NuvioTheme.colors.Surface,
-                            shape = settingsItemShape(NuvioTheme.radii.md)
-                        )
-                ) {
-                    Column(
+                if (pendingChange.addedUrls.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.addon_confirm_added),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = NuvioTheme.colors.Success,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(NuvioTheme.spacing.md)
-                            .verticalScroll(scrollState)
-                    ) {
-                        if (pendingChange.addedUrls.isNotEmpty()) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_added),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = NuvioTheme.colors.Success,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = NuvioTheme.spacing.xs)
-                            )
-                            pendingChange.addedUrls.forEach { url ->
-                                val displayName = pendingChange.addedNames[url] ?: url
-                                Text(
-                                    text = "+ $displayName",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = NuvioTheme.colors.Success,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-                        }
-
-                        if (pendingChange.removedUrls.isNotEmpty()) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_removed),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = NuvioTheme.colors.Error,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = NuvioTheme.spacing.xs)
-                            )
-                            pendingChange.removedUrls.forEach { url ->
-                                val displayName = pendingChange.removedNames[url] ?: url
-                                Text(
-                                    text = "- $displayName",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = NuvioTheme.colors.Error,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-                        }
-
-                        if (pendingChange.catalogsReordered) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_catalog_reordered),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = NuvioTheme.colors.TextSecondary,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 6.dp)
-                            )
-                        }
-
-                        if (pendingChange.disabledCatalogNames.isNotEmpty()) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_catalogs_disabled),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = NuvioTheme.colors.Error,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = NuvioTheme.spacing.xs)
-                            )
-                            pendingChange.disabledCatalogNames.forEach { name ->
-                                Text(
-                                    text = "- $name",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = NuvioTheme.colors.Error,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-                        }
-
-                        if (pendingChange.enabledCatalogNames.isNotEmpty()) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_catalogs_enabled),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = NuvioTheme.colors.Success,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = NuvioTheme.spacing.xs)
-                            )
-                            pendingChange.enabledCatalogNames.forEach { name ->
-                                Text(
-                                    text = "+ $name",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = NuvioTheme.colors.Success,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-                        }
-
-                        if (pendingChange.collectionsChanged) {
-                            Text(
-                                text = stringResource(R.string.addon_pending_collections_updated),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = NuvioTheme.colors.TextPrimary,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = NuvioTheme.spacing.xs)
-                            )
-                            Text(
-                                text = stringResource(R.string.addon_pending_collections_replace, pendingChange.proposedCollectionCount),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = NuvioTheme.colors.TextSecondary,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
-                            )
-                            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-                        }
-
-                        if (
-                            pendingChange.addedUrls.isEmpty() &&
-                            pendingChange.removedUrls.isEmpty() &&
-                            !pendingChange.catalogsReordered &&
-                            pendingChange.disabledCatalogNames.isEmpty() &&
-                            pendingChange.enabledCatalogNames.isEmpty() &&
-                            !pendingChange.collectionsChanged
-                        ) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_no_changes),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = NuvioTheme.colors.TextSecondary
-                            )
-                        }
+                            .padding(bottom = NuvioTheme.spacing.xs)
+                    )
+                    pendingChange.addedUrls.forEach { url ->
+                        val displayName = pendingChange.addedNames[url] ?: url
+                        Text(
+                            text = "+ $displayName",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NuvioTheme.colors.Success,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
                 }
 
-                Text(
-                    text = stringResource(R.string.addon_confirm_total_addons, pendingChange.proposedUrls.size),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = NuvioTheme.colors.TextTertiary,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    text = stringResource(R.string.addon_confirm_total_catalogs, pendingChange.proposedCatalogOrderKeys.size),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = NuvioTheme.colors.TextTertiary,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(NuvioTheme.spacing.xl))
-
-                if (pendingChange.isApplying) {
-                    LoadingIndicator(modifier = Modifier.size(36.dp))
-                } else {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.lg)
-                    ) {
-                        Surface(
-                            onClick = onReject,
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = NuvioTheme.colors.Surface,
-                                focusedContainerColor = NuvioTheme.colors.FocusBackground
-                            ),
-                            border = ClickableSurfaceDefaults.border(
-                                focusedBorder = Border(
-                                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                                    shape = RoundedCornerShape(50)
-                                )
-                            ),
-                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = NuvioTheme.spacing.xl, vertical = NuvioTheme.spacing.md),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = NuvioTheme.colors.TextPrimary
-                                )
-                                Spacer(modifier = Modifier.width(NuvioTheme.spacing.sm))
-                                Text(
-                                    text = stringResource(R.string.addon_confirm_reject),
-                                    color = NuvioTheme.colors.TextPrimary,
-                                    style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
-                                )
-                            }
-                        }
-
-                        Surface(
-                            onClick = onConfirm,
-                            modifier = Modifier.focusRequester(focusRequester),
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = NuvioTheme.colors.Secondary,
-                                focusedContainerColor = NuvioTheme.colors.SecondaryVariant
-                            ),
-                            border = ClickableSurfaceDefaults.border(
-                                focusedBorder = Border(
-                                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                                    shape = RoundedCornerShape(50)
-                                )
-                            ),
-                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50))
-                        ) {
-                            Text(
-                                text = stringResource(R.string.addon_confirm_confirm),
-                                modifier = Modifier.padding(horizontal = NuvioTheme.spacing.xl, vertical = NuvioTheme.spacing.md),
-                                color = NuvioTheme.colors.OnSecondary
-                            )
-                        }
+                if (pendingChange.removedUrls.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.addon_confirm_removed),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = NuvioTheme.colors.Error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = NuvioTheme.spacing.xs)
+                    )
+                    pendingChange.removedUrls.forEach { url ->
+                        val displayName = pendingChange.removedNames[url] ?: url
+                        Text(
+                            text = "- $displayName",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NuvioTheme.colors.Error,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
                 }
+
+                if (pendingChange.catalogsReordered) {
+                    Text(
+                        text = stringResource(R.string.addon_confirm_catalog_reordered),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = NuvioTheme.colors.TextSecondary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp)
+                    )
+                }
+
+                if (pendingChange.disabledCatalogNames.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.addon_confirm_catalogs_disabled),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = NuvioTheme.colors.Error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = NuvioTheme.spacing.xs)
+                    )
+                    pendingChange.disabledCatalogNames.forEach { name ->
+                        Text(
+                            text = "- $name",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NuvioTheme.colors.Error,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+                }
+
+                if (pendingChange.enabledCatalogNames.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.addon_confirm_catalogs_enabled),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = NuvioTheme.colors.Success,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = NuvioTheme.spacing.xs)
+                    )
+                    pendingChange.enabledCatalogNames.forEach { name ->
+                        Text(
+                            text = "+ $name",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NuvioTheme.colors.Success,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+                }
+
+                if (pendingChange.collectionsChanged) {
+                    Text(
+                        text = stringResource(R.string.addon_pending_collections_updated),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = NuvioTheme.colors.TextPrimary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = NuvioTheme.spacing.xs)
+                    )
+                    Text(
+                        text = stringResource(R.string.addon_pending_collections_replace, pendingChange.proposedCollectionCount),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = NuvioTheme.colors.TextSecondary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.xxs)
+                    )
+                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+                }
+
+                if (
+                    pendingChange.addedUrls.isEmpty() &&
+                    pendingChange.removedUrls.isEmpty() &&
+                    !pendingChange.catalogsReordered &&
+                    pendingChange.disabledCatalogNames.isEmpty() &&
+                    pendingChange.enabledCatalogNames.isEmpty() &&
+                    !pendingChange.collectionsChanged
+                ) {
+                    Text(
+                        text = stringResource(R.string.addon_confirm_no_changes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = NuvioTheme.colors.TextSecondary
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = stringResource(R.string.addon_confirm_total_addons, pendingChange.proposedUrls.size),
+            style = MaterialTheme.typography.bodySmall,
+            color = NuvioTheme.colors.TextTertiary,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text(
+            text = stringResource(R.string.addon_confirm_total_catalogs, pendingChange.proposedCatalogOrderKeys.size),
+            style = MaterialTheme.typography.bodySmall,
+            color = NuvioTheme.colors.TextTertiary,
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (pendingChange.isApplying) {
+            LoadingIndicator(modifier = Modifier.size(36.dp).align(Alignment.CenterHorizontally))
+        } else {
+            SettingsDialogActionRow {
+                SettingsDialogActionButton(text = stringResource(R.string.addon_confirm_reject), onClick = onReject)
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.addon_confirm_confirm),
+                    onClick = onConfirm,
+                    primary = true,
+                    modifier = Modifier.focusRequester(focusRequester)
+                )
             }
         }
     }
@@ -1475,7 +1406,11 @@ private fun AddonCardContent(
                     Surface(
                         onClick = { onEnabledChange(!addon.enabled) },
                         modifier = Modifier
-                            .focusRequester(toggleFocusRequester ?: remember { FocusRequester() }),
+                            .focusRequester(toggleFocusRequester ?: remember { FocusRequester() })
+                            .semantics {
+                                role = Role.Switch
+                                toggleableState = if (addon.enabled) ToggleableState.On else ToggleableState.Off
+                            },
                         colors = ClickableSurfaceDefaults.colors(
                             containerColor = Color.Transparent,
                             focusedContainerColor = NuvioTheme.colors.FocusBackground
@@ -1507,6 +1442,7 @@ private fun AddonCardContent(
                         Button(
                             onClick = onMoveUp,
                             enabled = canMoveUp,
+                            modifier = Modifier.semantics { role = Role.Button },
                             colors = ButtonDefaults.colors(
                                 containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
                                 contentColor = NuvioTheme.colors.TextSecondary,
@@ -1520,6 +1456,7 @@ private fun AddonCardContent(
                         Button(
                             onClick = onMoveDown,
                             enabled = canMoveDown,
+                            modifier = Modifier.semantics { role = Role.Button },
                             colors = ButtonDefaults.colors(
                                 containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
                                 contentColor = NuvioTheme.colors.TextSecondary,
@@ -1533,6 +1470,7 @@ private fun AddonCardContent(
                     }
                     Button(
                         onClick = onRemove,
+                        modifier = Modifier.semantics { role = Role.Button },
                         colors = ButtonDefaults.colors(
                             containerColor = settingsItemColor(NuvioTheme.colors.BackgroundCard),
                             contentColor = NuvioTheme.colors.TextSecondary,

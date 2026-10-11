@@ -584,7 +584,9 @@ fun GridHomeContent(
                         blurUnwatchedEpisodes = uiState.blurUnwatchedEpisodes,
                         useEpisodeThumbnails = uiState.useEpisodeThumbnailsInCw,
                         cardStyle = uiState.continueWatchingCardStyle,
-                        cornerRadius = posterCardStyle.cornerRadius
+                        cornerRadius = posterCardStyle.cornerRadius,
+                        posterCardWidth = posterCardStyle.width,
+                        posterCardHeight = posterCardStyle.height
                     )
                 }
             }
@@ -651,7 +653,9 @@ fun GridHomeContent(
                         blurUnwatchedEpisodes = uiState.blurUnwatchedEpisodes,
                         useEpisodeThumbnails = uiState.useEpisodeThumbnailsInCw,
                         cardStyle = uiState.continueWatchingCardStyle,
-                        cornerRadius = posterCardStyle.cornerRadius
+                        cornerRadius = posterCardStyle.cornerRadius,
+                        posterCardWidth = posterCardStyle.width,
+                        posterCardHeight = posterCardStyle.height
                     )
                 }
             }

@@ -242,7 +242,14 @@ data class PlayerUiState(
     // When true, suppress all torrent stats text (buffer, seeds, peers, speed)
     // from loading overlay, rebuffering indicator, and corner overlay.
     val hideTorrentStats: Boolean = true,
-    val controlLayout: com.nuvio.tv.data.local.PlayerControlLayout? = null
+    val controlLayout: com.nuvio.tv.data.local.PlayerControlLayout? = null,
+    val isLive: Boolean = false
+)
+
+internal fun PlayerUiState.clearFrameRateDetection(): PlayerUiState = copy(
+    detectedFrameRateRaw = 0f,
+    detectedFrameRate = 0f,
+    detectedFrameRateSource = null
 )
 
 data class PlaybackTimelineState(
@@ -303,6 +310,8 @@ sealed class PlayerEvent {
     data object OnSeekBackward : PlayerEvent()
     data class OnSeekBy(val deltaMs: Long) : PlayerEvent()
     data class OnPreviewSeekBy(val deltaMs: Long) : PlayerEvent()
+    /** A seek key repeat: the key is held, so the cursor glides until the commit. */
+    data class OnScrubHold(val forward: Boolean, val downTime: Long, val eventTime: Long) : PlayerEvent()
     data object OnCommitPreviewSeek : PlayerEvent()
     data class OnSeekTo(val position: Long) : PlayerEvent()
     data class OnSelectAudioTrack(val index: Int) : PlayerEvent()
@@ -310,9 +319,10 @@ sealed class PlayerEvent {
     data class OnSetAudioAmplificationDb(val db: Int) : PlayerEvent()
     data class OnSetPersistAudioAmplification(val enabled: Boolean) : PlayerEvent()
     data class OnSetCenterMixLevelDb(val db: Int) : PlayerEvent()
-    data class OnSelectSubtitleTrack(val index: Int) : PlayerEvent()
+    data class OnSelectSubtitleTrack(val index: Int, val openPanel: Boolean = true) : PlayerEvent()
     data object OnDisableSubtitles : PlayerEvent()
-    data class OnSelectAddonSubtitle(val subtitle: Subtitle) : PlayerEvent()
+    data object OnDisableSubtitlesQuietly : PlayerEvent()
+    data class OnSelectAddonSubtitle(val subtitle: Subtitle, val openPanel: Boolean = true) : PlayerEvent()
     data class OnSetPlaybackSpeed(val speed: Float) : PlayerEvent()
     data object OnToggleControls : PlayerEvent()
     data object OnShowAudioOverlay : PlayerEvent()

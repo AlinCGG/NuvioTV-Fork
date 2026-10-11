@@ -8,6 +8,7 @@ import com.nuvio.tv.ui.theme.NuvioTheme
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.os.Process
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
@@ -33,11 +34,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,6 +57,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import android.widget.Toast
@@ -71,6 +79,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.LocaleCache
 import com.nuvio.tv.R
+import com.nuvio.tv.ui.support.SupportNuvioDialog
 import com.nuvio.tv.domain.model.AppIconOption
 import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.domain.model.CustomThemeColors
@@ -101,7 +110,8 @@ fun ThemeSettingsScreen(
 @Composable
 fun ThemeSettingsContent(
     viewModel: ThemeSettingsViewModel = hiltViewModel(),
-    initialFocusRequester: FocusRequester? = null
+    initialFocusRequester: FocusRequester? = null,
+    onNavigateToSignIn: (() -> Unit)? = null
 ) {
     val isV2 = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -112,6 +122,8 @@ fun ThemeSettingsContent(
     var showCustomThemeDialog by remember(uiState.customThemeGradientEnabled) { mutableStateOf(false) }
     var restoreCustomThemeFocus by remember { mutableStateOf(false) }
     var appIconConfirmation by remember { mutableStateOf<AppIconOption?>(null) }
+    var showSupportDialog by remember { mutableStateOf(false) }
+    var refocusThemes by remember { mutableStateOf(false) }
     var pendingLanguageRestart by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -243,6 +255,18 @@ fun ThemeSettingsContent(
                                     if (theme == AppTheme.CUSTOM) Modifier.focusRequester(customThemeFocusRequester)
                                     else Modifier
                                 )
+                            )
+                        }
+                        items(
+                            items = uiState.lockedThemes,
+                            key = { theme -> "locked_${theme.name}" }
+                        ) { theme ->
+                            ThemeSwatchChip(
+                                theme = theme,
+                                customColors = uiState.customThemeColors,
+                                isSelected = false,
+                                locked = true,
+                                onClick = { showSupportDialog = true }
                             )
                         }
                     }
@@ -413,6 +437,26 @@ fun ThemeSettingsContent(
         SettingsVerticalScrollIndicators(state = themeScrollState)
     }
 
+    if (showSupportDialog) {
+        SupportNuvioDialog(
+            onDismiss = { showSupportDialog = false },
+            onSignIn = onNavigateToSignIn?.let { navigate ->
+                {
+                    showSupportDialog = false
+                    navigate()
+                }
+            },
+            onSuggestionsHidden = { refocusThemes = true }
+        )
+    }
+
+    LaunchedEffect(refocusThemes) {
+        if (refocusThemes) {
+            firstThemeFocusRequester.requestFocusAfterFrames()
+            refocusThemes = false
+        }
+    }
+
     if (showCustomThemeDialog && AppTheme.CUSTOM in uiState.availableThemes) {
         CustomThemeDialog(
             initialColors = uiState.customThemeColors,
@@ -489,8 +533,12 @@ fun ThemeSettingsContent(
             onConfirm = {
                 appIconConfirmation = null
                 if (viewModel.selectAppIcon(option)) {
+                    // Reopen through the new launcher entry; home screens can take a few seconds to drop the old one.
+                    val restart = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                        ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    val reopened = restart != null && runCatching { context.startActivity(restart) }.isSuccess
                     context.findActivity()?.finishAffinity()
-                    Process.killProcess(Process.myPid())
+                    if (!reopened) Process.killProcess(Process.myPid())
                 }
             },
             onDismiss = { appIconConfirmation = null }
@@ -510,11 +558,14 @@ private fun ThemeSwatchChip(
     customColors: CustomThemeColors,
     isSelected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    locked: Boolean = false
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val palette = remember(theme, customColors) { ThemeColors.getColorPalette(theme, customColors) }
     val chipShape = RoundedCornerShape(if (isV2Settings()) 12.dp else 18.dp)
+    val lockedLabel = stringResource(R.string.support_nuvio_theme_locked)
+    val label = if (locked) "${theme.localizedName()}, $lockedLabel" else theme.localizedName()
 
     Card(
         onClick = onClick,
@@ -544,6 +595,11 @@ private fun ThemeSwatchChip(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .clearAndSetSemantics {
+                    contentDescription = label
+                    role = Role.RadioButton
+                    this.selected = isSelected
+                }
                 .padding(horizontal = NuvioTheme.spacing.sm, vertical = NuvioTheme.spacing.md),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -557,7 +613,21 @@ private fun ThemeSwatchChip(
                     else Modifier.background(palette.accentBrush())),
                 contentAlignment = Alignment.Center
             ) {
-                if (isSelected) {
+                if (locked) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Black.copy(alpha = 0.35f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                } else if (isSelected) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = stringResource(R.string.cd_selected),
@@ -575,6 +645,14 @@ private fun ThemeSwatchChip(
                 color = if (isFocused || isSelected) NuvioTheme.colors.TextPrimary else NuvioTheme.colors.TextSecondary,
                 maxLines = 1
             )
+            if (locked) {
+                Text(
+                    text = lockedLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isFocused) NuvioTheme.colors.TextPrimary else NuvioTheme.colors.TextTertiary,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -679,6 +757,7 @@ internal fun AppTheme.localizedName(): String = when (this) {
     AppTheme.VIOLET -> stringResource(R.string.theme_color_violet)
     AppTheme.EMERALD -> stringResource(R.string.theme_color_emerald)
     AppTheme.AMBER -> stringResource(R.string.theme_color_amber)
+    AppTheme.COPPER -> stringResource(R.string.theme_color_copper)
     AppTheme.ROSE -> stringResource(R.string.theme_color_rose)
     AppTheme.WHITE -> stringResource(R.string.theme_color_white)
     AppTheme.GLASS -> stringResource(R.string.theme_color_glass)

@@ -98,12 +98,21 @@ object StreamAutoPlaySelector {
         }
         if (candidateStreams.isEmpty()) return null
 
-        // Binge group matching takes priority over mode — even in MANUAL mode,
+        // Binge group matching takes priority over mode and source filters — even in MANUAL mode,
         // a persisted binge group should auto-play without showing the picker.
+        // Search ALL streams, not just candidateStreams, since binge group reuse should
+        // not be limited by autoplay source/addon selection filters.
         val targetBingeGroup = preferredBingeGroup?.trim().orEmpty()
         if (preferBingeGroupInSelection && targetBingeGroup.isNotEmpty()) {
-            val bingeGroupMatch = candidateStreams.firstOrNull { stream ->
-                stream.behaviorHints?.bingeGroup == targetBingeGroup && isPlayable(stream)
+            val bingeGroupMatches = streams.filter { stream ->
+                !stream.isExternal() &&
+                    stream.behaviorHints?.bingeGroup == targetBingeGroup &&
+                    isPlayable(stream)
+            }
+            val bingeGroupMatch = if (mode == StreamAutoPlayMode.QUALITY_RANK && bingeGroupMatches.size > 1) {
+                StreamQualityRank.rank(bingeGroupMatches, debridStreamPreferences).firstOrNull()
+            } else {
+                bingeGroupMatches.firstOrNull()
             }
             if (bingeGroupMatch != null) return bingeGroupMatch
             // When bingeGroupOnly is set (MANUAL mode with only binge-group

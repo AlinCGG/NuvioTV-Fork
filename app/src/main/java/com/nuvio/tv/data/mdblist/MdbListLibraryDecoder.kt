@@ -1,5 +1,7 @@
 package com.nuvio.tv.data.mdblist
 
+import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -23,6 +25,22 @@ internal fun decodeMdbListLibraryLists(body: String, accountId: Long): List<MdbL
             name = row.text("name") ?: throw MdbListDecodingException(),
             private = row.flag("private") ?: throw MdbListDecodingException(),
             description = row.text("description"),
+            mediaType = mediaType,
+            updatedAt = row.text("last_updated_at", "updated_at", "updated")
+        )
+    }.also { lists -> if (lists.map { it.id }.toSet().size != lists.size) throw MdbListDecodingException() }
+}
+
+internal fun decodeMdbListExternalLists(body: String): List<MdbListExternalList> {
+    val rows = mdbListResponseElement(body) as? JsonArray ?: throw MdbListDecodingException()
+    return rows.mapNotNull { element ->
+        val row = element.objectValue()
+        val mediaType = row.text("mediatype")?.let(::mdbListLibraryType)
+        if (row.text("mediatype") != null && mediaType == null) return@mapNotNull null
+        MdbListExternalList(
+            id = row.number("id")?.takeIf { it > 0 } ?: throw MdbListDecodingException(),
+            name = row.text("name") ?: throw MdbListDecodingException(),
+            source = row.text("source"),
             mediaType = mediaType,
             updatedAt = row.text("last_updated_at", "updated_at", "updated")
         )
@@ -66,8 +84,9 @@ private fun decodeLibraryItem(row: JsonObject, bucket: MdbListItemType? = null):
         ),
         description = row.text("description", "overview"),
         genres = row.genreNames(),
-        listedAt = row.timestamp("listed_at", "added_at", "watchlist_at")?.let(::mdbListTimestamp) ?: 0,
-        rank = row.integer("rank")?.takeIf { it >= 0 }
+        listedAt = row.text("listed_at", "added_at", "watchlist_at")?.let(::mdbListListedAt) ?: 0,
+        rank = row.integer("rank")?.takeIf { it >= 0 },
+        releaseDate = row.text("release_date", "released")
     )
 }
 
@@ -81,6 +100,12 @@ private fun JsonObject.genreNames(): List<String> {
     }
     return names.map(String::trim).filter(String::isNotEmpty).distinct()
 }
+
+// Only used to sort by recently added, so an unusual date (external lists can carry
+// date-only values) must not discard the whole list.
+private fun mdbListListedAt(value: String): Long = runCatching { mdbListTimestamp(value) }
+    .recoverCatching { LocalDate.parse(value.take(10)).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }
+    .getOrDefault(0)
 
 internal fun mdbListLibraryType(type: String): MdbListItemType? = when (type.lowercase()) {
     "movie" -> MdbListItemType.MOVIE

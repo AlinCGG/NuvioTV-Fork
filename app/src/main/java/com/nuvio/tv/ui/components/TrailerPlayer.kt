@@ -84,6 +84,7 @@ fun TrailerPlayer(
     val playerOwner = remember { Any() }
     val currentIsPaused by rememberUpdatedState(isPaused)
     val currentOnEnded by rememberUpdatedState(onEnded)
+    val currentIsPlaying by rememberUpdatedState(isPlaying)
     val currentOnFirstFrameRendered by rememberUpdatedState(onFirstFrameRendered)
     val currentOnProgressChanged by rememberUpdatedState(onProgressChanged)
     val currentOnRemoteKey by rememberUpdatedState(onRemoteKey)
@@ -111,10 +112,17 @@ fun TrailerPlayer(
     // Resolve pool: explicit parameter > CompositionLocal
     val resolvedPool = trailerPlayerPool ?: LocalTrailerPlayerPool.current
 
+    LaunchedEffect(resolvedPool, trailerUrl, trailerAudioUrl, isPlaying, lifecycleState) {
+        if (!isPlaying && lifecycleState.isAtLeast(Lifecycle.State.RESUMED) && !trailerUrl.isNullOrBlank()) {
+            resolvedPool?.preload(com.nuvio.tv.data.trailer.TrailerPlaybackSource(trailerUrl, trailerAudioUrl))
+        }
+    }
+
     // Acquire only for a visible, resumed preview. A resolved URL alone must not
     // allocate a player during Details metadata loading or an outgoing transition.
     var trailerPlayer by remember(resolvedPool) { mutableStateOf<ExoPlayer?>(null) }
     var playbackGeneration by remember { mutableIntStateOf(0) }
+    var prepareStartedAtMs by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
     var loadedTrailerUrl by remember { mutableStateOf<String?>(null) }
     val hasTrailer = !trailerUrl.isNullOrBlank()
     DisposableEffect(resolvedPool, lifecycleOwner, isPlaying, hasTrailer) {
@@ -143,9 +151,11 @@ fun TrailerPlayer(
         }
     }
 
-    LaunchedEffect(playbackActive, playbackGeneration, trailerUrl, trailerAudioUrl, trailerPlayer) {
+    // Keep the player consistent with the effect key when acquisition triggers recomposition.
+    val acquiredPlayer = trailerPlayer
+    LaunchedEffect(playbackActive, playbackGeneration, trailerUrl, trailerAudioUrl, acquiredPlayer) {
         hasRenderedFirstFrame = false
-        val player = trailerPlayer ?: return@LaunchedEffect
+        val player = acquiredPlayer ?: return@LaunchedEffect
         if (resolvedPool?.isOwner(playerOwner) != true) return@LaunchedEffect
         if (playbackActive && trailerUrl != null) {
             if (!trailerAudioUrl.isNullOrBlank()) {
@@ -157,6 +167,8 @@ fun TrailerPlayer(
                 player.setMediaItem(MediaItem.fromUri(trailerUrl))
             }
             loadedTrailerUrl = trailerUrl
+            prepareStartedAtMs = android.os.SystemClock.elapsedRealtime()
+            android.util.Log.d("TrailerPlayback", "prepare provider=${if (trailerUrl.contains(".media-imdb.com")) "imdb" else "other"} separateAudio=${!trailerAudioUrl.isNullOrBlank()}")
             player.prepare()
             player.playWhenReady = !currentIsPaused
         }
@@ -219,7 +231,11 @@ fun TrailerPlayer(
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (resolvedPool?.isOwner(playerOwner) == true && playbackState == Player.STATE_ENDED) {
+                if (resolvedPool?.isOwner(playerOwner) == true &&
+                    playbackState == Player.STATE_ENDED &&
+                    currentIsPlaying &&
+                    player.playWhenReady
+                ) {
                     currentOnEnded()
                 }
             }
@@ -235,6 +251,11 @@ fun TrailerPlayer(
                 if (resolvedPool?.isOwner(playerOwner) != true) return
                 onVideoSizeChanged(player.videoSize)
                 hasRenderedFirstFrame = true
+                // A seek renders a first frame again: only the one after prepare is the start time.
+                if (prepareStartedAtMs != 0L) {
+                    android.util.Log.d("TrailerPlayback", "firstFrameAfterPrepareMs=${android.os.SystemClock.elapsedRealtime() - prepareStartedAtMs} resolution=${player.videoSize.width}x${player.videoSize.height}")
+                    prepareStartedAtMs = 0L
+                }
                 currentOnFirstFrameRendered()
             }
         }
@@ -261,8 +282,8 @@ fun TrailerPlayer(
                             (videoSurfaceView as? android.view.TextureView)?.isOpaque = false
                         }
                         player = trailerPlayer
-                        isFocusable = true
-                        isFocusableInTouchMode = true
+                        isFocusable = false
+                        isFocusableInTouchMode = false
                         setOnKeyListener { _, keyCode, event ->
                             currentOnRemoteKey(keyCode, event.action, event.repeatCount)
                         }

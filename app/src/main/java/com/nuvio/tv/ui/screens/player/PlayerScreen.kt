@@ -5,6 +5,7 @@
 
 package com.nuvio.tv.ui.screens.player
 
+import com.nuvio.tv.core.player.thumbnail.handsPlayerBackOnRestart
 import com.nuvio.tv.core.player.thumbnail.isThumbnailSource
 import com.nuvio.tv.data.local.SubtitleEdgeStyle
 import com.nuvio.tv.ui.v2.components.GlassRole
@@ -26,6 +27,7 @@ import com.nuvio.tv.ui.theme.NuvioMotion
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.theme.accentBrush
 
+import android.os.SystemClock
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -35,7 +37,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -160,6 +163,11 @@ import com.nuvio.tv.R
 import com.nuvio.tv.core.player.PlayerWindowBackdrop
 import com.nuvio.tv.ui.util.localizeEpisodeTitle
 import com.nuvio.tv.data.local.PlayerControlAction
+import com.nuvio.tv.data.local.RemoteButtonBinding
+import com.nuvio.tv.data.local.RemoteButtonJob
+import com.nuvio.tv.data.local.RemoteButtonMap
+import com.nuvio.tv.data.local.SUBTITLE_LANGUAGE_FORCED
+import com.nuvio.tv.data.local.SubtitleLanguageOption
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import com.nuvio.tv.data.local.InternalPlayerEngine
@@ -234,6 +242,13 @@ fun PlayerScreen(
     val customAvailable = playerControlAvailability(uiState, controlsTimeline, nativeVideoSelected,
         viewModel.exoPlayer?.isTunnelingEnabled == true)
     val customHasTimeline = !controlsTimeline.isLive && controlsTimeline.duration > 0L
+    val remoteButtons by remember(viewModel) {
+        viewModel.controller.deviceLocalPlayerPreferences.remoteButtons
+    }.collectAsState(initial = RemoteButtonMap.DEFAULT)
+    var remoteButtonBanner by remember { mutableStateOf<RemoteButtonBanner?>(null) }
+    var remoteButtonBannerText by remember { mutableStateOf("") }
+    var remoteSubtitleRestore by remember(uiState.currentVideoId) { mutableStateOf<Any?>(null) }
+    val remoteClaim = remember { RemoteKeyClaim() }
     val postPlayRecommendationState by viewModel.postPlayRecommendationUiState.collectAsState()
     val effectiveAutoplayEnabled by viewModel.effectiveAutoplayEnabled.collectAsState(initial = false)
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -531,14 +546,32 @@ fun PlayerScreen(
     val thumbsOnMpv = uiState.internalPlayerEngine == InternalPlayerEngine.MVP_PLAYER
     val lastThumbRun = remember { mutableStateOf<Pair<String?, Boolean>?>(null) }
     LaunchedEffect(seekThumbsEnabled.value, uiState.currentStreamUrl, uiState.isTorrentStream, thumbsOnMpv) {
-        SeekThumbnails.stopSession()
         val thumbSourceUrl = uiState.currentStreamUrl
         val previousRun = lastThumbRun.value
+        SeekThumbnails.stopSession(handBackPlayer = handsPlayerBackOnRestart(previousRun, thumbSourceUrl, thumbsOnMpv))
         val engineChanged = previousRun != null && previousRun.first == thumbSourceUrl && previousRun.second != thumbsOnMpv
         lastThumbRun.value = thumbSourceUrl to thumbsOnMpv
-        if (!seekThumbsEnabled.value || thumbSourceUrl.isNullOrBlank() || thumbsOnMpv) return@LaunchedEffect
+        if (!seekThumbsEnabled.value || thumbSourceUrl.isNullOrBlank() || thumbsOnMpv) {
+            SeekThumbnails.dropServerMemory()
+            return@LaunchedEffect
+        }
+        // A media server's own thumbnails first (also for its HLS transcodes); without them our own engine runs.
+        val serverCheckStart = SystemClock.elapsedRealtime()
+        val serverThumbs = viewModel.serverThumbnails(thumbSourceUrl)
+        if (serverThumbs != null && SeekThumbnails.startServerWhenEligible(
+                context = context.applicationContext,
+                source = serverThumbs,
+                playerProvider = { viewModel.exoPlayer }
+            )
+        ) return@LaunchedEffect
+        // A long server check means the film is already playing: our own engine must not hold it now.
+        val serverCheckLong = SystemClock.elapsedRealtime() - serverCheckStart > SERVER_CHECK_HOLD_LIMIT_MS
         // Not for torrents: a coverage pass asks for pieces across the whole file, against what playback needs next.
-        if (uiState.isTorrentStream || !isThumbnailSource(thumbSourceUrl, viewModel.currentStreamMimeType())) return@LaunchedEffect
+        if (uiState.isTorrentStream || !isThumbnailSource(thumbSourceUrl, viewModel.currentStreamMimeType())) {
+            SeekThumbnails.dropServerMemory()
+            return@LaunchedEffect
+        }
+        val copySources = viewModel.thumbnailCopySources()
         SeekThumbnails.startWhenEligible(
             context = context.applicationContext,
             source = ThumbSource(
@@ -546,12 +579,16 @@ fun PlayerScreen(
                 headers = viewModel.getCurrentHeaders(),
                 identity = viewModel.seekThumbnailIdentity() ?: uiState.title,
                 fileSizeHint = viewModel.getCurrentFileSizeBytes(),
-                holdBeforePlay = !engineChanged && !viewModel.isAutoPlayedEpisode(),
+                holdBeforePlay = !engineChanged && !serverCheckLong && !viewModel.isAutoPlayedEpisode(),
                 playbackConnections = viewModel.playbackConnectionCount(),
+                identityExact = viewModel.seekThumbnailIdentityExact(),
+                copySources = copySources,
+                usenet = copySources.playingIsUsenet(thumbSourceUrl),
             ),
             playerProvider = { viewModel.exoPlayer },
             reserveProvider = { viewModel.seekThumbnailBufferReserve() },
-            pauseForPrepare = { viewModel.pauseForSeekThumbnails() }
+            pauseForPrepare = { viewModel.pauseForSeekThumbnails() },
+            skipReason = { viewModel.seekThumbnailSkipReason() }
         )
     }
     DisposableEffect(Unit) {
@@ -703,6 +740,217 @@ fun PlayerScreen(
         focusPlayAfterMoreBack = false
     }
 
+    val openInExternalPlayer: () -> Unit = {
+        if (!externalHandoffInProgress) {
+            externalHandoffInProgress = true
+            val timeline = viewModel.playbackTimeline.value
+            val completed = !timeline.isLive &&
+                timeline.duration > 0L &&
+                (timeline.currentPosition.toFloat() / timeline.duration.toFloat()) >= WatchProgress.COMPLETED_THRESHOLD
+            viewModel.launchInExternalPlayer(context, timeline.currentPosition) { launched ->
+                externalHandoffInProgress = false
+                if (launched && !exitDispatched) {
+                    exitDispatched = true
+                    val (focusSeason, focusEpisode) = uiState.returnFocusSeasonEpisode(completed)
+                    currentOnBackPress(
+                        uiState.currentVideoId,
+                        focusSeason,
+                        focusEpisode,
+                        autoPlayEnabledForBack,
+                        completed
+                    )
+                }
+            }
+        }
+    }
+    val remoteButtonsReady = uiState.error == null &&
+        !uiState.showEpisodesPanel && !uiState.showSourcesPanel &&
+        !uiState.showAudioOverlay && !uiState.showSubtitleOverlay &&
+        !uiState.showSubtitleStylePanel && !uiState.showSpeedDialog &&
+        !uiState.showSubtitleDelayOverlay && !uiState.showSubtitleTimingDialog &&
+        !uiState.showMoreDialog && !uiState.showStreamInfoOverlay && !uiState.showPartyPanel &&
+        !shouldConfirmNextEpisodeOnEnd &&
+        uiState.postPlayMode !is PostPlayMode.StillWatching &&
+        !postPlayRecommendationState.isVisible &&
+        !postPlayRecommendationState.isLoadingRecommendation &&
+        !postPlayRecommendationState.isTrailerPlaying
+    // Runs on the first key-down of a button. True claims the button, so its repeats and release stay here too.
+    val runRemoteButton: (RemoteButtonBinding, KeyEvent) -> Boolean = runRemoteButton@{ binding, native ->
+        val job = binding.job
+        fun banner(text: String) {
+            remoteButtonBanner = RemoteButtonBanner(text)
+            remoteButtonBannerText = text
+        }
+        fun unavailable(): Boolean {
+            // Next and Previous kept their old meaning (live edge, restart) where the job has nothing to do.
+            if (binding == RemoteButtonMap.DEFAULTS[native.keyCode] &&
+                (native.keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || native.keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+            ) return false
+            banner(context.getString(R.string.remote_buttons_banner_unavailable, remoteJobLabel(context, job)))
+            return true
+        }
+        fun whenAvailable(action: PlayerControlAction, event: PlayerEvent): Boolean {
+            if (action !in customAvailable) return unavailable()
+            viewModel.onEvent(event)
+            return true
+        }
+        val skipActive = skipButtonActuallyVisible ||
+            (uiState.activeSkipInterval != null && !uiState.skipIntervalDismissed)
+        if (uiState.showPauseOverlay && job != RemoteButtonJob.PLAY_PAUSE && job != RemoteButtonJob.NOTHING &&
+            job != RemoteButtonJob.LEAVE
+        ) {
+            viewModel.onEvent(PlayerEvent.OnDismissPauseOverlay)
+        }
+        when (job) {
+            RemoteButtonJob.NOTHING, RemoteButtonJob.LEAVE -> true
+            RemoteButtonJob.SEEK_FORWARD, RemoteButtonJob.SEEK_BACK -> {
+                viewModel.onEvent(scrubEvent(native, forward = job == RemoteButtonJob.SEEK_FORWARD))
+                true
+            }
+            RemoteButtonJob.PLAY_PAUSE -> {
+                viewModel.onEvent(PlayerEvent.OnPlayPause)
+                true
+            }
+            RemoteButtonJob.STATS -> {
+                viewModel.onEvent(PlayerEvent.OnTogglePlaybackStats)
+                true
+            }
+            RemoteButtonJob.INFO -> {
+                viewModel.onEvent(PlayerEvent.OnShowStreamInfo)
+                true
+            }
+            RemoteButtonJob.SOURCES -> {
+                viewModel.onEvent(PlayerEvent.OnShowSourcesPanel)
+                true
+            }
+            RemoteButtonJob.SPEED -> {
+                viewModel.onEvent(PlayerEvent.OnShowSpeedDialog)
+                true
+            }
+            RemoteButtonJob.WATCH_PARTY -> {
+                viewModel.onEvent(PlayerEvent.OnShowPartyPanel)
+                true
+            }
+            RemoteButtonJob.EPISODES -> whenAvailable(PlayerControlAction.EPISODES, PlayerEvent.OnShowEpisodesPanel)
+            RemoteButtonJob.AUDIO -> whenAvailable(PlayerControlAction.AUDIO, PlayerEvent.OnShowAudioOverlay)
+            RemoteButtonJob.SUBTITLES -> whenAvailable(PlayerControlAction.SUBTITLES, PlayerEvent.OnShowSubtitleOverlay)
+            RemoteButtonJob.ASPECT -> whenAvailable(PlayerControlAction.ASPECT, PlayerEvent.OnToggleAspectRatio)
+            RemoteButtonJob.NEXT_EPISODE -> whenAvailable(PlayerControlAction.NEXT_EPISODE, PlayerEvent.OnPlayNextEpisode)
+            RemoteButtonJob.RESTART -> whenAvailable(PlayerControlAction.RESTART, PlayerEvent.OnSeekTo(0L))
+            RemoteButtonJob.EXTERNAL -> {
+                if (PlayerControlAction.EXTERNAL in customAvailable) {
+                    openInExternalPlayer()
+                    true
+                } else unavailable()
+            }
+            RemoteButtonJob.SKIP_INTRO_OR_NEXT -> when {
+                skipActive -> {
+                    viewModel.onEvent(PlayerEvent.OnSkipIntro)
+                    true
+                }
+                PlayerControlAction.NEXT_EPISODE in customAvailable -> {
+                    viewModel.onEvent(PlayerEvent.OnPlayNextEpisode)
+                    true
+                }
+                else -> unavailable()
+            }
+            RemoteButtonJob.SKIP_FORWARD, RemoteButtonJob.SKIP_BACK -> {
+                if (!customHasTimeline) return@runRemoteButton unavailable()
+                val forward = job == RemoteButtonJob.SKIP_FORWARD
+                viewModel.onEvent(PlayerEvent.OnSeekBy(if (forward) binding.skipMs else -binding.skipMs))
+                banner(
+                    context.getString(
+                        if (forward) R.string.remote_buttons_banner_skip_forward else R.string.remote_buttons_banner_skip_back,
+                        remoteSkipSizeLabel(context, binding.skipMs)
+                    )
+                )
+                true
+            }
+            RemoteButtonJob.JUMP_TO_PERCENT -> {
+                val number = RemoteButtonMap.numberOf(native.keyCode)
+                if (number == null || !customHasTimeline) return@runRemoteButton unavailable()
+                viewModel.onEvent(PlayerEvent.OnSeekTo(controlsTimeline.duration * number / 10))
+                banner(context.getString(R.string.remote_buttons_banner_jump, number * 10))
+                true
+            }
+            RemoteButtonJob.NEXT_AUDIO -> {
+                val server = uiState.serverAudioTracks.isNotEmpty()
+                val tracks = if (server) uiState.serverAudioTracks else uiState.audioTracks
+                when {
+                    tracks.isEmpty() -> unavailable()
+                    tracks.size == 1 -> {
+                        banner(context.getString(R.string.remote_buttons_banner_one_audio))
+                        true
+                    }
+                    else -> {
+                        val current = tracks.indexOfFirst {
+                            if (server) it.isSelected else it.index == uiState.selectedAudioTrackIndex || it.isSelected
+                        }
+                        val next = tracks[(current + 1).mod(tracks.size)]
+                        viewModel.onEvent(PlayerEvent.OnSelectAudioTrack(next.index))
+                        banner(context.getString(R.string.remote_buttons_banner_audio, next.remoteLabel()))
+                        true
+                    }
+                }
+            }
+            RemoteButtonJob.SUBTITLES_TOGGLE -> {
+                val server = uiState.serverSubtitleTracks.isNotEmpty()
+                val tracks = if (server) uiState.serverSubtitleTracks else uiState.subtitleTracks
+                val addon = uiState.selectedAddonSubtitle
+                val internal = if (server) {
+                    tracks.firstOrNull { it.isSelected }
+                } else {
+                    tracks.firstOrNull { it.index == uiState.selectedSubtitleTrackIndex }
+                }
+                if (addon != null || internal != null) {
+                    remoteSubtitleRestore = addon ?: internal
+                    viewModel.onEvent(PlayerEvent.OnDisableSubtitlesQuietly)
+                    banner(context.getString(R.string.remote_buttons_banner_subtitles_off))
+                    return@runRemoteButton true
+                }
+                val restore = remoteSubtitleRestore
+                val wanted = with(uiState.subtitleStyle) {
+                    listOfNotNull(preferredLanguageBeforeOff, preferredLanguage, secondaryPreferredLanguage, tertiaryPreferredLanguage)
+                        .filter { it != "none" && it != SUBTITLE_LANGUAGE_FORCED && it != SubtitleLanguageOption.DEVICE }
+                }
+                val pick: Any? = when {
+                    restore is TrackInfo && tracks.any { it.index == restore.index } -> restore
+                    restore is Subtitle && restore in uiState.addonSubtitles -> restore
+                    else -> wanted.firstNotNullOfOrNull { language ->
+                        tracks.firstOrNull { !it.isForced && remoteLanguageMatches(it.language, language) }
+                            ?: uiState.addonSubtitles.firstOrNull { remoteLanguageMatches(it.lang, language) }
+                    } ?: tracks.firstOrNull { !it.isForced } ?: uiState.addonSubtitles.firstOrNull()
+                }
+                when (pick) {
+                    is TrackInfo -> {
+                        viewModel.onEvent(PlayerEvent.OnSelectSubtitleTrack(pick.index, openPanel = false))
+                        banner(context.getString(R.string.remote_buttons_banner_subtitles_on, pick.remoteLabel()))
+                        true
+                    }
+                    is Subtitle -> {
+                        viewModel.onEvent(PlayerEvent.OnSelectAddonSubtitle(pick, openPanel = false))
+                        banner(context.getString(R.string.remote_buttons_banner_subtitles_on, pick.lang))
+                        true
+                    }
+                    else -> unavailable()
+                }
+            }
+        }
+    }
+    // Repeats and the release of a claimed button.
+    val finishRemoteButton: (RemoteButtonBinding, KeyEvent) -> Unit = { binding, native ->
+        val seek = binding.job == RemoteButtonJob.SEEK_FORWARD || binding.job == RemoteButtonJob.SEEK_BACK
+        when (native.action) {
+            KeyEvent.ACTION_DOWN -> if (seek) {
+                viewModel.onEvent(scrubEvent(native, forward = binding.job == RemoteButtonJob.SEEK_FORWARD))
+            }
+            KeyEvent.ACTION_UP -> when {
+                seek -> viewModel.onEvent(PlayerEvent.OnCommitPreviewSeek)
+                binding.job == RemoteButtonJob.LEAVE && !externalHandoffInProgress -> exitPlayer()
+            }
+        }
+    }
+
     val transparentLetterbox = uiState.transparentLetterbox &&
         uiState.internalPlayerEngine != InternalPlayerEngine.MVP_PLAYER
     DisposableEffect(transparentLetterbox) {
@@ -762,6 +1010,25 @@ fun PlayerScreen(
                             true
                         }
                         else -> true
+                    }
+                }
+
+                val remoteKey = keyEvent.nativeKeyEvent
+                remoteClaim.bindingFor(remoteKey.keyCode)?.let { binding ->
+                    if (remoteKey.action == KeyEvent.ACTION_DOWN && remoteKey.repeatCount == 0) {
+                        remoteClaim.release()
+                    } else {
+                        if (remoteKey.action == KeyEvent.ACTION_UP) remoteClaim.release()
+                        finishRemoteButton(binding, remoteKey)
+                        return@onPreviewKeyEvent true
+                    }
+                }
+                if (remoteButtonsReady && remoteKey.action == KeyEvent.ACTION_DOWN && remoteKey.repeatCount == 0) {
+                    remoteButtons.overrideFor(remoteKey.keyCode)?.let { binding ->
+                        if (runRemoteButton(binding, remoteKey)) {
+                            remoteClaim.claim(remoteKey.keyCode, binding)
+                            return@onPreviewKeyEvent true
+                        }
                     }
                 }
 
@@ -968,13 +1235,7 @@ fun PlayerScreen(
                             if (!uiState.showControls && !overlayButtonsCoexist) {
                                 val isLeft =
                                     keyEvent.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_LEFT
-                                if (PlayerScrubRates.acceptStep(keyEvent.nativeKeyEvent.downTime, keyEvent.nativeKeyEvent.eventTime)) {
-                                    val deltaMs = PlayerScrubRates.deltaMsForHold(
-                                        holdDurationMs = keyEvent.nativeKeyEvent.eventTime - keyEvent.nativeKeyEvent.downTime,
-                                        forward = !isLeft
-                                    )
-                                    viewModel.onEvent(PlayerEvent.OnPreviewSeekBy(deltaMs))
-                                }
+                                viewModel.onEvent(scrubEvent(keyEvent.nativeKeyEvent, forward = !isLeft))
                                 true
                             } else {
                                 // Let focus system handle navigation when controls are visible
@@ -1047,13 +1308,7 @@ fun PlayerScreen(
                         KeyEvent.KEYCODE_MEDIA_REWIND -> {
                             val isRewind =
                                 keyEvent.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_MEDIA_REWIND
-                            if (PlayerScrubRates.acceptStep(keyEvent.nativeKeyEvent.downTime, keyEvent.nativeKeyEvent.eventTime)) {
-                                val deltaMs = PlayerScrubRates.deltaMsForHold(
-                                    holdDurationMs = keyEvent.nativeKeyEvent.eventTime - keyEvent.nativeKeyEvent.downTime,
-                                    forward = !isRewind
-                                )
-                                viewModel.onEvent(PlayerEvent.OnPreviewSeekBy(deltaMs))
-                            }
+                            viewModel.onEvent(scrubEvent(keyEvent.nativeKeyEvent, forward = !isRewind))
                             true
                         }
                         else -> false
@@ -1280,7 +1535,7 @@ fun PlayerScreen(
                 type = uiState.contentType,
                 description = uiState.description,
                 cast = uiState.castMembers,
-                showClock = !viewModel.playbackTimeline.collectAsState().value.isLive,
+                showClock = !uiState.isLive,
                 modifier = Modifier
                     .fillMaxSize()
                     .zIndex(2.5f)
@@ -1667,29 +1922,7 @@ fun PlayerScreen(
                             viewModel.onEvent(PlayerEvent.OnShowMoreDialog)
                         }
                     },
-                    onOpenInExternalPlayer = {
-                        if (!externalHandoffInProgress) {
-                            externalHandoffInProgress = true
-                            val timeline = viewModel.playbackTimeline.value
-                            val completed = !timeline.isLive &&
-                                timeline.duration > 0L &&
-                                (timeline.currentPosition.toFloat() / timeline.duration.toFloat()) >= WatchProgress.COMPLETED_THRESHOLD
-                            viewModel.launchInExternalPlayer(context, timeline.currentPosition) { launched ->
-                                externalHandoffInProgress = false
-                                if (launched && !exitDispatched) {
-                                    exitDispatched = true
-                                    val (focusSeason, focusEpisode) = uiState.returnFocusSeasonEpisode(completed)
-                                    currentOnBackPress(
-                                        uiState.currentVideoId,
-                                        focusSeason,
-                                        focusEpisode,
-                                        autoPlayEnabledForBack,
-                                        completed
-                                    )
-                                }
-                            }
-                        }
-                    },
+                    onOpenInExternalPlayer = openInExternalPlayer,
                     onShowStreamInfo = {
                         restoreStreamInfoFocus = !isV2 && uiState.controlLayout == null
                         viewModel.onEvent(PlayerEvent.OnShowStreamInfo)
@@ -1715,6 +1948,24 @@ fun PlayerScreen(
                     .padding(top = 80.dp)
             ) {
                 AspectRatioIndicator(text = uiState.aspectRatioIndicatorText)
+            }
+
+            LaunchedEffect(remoteButtonBanner) {
+                if (remoteButtonBanner != null) {
+                    delay(REMOTE_BUTTON_BANNER_MS)
+                    remoteButtonBanner = null
+                }
+            }
+            AnimatedVisibility(
+                visible = remoteButtonBanner != null && !uiState.showAspectRatioIndicator,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200)),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+                    .zIndex(3f)
+            ) {
+                RemoteButtonBannerPill(text = remoteButtonBannerText)
             }
 
             AnimatedVisibility(
@@ -1790,7 +2041,7 @@ fun PlayerScreen(
                     !uiState.showLoadingOverlay && !uiState.showPauseOverlay &&
                     !uiState.showSubtitleDelayOverlay && !uiState.showSubtitleTimingDialog &&
                     !uiState.showMoreDialog &&
-                    !viewModel.playbackTimeline.collectAsState().value.isLive,
+                    !uiState.isLive,
                 enter = fadeIn(animationSpec = tween(150)),
                 exit = fadeOut(animationSpec = tween(150)),
                 modifier = Modifier.align(Alignment.BottomCenter)
@@ -2122,6 +2373,8 @@ private fun ExoPlayerSurface(
     val latestTunneledSurfaceFill by rememberUpdatedState(tunneledSurfaceFill)
     val latestBindSubtitleView by rememberUpdatedState(onBindSubtitleView)
     val latestSubtitleStyle by rememberUpdatedState(subtitleStyle)
+    val latestUseLibass by rememberUpdatedState(useLibass)
+    val latestLibassRenderType by rememberUpdatedState(libassRenderType)
     val latestDimHdr by rememberUpdatedState(dimHdr)
     val playerView = remember(context, player) {
         PlayerView(context).apply {
@@ -2206,6 +2459,11 @@ private fun ExoPlayerSurface(
                 // even when subtitles are enabled after initial player setup.
                 playerView.post {
                     playerView.applySubtitleStyleIfNeeded(latestSubtitleStyle, force = true, dimHdr = latestDimHdr)
+                    playerView.syncLibassOverlay(
+                        player = player,
+                        enabled = latestUseLibass,
+                        renderType = latestLibassRenderType
+                    )
                 }
             }
         }
@@ -2432,7 +2690,7 @@ private fun PlayerView.syncLibassOverlay(
         R.id.libass_overlay_container
     }
     val overlayContainer = findViewById<android.widget.FrameLayout>(containerId) ?: return
-    val needsOverlay = enabled && renderType.usesOverlaySubtitleView()
+    val needsOverlay = enabled && renderType.usesOverlaySubtitleView() && isAssOrSsaSubtitleSelected()
     val boundPlayer = getTag(R.id.libass_overlay_bound_player) as? ExoPlayer
     val hasOverlayChild = overlayContainer.hasAssOverlayChild()
 
@@ -2925,6 +3183,11 @@ private fun PlayerControlsOverlay(
     }
 }
 
+/** A tap moves 10 s; a key repeat means the key is held and the cursor glides. */
+private fun scrubEvent(event: KeyEvent, forward: Boolean): PlayerEvent =
+    if (event.repeatCount == 0) PlayerEvent.OnPreviewSeekBy(PlayerScrubRates.tapDeltaMs(forward))
+    else PlayerEvent.OnScrubHold(forward, event.downTime, event.eventTime)
+
 @Composable
 internal fun PlayerControlsProgressBarHost(
     viewModel: PlayerViewModel,
@@ -2935,9 +3198,10 @@ internal fun PlayerControlsProgressBarHost(
     onFocused: (() -> Unit)? = null
 ) {
     val playbackTimeline by viewModel.playbackTimeline.collectAsState()
+    val gliding = ScrubGlide.active
 
     ProgressBar(
-        currentPosition = playbackTimeline.currentPosition,
+        currentPosition = if (gliding) ScrubGlide.positionMs else playbackTimeline.currentPosition,
         playbackPosition = playbackTimeline.playbackPosition,
         duration = playbackTimeline.duration,
         onSeekPreview = { delta ->
@@ -2946,6 +3210,10 @@ internal fun PlayerControlsProgressBarHost(
         onSeekCommit = {
             viewModel.onEvent(PlayerEvent.OnCommitPreviewSeek)
         },
+        onScrubHold = { forward, downTime, eventTime ->
+            viewModel.onEvent(PlayerEvent.OnScrubHold(forward, downTime, eventTime))
+        },
+        gliding = gliding,
         focusRequester = focusRequester,
         upFocusRequester = upFocusRequester,
         downFocusRequester = downFocusRequester,
@@ -2958,7 +3226,8 @@ internal fun PlayerControlsProgressBarHost(
 @Composable
 internal fun PlayerControlsTimeTextHost(viewModel: PlayerViewModel) {
     val playbackTimeline by viewModel.playbackTimeline.collectAsState()
-    val remainingMs = (playbackTimeline.duration - playbackTimeline.currentPosition).coerceAtLeast(0L)
+    val shownPosition = if (ScrubGlide.active) ScrubGlide.positionMs else playbackTimeline.currentPosition
+    val remainingMs = (playbackTimeline.duration - shownPosition).coerceAtLeast(0L)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -2966,7 +3235,7 @@ internal fun PlayerControlsTimeTextHost(viewModel: PlayerViewModel) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = formatTime(playbackTimeline.currentPosition),
+            text = formatTime(shownPosition),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White.copy(alpha = 0.9f)
         )
@@ -3167,6 +3436,8 @@ private fun ProgressBar(
     duration: Long,
     onSeekPreview: (Long) -> Unit,
     onSeekCommit: () -> Unit,
+    onScrubHold: (forward: Boolean, downTime: Long, eventTime: Long) -> Unit = { _, _, _ -> },
+    gliding: Boolean = false,
     focusRequester: FocusRequester? = null,
     upFocusRequester: FocusRequester? = null,
     downFocusRequester: FocusRequester? = null,
@@ -3182,11 +3453,13 @@ private fun ProgressBar(
     val geometry = PlaybackTimelineGeometry.from(playbackPosition, currentPosition, bufferedPosition, duration)
     val progress = geometry.played
     val bufferedProgress = geometry.buffered
+    // A glide moves every frame on its own; a tap or the landing after a glide eases in.
     val animatedPreview by animateFloatAsState(
         targetValue = geometry.preview,
-        animationSpec = tween(PlayerScrubRates.STEP_INTERVAL_MS.toInt(), easing = LinearEasing),
+        animationSpec = if (gliding) snap() else tween(150, easing = FastOutSlowInEasing),
         label = "seekPreview"
     )
+    val previewFraction = if (gliding) geometry.preview else animatedPreview
 
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
@@ -3264,26 +3537,14 @@ private fun ProgressBar(
                                 false
                             }
                         }
-                        // Same shared acceleration ramp as the hidden-controls DPAD path.
-                        KeyEvent.KEYCODE_DPAD_LEFT -> {
-                            if (PlayerScrubRates.acceptStep(keyEvent.nativeKeyEvent.downTime, keyEvent.nativeKeyEvent.eventTime)) {
-                                onSeekPreview(
-                                    PlayerScrubRates.deltaMsForHold(
-                                        holdDurationMs = keyEvent.nativeKeyEvent.eventTime - keyEvent.nativeKeyEvent.downTime,
-                                        forward = false
-                                    )
-                                )
-                            }
-                            true
-                        }
+                        // A tap moves 10 s, a held key glides, as on the hidden-controls path.
+                        KeyEvent.KEYCODE_DPAD_LEFT,
                         KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                            if (PlayerScrubRates.acceptStep(keyEvent.nativeKeyEvent.downTime, keyEvent.nativeKeyEvent.eventTime)) {
-                                onSeekPreview(
-                                    PlayerScrubRates.deltaMsForHold(
-                                        holdDurationMs = keyEvent.nativeKeyEvent.eventTime - keyEvent.nativeKeyEvent.downTime,
-                                        forward = true
-                                    )
-                                )
+                            val forward = keyEvent.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
+                            if (keyEvent.nativeKeyEvent.repeatCount == 0) {
+                                onSeekPreview(PlayerScrubRates.tapDeltaMs(forward))
+                            } else {
+                                onScrubHold(forward, keyEvent.nativeKeyEvent.downTime, keyEvent.nativeKeyEvent.eventTime)
                             }
                             true
                         }
@@ -3327,6 +3588,20 @@ private fun ProgressBar(
                 .clip(RoundedCornerShape(50))
                 .background(v2ProgressBrush)
         )
+        // A lighter fill between playback and the seek cursor shows how far the seek goes.
+        if (geometry.isPreviewing) {
+            val rewinding = previewFraction < animatedProgress
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .offset(x = trackWidth * minOf(animatedProgress, previewFraction))
+                    .width(trackWidth * abs(previewFraction - animatedProgress))
+                    .then(
+                        if (rewinding) Modifier.background(Color.Black.copy(alpha = 0.45f))
+                        else Modifier.background(v2ProgressBrush, alpha = 0.45f)
+                    )
+            )
+        }
         }
         if (geometry.hasDuration) {
             val markerSize = if (isFocused && !geometry.isPreviewing) 12.dp else 8.dp
@@ -3340,7 +3615,7 @@ private fun ProgressBar(
                 // A hollow seek cursor leaves the solid marker at actual playback.
                 Box(
                     modifier = Modifier.align(Alignment.CenterStart)
-                        .offset(x = (trackWidth * animatedPreview - 6.dp)
+                        .offset(x = (trackWidth * previewFraction - 6.dp)
                             .coerceIn(0.dp, (trackWidth - 12.dp).coerceAtLeast(0.dp)))
                         .size(12.dp).border(2.dp, Color.White, CircleShape)
                 )
@@ -3354,7 +3629,8 @@ private fun SeekOverlay(
     currentPosition: Long,
     duration: Long,
     playbackPosition: Long = currentPosition,
-    bufferedPosition: Long = 0L
+    bufferedPosition: Long = 0L,
+    gliding: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -3367,6 +3643,7 @@ private fun SeekOverlay(
                 duration = duration,
                 onSeekPreview = {},
                 onSeekCommit = {},
+                gliding = gliding,
                 playbackPosition = playbackPosition,
                 bufferedPosition = bufferedPosition
             )
@@ -3391,12 +3668,14 @@ private fun SeekOverlay(
 @Composable
 private fun SeekOverlayHost(viewModel: PlayerViewModel) {
     val playbackTimeline by viewModel.playbackTimeline.collectAsState()
+    val gliding = ScrubGlide.active
 
     SeekOverlay(
-        currentPosition = playbackTimeline.currentPosition,
+        currentPosition = if (gliding) ScrubGlide.positionMs else playbackTimeline.currentPosition,
         playbackPosition = playbackTimeline.playbackPosition,
         duration = playbackTimeline.duration,
-        bufferedPosition = playbackTimeline.bufferedPosition
+        bufferedPosition = playbackTimeline.bufferedPosition,
+        gliding = gliding
     )
 }
 
@@ -3489,6 +3768,66 @@ private fun SubtitleTimingDialogHost(
         onCaptureNow = onCaptureNow,
         onCueSelected = onCueSelected
     )
+}
+
+private const val REMOTE_BUTTON_BANNER_MS = 1_800L
+
+/** A fresh instance per press, so the same text shown twice restarts its timer. */
+private class RemoteButtonBanner(val text: String)
+
+/** The button whose key-down ran a job; its repeats and release belong to that job, whatever opens meanwhile. */
+private class RemoteKeyClaim {
+    private var keyCode = KeyEvent.KEYCODE_UNKNOWN
+    private var binding: RemoteButtonBinding? = null
+
+    fun claim(keyCode: Int, binding: RemoteButtonBinding) {
+        this.keyCode = keyCode
+        this.binding = binding
+    }
+
+    fun bindingFor(keyCode: Int): RemoteButtonBinding? = binding?.takeIf { keyCode == this.keyCode }
+
+    fun release() {
+        keyCode = KeyEvent.KEYCODE_UNKNOWN
+        binding = null
+    }
+}
+
+private fun remoteLanguageMatches(trackLanguage: String?, wanted: String): Boolean {
+    val track = trackLanguage?.lowercase()?.takeIf { it.isNotBlank() } ?: return false
+    val want = wanted.lowercase().takeIf { it.length >= 2 } ?: return false
+    return track == want || track.substringBefore('-') == want.substringBefore('-') ||
+        track.take(2) == want.take(2)
+}
+
+private fun TrackInfo.remoteLabel(): String = buildString {
+    append(name.ifBlank { language.orEmpty() })
+    val details = listOfNotNull(
+        codec?.takeIf { it.isNotBlank() },
+        channelCount?.let { if (it > 2) "${it - 1}.1" else if (it == 2) "2.0" else null }
+    )
+    if (details.isNotEmpty() && name.isNotBlank()) append(" · ").append(details.joinToString(" "))
+}
+
+@Composable
+private fun RemoteButtonBannerPill(text: String) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = Color.Black.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(NuvioTheme.spacing.xl)
+            )
+            .padding(horizontal = 20.dp, vertical = NuvioTheme.spacing.md)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = Color.White
+        )
+    }
 }
 
 @Composable
@@ -4283,3 +4622,6 @@ private fun PlayerBufferingIndicator(
         }
     }
 }
+
+/** A server check longer than this means playback already started: the own engine then never holds it. */
+private const val SERVER_CHECK_HOLD_LIMIT_MS = 3_000L

@@ -343,7 +343,7 @@ private fun DebugToggleCard(
 
             Switch(
                 checked = checked,
-                onCheckedChange = { onToggle(it) },
+                onCheckedChange = null,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = Color.White.copy(alpha = 0.3f),

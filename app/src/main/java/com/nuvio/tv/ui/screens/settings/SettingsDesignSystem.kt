@@ -54,6 +54,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -71,7 +73,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -202,7 +208,8 @@ internal data class SettingsPickerOption<T>(
     val title: String,
     val description: String? = null,
     val trailing: String? = null,
-    val titleFontFamily: FontFamily? = null
+    val titleFontFamily: FontFamily? = null,
+    val warning: String? = null
 )
 
 @Composable
@@ -411,7 +418,12 @@ internal fun SettingsRailButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = if (LocalV2Appearance.current != null) 54.dp else SettingsRailItemHeight),
+                .heightIn(min = if (LocalV2Appearance.current != null) 54.dp else SettingsRailItemHeight)
+                .clearAndSetSemantics {
+                    contentDescription = title
+                    role = Role.Tab
+                    this.selected = isSelected
+                },
             contentAlignment = Alignment.CenterStart
         ) {
             Row(
@@ -772,6 +784,8 @@ internal fun SettingsToggleRow(
             .focusProperties { canFocus = enabled }
             .semantics {
                 if (!enabled) disabled()
+                role = Role.Switch
+                toggleableState = if (checked) ToggleableState.On else ToggleableState.Off
             }
             .settingsItemFocus(isFocused)
             .onFocusChanged { state ->
@@ -867,6 +881,7 @@ internal fun SettingsActionRow(
             .focusProperties { canFocus = enabled }
             .semantics {
                 if (!enabled) disabled()
+                role = Role.Button
             }
             .settingsItemFocus(isFocused)
             .onFocusChanged { state ->
@@ -1043,6 +1058,14 @@ internal fun <T> SettingsSingleChoiceDialog(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
+                                if (!option.warning.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.xxs))
+                                    Text(
+                                        text = option.warning,
+                                        color = NuvioTheme.colors.Warning,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                             if (!option.trailing.isNullOrBlank()) {
                                 Spacer(modifier = Modifier.width(NuvioTheme.spacing.md))
@@ -1211,10 +1234,11 @@ internal fun SettingsDialogActionButton(
     text: String,
     onClick: () -> Unit,
     primary: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     if (isV2Settings()) {
-        NuvioActionPill(onClick = onClick, enabled = enabled) {
+        NuvioActionPill(onClick = onClick, modifier = modifier, enabled = enabled) {
             Text(
                 text = text,
                 maxLines = 1,
@@ -1226,6 +1250,7 @@ internal fun SettingsDialogActionButton(
     }
     Button(
         onClick = onClick,
+        modifier = modifier,
         enabled = enabled,
         colors = ButtonDefaults.colors(
             containerColor = if (primary) NuvioTheme.colors.Secondary.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f),

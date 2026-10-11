@@ -1,5 +1,7 @@
 package com.nuvio.tv.ui.screens.detail
 
+import com.nuvio.tv.ui.v2.components.GlassRole
+import com.nuvio.tv.ui.v2.components.nuvioGlass
 import com.nuvio.tv.ui.v2.components.nuvioV2Focus
 
 import android.view.KeyEvent as AndroidKeyEvent
@@ -43,6 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -107,6 +112,7 @@ private const val EPISODE_CARD_CONTENT_TYPE = "episode_card"
 private const val EPISODE_SCROLL_REPEAT_THROTTLE_MS = 80L
 private const val EPISODE_RESTORE_FALLBACK_MS = 250L
 private const val EPISODE_RESTORE_FOCUS_ATTEMPTS = 24
+private const val SEASON_EDGE_PIN_COUNT = 4
 
 @OptIn(ExperimentalTvMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
@@ -127,12 +133,19 @@ fun SeasonTabs(
         regularSeasons + specials
     }
 
-    val compact = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null
+    val v2Appearance = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current
+    val compact = v2Appearance != null
+    val v2Cinematic = v2Appearance?.visualStyle == com.nuvio.tv.domain.model.VisualStyle.CINEMATIC_GLASS
     val tabShape = remember(compact) { RoundedCornerShape(if (compact) 8.dp else 20.dp) }
+    val accent = NuvioTheme.colors.Secondary
     val tabBorder = CardDefaults.border(
         focusedBorder = Border(
-            border = BorderStroke(NuvioTheme.spacing.xxs, Color.Transparent),
-            shape = RoundedCornerShape(20.dp)
+            border = if (compact) {
+                BorderStroke(NuvioTheme.spacing.xxs, Color.Transparent)
+            } else {
+                NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs)
+            },
+            shape = tabShape
         )
     )
     val tabScale = CardDefaults.scale(focusedScale = 1.0f)
@@ -140,7 +153,10 @@ fun SeasonTabs(
     val tabTextStyle = if (compact) typography.labelLarge else typography.titleMedium
     val textSecondary = NuvioTheme.extendedColors.textSecondary
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val lazyListState = rememberLazyListState()
+    val initialSeasonIndex = remember(sortedSeasons, selectedSeason) {
+        (sortedSeasons.indexOf(selectedSeason) - (SEASON_EDGE_PIN_COUNT - 1)).coerceAtLeast(0)
+    }
+    val lazyListState = rememberLazyListState(initialFirstVisibleItemIndex = initialSeasonIndex)
 
     var suppressFocusSwitch by remember { mutableStateOf(false) }
     var lastAppliedSeason by remember { mutableStateOf(selectedSeason) }
@@ -166,22 +182,80 @@ fun SeasonTabs(
     LaunchedEffect(sortedSeasons, selectedSeason) {
         val selectedIndex = sortedSeasons.indexOf(selectedSeason)
         if (selectedIndex < 0) return@LaunchedEffect
-        val layoutInfo = snapshotFlow { lazyListState.layoutInfo }
-            .first { it.visibleItemsInfo.isNotEmpty() }
-        val visible = layoutInfo.visibleItemsInfo
-        if (visible.any { it.index == selectedIndex }) return@LaunchedEffect
-        val viewportSize = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
-        val approxItemSize = visible.lastOrNull()?.size
-            ?: visible.firstOrNull()?.size
-            ?: 0
-        val trailingOffset = -(viewportSize - approxItemSize).coerceAtLeast(0)
-        suppressFocusSwitch = true
-        if (selectedIndex > (visible.lastOrNull()?.index ?: -1)) {
-            lazyListState.scrollToItem(selectedIndex, scrollOffset = trailingOffset)
-        } else {
-            lazyListState.scrollToItem(selectedIndex)
+        val lastIndex = sortedSeasons.lastIndex
+        val pinToStart = selectedIndex < SEASON_EDGE_PIN_COUNT
+        val pinToEnd = selectedIndex > lastIndex - SEASON_EDGE_PIN_COUNT
+        var attempts = 0
+        while (attempts < 2) {
+            attempts++
+            val info = snapshotFlow { lazyListState.layoutInfo }
+                .first { it.visibleItemsInfo.isNotEmpty() }
+            val visible = info.visibleItemsInfo
+            val contentEnd = info.viewportEndOffset - info.afterContentPadding
+            if (pinToStart) {
+                if (lazyListState.firstVisibleItemIndex != 0 || lazyListState.firstVisibleItemScrollOffset != 0) {
+                    suppressFocusSwitch = true
+                    lazyListState.scrollToItem(0)
+                    suppressFocusSwitch = false
+                }
+                return@LaunchedEffect
+            }
+            if (pinToEnd) {
+                val lastItem = visible.firstOrNull { it.index == lastIndex }
+                if (lastItem == null) {
+                    suppressFocusSwitch = true
+                    lazyListState.scrollToItem(
+                        lastIndex,
+                        scrollOffset = -(contentEnd - visible.last().size).coerceAtLeast(0)
+                    )
+                    suppressFocusSwitch = false
+                    snapshotFlow { lazyListState.layoutInfo }
+                        .first { it.visibleItemsInfo.any { it.index == lastIndex } }
+                    continue
+                }
+                if (lastItem.offset + lastItem.size > contentEnd) {
+                    suppressFocusSwitch = true
+                    lazyListState.scrollToItem(
+                        lastIndex,
+                        scrollOffset = -(contentEnd - lastItem.size)
+                    )
+                    suppressFocusSwitch = false
+                }
+                return@LaunchedEffect
+            }
+            val item = visible.firstOrNull { it.index == selectedIndex }
+            if (item == null) {
+                suppressFocusSwitch = true
+                if (selectedIndex > visible.last().index) {
+                    lazyListState.scrollToItem(
+                        selectedIndex,
+                        scrollOffset = -(contentEnd - visible.last().size).coerceAtLeast(0)
+                    )
+                } else {
+                    lazyListState.scrollToItem(selectedIndex)
+                }
+                suppressFocusSwitch = false
+                snapshotFlow { lazyListState.layoutInfo }
+                    .first { it.visibleItemsInfo.any { it.index == selectedIndex } }
+                continue
+            }
+            when {
+                item.offset < 0 -> {
+                    suppressFocusSwitch = true
+                    lazyListState.scrollToItem(selectedIndex)
+                    suppressFocusSwitch = false
+                }
+                item.offset + item.size > contentEnd -> {
+                    suppressFocusSwitch = true
+                    lazyListState.scrollToItem(
+                        selectedIndex,
+                        scrollOffset = -(contentEnd - item.size)
+                    )
+                    suppressFocusSwitch = false
+                }
+            }
+            break
         }
-        suppressFocusSwitch = false
     }
 
     val restorerRequester = remember(lastFocusedSeason, selectedSeason, selectedTabFocusRequester) {
@@ -229,6 +303,31 @@ fun SeasonTabs(
                 },
                 modifier = Modifier
                     .nuvioV2Focus(isFocused, tabShape)
+                    .then(
+                        if (compact && (isFocused || isSelected)) {
+                            Modifier.nuvioGlass(GlassRole.CONTROL, isFocused, tabShape)
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .then(
+                        if (compact && isSelected && !isFocused) {
+                            Modifier.drawWithContent {
+                                drawContent()
+                                val barWidth = 18.dp.toPx()
+                                val barHeight = 2.5.dp.toPx()
+                                drawRoundRect(
+                                    color = accent,
+                                    topLeft = Offset((size.width - barWidth) / 2f, size.height - 4.dp.toPx() - barHeight),
+                                    size = Size(barWidth, barHeight),
+                                    cornerRadius = CornerRadius(barHeight / 2f)
+                                )
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .semantics { selected = isSelected }
                     .focusRequester(seasonFocusRequester)
                     .focusProperties {
                         canFocus = isFocusEnabled
@@ -281,8 +380,12 @@ fun SeasonTabs(
                     },
                 shape = CardDefaults.shape(shape = tabShape),
                 colors = CardDefaults.colors(
-                    containerColor = if (isSelected) NuvioTheme.colors.Secondary else Color.White.copy(alpha = 0.08f),
-                    focusedContainerColor = NuvioTheme.colors.Secondary
+                    containerColor = when {
+                        compact && isSelected -> Color.Transparent
+                        isSelected -> accent
+                        else -> Color.White.copy(alpha = 0.08f)
+                    },
+                    focusedContainerColor = if (compact) accent.copy(alpha = if (v2Cinematic) .16f else .24f) else accent
                 ),
                 border = tabBorder,
                 scale = tabScale
@@ -291,8 +394,9 @@ fun SeasonTabs(
                     text = if (season == 0) stringResource(R.string.episodes_specials) else stringResource(R.string.episodes_season, season),
                     style = tabTextStyle,
                     color = when {
-                        isFocused -> NuvioTheme.colors.OnSecondary
-                        isSelected -> NuvioTheme.colors.OnSecondary
+                        compact && isFocused -> NuvioTheme.colors.TextPrimary
+                        compact && isSelected -> accent
+                        isFocused || isSelected -> NuvioTheme.colors.OnSecondary
                         else -> Color(0xFFE8E8EC)
                     },
                     modifier = Modifier.padding(vertical = 10.dp, horizontal = 20.dp)

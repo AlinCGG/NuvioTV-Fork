@@ -141,7 +141,12 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         // MP4 session mode is deliberately single-connection; leave its 1+1 behaviour.
         if (mp4SessionMode || !nuvioPerformanceModeEnabled) return connections + 1
         val chunkMb = (chunkBytes / (1024L * 1024L)).toInt().coerceAtLeast(1)
-        val safeNativeMb = NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)
+        // An automatic target is already all this box should hold, so the window stays at its floor.
+        val safeNativeMb = if (NuvioExoPlayerPerformanceHelper.targetIsAutomatic) {
+            NuvioExoPlayerPerformanceHelper.targetBufferSizeMb
+        } else {
+            NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)
+        }
         // Reserve the SampleQueue's target-buffer bytes (its own pool, set from settings)
         // so the two together stay inside the safe envelope; give the remainder to chunks.
         val reserveMb = NuvioExoPlayerPerformanceHelper.targetBufferSizeMb.coerceAtLeast(0)
@@ -162,7 +167,35 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         PlayerPlaybackNetworking.playbackHttpClient.newBuilder()
             .cookieJar(NuvioApplication.extensionCookieJar)
             .let { NuvioExoPlayerPerformanceHelper.applyNetworkOptimizations(it) }
+            .let(::withChunkSessionTimeouts)
             .build()
+    }
+
+    private val chunkSessionSlowStartHttpClient by lazy {
+        chunkSessionHttpClient.newBuilder()
+            .readTimeout(SlowStartServer.FIRST_DATA_WAIT_MS, TimeUnit.MILLISECONDS)
+            .build()
+    }
+
+    private val chunkSessionLanes = java.util.concurrent.ConcurrentHashMap<Int, okhttp3.Call.Factory>()
+
+    private fun chunkSessionCallFactory(connections: Int, url: String): okhttp3.Call.Factory {
+        if (SlowStartServer.matches(url)) return chunkSessionSlowStartHttpClient
+        // Plain http:// never negotiates HTTP/2, so lanes would only split the idle sockets.
+        if (url.startsWith("http://", ignoreCase = true)) return chunkSessionHttpClient
+        val factory = chunkSessionLanes.getOrPut(connections) {
+            HttpLanes.callFactory(
+                chunkSessionHttpClient,
+                connections,
+                NuvioExoPlayerPerformanceHelper::lanePool
+            ).also { factory ->
+                if (factory is LaneCallFactory) {
+                    Log.i("PlayerMediaSourceFactory", "HTTP2_LANES lanes=${factory.lanes.size}")
+                }
+            }
+        }
+        (factory as? LaneCallFactory)?.restart()
+        return factory
     }
 
     fun configureSubtitleParsing(
@@ -245,7 +278,7 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         if (!shape.useChunkSessionSource || shape.mp4SessionMode) return
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         val sanitizedHeaders = sanitizeHeaders(headers)
-        val okHttpFactory = OkHttpDataSource.Factory(chunkSessionHttpClient).apply {
+        val okHttpFactory = OkHttpDataSource.Factory(chunkSessionCallFactory(shape.effectiveConnections, url)).apply {
             setDefaultRequestProperties(sanitizedHeaders)
             if (sanitizedHeaders.none { it.key.equals("User-Agent", ignoreCase = true) }) {
                 setUserAgent(DEFAULT_USER_AGENT)
@@ -279,7 +312,9 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         cacheKey: String? = null
     ): MediaSource {
         val sanitizedHeaders = sanitizeHeaders(headers)
-        val httpDataSourceFactory = PlayerPlaybackNetworking.createDataSourceFactory(context, sanitizedHeaders)
+        val httpDataSourceFactory = PlayerPlaybackNetworking.createDataSourceFactory(
+            context, sanitizedHeaders, slowStart = SlowStartServer.matches(url)
+        )
 
         val chunkSessionShape = resolveChunkSessionShape(
             url = url,
@@ -340,7 +375,7 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
                         "for progressive MP4 with parallel connections off"
                 )
             }
-            val okHttpFactory = OkHttpDataSource.Factory(chunkSessionHttpClient).apply {
+            val okHttpFactory = OkHttpDataSource.Factory(chunkSessionCallFactory(chunkSessionShape.effectiveConnections, url)).apply {
                 setDefaultRequestProperties(sanitizedHeaders)
                 if (sanitizedHeaders.none { it.key.equals("User-Agent", ignoreCase = true) }) {
                     setUserAgent(DEFAULT_USER_AGENT)
@@ -371,7 +406,7 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         } else if (isLoopbackUrl(url)) {
             PlayerPlaybackNetworking.createHttpDataSourceFactory(sanitizedHeaders, useLongReadTimeout = true)
         } else {
-            httpDataSourceFactory
+            LedgerDataSourceFactory(httpDataSourceFactory)
         }
 
         // 2. VOD disk cache (opt-in).
@@ -534,6 +569,13 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         // little per touch, and the retained set (session cap 3 chunks on the
         // low-RAM tier, 5 otherwise) stays a few tens of MB.
         internal const val MP4_SESSION_CHUNK_BYTES = 8L * 1024L * 1024L
+        // Only the connection itself. A reachable server answers a connect within a second or
+        // two even after lost packets; a Usenet engine that is slow to send its first bytes is
+        // covered by the read time-out, which stays at 15 s.
+        internal const val CHUNK_CONNECT_TIMEOUT_MS = 6_000L
+
+        internal fun withChunkSessionTimeouts(builder: OkHttpClient.Builder): OkHttpClient.Builder =
+            builder.connectTimeout(CHUNK_CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         private const val ENABLE_VOD_CACHE = true
         private const val VOD_CACHE_DIR_NAME = "nuvio_vod_cache"
         private const val VOD_CACHE_STALE_PREFIX = "nuvio_vod_cache_stale_"

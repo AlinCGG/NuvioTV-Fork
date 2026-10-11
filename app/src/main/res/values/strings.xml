@@ -2239,6 +2239,8 @@
     <string name="library_sort_provider_order">Provider Order</string>
     <string name="library_sort_added_desc">Added ↓</string>
     <string name="library_sort_added_asc">Added ↑</string>
+    <string name="library_sort_released_desc">Released ↓</string>
+    <string name="library_sort_released_asc">Released ↑</string>
     <string name="library_sort_title_asc">Title A-Z</string>
     <string name="library_sort_title_desc">Title Z-A</string>
     <string name="library_manage_lists">Manage lists</string>

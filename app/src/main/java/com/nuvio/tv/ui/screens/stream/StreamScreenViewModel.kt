@@ -1,5 +1,7 @@
 package com.nuvio.tv.ui.screens.stream
 
+import com.nuvio.tv.core.player.StreamListOrder
+import com.nuvio.tv.data.local.StreamListSort
 import com.nuvio.tv.core.util.TtffTrace
 import android.content.Context
 import android.util.Log
@@ -122,6 +124,7 @@ class StreamScreenViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             debridSettingsDataStore.settings.collect { settings ->
+                if (latestDebridStreamPreferences != settings.streamPreferences) listOrder = null
                 latestDebridStreamPreferences = settings.streamPreferences
             }
         }
@@ -140,6 +143,12 @@ class StreamScreenViewModel @Inject constructor(
     private var streamBadgePresentationJob: Job? = null
     private var streamFilterExpandJob: Job? = null
     private var streamFilterFullList: List<Stream> = emptyList()
+    @Volatile
+    private var listSortBestFirst = false
+    @Volatile
+    private var listOrder: StreamListOrder? = null
+    private val listOrderLock = Any()
+    private var listOrderJob: Job? = null
     private var streamBadgePresentationRequestId = 0L
     private var badgedAddonNames: Set<String> = emptySet()
     private var playbackMetaVideos: List<Video>? = null
@@ -248,12 +257,7 @@ class StreamScreenViewModel @Inject constructor(
                             )
                         }
                         val updatedAllStreams = updatedAddonStreams.flatMap { it.streams }
-                        val currentFilter = state.selectedAddonFilter
-                        val fullFiltered = if (currentFilter == null) {
-                            updatedAllStreams
-                        } else {
-                            updatedAllStreams.filter { it.addonName == currentFilter }
-                        }
+                        val fullFiltered = viewOf(updatedAllStreams, state.selectedAddonFilter)
                         streamFilterFullList = fullFiltered
                         val pageEnd = state.filteredStreams.size
                             .coerceAtLeast(STREAM_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
@@ -404,7 +408,11 @@ class StreamScreenViewModel @Inject constructor(
             // badge-merge and chip-merge work on Main afterwards. Logging only.
             val loadSplitT0 = SystemClock.elapsedRealtime()
             val playerSettings = playerSettingsDataStore.playerSettings.first()
+            listSortBestFirst = playerSettings.streamListSort == StreamListSort.BEST_QUALITY_FIRST
             android.util.Log.i(TAG, "LOAD_SPLIT playerSettings=${SystemClock.elapsedRealtime() - loadSplitT0}ms")
+            if (latestDebridStreamPreferences == null) {
+                latestDebridStreamPreferences = debridSettingsDataStore.settings.first().streamPreferences
+            }
             if (autoSelectionOff) {
                 directAutoPlayModeInitializedForSession = true
                 directAutoPlayFlowEnabledForSession = false
@@ -589,6 +597,21 @@ class StreamScreenViewModel @Inject constructor(
                 val allStreams = mergedAddonStreams.flatMap { it.streams }
                 val applyBadgeMs = SystemClock.elapsedRealtime() - applyT0 - applyOrderMs
                 val availableAddons = mergedAddonStreams.map { it.addonName }
+
+                // Early binge group match: if we have a persisted binge group, try to
+                // match it immediately on every emission without waiting for all addons.
+                val earlyBingeGroupMatch = if (!autoPlayHandledForSession && !resolvedAutoPlayTarget && persistedBingeGroup != null) {
+                    val debridPreferences = latestDebridStreamPreferences
+                    withContext(Dispatchers.Default) {
+                        AutoPlaySelection.select(
+                            streams = allStreams,
+                            inputs = autoPlayInputs,
+                            debridStreamPreferences = debridPreferences,
+                            bingeGroupOnly = true
+                        )
+                    }.takeUnless { resolvedAutoPlayTarget || autoPlayHandledForSession }
+                } else null
+
                 // Auto-select only after all addons have responded or the
                 // configured timeout has elapsed. This gives slower addons a
                 // chance to return higher-quality streams before the selector
@@ -612,7 +635,7 @@ class StreamScreenViewModel @Inject constructor(
                     partyPickDone = true
                     updateUiStateIfChanged { it.copy(autoPlayPlaybackInfo = partySharedLinkPlayback(partyHostMedia)) }
                 }
-                val selectedAutoPlayStream = partyPick ?: if (!shouldAutoSelect) {
+                val selectedAutoPlayStream = partyPick ?: earlyBingeGroupMatch ?: if (!shouldAutoSelect) {
                     null
                 } else {
                     val gateT0 = SystemClock.elapsedRealtime()
@@ -688,12 +711,7 @@ class StreamScreenViewModel @Inject constructor(
                     resolvedAutoPlayTarget = true
                 }
 
-                val currentFilter = _uiState.value.selectedAddonFilter
-                val fullFiltered = if (currentFilter == null) {
-                    allStreams
-                } else {
-                    allStreams.filter { it.addonName == currentFilter }
-                }
+                val fullFiltered = viewOf(allStreams, _uiState.value.selectedAddonFilter)
                 streamFilterFullList = fullFiltered
                 val currentPageSize = _uiState.value.filteredStreams.size
                 val isFirstLoad = currentPageSize == 0
@@ -797,12 +815,7 @@ class StreamScreenViewModel @Inject constructor(
                                 val updatedAllStreams = updatedGroups.flatMap { addonStreams ->
                                     addonStreams.streams
                                 }
-                                val currentFilter = state.selectedAddonFilter
-                                val fullFiltered = if (currentFilter == null) {
-                                    updatedAllStreams
-                                } else {
-                                    updatedAllStreams.filter { it.addonName == currentFilter }
-                                }
+                                val fullFiltered = viewOf(updatedAllStreams, state.selectedAddonFilter)
                                 streamFilterFullList = fullFiltered
                                 val pageEnd = state.filteredStreams.size
                                     .coerceAtLeast(STREAM_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
@@ -889,12 +902,15 @@ class StreamScreenViewModel @Inject constructor(
                                     result.data, installedAddonOrder, preferredServerNames
                                 )
                                 val allStreams = orderedStreams.flatMap { it.streams }
-                                val earlyMatch = AutoPlaySelection.select(
-                                    streams = allStreams,
-                                    inputs = autoPlayInputs,
-                                    debridStreamPreferences = latestDebridStreamPreferences,
-                                    bingeGroupOnly = true
-                                )
+                                val debridPreferences = latestDebridStreamPreferences
+                                val earlyMatch = withContext(Dispatchers.Default) {
+                                    AutoPlaySelection.select(
+                                        streams = allStreams,
+                                        inputs = autoPlayInputs,
+                                        debridStreamPreferences = debridPreferences,
+                                        bingeGroupOnly = true
+                                    )
+                                }.takeUnless { resolvedAutoPlayTarget || autoPlayHandledForSession }
                                 if (earlyMatch != null) {
                                     resolvedAutoPlayTarget = true
                                     autoSelectTriggered = true
@@ -1340,11 +1356,7 @@ class StreamScreenViewModel @Inject constructor(
             if (state.selectedAddonFilter == addonName) {
                 return@updateUiStateIfChanged state
             }
-            val fullFiltered = if (addonName == null) {
-                state.allStreams
-            } else {
-                state.allStreams.filter { it.addonName == addonName }
-            }
+            val fullFiltered = viewOf(state.allStreams, addonName)
             streamFilterFullList = fullFiltered
             val paginatedStreams = if (fullFiltered.size > STREAM_FILTER_PAGE_SIZE) {
                 fullFiltered.subList(0, STREAM_FILTER_PAGE_SIZE)
@@ -1355,6 +1367,44 @@ class StreamScreenViewModel @Inject constructor(
                 selectedAddonFilter = addonName,
                 filteredStreams = paginatedStreams
             )
+        }
+    }
+
+    /**
+     * The links of one view (All, or one source). With Best quality first they are ranked with the order worked out
+     * for every link; links that arrived after it go last until the ranking, done off the main thread, catches up.
+     */
+    private fun viewOf(all: List<Stream>, addonName: String?): List<Stream> {
+        val chosen = if (addonName == null) all else all.filter { it.addonName == addonName }
+        if (!listSortBestFirst || all.isEmpty()) return chosen
+        val order = listOrder
+        if (order == null || !order.covers(all)) scheduleListOrder(all)
+        return order?.apply(chosen) ?: chosen
+    }
+
+    private fun scheduleListOrder(all: List<Stream>) {
+        synchronized(listOrderLock) {
+            listOrderJob?.cancel()
+            listOrderJob = viewModelScope.launch(Dispatchers.Default) {
+                val order = StreamListOrder.of(all, latestDebridStreamPreferences) { it.badgeMergeKey() }
+                ensureActive()
+                listOrder = order
+                updateUiStateIfChanged { state ->
+                    if (!order.covers(state.allStreams)) return@updateUiStateIfChanged state
+                    val fullFiltered = order.apply(
+                        state.selectedAddonFilter?.let { name -> state.allStreams.filter { it.addonName == name } }
+                            ?: state.allStreams
+                    )
+                    streamFilterFullList = fullFiltered
+                    val pageEnd = state.filteredStreams.size
+                        .coerceAtLeast(STREAM_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
+                        .coerceAtMost(fullFiltered.size)
+                    state.copy(
+                        filteredStreams = if (pageEnd >= fullFiltered.size) fullFiltered
+                            else fullFiltered.subList(0, pageEnd)
+                    )
+                }
+            }
         }
     }
 
@@ -1369,9 +1419,8 @@ class StreamScreenViewModel @Inject constructor(
     }
 
     suspend fun prewarmSelectedPlayback(playbackInfo: StreamPlaybackInfo) {
-        val settings = playerSettingsDataStore.playerSettings.first()
         com.nuvio.tv.ui.screens.player.PlayerPlaybackNetworking.prewarmSelectedPlayback(
-            playbackInfo.url, playbackInfo.headers, enableHttp2 = settings.enableHttp2
+            playbackInfo.url, playbackInfo.headers
         )
     }
 
@@ -1882,6 +1931,7 @@ class StreamScreenViewModel @Inject constructor(
 
                 val client = okhttp3.OkHttpClient.Builder()
                     .dns(com.nuvio.tv.core.network.IPv4FirstDns())
+                    .socketFactory(com.nuvio.tv.core.network.NoDelaySocketFactory)
                     .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
                     .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                     .build()
