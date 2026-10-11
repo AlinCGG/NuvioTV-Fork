@@ -19,6 +19,9 @@ object TtffTrace {
     @Volatile private var t0ElapsedMs: Long = 0L
     @Volatile private var lastMarkElapsedMs: Long = 0L
 
+    /** Reads served by the chunked playback reader; a plain counter, compared within one thread. */
+    @JvmField var sourceReads: Long = 0L
+
     fun begin(name: String) {
         val now = SystemClock.elapsedRealtime()
         t0ElapsedMs = now

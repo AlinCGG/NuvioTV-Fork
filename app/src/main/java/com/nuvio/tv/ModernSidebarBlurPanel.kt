@@ -165,7 +165,7 @@ internal fun ModernSidebarBlurPanel(
             .padding(horizontal = NuvioTheme.spacing.md, vertical = NuvioTheme.spacing.lg - NuvioTheme.spacing.xxs)
     ) {
         if (v2Glass != null) {
-            BrandWordmark(Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(.78f).height(32.dp), contentDescription = "Nuvio")
+            BrandWordmark(Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(.78f).height(32.dp), contentDescription = stringResource(R.string.cd_nuvio_logo))
         }
         if (showProfileSelector && activeProfileName.isNotEmpty()) {
             Box(

@@ -244,14 +244,12 @@ fun EssentialAddonSetupScreen(
         }
 
         if (uiState.pendingChange != null) {
-            Popup(properties = PopupProperties(focusable = true)) {
-                uiState.pendingChange?.let { pending ->
-                    ConfirmAddonChangesDialog(
-                        pendingChange = pending,
-                        onConfirm = viewModel::confirmPendingChange,
-                        onReject = viewModel::rejectPendingChange
-                    )
-                }
+            uiState.pendingChange?.let { pending ->
+                ConfirmAddonChangesDialog(
+                    pendingChange = pending,
+                    onConfirm = viewModel::confirmPendingChange,
+                    onReject = viewModel::rejectPendingChange
+                )
             }
         }
 

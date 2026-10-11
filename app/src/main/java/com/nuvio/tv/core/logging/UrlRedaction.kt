@@ -8,11 +8,54 @@ private val URL_CREDENTIAL = Regex(
     RegexOption.IGNORE_CASE
 )
 
+private val LOG_CREDENTIAL_PARAMETERS =
+    CREDENTIAL_PARAMETERS + listOf(
+        "password", "pass", "auth", "access_token", "sig", "signature", "api_password", "auth_token"
+    )
+
+private val LOG_URL_CREDENTIAL = Regex(
+    """([?&](?:${LOG_CREDENTIAL_PARAMETERS.joinToString("|")})=)[^&#\s"']*""",
+    RegexOption.IGNORE_CASE
+)
+
+// Scheme, authority, then the rest of the link without trailing sentence punctuation.
+private val LINK = Regex("""\b([A-Za-z][A-Za-z0-9+.\-]{0,15}://)([^/?#\s"'<>]*)([^\s"'<>]*[^\s"'<>.,;:!?)\]}])?""")
+private val SECRET_SEGMENT = Regex("""[A-Za-z0-9_\-=+%~]{24,}""")
+private val DEBRID_SERVICES = setOf(
+    "realdebrid", "alldebrid", "premiumize", "debridlink", "easydebrid", "offcloud", "torbox", "putio", "pikpak"
+)
+private val DEBRID_PAIR = Regex("""((?:${DEBRID_SERVICES.joinToString("|")})=)[^|,/%&?#]+""", RegexOption.IGNORE_CASE)
+
 /** Masks access tokens carried in URL query strings, keeping the rest of the text readable. */
 fun String.redactUrlCredentials(): String =
     URL_CREDENTIAL.replace(this) { match -> match.groupValues[1] + "REDACTED" }
 
-fun String?.redactedUrlForLog(): String = this?.redactUrlCredentials() ?: "(null)"
+/**
+ * Masks secrets in every link found in log text: credential query values, user:password@ and
+ * key-like path segments (addon configs, API keys, hashes). Scheme, host and port stay readable.
+ */
+fun String.redactLinksForLog(): String {
+    val masked = LOG_URL_CREDENTIAL.replace(this) { match -> match.groupValues[1] + "REDACTED" }
+    if (!masked.contains("://")) return masked
+    return LINK.replace(masked) { match ->
+        val (scheme, authority, rest) = match.destructured
+        val at = authority.lastIndexOf('@')
+        val host = if (at >= 0) "REDACTED@" + authority.substring(at + 1) else authority
+        val pathEnd = rest.indexOfFirst { it == '?' || it == '#' }.let { if (it < 0) rest.length else it }
+        val segments = rest.substring(0, pathEnd).split('/')
+        val path = segments.mapIndexed { i, segment ->
+            val afterService = i > 0 && segment.isNotEmpty() && segments[i - 1].lowercase() in DEBRID_SERVICES
+            if (afterService || segment.isSecretPathSegment()) "REDACTED"
+            else DEBRID_PAIR.replace(segment) { it.groupValues[1] + "REDACTED" }
+        }.joinToString("/")
+        scheme + host + path + rest.substring(pathEnd)
+    }
+}
+
+internal fun String.isSecretPathSegment(): Boolean =
+    (length >= 12 && startsWith("eyJ")) || SECRET_SEGMENT.matches(this)
+
+fun String?.redactedUrlForLog(): String = this?.redactLinksForLog() ?: "(null)"
 
 /** Drops access token parameters from a single URL, keeping the other parameters and any fragment. */
 fun String.withoutUrlCredentials(): String = filterQuery { name -> name.lowercase() !in CREDENTIAL_PARAMETERS }

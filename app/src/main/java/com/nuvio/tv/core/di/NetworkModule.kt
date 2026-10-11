@@ -3,6 +3,7 @@ package com.nuvio.tv.core.di
 import android.content.Context
 import android.util.Log
 import com.nuvio.tv.BuildConfig
+import com.nuvio.tv.core.network.NoDelaySocketFactory
 import com.nuvio.tv.data.remote.api.AniSkipApi
 import com.nuvio.tv.data.remote.api.AnimeSkipApi
 import com.nuvio.tv.data.remote.api.AddonApi
@@ -29,6 +30,7 @@ import com.nuvio.tv.data.simkl.SimklAuthError
 import com.nuvio.tv.data.simkl.SimklAuthStorage
 import com.nuvio.tv.data.simkl.defaultSimklApiConfiguration
 import com.nuvio.tv.LocaleCache
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -88,29 +90,10 @@ private fun buildAcceptLanguageHeader(): String {
 }
 
 /**
- * Query parameter names whose values are credentials.
- *
- * `apikey` is the live exposure: MDBList authenticates with the key in the
- * URL and its Retrofit rides the one client that carries a logger, so
- * BASIC-level logging printed the key in full in debug builds. `api_key`
- * (TMDB) and `token` (TorBox) ride clients with no logger today and are
- * covered defensively - they would leak the moment a logger was added to
- * those clients, or an API was moved onto the shared one.
+ * Masks credentials in a line about to be logged (query keys such as MDBList `apikey`, addon
+ * configs and keys in the path), keeping the rest of the URL so logs stay useful.
  */
-private val CREDENTIAL_QUERY_PATTERNS = listOf("apikey", "api_key", "token").map { param ->
-    Regex("([?&]" + param + "=)[^& ]*", RegexOption.IGNORE_CASE)
-}
-
-/**
- * Masks credential values in a line about to be logged, preserving the rest
- * of the URL so logs stay useful. Matches on exact parameter names rather
- * than a substring test, so non-credential params that merely contain "key"
- * (`with_keywords`) are left alone.
- */
-internal fun redactCredentialQueryParams(message: String): String =
-    CREDENTIAL_QUERY_PATTERNS.fold(message) { acc, pattern ->
-        pattern.replace(acc) { match -> match.groupValues[1] + "REDACTED" }
-    }
+internal fun redactCredentialQueryParams(message: String): String = message.redactLinksForLog()
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -128,6 +111,7 @@ object NetworkModule {
     fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         return OkHttpClient.Builder()
             .dns(IPv4FirstDns())
+            .socketFactory(NoDelaySocketFactory)
             // Keep separate from the old trust-all cache. Cached responses bypass a new TLS handshake.
             .cache(Cache(File(context.cacheDir, "http_cache_v2"), 50L * 1024 * 1024)) // 50 MB disk cache
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -221,6 +205,7 @@ object NetworkModule {
     @Named("customServerAuth")
     fun provideCustomServerAuthHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .dns(IPv4FirstDns())
+        .socketFactory(NoDelaySocketFactory)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .addInterceptor { chain ->
@@ -243,6 +228,7 @@ object NetworkModule {
     fun provideDirectDebridOkHttpClient(): OkHttpClient =
         OkHttpClient.Builder()
             .dns(IPv4FirstDns())
+            .socketFactory(NoDelaySocketFactory)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
@@ -269,6 +255,7 @@ object NetworkModule {
     fun provideValidatedOkHttpClient(@ApplicationContext context: Context): OkHttpClient =
         OkHttpClient.Builder()
             .dns(IPv4FirstDns())
+            .socketFactory(NoDelaySocketFactory)
             .cache(Cache(File(context.cacheDir, "http_cache_validated"), 20L * 1024 * 1024))
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
@@ -297,6 +284,7 @@ object NetworkModule {
     @Named("simkl")
     fun provideSimklOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .dns(IPv4FirstDns())
+        .socketFactory(NoDelaySocketFactory)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .build()

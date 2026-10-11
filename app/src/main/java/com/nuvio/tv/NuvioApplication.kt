@@ -22,11 +22,11 @@ import okio.Path.Companion.toOkioPath
 import com.nuvio.tv.core.runtime.PluginRuntimeHooks
 import com.nuvio.tv.core.sync.StartupSyncService
 import com.nuvio.tv.core.network.IPv4FirstDns
+import com.nuvio.tv.core.network.NoDelaySocketFactory
 import com.nuvio.tv.core.network.ServerTrust
 import com.nuvio.tv.core.network.withServerTrust
 import com.nuvio.tv.data.mediaserver.ServerUserStateProjection
 import com.nuvio.tv.data.simkl.SimklAnimeIdPreferenceHolder
-import coil3.network.cachecontrol.CacheControlCacheStrategy
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.Cookie
 import okhttp3.CookieJar
@@ -47,6 +47,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
     @Inject lateinit var playerSettingsDataStore: PlayerSettingsDataStore
     @Inject lateinit var simklAnimeIdPreferenceHolder: SimklAnimeIdPreferenceHolder
     @Inject lateinit var serverUserStateProjection: ServerUserStateProjection
+    @Inject lateinit var siloArtworkRefresher: com.nuvio.tv.data.mediaserver.silo.SiloArtworkRefresher
 
     companion object {
         private const val CACHE_TAG = "NuvioCache"
@@ -165,9 +166,15 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                 .withServerTrust()
                 .dispatcher(imageDispatcher)
                 .dns(IPv4FirstDns())
+                .socketFactory(NoDelaySocketFactory)
                 .connectTimeout(4, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.SECONDS)
                 .callTimeout(8, TimeUnit.SECONDS)
+                .addInterceptor(
+                    com.nuvio.tv.data.mediaserver.silo.SiloArtworkInterceptor({
+                        if (::siloArtworkRefresher.isInitialized) siloArtworkRefresher else null
+                    })
+                )
                 .addInterceptor { chain ->
                     try {
                         chain.proceed(chain.request())
@@ -230,17 +237,17 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                 }
                 add(SvgDecoder.Factory())
                 add(
-                    coil3.network.okhttp.OkHttpNetworkFetcherFactory(
+                    com.nuvio.tv.core.image.SavedCopyOnErrorFetcher.Factory(coil3.network.okhttp.OkHttpNetworkFetcherFactory(
                         callFactory = { imageOkHttpClient },
                         // Upstream's StaleWhileRevalidateCacheStrategy is deliberately not used:
                         // its background revalidation client has no cache, so a
                         // 200 downloads the new body and discards it; the card's reload then hits the
                         // unchanged disk entry and the strategy serves the stale copy again (and
-                        // re-fetches the body every 10-minute cooldown). CacheControlCacheStrategy
-                        // plus the interceptor above keeps the foreground conditional-GET path that
-                        // does update the disk entry.
-                        cacheStrategy = { CacheControlCacheStrategy() },
-                    )
+                        // re-fetches the body every 10-minute cooldown). Server cache rules plus the
+                        // interceptor above keep the foreground conditional-GET path that does update
+                        // the disk entry; saved copies count as fresh for at least a week.
+                        cacheStrategy = { com.nuvio.tv.core.image.imageCacheStrategy },
+                    ))
                 )
             }
             .memoryCache {
