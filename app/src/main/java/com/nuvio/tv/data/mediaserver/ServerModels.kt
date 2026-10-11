@@ -38,6 +38,14 @@ data class ServerLibrary(
     val selected: Boolean = true
 )
 
+/** A row from the server's own home page, shown on Nuvio Home next to the libraries. */
+@Serializable
+data class ServerHomeRow(
+    val id: String,
+    val title: String,
+    val kind: ServerMediaKind
+)
+
 @Serializable
 data class ServerConnection(
     val id: String,
@@ -54,13 +62,38 @@ data class ServerConnection(
     val importContinueWatching: Boolean = true,
     val alternateAddress: String? = null,
     val lastGoodAddress: String? = null,
-    val tlsPins: Map<String, String> = emptyMap()
+    val tlsPins: Map<String, String> = emptyMap(),
+    /** Null: never renamed. Empty: renamed and reset, so other devices drop their name too. */
+    val displayName: String? = null,
+    val homeRows: List<ServerHomeRow> = emptyList(),
+    val showHomeRows: Boolean = true
 ) {
+    val shownName: String
+        get() = displayName?.takeIf { it.isNotBlank() } ?: name
+
+    val isRenamed: Boolean
+        get() = shownName != name
+
     val selectedLibraries: List<ServerLibrary>
         get() = libraries.filter { it.selected }
 
     fun selectedLibraries(kind: ServerMediaKind): List<ServerLibrary> =
         selectedLibraries.filter { it.kind == kind }
+}
+
+const val SERVER_DISPLAY_NAME_MAX_LENGTH = 30
+
+private val WHITESPACE = Regex("\\s+")
+
+/** Cleans a typed server name; null means the server's own name is used. */
+fun serverDisplayName(input: String?, serverName: String): String? {
+    val cleaned = input.orEmpty()
+        .replace(WHITESPACE, " ")
+        .trim()
+        .take(SERVER_DISPLAY_NAME_MAX_LENGTH)
+        .let { if (it.lastOrNull()?.isHighSurrogate() == true) it.dropLast(1) else it }
+        .trim()
+    return cleaned.takeIf { it.isNotEmpty() && it != serverName }
 }
 
 class ServerSession(
@@ -170,7 +203,8 @@ data class ServerCandidate(
     val video: String? = null,
     val audio: String? = null,
     val container: String? = null,
-    val versionName: String? = null
+    val versionName: String? = null,
+    val durationMs: Long? = null
 )
 
 data class ServerPlaybackRequest(
@@ -251,10 +285,31 @@ enum class ServerFailure {
     FAILED
 }
 
+enum class ServerSignInIssue {
+    WEBSITE,
+    SILO_WEBSITE,
+    SILO_JELLYFIN_OFF,
+    PROFILE_NEEDED,
+    PROFILE_NOT_FOUND,
+    PROFILE_PIN,
+    PROFILE_AND_PIN,
+    PIN_WRONG,
+    TEMPORARY_PASSWORD,
+    PASSWORD_SIGN_IN_OFF,
+    TOO_MANY_TRIES,
+    SILO_NOT_NATIVE,
+    SERVER_MESSAGE
+}
+
 class ServerException(
     val failure: ServerFailure,
     message: String? = null,
-    val network: Boolean = false
+    val network: Boolean = false,
+    val issue: ServerSignInIssue? = null,
+    val detail: String? = null,
+    val httpStatus: Int? = null,
+    val address: String? = null,
+    val code: String? = null
 ) : Exception(message ?: failure.name)
 
 data class ServerLocation(

@@ -17,17 +17,23 @@ import com.nuvio.tv.data.mediaserver.ServerPlaybackEvent
 import com.nuvio.tv.data.mediaserver.ServerPlaybackEventType
 import com.nuvio.tv.data.mediaserver.ServerPlaybackRequest
 import com.nuvio.tv.data.mediaserver.ServerPlaybackSession
+import com.nuvio.tv.data.mediaserver.ServerPlaybackTarget
 import com.nuvio.tv.data.mediaserver.ServerPlayerCapabilities
 import com.nuvio.tv.data.mediaserver.ServerProvider
 import com.nuvio.tv.data.mediaserver.ServerQuickConnect
 import com.nuvio.tv.data.mediaserver.ServerResumeEntry
 import com.nuvio.tv.data.mediaserver.ServerSegment
 import com.nuvio.tv.data.mediaserver.ServerSegmentKind
+import com.nuvio.tv.data.mediaserver.ServerBytes
 import com.nuvio.tv.data.mediaserver.ServerSession
 import com.nuvio.tv.data.mediaserver.ServerSignIn
+import com.nuvio.tv.data.mediaserver.ServerSignInIssue
+import com.nuvio.tv.data.mediaserver.ServerThumbnailFormat
 import com.nuvio.tv.data.mediaserver.ServerTitle
 import com.nuvio.tv.data.mediaserver.ServerTitleQuery
 import com.nuvio.tv.data.mediaserver.ServerTrack
+import com.nuvio.tv.data.mediaserver.ServerTrickplay
+import com.nuvio.tv.data.mediaserver.ServerTrickplaySet
 import com.nuvio.tv.data.mediaserver.ServerUserState
 import com.nuvio.tv.data.mediaserver.verifiedTitleMatches
 import com.nuvio.tv.domain.model.Subtitle
@@ -49,7 +55,7 @@ internal abstract class MediaBrowserProvider(
 ) : ServerProvider {
     override val capabilities: Set<ServerCapability> = ServerCapability.entries.toSet()
 
-    private val client = MediaBrowserClient(authorizationHeader, http, identity)
+    protected val client = MediaBrowserClient(authorizationHeader, http, identity)
 
     protected abstract fun viewsEndpoint(userId: String): Endpoint
 
@@ -80,13 +86,17 @@ internal abstract class MediaBrowserProvider(
         val normalized = normalizeServerAddress(address, apiPath) ?: throw ServerException(ServerFailure.NOT_FOUND)
         val (baseUrl, info) = publicInfo(normalized)
         if (!isSupported(info)) throw ServerException(ServerFailure.UNSUPPORTED)
-        val response = client.execute(
-            method = "POST",
-            baseUrl = baseUrl + apiPath,
-            path = "/Users/AuthenticateByName",
-            token = null,
-            body = client.json.encodeToString(AuthRequest.serializer(), AuthRequest(username, password))
-        )
+        val response = try {
+            client.execute(
+                method = "POST",
+                baseUrl = baseUrl + apiPath,
+                path = "/Users/AuthenticateByName",
+                token = null,
+                body = client.json.encodeToString(AuthRequest.serializer(), AuthRequest(username, password))
+            )
+        } catch (error: ServerException) {
+            throw error.withSignInIssue()
+        }
         return signInResult(response.body, baseUrl, serverName(info, baseUrl), info.id, username)
     }
 
@@ -173,9 +183,16 @@ internal abstract class MediaBrowserProvider(
                 ?.takeIf { it != baseUrl && !dropsEncryption(baseUrl, it) }
                 ?: throw ServerException(ServerFailure.FAILED)
             val retried = client.execute("GET", redirected + apiPath, path, token = null)
-            return redirected to client.json.decodeFromString(PublicInfo.serializer(), retried.body)
+            return redirected to readPublicInfo(retried.body)
         }
-        return baseUrl to client.json.decodeFromString(PublicInfo.serializer(), response.body)
+        return baseUrl to readPublicInfo(response.body)
+    }
+
+    /** A website (or a server's web page) answers this request with a page instead of server details. */
+    private fun readPublicInfo(body: String): PublicInfo = try {
+        client.json.decodeFromString(PublicInfo.serializer(), body)
+    } catch (_: IllegalArgumentException) {
+        throw ServerException(ServerFailure.FAILED, issue = ServerSignInIssue.WEBSITE)
     }
 
     override suspend fun locate(address: String): ServerLocation? {
@@ -465,6 +482,46 @@ internal abstract class MediaBrowserProvider(
 
     protected open fun segmentItemId(itemId: String, mediaSourceId: String?): String = itemId
 
+    override suspend fun trickplay(session: ServerSession, itemId: String, mediaSourceId: String): ServerTrickplaySet? {
+        if (thumbnailFormat != ServerThumbnailFormat.TRICKPLAY) return null
+        return trickplayLevels(item(session, itemId, "Trickplay").trickplay, itemId, mediaSourceId)
+    }
+
+    override suspend fun trickplaySheet(
+        session: ServerSession,
+        itemId: String,
+        mediaSourceId: String,
+        width: Int,
+        index: Int,
+        maxBytes: Long
+    ): ByteArray {
+        val url = buildUrl(
+            session.apiRoot,
+            "/Videos/${pathSegment(itemId)}/Trickplay/$width/$index.jpg",
+            mapOf("mediaSourceId" to mediaSourceId)
+        )
+        val reply = client.bytes(url, session.token, maxBytes)
+        if (reply.truncated) throw ServerException(ServerFailure.FAILED, "sheet over size limit")
+        return reply.bytes
+    }
+
+    override suspend fun bif(
+        session: ServerSession,
+        itemId: String,
+        mediaSourceId: String,
+        width: Int,
+        range: LongRange?,
+        maxBytes: Long
+    ): ServerBytes {
+        if (thumbnailFormat != ServerThumbnailFormat.BIF) throw ServerException(ServerFailure.UNSUPPORTED)
+        val url = buildUrl(
+            session.apiRoot,
+            "/Videos/${pathSegment(itemId)}/index.bif",
+            mapOf("Width" to width.toString(), "MediaSourceId" to mediaSourceId)
+        )
+        return client.bytes(url, session.token, maxBytes, range)
+    }
+
     protected suspend fun chapterSegments(session: ServerSession, itemId: String): List<ServerSegment> {
         val item = item(session, itemId, "Chapters")
         val marks = item.chapters.mapNotNull { chapter ->
@@ -713,6 +770,18 @@ internal abstract class MediaBrowserProvider(
 
     override fun authHeaders(session: ServerSession): Map<String, String> = client.authHeaders(session.token)
 
+    override fun staticStreamUrl(session: ServerSession, target: ServerPlaybackTarget): String =
+        buildUrl(
+            session.apiRoot,
+            "/Videos/${pathSegment(target.item.itemId)}/stream",
+            mapOf(
+                "static" to "true",
+                "mediaSourceId" to target.mediaSourceId,
+                "deviceId" to client.deviceId,
+                tokenQueryName to session.token
+            )
+        )
+
     private fun withApiKey(url: String, token: String): String {
         if (queryValue(url, "api_key") != null || queryValue(url, "ApiKey") != null) return url
         return url + (if ('?' in url) "&" else "?") + "$tokenQueryName=$token"
@@ -736,4 +805,59 @@ internal abstract class MediaBrowserProvider(
         val IMAGE_SUBTITLES = listOf("pgssub", "dvdsub", "dvbsub")
         val EMBEDDED_SUBTITLES = TEXT_SUBTITLES + "mov_text" + IMAGE_SUBTITLES
     }
+}
+
+/** Silo's Jellyfin-compatible sign-in names the reason for a refusal; plain Jellyfin and Emby only say "invalid". */
+internal fun signInIssue(detail: String?): ServerSignInIssue? {
+    val text = detail?.lowercase() ?: return null
+    return when {
+        "profile suffix" in text -> ServerSignInIssue.PROFILE_NEEDED
+        text.startsWith("profile not found") -> ServerSignInIssue.PROFILE_NOT_FOUND
+        "invalid profile pin" in text -> ServerSignInIssue.PIN_WRONG
+        "pin protected" in text && "username#profile" in text -> ServerSignInIssue.PROFILE_AND_PIN
+        "pin protected" in text -> ServerSignInIssue.PROFILE_PIN
+        "password change required" in text || "temporary password" in text -> ServerSignInIssue.TEMPORARY_PASSWORD
+        "password sign-in is turned off" in text || "password login is disabled" in text ->
+            ServerSignInIssue.PASSWORD_SIGN_IN_OFF
+        else -> null
+    }
+}
+
+internal fun ServerException.withSignInIssue(): ServerException {
+    val issue = when {
+        httpStatus == 429 -> ServerSignInIssue.TOO_MANY_TRIES
+        failure == ServerFailure.AUTH_REQUIRED -> signInIssue(detail)
+        else -> null
+    } ?: return this
+    return ServerException(failure, message, issue = issue, httpStatus = httpStatus)
+}
+
+/**
+ * The usable trickplay widths for one file version, smallest first, with the key they are listed under. Jellyfin keys
+ * the manifest by media source id (the item id without dashes for a single-version item); Silo gives each version its
+ * own id. An entry under the item id stands in only when the version's own id is not listed.
+ */
+internal fun trickplayLevels(
+    manifest: Map<String, Map<String, TrickplayInfoDto>>?,
+    itemId: String,
+    mediaSourceId: String
+): ServerTrickplaySet? {
+    if (manifest.isNullOrEmpty()) return null
+    fun norm(id: String) = id.replace("-", "").lowercase()
+    val entry = manifest.entries.firstOrNull { norm(it.key) == norm(mediaSourceId) }
+        ?: manifest.entries.firstOrNull { norm(it.key) == norm(itemId) }
+        ?: return null
+    val levels = entry.value.mapNotNull { (key, info) ->
+        val width = info.width ?: key.toIntOrNull() ?: return@mapNotNull null
+        val height = info.height ?: return@mapNotNull null
+        val tileWidth = info.tileWidth ?: return@mapNotNull null
+        val tileHeight = info.tileHeight ?: return@mapNotNull null
+        val count = info.thumbnailCount ?: return@mapNotNull null
+        val interval = info.interval ?: return@mapNotNull null
+        if (width <= 0 || height <= 0 || tileWidth <= 0 || tileHeight <= 0 || count <= 0 || interval <= 0) {
+            return@mapNotNull null
+        }
+        ServerTrickplay(width, height, tileWidth, tileHeight, count, interval.toLong())
+    }.sortedBy { it.width }
+    return if (levels.isEmpty()) null else ServerTrickplaySet(entry.key, levels)
 }

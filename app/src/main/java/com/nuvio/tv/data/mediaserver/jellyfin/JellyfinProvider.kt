@@ -1,5 +1,6 @@
 package com.nuvio.tv.data.mediaserver.jellyfin
 
+import com.nuvio.tv.data.mediaserver.ServerThumbnailFormat
 import com.nuvio.tv.data.mediaserver.ServerTitleQuery
 import com.nuvio.tv.data.mediaserver.mediabrowser.CodecProfile
 import com.nuvio.tv.data.mediaserver.mediabrowser.Endpoint
@@ -18,6 +19,8 @@ internal open class JellyfinProvider(
     override val displayName: String = "Jellyfin"
     override val minimumVersion: String = "10.9"
     override val tokenQueryName: String = "ApiKey"
+    override val thumbnailFormat: ServerThumbnailFormat?
+        get() = ServerThumbnailFormat.TRICKPLAY
     override val supportsQuickConnect: Boolean
         get() = true
 

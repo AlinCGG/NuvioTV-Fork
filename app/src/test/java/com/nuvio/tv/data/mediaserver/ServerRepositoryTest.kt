@@ -79,6 +79,17 @@ class ServerRepositoryTest {
     }
 
     @Test
+    fun spacesAroundTheUsernameAreIgnoredButThePasswordIsSentAsTyped() = runTest {
+        val provider = FakeServerProvider()
+        val fresh = ServerRepository(MemoryServerPersistence(), listOf(provider), CoroutineScope(Dispatchers.Unconfined))
+
+        val added = fresh.connect(provider, "https://fake.example", "  viewer ", " pw ")
+
+        assertEquals(listOf("viewer" to " pw "), provider.signIns)
+        assertEquals("viewer", fresh.connection(added.id)!!.userName)
+    }
+
+    @Test
     fun anAcceptedCertificateIsStoredWithTheServerAndKeptOffTheAccount() = runTest {
         val provider = FakeServerProvider()
         val (repository, connection) = fakeServerRepository(provider)

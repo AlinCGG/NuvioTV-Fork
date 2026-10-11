@@ -3,6 +3,7 @@ package com.nuvio.tv.data.mediaserver
 import android.util.Log
 import com.nuvio.tv.core.network.ServerTrust
 import com.nuvio.tv.core.profile.ProfileScopedCredentialStore
+import com.nuvio.tv.data.mediaserver.silo.SiloNativeProvider
 import com.nuvio.tv.data.mediaserver.silo.SiloProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +15,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
@@ -38,7 +42,8 @@ data class ServersUiState(
     val failures: Map<String, ServerFailure> = emptyMap(),
     val revision: Int = 0,
     val syncEnabled: Boolean = false,
-    val fullSourceText: Boolean = false
+    val fullSourceText: Boolean = false,
+    val showServerLogos: Boolean = true
 ) {
     val enabledConnections: List<ServerConnection>
         get() = connections.filter { it.enabled }
@@ -78,8 +83,10 @@ class ServerRepository(
     private var syncedKeys: Set<String>? = null
     private var syncEnabled = false
     private var fullSourceText = false
+    private var showServerLogos = true
     private var localVersion = 0L
     private val activeAddresses = ConcurrentHashMap<String, AddressChoice>()
+    private val renewLocks = ConcurrentHashMap<String, Mutex>()
     private val trustLock = Any()
     private val mutableLocalChanges = MutableSharedFlow<Int>(extraBufferCapacity = 8)
     val localChanges: SharedFlow<Int> = mutableLocalChanges.asSharedFlow()
@@ -124,7 +131,7 @@ class ServerRepository(
     }
 
     fun sourceLabel(connection: ServerConnection): String =
-        "${provider(connection)?.displayName ?: connection.providerId} · ${connection.name}"
+        "${provider(connection)?.displayName ?: connection.providerId} · ${connection.shownName}"
 
     fun session(connectionId: String): ServerSession? {
         val connection = connection(connectionId)?.takeIf { it.enabled } ?: return null
@@ -177,9 +184,18 @@ class ServerRepository(
         val provider = provider(session.connection) ?: throw ServerException(ServerFailure.UNSUPPORTED)
         val connectLimit = connectLimitFor(connection)
         val first = firstAddressRetry(session)
-        suspend fun run(current: ServerSession): T = withContext(connectLimit) { block(provider, current) }.also {
+        suspend fun runOnce(current: ServerSession): T = withContext(connectLimit) { block(provider, current) }.also {
             if (startedGeneration != generation) throw ServerException(ServerFailure.INCOMPLETE)
             setFailure(connectionId, null)
+        }
+        suspend fun run(current: ServerSession): T {
+            val ready = if (provider.renewalDue(current)) renewAhead(provider, current) else current
+            return try {
+                runOnce(ready)
+            } catch (error: ServerException) {
+                if (error.failure != ServerFailure.AUTH_REQUIRED) throw error
+                runOnce(renew(provider, ready, error) ?: throw error)
+            }
         }
         return try {
             try {
@@ -197,6 +213,34 @@ class ServerRepository(
             }
             throw error
         }
+    }
+
+    private suspend fun renewAhead(provider: ServerProvider, session: ServerSession): ServerSession = try {
+        renew(provider, session, null) ?: session
+    } catch (error: ServerException) {
+        if (error.failure == ServerFailure.AUTH_REQUIRED) throw error
+        session
+    }
+
+    /** One renewal at a time per server; a call that waited uses the token the other one got. */
+    private suspend fun renew(provider: ServerProvider, session: ServerSession, failure: ServerException?): ServerSession? {
+        val connection = session.connection
+        return renewLocks.getOrPut(connection.id) { Mutex() }.withLock {
+            val stored = synchronized(lock) { tokens[connection.credentialRef] } ?: return@withLock null
+            if (stored != session.token) return@withLock ServerSession(connection, stored, session.address)
+            val renewed = provider.renewCredential(session, failure) ?: return@withLock null
+            replaceToken(connection, session.token, renewed)
+            ServerSession(connection, renewed, session.address)
+        }
+    }
+
+    private fun replaceToken(connection: ServerConnection, previous: String, renewed: String) {
+        if (loadedProfileId == null) return
+        val updated = synchronized(lock) {
+            if (tokens[connection.credentialRef] != previous) return
+            (tokens + (connection.credentialRef to renewed)).also { tokens = it }
+        }
+        persist(mutableState.value.connections, updated)
     }
 
     /** With a second address set, a dead first address is given up on quickly so the switch happens sooner. */
@@ -248,7 +292,7 @@ class ServerRepository(
     ): ServerConnection {
         acceptedCertificate?.let { (host, fingerprint) -> ServerTrust.allow(host, fingerprint) }
         return try {
-            connect(provider, acceptedCertificate) { provider.signIn(address, username, password) }
+            connect(provider, acceptedCertificate) { provider.signIn(address, username.trim(), password) }
         } finally {
             ServerTrust.clearPending()
         }
@@ -264,23 +308,44 @@ class ServerRepository(
         ServerTrust.clearPending()
     }
 
+    /**
+     * Saves a sign-in made outside this repository. With [replacing], that connection's name and choices carry over
+     * and it is removed once the new one is saved.
+     */
+    suspend fun connectWith(
+        provider: ServerProvider,
+        acceptedCertificate: Pair<String, String>? = null,
+        replacing: String? = null,
+        signInWith: suspend () -> ServerSignIn
+    ): ServerConnection = try {
+        acceptedCertificate?.let { (host, fingerprint) -> ServerTrust.allow(host, fingerprint) }
+        val previous = replacing?.let(::connection)
+        connect(provider, acceptedCertificate, previous, signInWith).also { connection ->
+            if (previous != null && previous.id != connection.id) remove(previous.id)
+        }
+    } finally {
+        ServerTrust.clearPending()
+    }
+
     private suspend fun connect(
         provider: ServerProvider,
         acceptedCertificate: Pair<String, String>? = null,
+        previous: ServerConnection? = null,
         signInWith: suspend () -> ServerSignIn
     ): ServerConnection {
         ensureLoaded()
         val startedGeneration = generation
         val profileId = loadedProfileId ?: activeProfileId
         val signIn = signInWith()
-        val existing = mutableState.value.connections.firstOrNull {
+        val matching = mutableState.value.connections.firstOrNull {
             it.providerId == provider.id &&
                 it.remoteServerId == signIn.serverId &&
                 it.remoteUserId == signIn.userId
         }
+        val existing = matching ?: previous?.carriedOver()
         val signedInOnAlternate = existing != null && existing.alternateAddress == signIn.address
         val draft = ServerConnection(
-            id = existing?.id ?: newId("c"),
+            id = matching?.id ?: newId("c"),
             providerId = provider.id,
             name = signIn.serverName,
             address = if (signedInOnAlternate) existing!!.address else signIn.address,
@@ -293,14 +358,21 @@ class ServerRepository(
             useCatalogMetadata = existing?.useCatalogMetadata ?: true,
             importContinueWatching = existing?.importContinueWatching ?: true,
             alternateAddress = existing?.alternateAddress,
-            tlsPins = existing?.tlsPins.orEmpty() + listOfNotNull(acceptedCertificate)
+            tlsPins = existing?.tlsPins.orEmpty() + listOfNotNull(acceptedCertificate),
+            displayName = existing?.displayName?.let { serverDisplayName(it, signIn.serverName) ?: "" }
         )
-        val libraries = provider.libraries(ServerSession(draft, signIn.token, signIn.address))
+        val draftSession = ServerSession(draft, signIn.token, signIn.address)
+        val libraries = provider.libraries(draftSession)
+        val homeRows = homeRowsOrNull(provider, draftSession)
         if (startedGeneration != generation || profileId != loadedProfileId) {
             throw CancellationException("Server scope changed")
         }
-        val connection = draft.copy(libraries = mergeLibraries(existing?.libraries.orEmpty(), libraries))
-        store(connection, signIn.token, replacedCredential = existing?.credentialRef)
+        val connection = draft.copy(
+            libraries = mergeLibraries(existing?.libraries.orEmpty(), libraries, byName = matching == null && previous != null),
+            homeRows = homeRows ?: matching?.homeRows.orEmpty(),
+            showHomeRows = existing?.showHomeRows ?: true
+        )
+        store(connection, signIn.token, replacedCredential = matching?.credentialRef)
         return connection
     }
 
@@ -318,7 +390,39 @@ class ServerRepository(
 
     suspend fun refreshLibraries(connectionId: String) {
         val libraries = call(connectionId) { provider, session -> provider.libraries(session) }
-        updateConnection(connectionId) { it.copy(libraries = mergeLibraries(it.libraries, libraries)) }
+        val homeRows = call(connectionId) { provider, session -> homeRowsOrNull(provider, session) }
+        updateConnection(connectionId) { connection ->
+            connection.copy(libraries = mergeLibraries(connection.libraries, libraries), homeRows = homeRows ?: connection.homeRows)
+        }
+    }
+
+    /** Reads the server's own home rows again; they change with its settings and the profile in use. */
+    suspend fun refreshHomeRows(connectionId: String) {
+        val homeRows = call(connectionId) { provider, session -> homeRowsOrNull(provider, session) } ?: return
+        if (loadedProfileId == null) return
+        var changed = false
+        val state = mutableState.updateAndGet { state ->
+            val connections = state.connections.map { connection ->
+                if (connection.id != connectionId || connection.homeRows == homeRows) return@map connection
+                changed = true
+                connection.copy(homeRows = homeRows)
+            }
+            if (changed) state.copy(connections = connections) else state
+        }
+        if (changed) persist(state.connections, synchronized(lock) { tokens })
+    }
+
+    private suspend fun homeRowsOrNull(provider: ServerProvider, session: ServerSession): List<ServerHomeRow>? = try {
+        provider.homeRows(session)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: ServerException) {
+        if (error.failure == ServerFailure.AUTH_REQUIRED) throw error
+        null
+    }
+
+    fun setShowHomeRows(connectionId: String, show: Boolean) {
+        updateConnection(connectionId) { it.copy(showHomeRows = show) }
     }
 
     fun setLibrarySelected(connectionId: String, libraryId: String, selected: Boolean) {
@@ -337,6 +441,20 @@ class ServerRepository(
 
     fun setImportContinueWatching(connectionId: String, enabled: Boolean) {
         updateConnection(connectionId) { it.copy(importContinueWatching = enabled) }
+    }
+
+    fun setDisplayName(connectionId: String, input: String?) {
+        val connection = connection(connectionId) ?: return
+        val displayName = serverDisplayName(input, connection.name) ?: connection.displayName?.let { "" }
+        if (displayName == connection.displayName) return
+        updateConnection(connectionId) { it.copy(displayName = displayName) }
+    }
+
+    /** A new token for the same sign-in, for example after picking another Silo profile. */
+    fun setCredential(connectionId: String, token: String) {
+        val connection = connection(connectionId) ?: return
+        save(mutableState.value.connections, synchronized(lock) { tokens } + (connection.credentialRef to token))
+        setFailure(connectionId, null)
     }
 
     fun forgetCertificates(connectionId: String) {
@@ -384,6 +502,14 @@ class ServerRepository(
         fullSourceText = full
         persist(mutableState.value.connections, synchronized(lock) { tokens })
         mutableState.update { it.copy(fullSourceText = full) }
+    }
+
+    fun setShowServerLogos(show: Boolean) {
+        ensureLoaded()
+        if (loadedProfileId == null || showServerLogos == show) return
+        showServerLogos = show
+        persist(mutableState.value.connections, synchronized(lock) { tokens })
+        mutableState.update { it.copy(showServerLogos = show) }
     }
 
     fun syncSnapshot(profileId: Int): ServerSyncSnapshot? {
@@ -460,6 +586,7 @@ class ServerRepository(
         syncedKeys = null
         syncEnabled = false
         fullSourceText = false
+        showServerLogos = true
         runCatching { persistence.clear() }.onFailure { Log.w(TAG, "Unable to clear server storage", it) }
         mutableState.value = ServersUiState(revision = mutableState.value.revision + 1)
     }
@@ -472,12 +599,14 @@ class ServerRepository(
         syncedKeys = stored.syncedKeys?.toSet()
         syncEnabled = stored.syncEnabled
         fullSourceText = stored.fullSourceText
+        showServerLogos = stored.showServerLogos
         loadedProfileId = profileId
         mutableState.value = ServersUiState(
             connections = stored.connections,
             revision = mutableState.value.revision + 1,
             syncEnabled = stored.syncEnabled,
-            fullSourceText = stored.fullSourceText
+            fullSourceText = stored.fullSourceText,
+            showServerLogos = stored.showServerLogos
         )
         publishTrust()
     }
@@ -518,7 +647,15 @@ class ServerRepository(
 
     private fun persist(connections: List<ServerConnection>, currentTokens: Map<String, String>) {
         val profileId = loadedProfileId ?: return
-        val stored = StoredServers(connections, currentTokens, pendingPush, syncedKeys?.toList(), syncEnabled, fullSourceText)
+        val stored = StoredServers(
+            connections,
+            currentTokens,
+            pendingPush,
+            syncedKeys?.toList(),
+            syncEnabled,
+            fullSourceText,
+            showServerLogos
+        )
         runCatching {
             persistence.write(profileId, json.encodeToString(StoredServers.serializer(), stored))
         }.onFailure { Log.w(TAG, "Unable to save server connections", it) }
@@ -537,16 +674,30 @@ class ServerRepository(
             persistence.read(profileId)?.let { json.decodeFromString(StoredServers.serializer(), it) }
         }.getOrNull() ?: StoredServers()
 
-    private fun mergeLibraries(previous: List<ServerLibrary>, current: List<ServerLibrary>): List<ServerLibrary> {
+    private fun mergeLibraries(
+        previous: List<ServerLibrary>,
+        current: List<ServerLibrary>,
+        byName: Boolean = false
+    ): List<ServerLibrary> {
         val selection = previous.associate { it.id to it.selected }
-        return current.map { library -> library.copy(selected = selection[library.id] ?: true) }
+        val selectionByName = if (byName) previous.associate { it.name.lowercase() to it.selected } else emptyMap()
+        return current.map { library ->
+            library.copy(selected = selection[library.id] ?: selectionByName[library.name.lowercase()] ?: true)
+        }
     }
+
+    /** What a connection hands on to the sign-in that replaces it: its name as shown, its choices and certificates. */
+    private fun ServerConnection.carriedOver(): ServerConnection = copy(
+        displayName = shownName,
+        alternateAddress = null,
+        lastGoodAddress = null
+    )
 
     private fun newId(prefix: String): String =
         prefix + (0 until 15).joinToString("") { Random.nextInt(16).toString(16) }
 
     private val ServerConnection.syncsToAccount: Boolean
-        get() = providerId != SiloProvider.ID
+        get() = providerId != SiloProvider.ID && providerId != SiloNativeProvider.ID
 
     private class AddressChoice(val address: String, val atMs: Long)
 

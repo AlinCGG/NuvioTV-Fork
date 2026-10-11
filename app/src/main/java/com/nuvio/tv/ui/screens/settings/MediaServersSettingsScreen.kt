@@ -38,6 +38,8 @@ import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.data.mediaserver.ServerConnection
 import com.nuvio.tv.data.mediaserver.ServerFailure
 import com.nuvio.tv.data.mediaserver.serverLogoRes
+import com.nuvio.tv.data.mediaserver.silo.SiloNativeProvider
+import com.nuvio.tv.data.mediaserver.silo.SiloProvider
 import com.nuvio.tv.ui.theme.NuvioTheme
 
 @Composable
@@ -48,6 +50,7 @@ internal fun MediaServersSettingsContent(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var signIn by remember { mutableStateOf<ServerSignInRequest?>(null) }
+    var siloSetup by remember { mutableStateOf(false) }
     var confirmRemoveFromAccount by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val connections = uiState.connections
@@ -84,10 +87,11 @@ internal fun MediaServersSettingsContent(
                     }
                     items(connections, key = { "server_${it.id}" }) { connection ->
                         SettingsActionRow(
-                            title = connection.name,
+                            title = connection.shownName,
                             subtitle = connection.statusText(
-                                providerName = viewModel.provider(connection)?.displayName ?: connection.providerId,
-                                failure = uiState.failures[connection.id]
+                                providerName = connection.kindLabel(viewModel),
+                                failure = uiState.failures[connection.id],
+                                user = connection.userLabel(viewModel)
                             ),
                             onClick = { onOpenServer(connection.id) },
                             leadingIcon = Icons.Default.Dns.takeIf { serverLogoRes(connection.providerId) == null },
@@ -96,14 +100,20 @@ internal fun MediaServersSettingsContent(
                         )
                     }
                     item(key = "servers_add_label") { ServerSectionLabel(stringResource(R.string.servers_section_add)) }
-                    items(viewModel.providers, key = { "provider_${it.id}" }) { provider ->
+                    items(viewModel.addableProviders, key = { "provider_${it.id}" }) { provider ->
                         SettingsActionRow(
                             title = provider.displayName,
-                            subtitle = stringResource(R.string.servers_add_description, provider.displayName),
-                            onClick = { signIn = ServerSignInRequest(provider) },
+                            subtitle = if (provider.id == SiloProvider.ID) {
+                                stringResource(R.string.servers_add_silo_description)
+                            } else {
+                                stringResource(R.string.servers_add_description, provider.displayName)
+                            },
+                            onClick = {
+                                if (provider.id == SiloProvider.ID) siloSetup = true else signIn = ServerSignInRequest(provider)
+                            },
                             leadingIcon = Icons.Default.Dns.takeIf { serverLogoRes(provider.id) == null },
                             leadingRawIconRes = serverLogoRes(provider.id),
-                            modifier = if (connections.isEmpty() && provider == viewModel.providers.first()) focusModifier else Modifier
+                            modifier = if (connections.isEmpty() && provider == viewModel.addableProviders.first()) focusModifier else Modifier
                         )
                     }
                     item(key = "servers_display_label") { ServerSectionLabel(stringResource(R.string.settings_stream_display_section)) }
@@ -115,6 +125,14 @@ internal fun MediaServersSettingsContent(
                                 if (uiState.fullSourceText) R.string.servers_source_details_full else R.string.servers_source_details_clean
                             ),
                             onClick = { viewModel.setFullSourceText(!uiState.fullSourceText) }
+                        )
+                    }
+                    item(key = "servers_show_logos") {
+                        SettingsToggleRow(
+                            title = stringResource(R.string.servers_show_logos),
+                            subtitle = stringResource(R.string.servers_show_logos_description),
+                            checked = uiState.showServerLogos,
+                            onToggle = { viewModel.setShowServerLogos(!uiState.showServerLogos) }
                         )
                     }
                     item(key = "servers_account_label") { ServerSectionLabel(stringResource(R.string.servers_section_account)) }
@@ -166,6 +184,21 @@ internal fun MediaServersSettingsContent(
         }
     }
 
+    if (siloSetup) {
+        SiloSetupDialog(
+            viewModel = viewModel,
+            onJellyfinCompatible = { address ->
+                siloSetup = false
+                viewModel.providers.firstOrNull { it.id == SiloProvider.ID }?.let { signIn = ServerSignInRequest(it, address = address) }
+            },
+            onConnected = { connection ->
+                siloSetup = false
+                onOpenServer(connection.id)
+            },
+            onDismiss = { siloSetup = false }
+        )
+    }
+
     signIn?.let { request ->
         ServerSignInDialog(
             request = request,
@@ -191,10 +224,26 @@ internal fun ServerSectionLabel(text: String) {
 }
 
 @Composable
-internal fun ServerConnection.statusText(providerName: String, failure: ServerFailure?): String {
-    val identity = stringResource(R.string.servers_signed_in_as, providerName, userName)
+internal fun ServerConnection.statusText(providerName: String, failure: ServerFailure?, user: String = userName): String {
+    val identity = stringResource(R.string.servers_signed_in_as, providerName, user)
     return listOfNotNull(identity, statusLabel(failure)).joinToString(" · ")
 }
+
+/** Silo says which way it is connected; other servers just their name. */
+@Composable
+internal fun ServerConnection.kindLabel(viewModel: MediaServersViewModel): String {
+    val name = viewModel.provider(this)?.displayName ?: providerId
+    val method = when (providerId) {
+        SiloNativeProvider.ID -> stringResource(R.string.silo_method_native)
+        SiloProvider.ID -> stringResource(R.string.silo_method_jellyfin)
+        else -> return name
+    }
+    return "$name · $method"
+}
+
+@Composable
+internal fun ServerConnection.userLabel(viewModel: MediaServersViewModel): String =
+    viewModel.siloProfileName(this)?.let { stringResource(R.string.silo_user_profile, userName, it) } ?: userName
 
 @Composable
 internal fun ServerConnection.statusLabel(failure: ServerFailure?): String? = when {

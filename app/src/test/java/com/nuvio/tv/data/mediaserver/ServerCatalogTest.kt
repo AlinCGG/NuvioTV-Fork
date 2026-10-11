@@ -108,9 +108,9 @@ class ServerCatalogTest {
             )
         )
         assertEquals(
-            mapOf("a" to "Jellyfin · Home (paul)", "b" to "Jellyfin · Home (kids)"),
+            mapOf("a" to "Jellyfin · Home (sam)", "b" to "Jellyfin · Home (kids)"),
             serverRowLabels(
-                listOf(connection("a", "jellyfin", "Home", user = "paul"), connection("b", "jellyfin", "Home", user = "kids")),
+                listOf(connection("a", "jellyfin", "Home", user = "sam"), connection("b", "jellyfin", "Home", user = "kids")),
                 product
             )
         )

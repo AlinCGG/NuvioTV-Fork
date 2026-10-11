@@ -1,11 +1,14 @@
 package com.nuvio.tv.data.mediaserver
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class SyncedServer(
     val id: String,
@@ -18,7 +21,9 @@ data class SyncedServer(
     val token: String,
     val libraries: List<SyncedLibrary> = emptyList(),
     val enabled: Boolean = true,
-    @SerialName("use_catalog_metadata") val useCatalogMetadata: Boolean = false
+    @SerialName("use_catalog_metadata") val useCatalogMetadata: Boolean = false,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName("display_name") val displayName: String? = null
 ) {
     val key: String
         get() = serverKey(providerId, remoteServerId, remoteUserId)
@@ -46,6 +51,8 @@ private val syncJson = Json { encodeDefaults = true }
 
 fun List<SyncedServer>.toSyncPayload(): JsonElement = syncJson.encodeToJsonElement(this)
 
+internal fun List<SyncedServer>.withoutDisplayNames(): List<SyncedServer> = map { it.copy(displayName = null) }
+
 fun serverKey(providerId: String, remoteServerId: String, remoteUserId: String): String =
     "$providerId|$remoteServerId|$remoteUserId"
 
@@ -56,7 +63,11 @@ internal fun mergeSyncedServers(
 ): List<SyncedServer> {
     val localByKey = local.associateBy { it.key }
     val remoteKeys = remote.mapTo(mutableSetOf()) { it.key }
-    val kept = remote.map { server -> localByKey[server.key]?.let { server.copy(id = it.id) } ?: server }
+    val kept = remote.map { server ->
+        localByKey[server.key]?.let { local ->
+            server.copy(id = local.id, displayName = server.displayName ?: local.displayName)
+        } ?: server
+    }
     val added = local.filter { it.key !in remoteKeys && (syncedKeys == null || it.key !in syncedKeys) }
     return kept + added
 }
@@ -72,7 +83,8 @@ internal fun ServerConnection.toSynced(token: String) = SyncedServer(
     token = token,
     libraries = libraries.map { SyncedLibrary(it.id, it.name, it.kind.contentType, it.selected) },
     enabled = enabled,
-    useCatalogMetadata = useCatalogMetadata
+    useCatalogMetadata = useCatalogMetadata,
+    displayName = displayName
 )
 
 internal fun SyncedServer.toConnection(id: String, credentialRef: String) = ServerConnection(
@@ -90,5 +102,6 @@ internal fun SyncedServer.toConnection(id: String, credentialRef: String) = Serv
         }
     },
     enabled = enabled,
-    useCatalogMetadata = useCatalogMetadata
+    useCatalogMetadata = useCatalogMetadata,
+    displayName = displayName?.let { serverDisplayName(it, name) ?: "" }
 )

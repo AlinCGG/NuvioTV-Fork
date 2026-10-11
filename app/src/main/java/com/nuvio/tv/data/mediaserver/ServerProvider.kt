@@ -96,7 +96,53 @@ interface ServerProvider {
 
     suspend fun segments(session: ServerSession, itemId: String, mediaSourceId: String?): List<ServerSegment> = emptyList()
 
+    /** How this server serves seek thumbnails, null when it has none. */
+    val thumbnailFormat: ServerThumbnailFormat?
+        get() = null
+
+    /** The trickplay widths made for [mediaSourceId]; null when none are made. */
+    suspend fun trickplay(session: ServerSession, itemId: String, mediaSourceId: String): ServerTrickplaySet? = null
+
+    suspend fun trickplaySheet(
+        session: ServerSession,
+        itemId: String,
+        mediaSourceId: String,
+        width: Int,
+        index: Int,
+        maxBytes: Long
+    ): ByteArray = unsupported()
+
+    /** The BIF file, or [range] of it; [ServerFailure.NOT_FOUND] when the server made none. */
+    suspend fun bif(
+        session: ServerSession,
+        itemId: String,
+        mediaSourceId: String,
+        width: Int,
+        range: LongRange?,
+        maxBytes: Long
+    ): ServerBytes = unsupported()
+
+    /** Tracking services (storage ids such as "trakt") the server itself sends this profile's plays to. */
+    suspend fun scrobbledServices(session: ServerSession): Set<String> = emptySet()
+
+    /** The rows of the server's own home page; null when it has none to offer. */
+    suspend fun homeRows(session: ServerSession): List<ServerHomeRow>? = null
+
+    suspend fun homeRowItems(session: ServerSession, rowId: String): List<ServerTitle> = unsupported()
+
     fun authHeaders(session: ServerSession): Map<String, String> = emptyMap()
+
+    /** True when [session]'s token runs out soon and is better renewed before the next call. */
+    fun renewalDue(session: ServerSession): Boolean = false
+
+    /**
+     * A renewed token for [session], after [failure] or ahead of time when [failure] is null; null when this server
+     * can't renew it. Throws [ServerFailure.AUTH_REQUIRED] once the server has ended the sign-in.
+     */
+    suspend fun renewCredential(session: ServerSession, failure: ServerException?): String? = null
+
+    /** A link that reads [target]'s file as it is (range requests), without opening a playback session; null when none. */
+    fun staticStreamUrl(session: ServerSession, target: ServerPlaybackTarget): String? = null
 }
 
 data class ServerIndexEntry(

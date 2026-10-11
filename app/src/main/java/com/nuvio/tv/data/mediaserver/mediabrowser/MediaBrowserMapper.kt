@@ -153,7 +153,8 @@ internal class MediaBrowserMapper(
                 video = video?.let(::videoLabel),
                 audio = source.defaultAudio()?.let(::audioLabel),
                 container = containerLabel(source.container, filename),
-                versionName = source.name?.trim()?.takeIf { it.isNotEmpty() }
+                versionName = source.name?.trim()?.takeIf { it.isNotEmpty() },
+                durationMs = (source.runTimeTicks ?: item.runTimeTicks)?.takeIf { it > 0 }?.let { it / TICKS_PER_MS }
             )
         }
     }

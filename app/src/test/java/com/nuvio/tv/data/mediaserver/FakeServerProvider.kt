@@ -53,6 +53,7 @@ internal class FakeServerProvider(
     val reportAddresses = mutableListOf<String>()
     var titleLookup: (suspend (ServerLibrary, ServerTitleQuery) -> List<ServerIndexEntry>?)? = null
     val titleQueries = mutableListOf<ServerTitleQuery>()
+    val signIns = mutableListOf<Pair<String, String>>()
     var indexRequests = 0
 
     override suspend fun locate(address: String): ServerLocation? = locations[address]?.takeIf { address !in downAddresses }
@@ -251,7 +252,12 @@ internal class FakeServerProvider(
 
     override fun authHeaders(session: ServerSession): Map<String, String> = mapOf("X-Test-Token" to session.token)
 
-    override suspend fun signIn(address: String, username: String, password: String): ServerSignIn = ServerSignIn(
+    override suspend fun signIn(address: String, username: String, password: String): ServerSignIn = run {
+        signIns += username to password
+        signInResult(address, username)
+    }
+
+    private fun signInResult(address: String, username: String) = ServerSignIn(
         address = address,
         serverName = "Box",
         serverId = "server-1",

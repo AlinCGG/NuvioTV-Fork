@@ -4,8 +4,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
+import com.nuvio.tv.core.network.NoDelaySocketFactory
 import java.net.InetAddress
 import com.nuvio.tv.BuildConfig
+import com.nuvio.tv.R
 import com.nuvio.tv.core.network.ServerTrust
 import com.nuvio.tv.core.network.withServerTrust
 import com.nuvio.tv.core.profile.ProfileScopedCredentialStore
@@ -13,11 +15,13 @@ import com.nuvio.tv.core.sync.SyncClientIdentity
 import com.nuvio.tv.data.local.ProfileDataStore
 import com.nuvio.tv.data.mediaserver.AndroidServerPersistence
 import com.nuvio.tv.data.mediaserver.AndroidServerResumeImports
+import com.nuvio.tv.data.mediaserver.ServerMediaKind
 import com.nuvio.tv.data.mediaserver.ServerRepository
 import com.nuvio.tv.data.mediaserver.ServerResumeImports
 import com.nuvio.tv.data.mediaserver.emby.EmbyProvider
 import com.nuvio.tv.data.mediaserver.jellyfin.JellyfinProvider
 import com.nuvio.tv.data.mediaserver.mediabrowser.ServerClientIdentity
+import com.nuvio.tv.data.mediaserver.silo.SiloNativeProvider
 import com.nuvio.tv.data.mediaserver.silo.SiloProvider
 import dagger.Module
 import dagger.Provides
@@ -45,6 +49,7 @@ object MediaServerModule {
         profileDataStore: ProfileDataStore
     ): ServerRepository {
         val http = OkHttpClient.Builder()
+            .socketFactory(NoDelaySocketFactory)
             .withServerTrust()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -62,7 +67,10 @@ object MediaServerModule {
             providers = listOf(
                 JellyfinProvider(http, clientIdentity),
                 EmbyProvider(http, clientIdentity),
-                SiloProvider(http, clientIdentity)
+                SiloProvider(http, clientIdentity),
+                SiloNativeProvider(http, clientIdentity) { kind ->
+                    context.getString(if (kind == ServerMediaKind.SERIES) R.string.type_series else R.string.type_movies)
+                }
             ),
             scope = scope,
             isOnCurrentNetwork = { host -> isOnCurrentNetwork(context, host) }

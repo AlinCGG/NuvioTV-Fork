@@ -2,6 +2,7 @@ package com.nuvio.tv.data.mediaserver.emby
 
 import com.nuvio.tv.data.mediaserver.ServerSegment
 import com.nuvio.tv.data.mediaserver.ServerSession
+import com.nuvio.tv.data.mediaserver.ServerThumbnailFormat
 import com.nuvio.tv.data.mediaserver.ServerTitleQuery
 import com.nuvio.tv.data.mediaserver.mediabrowser.Endpoint
 import com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserProvider
@@ -17,6 +18,8 @@ internal class EmbyProvider(
     override val id: String = "emby"
     override val displayName: String = "Emby"
     override val minimumVersion: String = "4.7"
+    override val thumbnailFormat: ServerThumbnailFormat?
+        get() = ServerThumbnailFormat.BIF
 
     override fun isSupported(info: PublicInfo): Boolean =
         info.productName?.contains("Jellyfin", ignoreCase = true) != true && isSupportedVersion(info.version)

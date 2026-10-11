@@ -87,10 +87,10 @@ class QuickConnectTest {
 
     @Test
     fun finishesTheSignInWithTheSecret() = runTest {
-        val http = TestHttp { """{"User": {"Id": "u1", "Name": "paul"}, "AccessToken": "tok", "ServerId": "srv1"}""" }
+        val http = TestHttp { """{"User": {"Id": "u1", "Name": "sam"}, "AccessToken": "tok", "ServerId": "srv1"}""" }
         val signIn = JellyfinProvider(http.client, testIdentity).quickConnectSignIn(ticket())
 
-        assertEquals("paul", signIn.userName)
+        assertEquals("sam", signIn.userName)
         assertEquals("u1", signIn.userId)
         assertEquals("srv1", signIn.serverId)
         assertEquals("HomeServer", signIn.serverName)

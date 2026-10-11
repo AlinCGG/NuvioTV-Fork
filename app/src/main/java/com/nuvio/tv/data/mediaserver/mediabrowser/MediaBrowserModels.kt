@@ -81,11 +81,23 @@ internal data class BaseItem(
     @SerialName("LocationType") val locationType: String? = null,
     @SerialName("UserData") val userData: UserItemData? = null,
     @SerialName("MediaSources") val mediaSources: List<MediaSource> = emptyList(),
-    @SerialName("Chapters") val chapters: List<ChapterInfo> = emptyList()
+    @SerialName("Chapters") val chapters: List<ChapterInfo> = emptyList(),
+    @SerialName("Trickplay") val trickplay: Map<String, Map<String, TrickplayInfoDto>>? = null
 ) {
     val isMissing: Boolean
         get() = locationType.equals("Virtual", ignoreCase = true)
 }
+
+/** Jellyfin's TrickplayInfoDto; Interval is in milliseconds. */
+@Serializable
+internal data class TrickplayInfoDto(
+    @SerialName("Width") val width: Int? = null,
+    @SerialName("Height") val height: Int? = null,
+    @SerialName("TileWidth") val tileWidth: Int? = null,
+    @SerialName("TileHeight") val tileHeight: Int? = null,
+    @SerialName("ThumbnailCount") val thumbnailCount: Int? = null,
+    @SerialName("Interval") val interval: Int? = null
+)
 
 @Serializable
 internal data class ChapterInfo(

@@ -15,8 +15,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.runtime.Composable
@@ -40,6 +44,8 @@ import com.nuvio.tv.R
 import com.nuvio.tv.core.network.displayFingerprint
 import com.nuvio.tv.data.mediaserver.ServerCapability
 import com.nuvio.tv.data.mediaserver.messageRes
+import com.nuvio.tv.data.mediaserver.silo.SiloNativeProvider
+import com.nuvio.tv.data.mediaserver.silo.SiloProvider
 import com.nuvio.tv.data.mediaserver.supports
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.theme.NuvioTheme
@@ -63,13 +69,16 @@ internal fun MediaServerSettingsContent(
     val provider = viewModel.provider(connection)
     val providerName = provider?.displayName ?: connection.providerId
     var signIn by remember { mutableStateOf<ServerSignInRequest?>(null) }
+    var siloSignIn by remember { mutableStateOf<SiloSignInRequest?>(null) }
+    val siloNative = connection.providerId == SiloNativeProvider.ID
     var confirmRemove by remember { mutableStateOf(false) }
     var editAlternate by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         SettingsDetailHeader(
-            title = connection.name,
-            subtitle = "${connection.statusText(providerName, uiState.failures[connection.id])} · ${connection.address}"
+            title = connection.shownName,
+            subtitle = "${connection.statusText(connection.kindLabel(viewModel), uiState.failures[connection.id], connection.userLabel(viewModel))} · ${connection.address}"
         )
         SettingsGroupCard(
             modifier = Modifier
@@ -84,13 +93,71 @@ internal fun MediaServerSettingsContent(
                     contentPadding = PaddingValues(bottom = NuvioTheme.spacing.sm),
                     verticalArrangement = Arrangement.spacedBy(if (isV2Settings()) 4.dp else 10.dp)
                 ) {
+                    item(key = "server_display_name") {
+                        SettingsActionRow(
+                            title = stringResource(R.string.servers_display_name),
+                            subtitle = if (connection.isRenamed) {
+                                stringResource(R.string.servers_display_name_server_name, connection.name)
+                            } else {
+                                stringResource(R.string.servers_display_name_description)
+                            },
+                            value = connection.shownName,
+                            leadingIcon = Icons.Default.Edit,
+                            onClick = { editName = true },
+                            modifier = initialFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier
+                        )
+                    }
+                    if (siloNative) {
+                        item(key = "server_silo_connected_with") {
+                            SettingsActionRow(
+                                title = stringResource(R.string.servers_silo_connected_with),
+                                subtitle = stringResource(R.string.silo_method_native),
+                                value = connection.userName,
+                                leadingIcon = Icons.Default.VpnKey,
+                                trailingIcon = null,
+                                onClick = {}
+                            )
+                        }
+                        item(key = "server_silo_profile") {
+                            SettingsActionRow(
+                                title = stringResource(R.string.servers_silo_profile),
+                                subtitle = stringResource(R.string.servers_silo_profile_description),
+                                value = viewModel.siloProfileName(connection),
+                                leadingIcon = Icons.Default.AccountCircle,
+                                enabled = connection.enabled,
+                                onClick = { viewModel.openSiloProfiles(connection.id) }
+                            )
+                        }
+                    }
+                    if (siloNative) {
+                        item(key = "server_silo_home_rows") {
+                            SettingsToggleRow(
+                                title = stringResource(R.string.servers_silo_home_rows),
+                                subtitle = stringResource(R.string.servers_silo_home_rows_description),
+                                checked = connection.showHomeRows,
+                                enabled = connection.enabled,
+                                onToggle = { viewModel.setShowHomeRows(connection.id, !connection.showHomeRows) }
+                            )
+                        }
+                    }
+                    if (connection.providerId == SiloProvider.ID) {
+                        item(key = "server_silo_switch") {
+                            SettingsActionRow(
+                                title = stringResource(R.string.servers_silo_switch),
+                                subtitle = stringResource(R.string.servers_silo_switch_description),
+                                leadingIcon = Icons.Default.SwapHoriz,
+                                onClick = {
+                                    siloSignIn = SiloSignInRequest(siloWebsiteGuess(connection.address), replacing = connection.id)
+                                }
+                            )
+                        }
+                    }
                     item(key = "server_enabled") {
                         SettingsToggleRow(
                             title = stringResource(R.string.servers_enabled),
                             subtitle = stringResource(R.string.servers_enabled_description),
                             checked = connection.enabled,
-                            onToggle = { viewModel.setEnabled(connection.id, !connection.enabled) },
-                            modifier = initialFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier
+                            onToggle = { viewModel.setEnabled(connection.id, !connection.enabled) }
                         )
                     }
                     if (provider?.supports(ServerCapability.EXTERNAL_ID_LOOKUP) == true) {
@@ -184,7 +251,11 @@ internal fun MediaServerSettingsContent(
                                 subtitle = null,
                                 leadingIcon = Icons.Default.Lock,
                                 onClick = {
-                                    signIn = ServerSignInRequest(provider, address = connection.address, username = connection.userName)
+                                    if (siloNative) {
+                                        siloSignIn = SiloSignInRequest(connection.address)
+                                    } else {
+                                        signIn = ServerSignInRequest(provider, address = connection.address, username = connection.userName)
+                                    }
                                 }
                             )
                         }
@@ -215,6 +286,22 @@ internal fun MediaServerSettingsContent(
         )
     }
 
+    siloSignIn?.let { request ->
+        SiloSetupDialog(
+            viewModel = viewModel,
+            initialAddress = request.address,
+            replacing = request.replacing,
+            title = stringResource(if (request.replacing != null) R.string.servers_silo_switch else R.string.servers_sign_in_again),
+            onConnected = { connected ->
+                siloSignIn = null
+                if (connected.id != connection.id) onOpenServer(connected.id)
+            },
+            onDismiss = { siloSignIn = null }
+        )
+    }
+
+    if (siloNative) SiloProfileDialog(viewModel, current = viewModel.siloProfileId(connection))
+
     if (editAlternate) {
         AlternateAddressDialog(
             current = connection.alternateAddress.orEmpty(),
@@ -223,11 +310,19 @@ internal fun MediaServerSettingsContent(
         )
     }
 
+    if (editName) {
+        ServerDisplayNameDialog(
+            connection = connection,
+            onSave = { name -> viewModel.setDisplayName(connection.id, name) },
+            onDismiss = { editName = false }
+        )
+    }
+
     if (confirmRemove) {
         NuvioDialog(
             onDismiss = { confirmRemove = false },
             title = stringResource(R.string.servers_remove_confirm_title),
-            subtitle = stringResource(R.string.servers_remove_confirm_message, connection.name)
+            subtitle = stringResource(R.string.servers_remove_confirm_message, connection.shownName)
         ) {
             SettingsDialogActionRow {
                 SettingsDialogActionButton(
@@ -246,5 +341,7 @@ internal fun MediaServerSettingsContent(
         }
     }
 }
+
+private data class SiloSignInRequest(val address: String, val replacing: String? = null)
 
 private const val CERTIFICATE_PREVIEW_CHARS = 23

@@ -15,30 +15,35 @@ import com.nuvio.tv.domain.model.supportsExtra
 import com.nuvio.tv.domain.repository.AddonRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 data class ServerLibraryRef(
     val connection: ServerConnection,
     val library: ServerLibrary,
-    val title: String = "${connection.name} · ${library.name}"
+    val title: String = "${connection.shownName} · ${library.name}"
 )
 
 internal fun serverRowLabels(
     connections: List<ServerConnection>,
     productName: (ServerConnection) -> String
 ): Map<String, String> {
-    val byName = connections.groupBy { it.name.trim().lowercase() }
+    val byName = connections.groupBy { it.shownName.trim().lowercase() }
     return connections.associate { connection ->
-        val sameName = byName.getValue(connection.name.trim().lowercase())
+        val name = connection.shownName
+        val sameName = byName.getValue(name.trim().lowercase())
         val product = productName(connection)
         val label = when {
-            sameName.size == 1 -> connection.name
-            sameName.count { productName(it) == product } == 1 -> "$product · ${connection.name}"
-            else -> "$product · ${connection.name} (${connection.userName})"
+            sameName.size == 1 -> name
+            sameName.count { productName(it) == product } == 1 -> "$product · $name"
+            else -> "$product · $name (${connection.userName})"
         }
         connection.id to label
     }
@@ -84,6 +89,9 @@ class ServerCatalog @Inject constructor(
 ) {
     val detailsLoaded = MutableSharedFlow<ServerItemDetails>(extraBufferCapacity = DETAILS_BUFFER)
 
+    private val refreshedHomeRows = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
+    private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     val libraryLoaded = MutableSharedFlow<String>(extraBufferCapacity = DETAILS_BUFFER)
 
     val addons: Flow<List<Addon>> = repository.uiState
@@ -103,7 +111,7 @@ class ServerCatalog @Inject constructor(
         val labels = rowLabels(connections)
         return connections.flatMap { connection ->
             connection.selectedLibraries.map { library ->
-                ServerLibraryRef(connection, library, "${labels[connection.id] ?: connection.name} · ${library.name}")
+                ServerLibraryRef(connection, library, "${labels[connection.id] ?: connection.shownName} · ${library.name}")
             }
         }
     }
@@ -129,6 +137,7 @@ class ServerCatalog @Inject constructor(
         val connection = repository.connection(connectionId) ?: throw ServerException(ServerFailure.NOT_FOUND)
         val query = extraArgs["search"]?.trim()?.takeIf { it.isNotEmpty() }
         val page = when {
+            catalogId.startsWith(HOME_ROW_PREFIX) -> homeRowPage(connection, catalogId.removePrefix(HOME_ROW_PREFIX), skip, posterPattern)
             catalogId.startsWith(COLLECTION_PREFIX) -> pageOf(connection, skip, posterPattern) {
                 repository.call(connection.id) { provider, session ->
                     provider.collectionPage(session, catalogId.removePrefix(COLLECTION_PREFIX), skip, PAGE_SIZE)
@@ -226,9 +235,21 @@ class ServerCatalog @Inject constructor(
     private fun addonFor(connection: ServerConnection, rowLabels: Map<String, String>): Addon? {
         val provider = repository.provider(connection) ?: return null
         val libraries = connection.selectedLibraries
-        if (libraries.isEmpty()) return null
-        val rowLabel = rowLabels[connection.id] ?: connection.name
-        val catalogs = libraries.map { library ->
+        val homeRows = connection.homeRows.takeIf { connection.showHomeRows }.orEmpty()
+        if (libraries.isEmpty() && homeRows.isEmpty()) return null
+        val rowLabel = rowLabels[connection.id] ?: connection.shownName
+        val homeCatalogs = homeRows.map { row ->
+            CatalogDescriptor(
+                type = row.kind.domainType(),
+                rawType = row.kind.contentType,
+                id = HOME_ROW_PREFIX + row.id,
+                name = "$rowLabel · ${row.title}",
+                extra = emptyList(),
+                showInHome = true,
+                hasExplicitShowInHome = true
+            )
+        }
+        val catalogs = homeCatalogs + libraries.map { library ->
             CatalogDescriptor(
                 type = library.kind.domainType(),
                 rawType = library.kind.contentType,
@@ -257,6 +278,15 @@ class ServerCatalog @Inject constructor(
             types = listOf(ContentType.MOVIE, ContentType.SERIES),
             resources = listOf(AddonResource(name = "catalog", types = emptyList(), idPrefixes = null))
         )
+    }
+
+    private suspend fun homeRowPage(connection: ServerConnection, rowId: String, skip: Int, posterPattern: String): Page {
+        if (skip > 0) return Page(emptyList(), null)
+        if (refreshedHomeRows.add(connection.id)) {
+            refreshScope.launch { runCatching { repository.refreshHomeRows(connection.id) } }
+        }
+        val titles = repository.call(connection.id) { provider, session -> provider.homeRowItems(session, rowId) }
+        return Page(present(connection, titles, posterPattern), null)
     }
 
     private suspend fun searchPage(
@@ -311,6 +341,7 @@ class ServerCatalog @Inject constructor(
         private const val ARTWORK_WAIT_MS = 700L
         private const val ARTWORK_SETTLE_MS = 8_000L
         private const val COLLECTION_PREFIX = "collection:"
+        private const val HOME_ROW_PREFIX = "home:"
         private const val BASE_URL_PREFIX = "nuvio-server://"
         private const val ADDON_ID_PREFIX = "server."
 

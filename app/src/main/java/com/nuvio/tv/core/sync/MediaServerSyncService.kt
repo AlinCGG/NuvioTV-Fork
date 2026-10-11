@@ -9,9 +9,12 @@ import com.nuvio.tv.data.mediaserver.ServerSyncSnapshot
 import com.nuvio.tv.data.mediaserver.SyncedServer
 import com.nuvio.tv.data.mediaserver.mergeSyncedServers
 import com.nuvio.tv.data.mediaserver.toSyncPayload
+import com.nuvio.tv.data.mediaserver.withoutDisplayNames
 import com.nuvio.tv.data.remote.supabase.SupabaseMediaServers
 import com.nuvio.tv.domain.model.AuthState
+import io.github.jan.supabase.exceptions.HttpRequestException
 import io.github.jan.supabase.postgrest.Postgrest
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -44,6 +47,7 @@ class MediaServerSyncService @Inject constructor(
     private val syncMutex = Mutex()
     private var foregroundPullJob: Job? = null
     private var lastForegroundPullAtMs = 0L
+    @Volatile private var displayNamesRefused = false
 
     init {
         observeLocalChanges()
@@ -161,16 +165,39 @@ class MediaServerSyncService @Inject constructor(
     }
 
     private suspend fun push(snapshot: ServerSyncSnapshot) {
+        val hasNames = snapshot.servers.any { it.displayName != null }
+        if (!hasNames || displayNamesRefused) {
+            pushServers(snapshot.profileId, snapshot.servers.withoutDisplayNames())
+        } else {
+            try {
+                pushServers(snapshot.profileId, snapshot.servers)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                if (error is HttpRequestException || error is IOException) throw error
+                try {
+                    pushServers(snapshot.profileId, snapshot.servers.withoutDisplayNames())
+                } catch (retryError: Exception) {
+                    retryError.addSuppressed(error)
+                    throw retryError
+                }
+                displayNamesRefused = true
+                Log.w(TAG, "The account did not take server display names; they stay on this device", error)
+            }
+        }
+        repository.markPushed(snapshot)
+        Log.d(TAG, "Pushed ${snapshot.servers.size} media servers for profile ${snapshot.profileId}")
+    }
+
+    private suspend fun pushServers(profileId: Int, servers: List<SyncedServer>) {
         val params = buildJsonObject {
-            put("p_profile_id", snapshot.profileId)
-            put("p_servers", snapshot.servers.toSyncPayload())
+            put("p_profile_id", profileId)
+            put("p_servers", servers.toSyncPayload())
             putSyncOriginClientId(syncClientIdentity)
         }
         withJwtRefreshRetry {
             postgrest.rpc("sync_push_media_servers", params)
         }
-        repository.markPushed(snapshot)
-        Log.d(TAG, "Pushed ${snapshot.servers.size} media servers for profile ${snapshot.profileId}")
     }
 
     private fun canSync(profileId: Int): Boolean =

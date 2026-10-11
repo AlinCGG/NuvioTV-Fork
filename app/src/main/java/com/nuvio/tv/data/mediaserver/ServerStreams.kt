@@ -22,7 +22,9 @@ class ServerStreams @Inject constructor(
     private val matcher: ServerMatcher
 ) {
     val revision: Int
-        get() = repository.uiState.value.let { 31 * it.revision + if (it.fullSourceText) 1 else 0 }
+        get() = repository.uiState.value.let {
+            4 * it.revision + (if (it.fullSourceText) 1 else 0) + (if (it.showServerLogos) 2 else 0)
+        }
 
     fun isNativeRequest(videoId: String): Boolean = ServerItemRef.isServerId(videoId)
 
@@ -70,10 +72,10 @@ class ServerStreams @Inject constructor(
         val connection = repository.connection(ref.connectionId) ?: throw ServerException(ServerFailure.NOT_FOUND)
         val label = repository.sourceLabel(connection)
         val providerName = repository.provider(connection)?.displayName ?: connection.providerId
-        val logo = serverLogoUri(connection.providerId)
+        val state = repository.uiState.value
+        val logo = serverLogoUri(connection.providerId).takeIf { state.showServerLogos }
         val candidates = repository.call(ref.connectionId) { provider, session -> provider.candidates(session, ref.itemId) }
-        val full = repository.uiState.value.fullSourceText
-        return candidates.zip(serverStreamTexts(candidates, providerName, connection.name, full))
+        return candidates.zip(serverStreamTexts(candidates, providerName, connection.shownName, state.fullSourceText))
             .map { (candidate, text) ->
                 Stream(
                     name = text.name,
@@ -94,7 +96,8 @@ class ServerStreams @Inject constructor(
                     ),
                     addonName = label,
                     addonLogo = logo,
-                    serverTarget = candidate.target
+                    serverTarget = candidate.target,
+                    durationMs = candidate.durationMs
                 )
             }
     }

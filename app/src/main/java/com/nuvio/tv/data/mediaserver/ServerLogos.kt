@@ -8,7 +8,7 @@ import com.nuvio.tv.R
 fun serverLogoRes(providerId: String): Int? = when (providerId) {
     "jellyfin" -> R.raw.jellyfin_logo
     "emby" -> R.raw.emby_logo
-    "silo" -> R.raw.silo_logo
+    "silo", "silo-native" -> R.raw.silo_logo
     else -> null
 }
 

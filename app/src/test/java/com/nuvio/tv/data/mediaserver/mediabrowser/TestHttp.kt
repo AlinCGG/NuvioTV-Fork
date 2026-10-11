@@ -10,10 +10,15 @@ import okio.Buffer
 
 internal class TestHttp(
     private val status: (Request) -> Int = { 200 },
+    private val location: (Request) -> String? = { null },
     private val responder: (Request) -> String = { error("Unexpected request ${it.url}") }
 ) {
     private val recorded = mutableListOf<Request>()
     val connectTimeouts = mutableListOf<Int>()
+
+    fun statusFor(request: Request): Int = status(request)
+
+    fun replyFor(request: Request): String = responder(request)
 
     val requests: List<Request>
         get() = synchronized(recorded) { recorded.toList() }
@@ -30,6 +35,7 @@ internal class TestHttp(
                 .protocol(Protocol.HTTP_1_1)
                 .code(status(request))
                 .message("OK")
+                .apply { location(request)?.let { header("Location", it) } }
                 .body(responder(request).toResponseBody("application/json".toMediaType()))
                 .build()
         }

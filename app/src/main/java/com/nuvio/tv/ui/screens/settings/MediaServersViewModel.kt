@@ -12,11 +12,18 @@ import com.nuvio.tv.data.mediaserver.mediabrowser.normalizeServerAddress
 import com.nuvio.tv.data.mediaserver.ServerConnection
 import com.nuvio.tv.data.mediaserver.ServerException
 import com.nuvio.tv.data.mediaserver.ServerFailure
+import com.nuvio.tv.data.mediaserver.ServerSignInIssue
 import com.nuvio.tv.data.mediaserver.ServerProvider
 import com.nuvio.tv.data.mediaserver.ServerQuickConnect
 import com.nuvio.tv.data.mediaserver.ServerRepository
 import com.nuvio.tv.data.mediaserver.ServersUiState
 import com.nuvio.tv.data.mediaserver.serverFailure
+import com.nuvio.tv.data.mediaserver.silo.SiloNativeProvider
+import com.nuvio.tv.data.mediaserver.silo.SiloProfile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.update
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -31,6 +38,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 data class ServerSignInState(
     val connecting: Boolean = false,
     val error: ServerFailure? = null,
+    val issue: ServerSignInIssue? = null,
     val certificate: ServerCertificateInfo? = null,
     val certificateForCode: Boolean = false
 )
@@ -44,6 +52,16 @@ enum class QuickConnectPhase {
     EXPIRED,
     FAILED
 }
+
+data class SiloProfileChange(
+    val connectionId: String,
+    val profiles: List<SiloProfile> = emptyList(),
+    val loading: Boolean = true,
+    val pinFor: SiloProfile? = null,
+    val pinWrong: Boolean = false,
+    val busy: Boolean = false,
+    val error: ServerFailure? = null
+)
 
 data class QuickConnectState(
     val phase: QuickConnectPhase = QuickConnectPhase.IDLE,
@@ -74,6 +92,12 @@ class MediaServersViewModel @Inject constructor(
     private fun hostOf(address: String): String? =
         normalizeServerAddress(address)?.toHttpUrlOrNull()?.host?.let(::normalizeHost)
 
+    private val siloFlow = lazy { SiloSignInFlow(repository, viewModelScope, CoroutineScope(SupervisorJob() + Dispatchers.IO)) }
+    val silo: SiloSignInFlow by siloFlow
+
+    private val mutableSiloProfiles = MutableStateFlow<SiloProfileChange?>(null)
+    val siloProfiles: StateFlow<SiloProfileChange?> = mutableSiloProfiles.asStateFlow()
+
     private val mutableRefreshing = MutableStateFlow<String?>(null)
     val refreshing: StateFlow<String?> = mutableRefreshing.asStateFlow()
 
@@ -82,6 +106,80 @@ class MediaServersViewModel @Inject constructor(
     }
 
     fun provider(connection: ServerConnection): ServerProvider? = repository.provider(connection)
+
+    /** The add list shows Silo once; its setup page offers both ways to connect. */
+    val addableProviders: List<ServerProvider>
+        get() = providers.filterNot { it.id == SiloNativeProvider.ID }
+
+    fun siloProfileName(connection: ServerConnection): String? {
+        val provider = repository.provider(connection) as? SiloNativeProvider ?: return null
+        return repository.session(connection.id)?.let(provider::profileName)
+    }
+
+    fun siloProfileId(connection: ServerConnection): String? {
+        val provider = repository.provider(connection) as? SiloNativeProvider ?: return null
+        return repository.session(connection.id)?.let(provider::profileId)
+    }
+
+    fun openSiloProfiles(connectionId: String) {
+        mutableSiloProfiles.value = SiloProfileChange(connectionId)
+        viewModelScope.launch {
+            val profiles = try {
+                repository.call(connectionId) { provider, session ->
+                    (provider as? SiloNativeProvider ?: throw ServerException(ServerFailure.UNSUPPORTED)).profiles(session)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                mutableSiloProfiles.update { it?.copy(loading = false, error = error.serverFailure()) }
+                return@launch
+            }
+            mutableSiloProfiles.update { it?.copy(loading = false, profiles = profiles) }
+        }
+    }
+
+    fun pickSiloProfile(profile: SiloProfile, pin: String? = null) {
+        val change = mutableSiloProfiles.value ?: return
+        if (change.busy) return
+        if (profile.hasPin && pin == null) {
+            mutableSiloProfiles.value = change.copy(pinFor = profile, pinWrong = false, error = null)
+            return
+        }
+        mutableSiloProfiles.value = change.copy(busy = true, pinWrong = false, error = null)
+        viewModelScope.launch {
+            val token = try {
+                repository.call(change.connectionId) { provider, session ->
+                    (provider as? SiloNativeProvider ?: throw ServerException(ServerFailure.UNSUPPORTED))
+                        .withProfile(session, profile, pin)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                mutableSiloProfiles.update { it?.copy(busy = false, error = error.serverFailure()) }
+                return@launch
+            }
+            if (token == null) {
+                mutableSiloProfiles.update { it?.copy(busy = false, pinWrong = true) }
+            } else {
+                repository.setCredential(change.connectionId, token)
+                mutableSiloProfiles.value = null
+                runCatching { repository.refreshHomeRows(change.connectionId) }
+            }
+        }
+    }
+
+    fun backToSiloProfiles() {
+        mutableSiloProfiles.update { it?.copy(pinFor = null, pinWrong = false, error = null) }
+    }
+
+    fun closeSiloProfiles() {
+        mutableSiloProfiles.value = null
+    }
+
+    override fun onCleared() {
+        if (siloFlow.isInitialized()) silo.close()
+        super.onCleared()
+    }
 
     fun resetSignIn() {
         mutableSignIn.value = ServerSignInState()
@@ -97,7 +195,7 @@ class MediaServersViewModel @Inject constructor(
         onConnected: (ServerConnection) -> Unit
     ) {
         if (mutableSignIn.value.connecting) return
-        val accepted = trusted?.takeIf { it.host == hostOf(address) }
+        val accepted = trusted?.takeIf { it.host == hostOf(address) || it.host == mutableSignIn.value.certificate?.host }
         if (accepted != null) acceptedCertificate = accepted
         mutableSignIn.value = ServerSignInState(connecting = true)
         viewModelScope.launch {
@@ -116,12 +214,12 @@ class MediaServersViewModel @Inject constructor(
                 throw error
             } catch (error: ServerException) {
                 val certificate = if (error.failure == ServerFailure.CERTIFICATE) {
-                    normalizeServerAddress(address)?.let { ServerCertificateProbe.probe(it) }
+                    (error.address ?: normalizeServerAddress(address))?.let { ServerCertificateProbe.probe(it) }
                         ?.takeIf { it.fingerprint != accepted?.fingerprint }
                 } else {
                     null
                 }
-                mutableSignIn.value = ServerSignInState(error = error.failure, certificate = certificate)
+                mutableSignIn.value = ServerSignInState(error = error.failure, issue = error.issue, certificate = certificate)
             } catch (_: Exception) {
                 mutableSignIn.value = ServerSignInState(error = ServerFailure.FAILED)
             }
@@ -262,6 +360,8 @@ class MediaServersViewModel @Inject constructor(
 
     fun setEnabled(connectionId: String, enabled: Boolean) = repository.setEnabled(connectionId, enabled)
 
+    fun setShowHomeRows(connectionId: String, show: Boolean) = repository.setShowHomeRows(connectionId, show)
+
     fun setCatalogMetadata(connectionId: String, enabled: Boolean) = repository.setCatalogMetadata(connectionId, enabled)
 
     fun setImportContinueWatching(connectionId: String, enabled: Boolean) =
@@ -275,6 +375,10 @@ class MediaServersViewModel @Inject constructor(
     fun setSyncEnabled(enabled: Boolean) = repository.setSyncEnabled(enabled)
 
     fun setFullSourceText(full: Boolean) = repository.setFullSourceText(full)
+
+    fun setShowServerLogos(show: Boolean) = repository.setShowServerLogos(show)
+
+    fun setDisplayName(connectionId: String, name: String?) = repository.setDisplayName(connectionId, name)
 
     fun activeAddress(connection: ServerConnection): String = repository.activeAddress(connection)
 

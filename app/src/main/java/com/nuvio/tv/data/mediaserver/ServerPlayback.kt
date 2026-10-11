@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -32,6 +33,7 @@ class ServerPlayback internal constructor(
     private val lock = Any()
     private val active = mutableMapOf<String, ActivePlayback>()
     private val segmentCache = LinkedHashMap<String, List<ServerSegment>>()
+    private val scrobbledByUrl = LinkedHashMap<String, Set<String>>()
 
     suspend fun prepare(target: ServerPlaybackTarget): ServerPlaybackSession {
         val (provider, session, playback) = repository.call(target.item.connectionId) { provider, session ->
@@ -43,6 +45,7 @@ class ServerPlayback internal constructor(
             unstarted.mapNotNull(active::remove)
         }
         orphans.forEach { it.stop() }
+        scope.launch { runCatching { scrobbledServices(playback.url) } }
         return playback
     }
 
@@ -87,7 +90,60 @@ class ServerPlayback internal constructor(
 
     fun session(url: String?): ServerPlaybackSession? = url?.let { synchronized(lock) { active[it] } }?.playback
 
+    /** A link to read [target]'s file directly, without a playback session on the server; null when there is none. */
+    suspend fun staticUrl(target: ServerPlaybackTarget): String? = try {
+        repository.call(target.item.connectionId) { provider, session -> provider.staticStreamUrl(session, target) }
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        Log.w(TAG, "Static link failed: ${error.serverFailure()}")
+        null
+    }
+
+    /** Tracking services the server sends the play behind [url] to by itself; Nuvio leaves those to it. */
+    suspend fun scrobbledServices(url: String?): Set<String> {
+        if (url == null) return emptySet()
+        val current = synchronized(lock) { active[url] } ?: return synchronized(lock) { scrobbledByUrl[url] }.orEmpty()
+        val check = synchronized(lock) {
+            current.scrobbleCheck ?: scope.async {
+                try {
+                    withTimeoutOrNull(SCROBBLE_CHECK_TIMEOUT_MS) { current.provider.scrobbledServices(current.liveSession()) }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Log.w(TAG, "Scrobble check failed: ${error.serverFailure()}")
+                    null
+                }
+            }.also { current.scrobbleCheck = it }
+        }
+        val services = check.await()
+        if (services == null) {
+            synchronized(lock) { if (current.scrobbleCheck === check) current.scrobbleCheck = null }
+            return emptySet()
+        }
+        synchronized(lock) {
+            scrobbledByUrl[url] = services
+            if (scrobbledByUrl.size > SCROBBLED_MEMORY) scrobbledByUrl.remove(scrobbledByUrl.keys.first())
+        }
+        return services
+    }
+
     fun providerName(url: String?): String? = url?.let { synchronized(lock) { active[it] } }?.provider?.displayName
+
+    /** The server's own seek thumbnails for the file version behind [url]; null when the server has no such API. */
+    fun thumbnails(url: String?): ServerThumbnailSource? {
+        val current = url?.let { synchronized(lock) { active[it] } } ?: return null
+        val format = current.provider.thumbnailFormat ?: return null
+        return ServerThumbnailSource(
+            serverName = current.provider.displayName,
+            format = format,
+            connectionId = current.playback.target.item.connectionId,
+            itemId = current.playback.target.item.itemId,
+            mediaSourceId = current.playback.mediaSourceId,
+            provider = current.provider,
+            session = current::liveSession
+        )
+    }
 
     /** Intro, recap and credit markers for the item behind [url], fetched once per file version. */
     suspend fun segments(url: String?): List<ServerSegment> {
@@ -190,6 +246,8 @@ class ServerPlayback internal constructor(
 
         @Volatile
         var transcodeRefused = false
+
+        var scrobbleCheck: kotlinx.coroutines.Deferred<Set<String>?>? = null
         private var paused = false
         private var lastReportPositionMs = 0L
         private var lastReportAtMs = 0L
@@ -229,7 +287,7 @@ class ServerPlayback internal constructor(
                     send(if (paused) ServerPlaybackEventType.PAUSE else ServerPlaybackEventType.RESUME, positionMs, paused)
                 }
                 abs(positionMs - expected) > SEEK_THRESHOLD_MS ||
-                    (isPlaying && elapsed >= PROGRESS_INTERVAL_MS) -> {
+                    elapsed >= if (isPlaying) PROGRESS_INTERVAL_MS else PAUSED_PROGRESS_INTERVAL_MS -> {
                     send(ServerPlaybackEventType.PROGRESS, positionMs, paused)
                 }
             }
@@ -251,11 +309,14 @@ class ServerPlayback internal constructor(
     private companion object {
         const val TAG = "ServerPlayback"
         const val PROGRESS_INTERVAL_MS = 10_000L
+        const val PAUSED_PROGRESS_INTERVAL_MS = 5 * 60_000L
         const val SEEK_THRESHOLD_MS = 5_000L
         const val REPORT_TIMEOUT_MS = 10_000L
         const val SEGMENTS_TIMEOUT_MS = 3_000L
         const val SEGMENT_CACHE_SIZE = 16
         const val RESUME_TIMEOUT_MS = 1_500L
+        const val SCROBBLE_CHECK_TIMEOUT_MS = 3_000L
+        const val SCROBBLED_MEMORY = 8
     }
 }
 
