@@ -47,6 +47,8 @@ internal fun isProfileScopedDataStoreFile(fileName: String): Boolean {
     return dataStoreName !in retainedStandaloneDataStoreNames
 }
 
+private const val SHADOW_PART_SUFFIX = ".part"
+
 private class ScopedDataStore(
     val store: DataStore<Preferences>,
     val scope: CoroutineScope,
@@ -85,6 +87,9 @@ class ProfileDataStoreFactory @Inject constructor(
     private val cache = ConcurrentHashMap<String, ScopedDataStore>()
     private val deletedProfileIds = ConcurrentHashMap.newKeySet<Int>()
     private val lock = Any()
+    private val shadowLock = Any()
+    @Volatile
+    private var shadowGeneration = 0L
     private val lifecycleMutex = Mutex()
     private val historyGenerations = kotlinx.coroutines.flow.MutableStateFlow(0L)
     internal val historyGenerationChanges: kotlinx.coroutines.flow.StateFlow<Long> get() = historyGenerations
@@ -122,7 +127,7 @@ class ProfileDataStoreFactory @Inject constructor(
                 try {
                     retireStores(stores)
                     File(context.filesDir, "datastore").listFiles()?.forEach { file ->
-                        if (file.name.endsWith("_p$profileId.preferences_pb") || file.name.endsWith("_p$profileId.preferences_pb.bak")) file.delete()
+                        if (file.name.removeSuffix(SHADOW_PART_SUFFIX).removeSuffix(".bak").endsWith("_p$profileId.preferences_pb")) file.delete()
                     }
                 } finally {
                     synchronized(lock) { retiringProfiles.remove(profileId); historyGenerations.value++ }
@@ -146,8 +151,13 @@ class ProfileDataStoreFactory @Inject constructor(
                 }
                 val retainedFiles = synchronized(lock) { cache.keys.mapTo(mutableSetOf()) { "$it.preferences_pb" } }
                 val dataStoreDir = File(context.filesDir, "datastore")
-                dataStoreDir.listFiles()?.forEach { file ->
-                    if (file.name.removeSuffix(".bak") !in retainedFiles && isProfileScopedDataStoreFile(file.name.removeSuffix(".bak"))) file.delete()
+                synchronized(shadowLock) {
+                    shadowGeneration++
+                    dataStoreDir.listFiles()?.forEach { file ->
+                        val baseName = file.name.removeSuffix(SHADOW_PART_SUFFIX).removeSuffix(".bak")
+                        val isShadowCopy = baseName != file.name
+                        if (isProfileScopedDataStoreFile(baseName) && (isShadowCopy || baseName !in retainedFiles)) file.delete()
+                    }
                 }
                 deletedProfileIds.clear()
                 corruptedFileNames.clear()
@@ -235,12 +245,32 @@ class ProfileDataStoreFactory @Inject constructor(
         return scoped
     }
 
-    internal fun writeShadowCopy(fileName: String, preferences: Preferences) {
-        val sourceFile = File(File(context.filesDir, "datastore"), "$fileName.preferences_pb")
-        val backupFile = File(File(context.filesDir, "datastore"), "$fileName.preferences_pb.bak")
+    internal fun currentShadowGeneration(): Long = shadowGeneration
+
+    /** Writes [preferences] to the shadow copy without opening the live store file, which DataStore renames over. */
+    internal suspend fun writeShadowCopy(fileName: String, preferences: Preferences, generation: Long) {
+        val dataStoreDir = File(context.filesDir, "datastore")
+        val backupFile = File(dataStoreDir, "$fileName.preferences_pb.bak")
+        val partFile = File(dataStoreDir, "$fileName.preferences_pb.bak$SHADOW_PART_SUFFIX")
         try {
-            if (sourceFile.exists() && sourceFile.length() > 0) {
-                sourceFile.copyTo(backupFile, overwrite = true)
+            val bytes = if (preferences.asMap().isEmpty()) {
+                null
+            } else {
+                okio.Buffer().also {
+                    androidx.datastore.preferences.core.PreferencesSerializer.writeTo(preferences, it)
+                }.readByteArray()
+            }
+            synchronized(shadowLock) {
+                if (generation != shadowGeneration) return
+                if (bytes == null) {
+                    backupFile.delete()
+                    return
+                }
+                partFile.writeBytes(bytes)
+                if (!partFile.renameTo(backupFile)) {
+                    backupFile.delete()
+                    if (!partFile.renameTo(backupFile)) partFile.delete()
+                }
             }
         } catch (e: Exception) {
             Log.w("ProfileDataStoreFactory", "Failed to write shadow copy for $fileName: ${e.message}")
@@ -281,30 +311,29 @@ private class ShadowCopyDataStore(
 
     @Volatile
     private var shadowWritten = false
+    private val shadowMutex = Mutex()
 
     override val data: kotlinx.coroutines.flow.Flow<Preferences>
         get() = delegate.data.also {
-            if (!shadowWritten) {
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        val prefs = delegate.data.first()
-                        if (prefs != emptyPreferences()) {
-                            factory.writeShadowCopy(fileName, prefs)
-                            shadowWritten = true
-                        }
-                    } catch (_: Exception) { }
-                }
-            }
+            if (!shadowWritten) launchShadowCopy()
         }
 
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
         val result = delegate.updateData(transform)
+        launchShadowCopy()
+        return result
+    }
+
+    // Each copy reads the newest data under the mutex, so a late copy never overwrites a newer one.
+    private fun launchShadowCopy() {
         scope.launch(Dispatchers.IO) {
             try {
-                factory.writeShadowCopy(fileName, result)
-                shadowWritten = true
+                shadowMutex.withLock {
+                    val generation = factory.currentShadowGeneration()
+                    factory.writeShadowCopy(fileName, delegate.data.first(), generation)
+                    shadowWritten = true
+                }
             } catch (_: Exception) { }
         }
-        return result
     }
 }

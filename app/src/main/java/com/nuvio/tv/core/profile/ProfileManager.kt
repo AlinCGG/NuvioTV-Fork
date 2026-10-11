@@ -80,7 +80,9 @@ class ProfileManager @Inject constructor(
         if (exists) {
             _profileSelectionRevision.update { it + 1 }
             if (snapshotStorage.reopenListedProfile(id)) factory.markProfileCreated(id)
-            com.nuvio.tv.core.stream.StreamPrefetchCache.updatePolicy(id, false)
+            // Picking the profile already active changes nothing that would load its preference again,
+            // so turning the early search off here would leave it off until some setting is written.
+            if (activeProfileId.value != id) com.nuvio.tv.core.stream.StreamPrefetchCache.updatePolicy(id, false)
             profileDataStore.setActiveProfile(id)
         }
     }

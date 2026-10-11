@@ -33,6 +33,7 @@ import com.nuvio.tv.domain.model.LandscapePosterScope
 import com.nuvio.tv.domain.model.DetailImdbRatingsVisibility
 import com.nuvio.tv.domain.model.HomeLayout
 import com.nuvio.tv.domain.model.HomeImdbRatingsVisibility
+import com.nuvio.tv.domain.model.WatchedTitlesMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -124,6 +125,7 @@ class LayoutPreferenceDataStore @Inject constructor(
     private val preferExternalMetaAddonDetailKey = booleanPreferencesKey("prefer_external_meta_addon_detail")
     private val modernHeroFullScreenBackdropKey = booleanPreferencesKey("modern_hero_full_screen_backdrop")
     private val hideUnreleasedContentKey = booleanPreferencesKey("hide_unreleased_content")
+    private val watchedTitlesModeKey = stringPreferencesKey("watched_titles_mode")
     private val showFullReleaseDateKey = booleanPreferencesKey("show_full_release_date")
     private val memoryOnlyVerticalScrollKey = booleanPreferencesKey("memory_only_vertical_scroll")
     private val smoothBringIntoViewEnabledKey = booleanPreferencesKey("smooth_bring_into_view_enabled")
@@ -415,6 +417,10 @@ class LayoutPreferenceDataStore @Inject constructor(
 
     val hideUnreleasedContent: Flow<Boolean> = profileFlow { prefs ->
         prefs[hideUnreleasedContentKey] ?: false
+    }
+
+    val watchedTitlesMode: Flow<WatchedTitlesMode> = profileFlow { prefs ->
+        WatchedTitlesMode.fromStored(prefs[watchedTitlesModeKey])
     }
 
     val showFullReleaseDate: Flow<Boolean> = profileFlow { prefs ->
@@ -867,6 +873,12 @@ class LayoutPreferenceDataStore @Inject constructor(
         }
     }
 
+    suspend fun setWatchedTitlesMode(mode: WatchedTitlesMode) {
+        store().edit { prefs ->
+            prefs[watchedTitlesModeKey] = mode.name
+        }
+    }
+
     suspend fun setShowFullReleaseDate(enabled: Boolean) {
         store().edit { prefs ->
             prefs[showFullReleaseDateKey] = enabled
@@ -950,6 +962,7 @@ class LayoutPreferenceDataStore @Inject constructor(
             val disabledKeys = remoteDisabledKeys + local.disabledKeys.filter(ServerCatalog::isServerKey)
             val titles = remoteTitles + local.customTitles.filterKeys(ServerCatalog::isServerKey)
             prefs[hideUnreleasedContentKey] = payload.hideUnreleasedContent
+            prefs[watchedTitlesModeKey] = WatchedTitlesMode.fromStored(payload.watchedTitlesMode).name
             if (orderKeys.isNotEmpty()) {
                 prefs[homeCatalogOrderKeysKey] = gson.toJson(orderKeys)
             } else {
@@ -973,7 +986,8 @@ class LayoutPreferenceDataStore @Inject constructor(
             orderKeys = parseCatalogKeys(prefs.getStringOrMigrateSet(homeCatalogOrderKeysKey)),
             disabledKeys = parseCatalogKeys(prefs.getStringOrMigrateSet(disabledHomeCatalogKeysKey)).toSet(),
             customTitles = parseCustomTitles(prefs.getStringOrMigrateSet(customCatalogTitlesKey)),
-            hideUnreleasedContent = prefs[hideUnreleasedContentKey] ?: false
+            hideUnreleasedContent = prefs[hideUnreleasedContentKey] ?: false,
+            watchedTitlesMode = WatchedTitlesMode.fromStored(prefs[watchedTitlesModeKey])
         )
     }
 }

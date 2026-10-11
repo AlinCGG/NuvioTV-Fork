@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.nuvio.tv.core.network.ADDON_REQUEST_TIMEOUT_MS
 import com.nuvio.tv.core.network.NetworkResult
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.data.mapper.toDomain
 import com.nuvio.tv.data.mediaserver.ServerCatalog
 import com.nuvio.tv.data.mediaserver.ServerItemRef
@@ -235,7 +236,7 @@ class MetaRepositoryImpl @Inject constructor(
                 Log.w(
                     TAG,
                     "Addon unresolved (not installed, disabled, or URL not matched), " +
-                        "requesting as-is url=$addonBaseUrl type=$requestedType id=$id"
+                        "requesting as-is url=${addonBaseUrl.redactLinksForLog()} type=$requestedType id=$id"
                 )
             } else {
                 Log.w(
@@ -275,7 +276,7 @@ class MetaRepositoryImpl @Inject constructor(
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.w(TAG, "getMeta failed for $url: ${e.message}")
+                    Log.w(TAG, "getMeta failed for $url: ${e.message}".redactLinksForLog())
                     null
                 } finally {
                     inFlightMeta.remove(cacheKey)
@@ -482,7 +483,7 @@ class MetaRepositoryImpl @Inject constructor(
                         }
 
                         val url = buildMetaUrl(addon.baseUrl, candidateType, id)
-                        Log.d(TAG, "Trying meta addonId=${addon.id} addonName=${addon.name} type=$candidateType id=$id url=$url")
+                        Log.d(TAG, "Trying meta addonId=${addon.id} addonName=${addon.name} type=$candidateType id=$id url=${url.redactLinksForLog()}")
                         loopAddonNames += addon.displayName
                         attempted++
                         try {
@@ -513,7 +514,7 @@ class MetaRepositoryImpl @Inject constructor(
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            Log.d(TAG, "Meta fetch failed addonId=${addon.id} type=$candidateType id=$id: ${e.message}")
+                            Log.d(TAG, "Meta fetch failed addonId=${addon.id} type=$candidateType id=$id: ${e.message?.redactLinksForLog()}")
                             loopFailures += MetaAttemptFailure(
                                 addonName = addon.displayName,
                                 kind = MetaFailureKind.REQUEST_FAILED,
@@ -607,7 +608,7 @@ class MetaRepositoryImpl @Inject constructor(
         val url = buildMetaUrl(addon.baseUrl, candidateType, id)
         Log.d(
             TAG,
-            "Trying primary meta addonId=${addon.id} addonName=${addon.name} type=$candidateType id=$id url=$url"
+            "Trying primary meta addonId=${addon.id} addonName=${addon.name} type=$candidateType id=$id url=${url.redactLinksForLog()}"
         )
 
         val deferred = inFlightPrimaryMeta.getOrPut(cacheKey) {
@@ -632,7 +633,7 @@ class MetaRepositoryImpl @Inject constructor(
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.w(TAG, "Primary meta fetch failed for $url: ${e.message}")
+                    Log.w(TAG, "Primary meta fetch failed for $url: ${e.message}".redactLinksForLog())
                     null
                 } finally {
                     inFlightPrimaryMeta.remove(cacheKey)

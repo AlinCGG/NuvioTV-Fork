@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.util.canonicalizeAddonUrl
 import com.nuvio.tv.core.network.safeApiCall
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.data.local.AddonPreferences
 import com.nuvio.tv.data.mapper.toDomain
 import com.nuvio.tv.data.remote.api.AddonApi
@@ -227,7 +228,7 @@ class AddonRepositoryImpl(
                         } ?: false
                         if (ok) {
                             synchronized(failedManifestLock) { failedManifestUrls.remove(url) }
-                            Log.d(TAG, "Recovered addon manifest on retry url=$url")
+                            Log.d(TAG, "Recovered addon manifest on retry url=${url.redactLinksForLog()}")
                         }
                     }
                     if (synchronized(failedManifestLock) { failedManifestUrls.isEmpty() }) break
@@ -381,12 +382,12 @@ class AddonRepositoryImpl(
             is NetworkResult.Success -> {
                 val addon = result.data.toDomain(cleanBaseUrl)
                 if (putCachedManifestIfChanged(cleanBaseUrl, addon)) {
-                    Log.d(TAG, "Updated addon manifest cache url=$cleanBaseUrl version=${addon.version} configVersion=${addon.configVersion}")
+                    Log.d(TAG, "Updated addon manifest cache url=${cleanBaseUrl.redactLinksForLog()} version=${addon.version} configVersion=${addon.configVersion}")
                 }
                 NetworkResult.Success(addon)
             }
             is NetworkResult.Error -> {
-                Log.w(TAG, "Failed to fetch addon manifest for url=$manifestUrl code=${result.code} message=${result.message}")
+                Log.w(TAG, "Failed to fetch addon manifest for url=$manifestUrl code=${result.code} message=${result.message}".redactLinksForLog())
                 result
             }
             NetworkResult.Loading -> NetworkResult.Loading

@@ -20,6 +20,9 @@ fun availableAppThemes(entitlements: CosmeticEntitlements): List<AppTheme> {
     return unlockedSupporterThemes + AppTheme.CUSTOM + standardThemes
 }
 
+fun lockedSupporterThemes(entitlements: CosmeticEntitlements): List<AppTheme> =
+    supporterThemes.filterValues { !entitlements.includes(it) }.keys.toList()
+
 fun resolveAppTheme(
     selectedTheme: AppTheme?,
     entitlements: CosmeticEntitlements

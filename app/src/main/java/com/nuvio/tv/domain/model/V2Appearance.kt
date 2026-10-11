@@ -29,6 +29,7 @@ data class V2AppearancePreferences(
     val settingsBackground: SettingsBackground = SettingsBackground.POSTERS,
     val playerChromeStyle: PlayerChromeStyle = PlayerChromeStyle.INVISIBLE,
     val introAnimationEnabled: Boolean = true,
+    val introSoundEnabled: Boolean = true,
     val glassPreset: GlassPreset = GlassPreset.BALANCED,
     val glassTransparencyPercent: Int = glassPreset.transparencyPercent,
     val glassBlurStrengthPercent: Int = glassPreset.blurStrengthPercent

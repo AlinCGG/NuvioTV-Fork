@@ -38,4 +38,12 @@ class PresentationPreferencePreservationTest {
             captureMissingPresentationChoices("layout_settings", local, setOf(legacy.name)))
         assertTrue(captureMissingPresentationChoices("layout_settings", local, setOf(legacy.name, scope.name)).isEmpty())
     }
+
+    @Test fun `watched titles choice survives a snapshot from an install without it`() {
+        val mode = stringPreferencesKey("watched_titles_mode")
+        val local = preferencesOf(mode to "HIDE")
+        assertEquals(mapOf<Preferences.Key<*>, Any>(Pair(mode, "HIDE")),
+            captureMissingPresentationChoices("layout_settings", local, setOf("hide_unreleased_content")))
+        assertTrue(captureMissingPresentationChoices("layout_settings", local, setOf(mode.name)).isEmpty())
+    }
 }

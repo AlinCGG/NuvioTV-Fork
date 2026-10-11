@@ -5,6 +5,7 @@ import android.util.Log
 import com.nuvio.tv.R
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.network.safeAddonApiCall
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.core.debrid.DebridStreamPresentation
 import com.nuvio.tv.core.debrid.LocalDebridAvailabilityService
 import com.nuvio.tv.core.plugin.PluginManager
@@ -351,7 +352,7 @@ class StreamRepositoryImpl @Inject constructor(
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e
                             addonOutcome = "error"
-                            Log.e(TAG, "Addon ${addon.name} failed: ${e.message}")
+                            Log.e(TAG, "Addon ${addon.name} failed: ${e.message?.redactLinksForLog()}")
                             attemptedFailures += StreamAttemptFailure(
                                 addonName = addon.displayName,
                                 kind = StreamFailureKind.REQUEST_FAILED,
@@ -832,7 +833,7 @@ class StreamRepositoryImpl @Inject constructor(
         val encodedType = encodePathSegment(type)
         val encodedVideoId = encodePathSegment(videoId)
         val streamUrl = "$basePath/stream/$encodedType/$encodedVideoId.json$baseQuery"
-        Log.d(TAG, "Fetching streams type=$type videoId=$videoId url=$streamUrl")
+        Log.d(TAG, "Fetching streams type=$type videoId=$videoId url=${streamUrl.redactLinksForLog()}")
 
         // Display info comes from the installed addon the caller already holds. Calling
         // addonRepository.fetchAddon() here caused an unconditional manifest GET ahead of every
@@ -846,13 +847,14 @@ class StreamRepositoryImpl @Inject constructor(
                 val streams = result.data.streams?.map { 
                     it.toDomain(resolvedAddonName, addonLogo) 
                 } ?: emptyList()
-                Log.d(TAG, "Streams success addon=$resolvedAddonName count=${streams.size} url=$streamUrl")
+                Log.d(TAG, "Streams success addon=$resolvedAddonName count=${streams.size} url=${streamUrl.redactLinksForLog()}")
                 NetworkResult.Success(streams)
             }
             is NetworkResult.Error -> {
                 Log.w(
                     TAG,
                     "Streams failed addon=$resolvedAddonName code=${result.code} message=${result.message} url=$streamUrl"
+                        .redactLinksForLog()
                 )
                 result
             }
@@ -902,7 +904,7 @@ class StreamRepositoryImpl @Inject constructor(
         val encodedType = encodePathSegment(type)
         val encodedMetaId = encodePathSegment(metaId)
         val metaUrl = "$basePath/meta/$encodedType/$encodedMetaId.json$baseQuery"
-        Log.d(TAG, "Fetching inline streams via meta type=$type metaId=$metaId videoId=$videoId url=$metaUrl")
+        Log.d(TAG, "Fetching inline streams via meta type=$type metaId=$metaId videoId=$videoId url=${metaUrl.redactLinksForLog()}")
         return try {
             when (val result = safeAddonApiCall(context) { api.getMeta(metaUrl) }) {
                 is NetworkResult.Success -> {
@@ -918,7 +920,7 @@ class StreamRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            Log.w(TAG, "Failed to fetch inline streams from meta for ${addon.displayName}: ${e.message}")
+            Log.w(TAG, "Failed to fetch inline streams from meta for ${addon.displayName}: ${e.message?.redactLinksForLog()}")
             emptyList()
         }
     }

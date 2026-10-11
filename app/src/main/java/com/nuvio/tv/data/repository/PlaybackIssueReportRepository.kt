@@ -3,7 +3,8 @@ package com.nuvio.tv.data.repository
 import android.net.Uri
 import android.os.Build
 import com.nuvio.tv.BuildConfig
-import com.nuvio.tv.core.logging.redactUrlCredentials
+import com.nuvio.tv.core.build.IssueReports
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.core.player.LastPlaybackDiagnostics
 import com.nuvio.tv.data.remote.api.PlaybackIssueReportApi
 import com.nuvio.tv.data.remote.dto.PlaybackIssueAppDto
@@ -193,7 +194,7 @@ class PlaybackIssueReportRepository @Inject constructor(
     private val playbackIssueReportApi: PlaybackIssueReportApi
 ) {
     suspend fun submit(input: PlaybackIssueReportInput): Result<String> = runCatching {
-        if (BuildConfig.PLAYBACK_REPORTS_BASE_URL.isBlank()) {
+        if (!IssueReports.available) {
             error("Playback report endpoint is not configured")
         }
         val response = playbackIssueReportApi.createPlaybackIssueReport(input.toDto())
@@ -649,7 +650,7 @@ class PlaybackIssueReportRepository @Inject constructor(
     private fun String.rawLogLine(maxLength: Int): String? =
         replace('\n', ' ')
             .replace('\r', ' ')
-            .redactUrlCredentials()
+            .redactLinksForLog()
             .trim()
             .takeIf { it.isNotBlank() }
             ?.limit(maxLength)

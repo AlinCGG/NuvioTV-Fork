@@ -1,11 +1,19 @@
 package com.nuvio.tv.data.local
 
+import com.nuvio.tv.core.build.IssueReports
+
 /** Stable preference IDs, independent of enum names and UI/theme implementations. */
 enum class PlayerControlAction(val id: String) {
     PLAY_PAUSE("play_pause"), RESTART("restart"), EPISODES("episodes"), NEXT_EPISODE("next_episode"),
     STATS("stats"), AUDIO("audio"), SUBTITLES("subtitles"), SOURCES("sources"), WATCH_PARTY("watch_party"),
     MORE("more"), SPEED("speed"), ASPECT("aspect"), EXTERNAL("external"), ENGINE("engine"), REPORT("report"),
-    INFO("info")
+    INFO("info");
+
+    companion object {
+        /** Actions this build can show at all; saved placements of the others are kept but never drawn. */
+        fun offered(reportsAvailable: Boolean = IssueReports.available): Set<PlayerControlAction> =
+            if (reportsAvailable) PlayerControlAction.entries.toSet() else PlayerControlAction.entries.toSet() - REPORT
+    }
 }
 
 enum class PlayerControlButtonStyle(val id: String) { PREVIOUS("previous"), LABELLED("labelled") }

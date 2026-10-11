@@ -27,7 +27,9 @@ data class Stream(
     val debridCacheStatus: StreamDebridCacheStatus? = null,
     val badges: List<StreamBadge> = emptyList(),
     val subtitles: List<Subtitle> = emptyList(),
-    val serverTarget: ServerPlaybackTarget? = null
+    val serverTarget: ServerPlaybackTarget? = null,
+    /** The file's length when the source states it (a media server's version), else null. */
+    val durationMs: Long? = null
 ) {
     /**
      * Returns the primary stream source URL

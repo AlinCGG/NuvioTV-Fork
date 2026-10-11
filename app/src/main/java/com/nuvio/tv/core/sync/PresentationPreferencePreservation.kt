@@ -15,7 +15,8 @@ internal fun captureMissingPresentationChoices(
             "focused_poster_backdrop_trailer_logo",
             "focused_poster_backdrop_trailer_playback_target",
             "modern_hero_full_screen_backdrop",
-            "landscape_poster_scope"
+            "landscape_poster_scope",
+            "watched_titles_mode"
         )
         "player_settings" -> setOf("speculative_stream_search_enabled")
         else -> emptySet()

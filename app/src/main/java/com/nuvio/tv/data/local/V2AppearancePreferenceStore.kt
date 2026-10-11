@@ -35,6 +35,7 @@ object V2AppearancePreferenceStore {
     private val settings = stringPreferencesKey("settings_presentation")
     private val player = stringPreferencesKey("player_chrome_style")
     private val intro = booleanPreferencesKey("intro_animation_enabled")
+    private val introSound = booleanPreferencesKey("intro_sound_enabled")
 
     private val glassPreset = stringPreferencesKey("glass_preset")
     private val transparency = intPreferencesKey("glass_transparency_percent")
@@ -52,6 +53,7 @@ object V2AppearancePreferenceStore {
             settingsPresentation = SettingsPresentation.entries.firstOrNull { it.name == p[settings] } ?: SettingsPresentation.GLASS,
             playerChromeStyle = PlayerChromeStyle.entries.firstOrNull { it.name == p[player] } ?: PlayerChromeStyle.INVISIBLE,
             introAnimationEnabled = p[intro] ?: true,
+            introSoundEnabled = p[introSound] ?: true,
             glassPreset = preset,
             glassTransparencyPercent = (p[transparency] ?: preset.transparencyPercent).coerceIn(0, 100),
             glassBlurStrengthPercent = (p[blurStrength] ?: preset.blurStrengthPercent).coerceIn(0, 100)
@@ -78,6 +80,7 @@ object V2AppearancePreferenceStore {
         p[background] = next.settingsBackground.name
         p[player] = next.playerChromeStyle.name
         p[intro] = next.introAnimationEnabled
+        p[introSound] = next.introSoundEnabled
         p[glassPreset] = next.glassPreset.name
         p[transparency] = next.glassTransparencyPercent.coerceIn(0, 100)
         p[blurStrength] = next.glassBlurStrengthPercent.coerceIn(0, 100)

@@ -110,6 +110,8 @@ private val localOnlyPlayerProfileSettingsKeys = setOf(
     "surround_tv_arc_soundbar",
     "tunnel_dead_audio_classes",
     "tunnel_dead_audio_signature",
+    "tunnel_dead_audio_saved_at_ms",
+    "tunnel_dead_audio_app_version",
     "experimental_dv5_to_dv81_enabled",
     "dv7_handling_mode",
     "map_dv7_to_hevc",
