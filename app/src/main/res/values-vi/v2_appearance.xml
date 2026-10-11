@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Tự động</string>
     <string name="v2_scale_manual">Thủ công</string>
     <string name="v2_scale_fine_tune">Tinh chỉnh tỷ lệ</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Âm thanh mở đầu</string>
+    <string name="v2_intro_sound_subtitle">Phát phần mở đầu kèm âm thanh, âm thanh vòm nếu hệ thống của bạn hỗ trợ</string>
 </resources>

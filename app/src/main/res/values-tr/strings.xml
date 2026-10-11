@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="tv_channel_continue_watching">İzlemeye Devam Et</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmler</string>
@@ -339,6 +339,7 @@
     <string name="theme_color_violet">Menekşe</string>
     <string name="theme_color_emerald">Zümrüt</string>
     <string name="theme_color_amber">Kehribar</string>
+    <string name="theme_color_copper">Bakır</string>
     <string name="theme_color_rose">Gül</string>
     <string name="theme_color_white">Beyaz</string>
     <string name="theme_color_custom">Özel</string>
@@ -371,13 +372,13 @@
     <string name="appearance_settings_style">Ayarlar Stili</string>
     <string name="appearance_settings_style_subtitle">Ayar ekranlarının nasıl görüneceğini seç</string>
     <string name="appearance_launcher_artwork">Başlatıcı Görseli</string>
-    <string name="appearance_launcher_artwork_subtitle">Nuvio\'nun TV ana ekranında nasıl görüneceğini seçin</string>
+    <string name="appearance_launcher_artwork_subtitle">Nuvio Arc\'nun TV ana ekranında nasıl görüneceğini seçin</string>
     <string name="appearance_app_icon_and_banner">Uygulama Simgesi ve Afiş</string>
     <string name="appearance_app_icon_and_banner_subtitle">Uygulama simgesini ve afişi değiştirin</string>
     <string name="appearance_app_icon_picker_title">Uygulama Simgesi ve Afiş Seçin</string>
     <string name="appearance_app_icon_picker_subtitle">Her stil, uyumlu bir kare simge ve TV afişi içerir</string>
     <string name="appearance_app_icon_confirmation_title">Uygulama Simgesi Değiştirilsin mi?</string>
-    <string name="appearance_app_icon_confirmation_message">%1$s stiline geçmek Nuvio\'yu kapatır. TV afişinin güncellenmesi için cihazın yeniden başlatılması gerekebilir. Devam etmek için Tamam\'ı seçin.</string>
+    <string name="appearance_app_icon_confirmation_message">%1$s stiline geçmek Nuvio Arc\'ı yeni simgeyle yeniden başlatır. Ana ekranın bunu göstermesi birkaç saniye sürebilir ve TV afişinin güncellenmesi için cihazın yeniden başlatılması gerekebilir. Devam etmek için Tamam\'ı seçin.</string>
     <string name="appearance_app_icon_change_failed">Simge ve afiş değiştirilemedi. Lütfen tekrar deneyin.</string>
     <string name="appearance_app_icon_original">Orijinal</string>
     <string name="appearance_app_icon_arctic_blue">Kutup Mavisi</string>
@@ -398,7 +399,7 @@
     <!-- AboutScreen -->
     <string name="about_title">Hakkında</string>
     <string name="about_subtitle">Uygulama bilgileri, güncellemeler ve yasal bağlantılar</string>
-    <string name="about_made_with_love">Tapframe ve arkadaşları tarafından ❤️ ile yapıldı</string>
+    <string name="about_made_with_love">Tapframe ve arkadaşlarının harika çalışması üzerine kuruldu ❤️ · Nuvio Arc: ysosrs123</string>
     <string name="about_version">Sürüm %1$s</string>
     <string name="about_update_banner_title">Otomatik güncelleme bildirimi</string>
     <string name="about_update_banner_subtitle">Yeni sürüm çıktığında bildirim göster</string>
@@ -419,31 +420,31 @@
     <string name="about_licenses_attributions">Lisanslar ve Atıflar</string>
     <string name="about_licenses_attributions_subtitle">Veri kaynakları, teşekkürler ve Android lisansları</string>
     <string name="licenses_attributions_title">Lisanslar ve Atıflar</string>
-    <string name="licenses_attributions_subtitle">Nuvio TV tarafından kullanılan veri sağlayıcıları, hizmet kredileri ve Android oynatma lisansları.</string>
+    <string name="licenses_attributions_subtitle">Nuvio Arc tarafından kullanılan veri sağlayıcıları, hizmet kredileri ve Android oynatma lisansları.</string>
     <string name="licenses_attributions_section_app">UYGULAMA LİSANSI</string>
     <string name="licenses_attributions_section_data">VERİ VE HİZMETLER</string>
     <string name="licenses_attributions_section_playback">ANDROID OYNATMA LİSANSLARI</string>
     <string name="licenses_attributions_section_ui">ARAYÜZ KÜTÜPHANELERİ</string>
     <string name="licenses_attributions_haze_title">Haze 1.7.2</string>
     <string name="licenses_attributions_haze_body">Arka plan bulanıklık efektleri için kullanılır. Chris Banes tarafından oluşturulmuştur. Apache License, Version 2.0 altında lisanslanmıştır.</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-test (Nuvio TV fork\'u)</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio Arc (Nuvio TV fork\'u)</string>
     <string name="licenses_attributions_nuvio_body">Nuvio TV\'nin değiştirilmiş bir sürümüdür. Bu derlemenin kaynak kodu ve lisans koşulları fork\'un deposunda mevcuttur. Nuvio TV\'nin adresi: github.com/NuvioMedia/NuvioTV. GNU General Public License v3.0 altında lisanslanmıştır.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-    <string name="licenses_attributions_tmdb_body">Nuvio, film ve dizi meta verileri, görseller, fragmanlar, oyuncular, yapım detayları, koleksiyonlar ve öneriler için TMDB API\'sini kullanır. Bu ürün TMDB API\'sini kullanır ancak TMDB tarafından onaylanmamıştır veya sertifikalandırılmamıştır.</string>
+    <string name="licenses_attributions_tmdb_body">Nuvio Arc, film ve dizi meta verileri, görseller, fragmanlar, oyuncular, yapım detayları, koleksiyonlar ve öneriler için TMDB API\'sini kullanır. Bu ürün TMDB API\'sini kullanır ancak TMDB tarafından onaylanmamıştır veya sertifikalandırılmamıştır.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="licenses_attributions_trakt_body">Nuvio, hesap doğrulama, izleme geçmişi, ilerleme senkronizasyonu, kütüphane verileri, puanlar, listeler ve yorumlar için Trakt\'a bağlanır. Nuvio Trakt ile bağlantılı veya onaylanmış değildir.</string>
+    <string name="licenses_attributions_trakt_body">Nuvio Arc, hesap doğrulama, izleme geçmişi, ilerleme senkronizasyonu, kütüphane verileri, puanlar, listeler ve yorumlar için Trakt\'a bağlanır. Nuvio Arc Trakt ile bağlantılı veya onaylanmış değildir.</string>
     <string name="licenses_attributions_simkl_title">Simkl</string>
-    <string name="licenses_attributions_simkl_body">Nuvio; hesap doğrulama, izleme listeleri, izleme geçmişi, oynatma ilerlemesi ve scrobbling için Simkl\'a bağlanır. Film, dizi ve anime takip verileri Simkl tarafından sağlanır. Nuvio, Simkl ile bağlantılı veya onaylanmış değildir.</string>
+    <string name="licenses_attributions_simkl_body">Nuvio Arc; hesap doğrulama, izleme listeleri, izleme geçmişi, oynatma ilerlemesi ve scrobbling için Simkl\'a bağlanır. Film, dizi ve anime takip verileri Simkl tarafından sağlanır. Nuvio Arc, Simkl ile bağlantılı veya onaylanmış değildir.</string>
     <string name="licenses_attributions_premiumize_title">Premiumize</string>
-    <string name="licenses_attributions_premiumize_body">Nuvio; hesap doğrulama, bulut kütüphanesine erişim, önbellek kontrolü ve bulut oynatma özellikleri için Premiumize\'a bağlanır. Nuvio\'nun Premiumize ile herhangi bir ortaklığı veya resmi bağı yoktur.</string>
+    <string name="licenses_attributions_premiumize_body">Nuvio Arc; hesap doğrulama, bulut kütüphanesine erişim, önbellek kontrolü ve bulut oynatma özellikleri için Premiumize\'a bağlanır. Nuvio Arc\'nun Premiumize ile herhangi bir ortaklığı veya resmi bağı yoktur.</string>
     <string name="licenses_attributions_torbox_title">TorBox</string>
-    <string name="licenses_attributions_torbox_body">Nuvio; hesap doğrulama, bulut kütüphanesine erişim, önbellek kontrolü ve bulut oynatma özellikleri için TorBox\'a bağlanır. Nuvio\'nun TorBox ile herhangi bir ortaklığı veya resmi bağı yoktur.</string>
+    <string name="licenses_attributions_torbox_body">Nuvio Arc; hesap doğrulama, bulut kütüphanesine erişim, önbellek kontrolü ve bulut oynatma özellikleri için TorBox\'a bağlanır. Nuvio Arc\'nun TorBox ile herhangi bir ortaklığı veya resmi bağı yoktur.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvio, puanlar ve harici skor sağlayıcı verileri için MDBList\'i kullanır. Nuvio MDBList ile bağlantılı veya onaylanmış değildir.</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio Arc, puanlar ve harici skor sağlayıcı verileri için MDBList\'i kullanır. Nuvio Arc MDBList ile bağlantılı veya onaylanmış değildir.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
-    <string name="licenses_attributions_introdb_body">Nuvio, atlatma kontrolleri için topluluk tarafından sağlanan intro, özet, jenerik ve önizleme zaman damgaları için IntroDB API\'sini kullanır. Nuvio IntroDB ile bağlantılı veya onaylanmış değildir.</string>
+    <string name="licenses_attributions_introdb_body">Nuvio Arc, atlatma kontrolleri için topluluk tarafından sağlanan intro, özet, jenerik ve önizleme zaman damgaları için IntroDB API\'sini kullanır. Nuvio Arc IntroDB ile bağlantılı veya onaylanmış değildir.</string>
     <string name="licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
-    <string name="licenses_attributions_imdb_body">Nuvio, IMDb Non-Commercial Datasets (title.ratings.tsv.gz dahil) kullanarak IMDb puanları ve oy sayılarını gösterir. Bilgiler IMDb\'nin izniyle sunulmaktadır (https://www.imdb.com). IMDb verileri yalnızca kişisel ve ticari olmayan kullanım içindir.</string>
+    <string name="licenses_attributions_imdb_body">Nuvio Arc, IMDb Non-Commercial Datasets (title.ratings.tsv.gz dahil) kullanarak IMDb puanları ve oy sayılarını gösterir. Bilgiler IMDb\'nin izniyle sunulmaktadır (https://www.imdb.com). IMDb verileri yalnızca kişisel ve ticari olmayan kullanım içindir.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Android oynatma motoru olarak kullanılır. Apache License, Version 2.0 altında lisanslanmıştır.</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -468,7 +469,7 @@
     <string name="tracking_accounts_title">Hesaplar</string>
     <string name="tracking_accounts_subtitle">Takip servislerini bağla ve yönet</string>
     <string name="tracking_sources_title">Kaynaklar</string>
-    <string name="tracking_sources_subtitle">Nuvio\'nun kütüphane ve izleme ilerlemesini nereden okuyacağını seç. Oynatma, bağlı tüm servislere scrobble edilir.</string>
+    <string name="tracking_sources_subtitle">Nuvio Arc\'nun kütüphane ve izleme ilerlemesini nereden okuyacağını seç. Oynatma, bağlı tüm servislere scrobble edilir.</string>
     <string name="tracking_trakt_features_title">Trakt özellikleri</string>
     <string name="tracking_trakt_features_subtitle">Trakt\'a özel geçmiş, incelemeler ve öneriler</string>
     <string name="tracking_simkl_features_title">Simkl özellikleri</string>
@@ -485,8 +486,8 @@
     <string name="tracking_status_connecting">Bağlanıyor</string>
     <string name="tracking_finish_connection">Bağlantı onayını tamamla</string>
     <string name="tracking_connecting_provider">%1$s bağlantısı başlatılıyor…</string>
-    <string name="tracking_watch_progress_dialog_subtitle">Nuvio\'nun devam etme ve İzlemeye Devam Et için okuyacağı servisi seç. Scrobbling bağlı tüm servislerde açık kalır.</string>
-    <string name="tracking_library_source_dialog_subtitle">Nuvio\'nun Kütüphane için okuyacağı servisi seç. Oynatma, bağlı tüm servislere scrobble edilir.</string>
+    <string name="tracking_watch_progress_dialog_subtitle">Nuvio Arc\'nun devam etme ve İzlemeye Devam Et için okuyacağı servisi seç. Scrobbling bağlı tüm servislerde açık kalır.</string>
+    <string name="tracking_library_source_dialog_subtitle">Nuvio Arc\'nun Kütüphane için okuyacağı servisi seç. Oynatma, bağlı tüm servislere scrobble edilir.</string>
     <string name="tracking_trakt_progress_required">İzleme İlerlemesi kaynağı Trakt olduğunda kullanılabilir</string>
     <string name="trakt_name">Trakt</string>
     <string name="simkl_name">Simkl</string>
@@ -498,7 +499,7 @@
     <!-- ExperienceMode -->
     <string name="experience_mode_essential">Basit</string>
     <string name="experience_mode_advanced">Gelişmiş</string>
-    <string name="experience_mode_choose_title">Nuvio deneyimini seç</string>
+    <string name="experience_mode_choose_title">Nuvio Arc deneyimini seç</string>
     <string name="experience_mode_choose_subtitle">Basit başla veya tüm özelleştirmeleri aç. İstediğin zaman değiştirebilirsin.</string>
     <string name="experience_mode_essential_card_subtitle">Odaklı kurulum, eklentiler, oynatma temelleri, Trakt ve hesap ayarları.</string>
     <string name="experience_mode_advanced_card_subtitle">Tam ayarlar, düzen kontrolleri, katalog sırası, koleksiyonlar, uzantılar ve teşhis.</string>
@@ -792,8 +793,8 @@
     <string name="playback_player_ask_desc">Her seferinde hangi oynatıcının kullanılacağını seçin</string>
     <string name="playback_player_auto">Otomatik (İçerik için en iyisi)</string>
     <string name="playback_player_auto_desc">Filmler ve Diziler için ExoPlayer · Anime için MPV</string>
-    <string name="playback_engine_exoplayer_desc">Nuvio\'nun mevcut özellikleriyle en uyumlu seçenek.</string>
-    <string name="playback_engine_mvplayer_desc">Nuvio ekran kontrolleriyle libmpv kullanır. Deneysel.</string>
+    <string name="playback_engine_exoplayer_desc">Nuvio Arc\'nun mevcut özellikleriyle en uyumlu seçenek.</string>
+    <string name="playback_engine_mvplayer_desc">Nuvio Arc ekran kontrolleriyle libmpv kullanır. Deneysel.</string>
 
     <string name="video_section">Video</string>
     <string name="playback_true_black_letterbox">Gerçek siyah bantlar</string>
@@ -1507,7 +1508,7 @@
     <string name="trakt_stat_watched_hours">İzlenen Saat</string>
     <string name="trakt_disconnect">Bağlantıyı Kes</string>
     <string name="trakt_disconnect_title">Trakt bağlantısı kesilsin mi?</string>
-    <string name="trakt_disconnect_subtitle">Bu işlem Trakt hesabınızın Nuvio ile bağlantısını kesecektir.</string>
+    <string name="trakt_disconnect_subtitle">Bu işlem Trakt hesabınızın Nuvio Arc ile bağlantısını kesecektir.</string>
     <string name="trakt_login">Giriş Yap</string>
     <string name="trakt_retry">Tekrar Dene</string>
     <string name="trakt_back">Geri</string>
@@ -1740,7 +1741,7 @@
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">P2P Yayın</string>
-    <string name="p2p_consent_body">Bu yayın eşler arası (P2P) teknolojisini kullanmaktadır. P2P\'yi etkinleştirerek şunları kabul etmiş olursunuz:\n\n\u2022 IP adresiniz ağdaki diğer kullanıcılara görünür hale gelecektir\n\u2022 Eriştiğiniz içerikten yalnızca siz sorumlusunuz\n\u2022 Bulunduğunuz yerde bu içeriği yasal olarak izleme hakkınız olduğunu onaylayıyorsunuz\n\u2022 Nuvio hiçbir P2P içeriği barındırmaz, dağıtmaz veya kontrol etmez\n\u2022 Nuvio, P2P yayını kullanımınızdan doğabilecek hukuki sonuçlardan sorumlu değildir\n\nBu özelliği tamamen kendi riskinizle kullanırsınız. P2P, istediğiniz zaman Ayarlar\'dan kapatılabilir.</string>
+    <string name="p2p_consent_body">Bu yayın eşler arası (P2P) teknolojisini kullanmaktadır. P2P\'yi etkinleştirerek şunları kabul etmiş olursunuz:\n\n\u2022 IP adresiniz ağdaki diğer kullanıcılara görünür hale gelecektir\n\u2022 Eriştiğiniz içerikten yalnızca siz sorumlusunuz\n\u2022 Bulunduğunuz yerde bu içeriği yasal olarak izleme hakkınız olduğunu onaylayıyorsunuz\n\u2022 Nuvio Arc hiçbir P2P içeriği barındırmaz, dağıtmaz veya kontrol etmez\n\u2022 Nuvio Arc, P2P yayını kullanımınızdan doğabilecek hukuki sonuçlardan sorumlu değildir\n\nBu özelliği tamamen kendi riskinizle kullanırsınız. P2P, istediğiniz zaman Ayarlar\'dan kapatılabilir.</string>
     <string name="p2p_consent_enable">P2P\'yi Etkinleştir</string>
     <string name="p2p_consent_cancel">İptal</string>
     <string name="settings_p2p_title">P2P Yayın</string>
@@ -2311,7 +2312,7 @@
     <string name="catalog_see_all_empty_subtitle">Daha sonra başka bir alt alan türünü denemek de faydalı olacaktır</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Nuvio\'ya Hoş Geldiniz</string>
+    <string name="layout_selection_welcome">Nuvio Arc\'ya Hoş Geldiniz</string>
     <string name="layout_selection_subtitle">Ana sayfa düzeninizi seçin</string>
     <string name="layout_selection_continue">Devam Et</string>
 
@@ -2765,7 +2766,7 @@
     <string name="cd_preview">Önizle</string>
     <string name="cd_test">Test et</string>
     <string name="cd_unlink">Bağlantıyı kes</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Trakt logosu</string>
     <string name="cd_trakt_qr">Trakt etkinleştirme QR kodu</string>
     <string name="cd_simkl_qr">Simkl etkinleştirme QR kodu</string>
@@ -2925,7 +2926,7 @@
     <string name="collections_editor_tmdb_list_helper">Örnek: https://www.themoviedb.org/list/8504994 veya 8504994.</string>
     <string name="collections_editor_tmdb_person_id">Kişi ID</string>
     <string name="collections_editor_tmdb_person_helper">Örnek: https://www.themoviedb.org/person/31-tom-hanks veya 31.</string>
-    <string name="collections_editor_tmdb_title_helper">Satır/sekme adı olarak gösterilir. Boş bırakırsanız, Nuvio kaynaktan otomatik olarak oluşturur.</string>
+    <string name="collections_editor_tmdb_title_helper">Satır/sekme adı olarak gösterilir. Boş bırakırsanız, Nuvio Arc kaynaktan otomatik olarak oluşturur.</string>
     <string name="collections_editor_tmdb_quick_genres">Hızlı Türler</string>
     <string name="collections_editor_tmdb_quick_languages">Hızlı Diller</string>
     <string name="collections_editor_tmdb_quick_countries">Hızlı Ülkeler</string>
@@ -3115,7 +3116,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">REMUX/HDR olmasın</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">NuvioTV\'nin dahili oynatıcısını kullan</string>
+    <string name="playback_player_internal_desc">Nuvio Arc\'nin dahili oynatıcısını kullan</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d seed · %2$d peer</string>
@@ -3222,9 +3223,9 @@
     <string name="simkl_visit">Simkl\'ı ziyaret et</string>
     <string name="simkl_sync_info_action">Eşitleme nasıl çalışır</string>
     <string name="simkl_sync_info_title">Simkl eşitlemesi nasıl çalışır</string>
-    <string name="simkl_sync_info_description">Nuvio, Simkl\'ı en fazla her %1$d dakikada bir otomatik kontrol eder. Başka bir uygulama veya Simkl sitesinden yapılan değişikliklerin görünmesi bu kadar sürebilir.</string>
+    <string name="simkl_sync_info_description">Nuvio Arc, Simkl\'ı en fazla her %1$d dakikada bir otomatik kontrol eder. Başka bir uygulama veya Simkl sitesinden yapılan değişikliklerin görünmesi bu kadar sürebilir.</string>
     <string name="simkl_sync_info_activity">Her yenilemede önce Simkl\'da değişiklik olup olmadığı kontrol edilir ve yalnızca güncellemeler indirilir. Bu, Simkl\'ın API kurallarına uyar, gereksiz veri kullanımını azaltır ve servisin stabil kalmasına yardımcı olur.</string>
-    <string name="simkl_sync_info_manual">Nuvio\'da yaptığın değişiklikler hemen Simkl\'a gönderilir. Uzak değişiklikleri daha erken kontrol ettirmek istediğinde Şimdi eşitle\'ye bas.</string>
+    <string name="simkl_sync_info_manual">Nuvio Arc\'da yaptığın değişiklikler hemen Simkl\'a gönderilir. Uzak değişiklikleri daha erken kontrol ettirmek istediğinde Şimdi eşitle\'ye bas.</string>
     <string name="simkl_sync_info_library_statuses">Simkl\'daki Beklemede veya Bırakıldı listelerine koyulan diziler İzlemeye Devam Et\'te gizlenir. Bu listelerde kaldıkları sürece gizli kalırlar.</string>
     <string name="simkl_sync_info_docs">Simkl eşitleme rehberini oku</string>
     <string name="error_open_browser_failed">Tarayıcı açılamadı</string>
@@ -3388,16 +3389,21 @@
     <string name="appearance_screensaver_dim_gentle">Ekran net şekilde görünür kalır</string>
     <string name="appearance_screensaver_dim_balanced">Koyu ama okunabilir</string>
     <string name="appearance_screensaver_dim_strong">Zar zor görünür</string>
+    <string name="appearance_app_icon_mint">Nane</string>
     <string name="licenses_attributions_avatars_title">İzleme partisi avatarları</string>
     <string name="licenses_attributions_avatars_body">DiceBear ile yapıldı, şu tasarımlar uyarlandı: Davis Uche\'nin \"Fun Emoji\" ve Lisa Wischofsky\'nin \"Adventurer\" tasarımları, CC BY 4.0 lisanslı (creativecommons.org/licenses/by/4.0). Lisa Wischofsky\'nin \"Lorelei\", Zoish\'in \"Notionists\", DiceBear\'ın \"Pixel Art\" ve \"Thumbs\" tasarımları, CC0 1.0. Pablo Stanley\'nin \"Bottts\" tasarımı, kişisel ve ticari kullanım için ücretsiz. Hayvan yüzleri Twitter, Inc. ve diğer katkıda bulunanların Twemoji setinden, CC BY 4.0 lisanslı.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby ve Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio, kendi Jellyfin, Emby veya Silo sunucunuza bağlanır. Adları ve logoları sahiplerine aittir. Nuvio; Jellyfin, Emby veya Silo ile bağlantılı veya onaylanmış değildir.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc, kendi Jellyfin, Emby veya Silo sunucunuza bağlanır. Adları ve logoları sahiplerine aittir. Nuvio Arc; Jellyfin, Emby veya Silo ile bağlantılı veya onaylanmış değildir.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Paylaşım grubu listeleri. MIT lisansı.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Dolby Vision meta verilerini ayrıştırma. quietvoid tarafından oluşturulmuştur. MIT lisansı.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Ses kod çözme. LGPL 2.1 veya sonraki bir sürümü altında lisanslanmıştır.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Yazılımsal AV1 video kod çözme. VideoLAN ve dav1d yazarları tarafından oluşturulmuştur. BSD 2-Clause lisansı.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">AV1 kod çözücü için işlemci özelliklerini algılama. Google tarafından oluşturulmuştur. Apache 2.0 lisansı.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHD MAT paketleme ve ses kanalı indirgeme Kodi\'den uyarlanmıştır. GPL 2.0 veya sonraki bir sürümü altında lisanslanmıştır.</string>
     <string name="settings_experience_subtitle">Basit veya Gelişmiş</string>
@@ -3433,8 +3439,9 @@
     <string name="playback_section_audio_desc">Ses kontrolleri ve video uyumluluğu.</string>
     <string name="playback_afr_open">Açık</string>
     <string name="playback_afr_closed">Kapalı</string>
+    <string name="audio_tunneled_sub_prefer_app">Decoder Önceliği, Uygulama kod çözücülerini tercih et olarak ayarlıyken kullanılamaz</string>
     <string name="audio_use_system_passthrough">Sistem Ses Geçidi</string>
-    <string name="audio_use_system_passthrough_sub">TrueHD ve DTS-HD\'yi alıcınıza Nuvio (IEC yolu) yerine Android üzerinden (Sistem yolu) gönderir. Kayıpsız formatlarda gürültü, kayma veya sessizlik oluyorsa bunu kullanın.</string>
+    <string name="audio_use_system_passthrough_sub">TrueHD ve DTS-HD\'yi alıcınıza Nuvio Arc (IEC yolu) yerine Android üzerinden (Sistem yolu) gönderir. Kayıpsız formatlarda gürültü, kayma veya sessizlik oluyorsa bunu kullanın.</string>
     <string name="audio_surround_header">Surround Ses</string>
     <string name="audio_surround_reset_iec_probe">IEC Yoklama Kararını Temizle</string>
     <string name="audio_surround_reset_iec_probe_sub">IEC 61937 çıkışını yeniden test eder. Alıcıyı veya girişi değiştirdikten sonra kayıpsız formatlar PCM\'e düşüyorsa bunu kullanın.</string>
@@ -3483,6 +3490,10 @@
     <string name="audio_inject_hdr10_sei_sub">HDR10 temel katmanına indirilen DV8 (Profile 8) içeriğe kaynağın mastering meta verisini (MaxCLL/MaxFALL ve tepe parlaklık) ekler; böylece DV desteklemeyen HDR10 TV\'ler ton eşlemeyi doğru yapar. Yalnızca DV İşleme, DV Katmanını Kaldır veya HDR10 temel katmanı iken etkindir; Profile 7\'ye ve Dolby Vision oynatmaya etkisi yoktur.</string>
     <string name="diag_value_not_advertised">Bildirilmiyor (yerel oynatma yine de çalışabilir)</string>
     <string name="diag_label_dv_el_type">DV7 EL türü</string>
+    <string name="diag_value_dv7_native_route">Yerel çift katmanlı yol kullanılıyor (Android bunu bildirmiyor)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, üç katmanın tümü kullanılıyor</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, 8.1\'e dönüştürüldü (EL kullanılmıyor)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · yalnızca BL (RPU ve EL kullanılmıyor)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR mastering</string>
     <string name="diag_label_dv_rpu_drops">DV RPU kayıpları</string>
     <string name="sub_tertiary_lang">Üçüncü Tercih Edilen Dil</string>
@@ -3490,6 +3501,10 @@
     <string name="sub_addon_subtitles_desc">Oynatma sırasında yüklü eklentilerden altyazı getirir. Kapalıyken yalnızca dosyaya gömülü altyazılar kullanılabilir.</string>
     <string name="autoplay_quality_rules_title">Kalite kuralları</string>
     <string name="autoplay_quality_rules_subtitle">Bağlı Servisler\'deki filtreler, sıralama ve paylaşım grubu kademeleri.</string>
+    <string name="stream_sort_sources">Kaynakları sırala</string>
+    <string name="stream_sort_sources_sub">Yayın listesinin sırası. Önce en iyi kalite, Kalite kurallarınızı kullanır.</string>
+    <string name="stream_sort_sources_source_order">Kaynak sırası</string>
+    <string name="stream_sort_sources_best_first">Önce en iyi kalite</string>
     <string name="autoplay_eager_ready_title">Yavaş kaynaklarda daha hızlı hazır</string>
     <string name="autoplay_eager_ready_sub">En yavaş eklentiyi beklemek yerine, seçim zaman aşımına ulaşılır ulaşılmaz oynatmayı hazırlar. Detay sayfası ve İzlemeye Devam Et için geçerlidir.</string>
     <string name="autoplay_mode_quality">En iyi kalite</string>
@@ -3500,6 +3515,17 @@
     <string name="layout_landscape_posters_home_only_desc">Ana Sayfada yatay kartlar; Kütüphane, Arama ve listelerde dikey</string>
     <string name="layout_landscape_posters_everywhere">Her Yerde</string>
     <string name="layout_landscape_posters_everywhere_desc">Ana Sayfa, Kütüphane, Arama ve listelerde yatay kartlar</string>
+    <string name="layout_hide_side_icons">Yan simgeleri gizle</string>
+    <string name="layout_hide_side_icons_sub">Menü kapalıyken sol kenardaki menü simgelerini gizle. Menüyü açmak için Sol veya Geri tuşuna basın.</string>
+    <string name="layout_watched_titles">İzlenen içerikler</string>
+    <string name="layout_watched_titles_sub">Bitirdiğiniz film ve dizileri göster, karart veya gizle.</string>
+    <string name="layout_watched_titles_dialog_title">İzlenen içerikler</string>
+    <string name="layout_watched_titles_show">Göster</string>
+    <string name="layout_watched_titles_show_desc">İzlenen içerikler olduğu gibi kalır, onay işaretiyle.</string>
+    <string name="layout_watched_titles_dim">Karart</string>
+    <string name="layout_watched_titles_dim_desc">İzlenen içerikler yerinde kalır, daha koyu ve onay işaretiyle.</string>
+    <string name="layout_watched_titles_hide">Gizle</string>
+    <string name="layout_watched_titles_hide_desc">İzlenen filmler ve tamamen izlenen diziler Ana Sayfa satırlarında ve banner\'da gösterilmez. İzlemeye Devam Et etkilenmez.</string>
     <string name="layout_trailer_logo">Kart Fragmanı Üzerinde Logo</string>
     <string name="layout_trailer_logo_sub">Kartta oynatılan fragmanın üzerinde başlık logosunu göster.</string>
     <string name="mdblist_account_title">Hesap</string>
@@ -3522,6 +3548,8 @@
     <string name="player_layout_more_fixed_help">Daha Fazla\'yı gizlemek/göstermek için OK\'e basın. En sağda kalır. Açılır menüde neyin yer alacağını değiştirmek için diğer işlemleri menü sınırının ötesine taşıyın.</string>
     <string name="player_error_placeholder_stream">Bu yayın video değil, sağlayıcının hata kartı gibi görünüyor. Farklı bir kaynak deneyin.</string>
     <string name="subtitle_panel_languages">Diller</string>
+    <string name="library_sort_released_desc">En Yeni Çıkanlar</string>
+    <string name="library_sort_released_asc">İlk Çıkanlar</string>
     <string name="library_empty_mdblist_title">İzleme listenizde %1$s yok</string>
     <string name="library_empty_mdblist_subtitle">MDBList izleme listenize içerik eklemek için detaylardaki + tuşunu kullanın</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList bağlı değil</string>
@@ -3542,6 +3570,7 @@
     <string name="library_transfer_copy">Kopyala</string>
     <string name="library_transfer_move">Taşı (kopyala, sonra kaynaktan kaldır)</string>
     <string name="library_transfer_none">Kopyalanacak bir şey yok</string>
+    <string name="sub_mode_effects_warning">Ağır: 4K\'da kare atlayabilir ve tünelli oynatmayı kapatır.</string>
     <string name="cd_playback_stats">Oynatma istatistikleri</string>
     <string name="player_stats_unavailable_mpv">libmpv motorunda istatistikler kullanılamaz</string>
     <string name="player_dead_source_failover">Kaynak kullanılamıyor - sonraki kaynak deneniyor (%1$d/%2$d)</string>
@@ -3557,6 +3586,17 @@
     <string name="debrid_filters_show_everything_title">Her şeyi göster</string>
     <string name="debrid_filters_show_everything_subtitle">Tüm filtreleri ve sonuç sınırlarını kaldırır; akıllı sıralama kalır.</string>
     <string name="debrid_filters_show_everything_action">Tümünü göster</string>
+    <string name="playback_net_device_memory_auto">Bu cihazda %1$s bellek var. Uygulama en fazla %2$d MB ileriyi arabelleğe alır, bellek azaldığında daha az.</string>
+    <string name="playback_net_native_memory_sub">Uygulamanın arabellek boyutunu bu cihaza göre belirlemesini ve yerel bellekte tutmasını sağlar, sarma daha hızlı olur. Açmak, aşağıdaki arabellek ve ağ değerlerini de bu cihaza göre ayarlar.</string>
+    <string name="playback_buffer_custom_desc">Uygulamanın kendi değerleri yerine aşağıdaki değerleri kullanın. Kapalıyken: ExoPlayer Native Memory açıksa uygulama bu cihaz için seçtiği boyut içinde 15 ile 45 sn arabelleğe alır; kapalıysa Media3\'ün standart arabelleği.</string>
+    <string name="playback_buffer_seconds_hint">%1$d MB, 4K bir remux (80 Mbit/s) için yaklaşık %2$d sn tutar. Daha uzun ayarlar fark yaratmaz.</string>
+    <string name="playback_buffer_back_fitted">Hedef Arabellek Boyutunun içinde tutulur. %1$d MB ile uygulama en fazla yaklaşık %2$d sn tutar (80 Mbit/s ile %3$d MB), böylece en az 5 sn ilerisi hazır kalır.</string>
+    <string name="playback_buffer_back_fitted_none">Hedef Arabellek Boyutunun içinde tutulur. %1$d MB ile buna yer kalmaz, bu yüzden uygulama bunun yerine 5 sn ileriyi tutar.</string>
+    <string name="playback_buffer_managed_desc">Arabelleği oynatma başlarken bu cihazda boş olan belleğe göre ayarlar ve bellek azaldığında küçültür. Hedef Arabellek Boyutunu kendiniz seçmek için kapatın; küçük cihazlarda daha büyük bir boyut oynatmanın takılmasına yol açabilir.</string>
+    <string name="playback_buffer_target_size_sub">Videoyu önceden arabelleğe almak için kullanılan bellek. Sınır bu cihazın toplam belleğine göre belirlenir. Yönetilen Bellek Bütçesi açıkken uygulama boyutu, oynatma başlarken boş olan belleğe göre seçer. Cihazın belleği azaldığında arabellek küçülür.</string>
+    <string name="playback_buffer_target_stutter_warning">Bu cihazda %1$s bellek var. %2$d MB üzerinde oynatma takılabilir.</string>
+    <string name="playback_buffer_allow_large_desc">Hedef Arabellek Boyutunun 2 GB\'a kadar çıkmasına izin verir. Yalnızca 4 GB veya daha fazla belleği olan cihazlar için; daha küçük cihazlarda büyük boyutlar takılır veya çöker.</string>
+    <string name="playback_net_connection_count_small_box">Bu cihazda %1$s bellek var. 2\'den fazla bağlantı oynatmanın takılmasına yol açabilir.</string>
     <string name="diag_label_serving_host">Sunan sunucu</string>
     <string name="diag_label_file">Dosya</string>
     <string name="diag_label_dv_applied">Uygulanan DV</string>
@@ -3566,16 +3606,16 @@
     <string name="diag_value_dv_base_layer">DV yok sayıldı - HDR10 temel katmanı</string>
     <string name="diag_label_audio_path">Ses yolu</string>
     <string name="diag_label_audio_caps">Ses zincirinin bildirdikleri</string>
+    <string name="playback_estimated_memory_parts">Tahmini bellek kullanımı: yaklaşık %1$d MB (arabellek %2$d MB + indirmeler %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Tahmini bellek kullanımı: yaklaşık %1$d MB (arabellek %2$d MB)</string>
     <string name="stream_test_serving_host_label">Sunan sunucu: %1$s</string>
     <string name="stream_test_file_label">Dosya: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Öneri: paralel bağlantıları kapalı bırakın - tek bağlantı zaten %1$s sağlıyor, bu içeriğin bit hızının 2\u00d7 katından fazla.</string>
     <string name="stream_test_verdict_recommend">Öneri: %1$d bağlantı / %2$d MB\'lık parça - %3$s. Bu içeriğin bit hızının 2\u00d7 katını karşılayan en az bellekli yapılandırma; daha hızlıları yukarıda görünebilir ama oynatmaya fayda sağlamadan daha çok bellek kullanır.</string>
     <string name="stream_test_verdict_marginal">En iyi sonuç: %1$d bağlantı / %2$d MB\'lık parça, %3$s - bu içeriğin %4$s ortalama bit hızının üstünde ama 2\u00d7 pay hedefinin altında. Oynatma çalışır, ancak yüksek bit hızlı sahnelerde veya sararken arabelleğe alma olabilir.</string>
     <string name="stream_test_verdict_cannot_sustain">Bu bağlantı bu içeriği taşıyamıyor - test edilen en hızlı yapılandırma (%1$d bağlantı / %2$d MB\'lık parça) %3$s değerine ulaştı; içeriğin %4$s ortalama bit hızının altında. Takılmalar beklenir; daha düşük bit hızlı bir sürüm düşünün.</string>
     <string name="stream_test_verdict_fastest_nobitrate">En hızlı kararlı: %1$d bağlantı / %2$d MB\'lık parça, %3$s. İçeriğin bit hızı bilinmiyor - size özel öneri için önce bir video oynatın.</string>
-    <string name="stream_test_verdict_pm_suffix">" Nuvio Performance Mode gerektirir."</string>
     <string name="stream_test_caveat">Yalnızca ham indirme hızını ölçer - gerçek oynatma arabelleğe alma, kod çözme ve sunucu yüküne de bağlıdır ve hedef arabelleği de bellekte tutar.</string>
     <string name="stream_test_label_parallel_dyn">Paralel Bağlantı (%1$d bağlantı / %2$d MB\'lık parça)</string>
     <string name="stream_test_btn_measuring_dyn">Ölçülüyor: %1$s\u2026</string>
@@ -3608,7 +3648,6 @@
     <string name="assessment_item_parallel">Paralel Bağlantılar</string>
     <string name="assessment_item_chunk">Parça Boyutu</string>
     <string name="assessment_item_network_master">Özel Ağ Yapılandırması</string>
-    <string name="assessment_item_http2">HTTP/2 Protokolünü Etkinleştir</string>
     <string name="assessment_item_perf_mode">ExoPlayer Native Memory</string>
     <string name="assessment_item_buffer_master">Özel Oynatma Arabellekleri</string>
     <string name="assessment_item_managed_budget">Yönetilen Bellek Bütçesi</string>
@@ -3629,15 +3668,18 @@
     <string name="assessment_grounds_parallel_cannot">En hızlı ölçüm %2$d \u00d7 %3$d MB ile %1$s - içeriğin kendi bit hızının altında; bu bağlantı yayını taşıyamaz</string>
     <string name="assessment_grounds_parallel_fastest">En hızlı ölçüm %2$d \u00d7 %3$d MB ile %1$s - içeriğin bit hızı bilinmediği için yeterlilik kararı yok</string>
     <string name="assessment_grounds_chunk">Yukarıdaki bağlantı sayısıyla eşlenir, aynı ölçüm geçişinden</string>
-    <string name="assessment_grounds_network_master">Aşağıdaki HTTP/2 ve paralel ayarlarının ana anahtarı</string>
-    <string name="assessment_grounds_http2">Aralık isteklerini tek bağlantıda çoğullar; genel olarak faydalıdır, yoklama gerekmez</string>
     <string name="assessment_grounds_perf_mode">Remux boyutundaki arabellekleri Java heap dışında tutar, böylece çöp toplama karelerde takılmaya yol açamaz; bellek sınırları bu cihazın %1$s kademesine göre ölçeklenir (güvenli %2$d MB / uyarı %3$d MB) ve %4$d üzerindeki bağlantı sayıları bunu gerektirir</string>
     <string name="assessment_grounds_perf_mode_unsupported">Android 8.0 veya daha yenisini gerektirir</string>
-    <string name="assessment_grounds_buffer_master">Kapalı, media3\'ün standart yük kontrolü demektir: bayt olarak hesaplanan yaklaşık 13 MB\'lık hedef, süre değerleri ne olursa olsun bir remux\'un \u2248 1 s\'sini tutar - aşağıdaki değerler ise bu cihaza göre boyutlandırılmıştır</string>
-    <string name="assessment_grounds_managed_budget">Yönetilen mod hedefi güvenli sınıra sabitler ve paralel bağlantı yükünü yok sayar; aşağıdaki açık hedef ikisini de hesaba katar</string>
-    <string name="assessment_grounds_target_buffer">Hedef %1$d + %2$d MB bağlantı yükü = %3$d MB \u2264 %4$d MB güvenli sınır (sığan en büyük %5$d MB\'lık adım)</string>
-    <string name="assessment_grounds_allow_large_on">Hedef sürgüsünün bu cihazda %1$d MB\'a ulaşması için gerekli</string>
-    <string name="assessment_grounds_allow_large_off">Önerilen hedef standart sürgü aralığına sığıyor</string>
+    <string name="assessment_grounds_native_auto">Uygulama arabelleği bu %1$s cihaza göre boyutlandırır (en fazla %2$d MB, bellek azaldığında daha az) ve yerel bellekte tutar</string>
+    <string name="assessment_grounds_buffer_custom_times">Arabellek sürelerini aşağıdaki arabellek profili belirler; boyut otomatik kalır</string>
+    <string name="assessment_grounds_managed_on">Arabelleği oynatma başlarken boş olan belleğe göre ayarlar ve cihazın belleği azaldığında küçültür; sabit bir boyut ikisini de yapamaz</string>
+    <string name="assessment_value_target_auto">Otomatik (en fazla %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Yönetilen Bellek Bütçesi açıkken uygulama bunu oynatma başlarken seçer</string>
+    <string name="assessment_grounds_allow_large_small_box">Yalnızca 4 GB veya daha fazla belleği olan cihazlar için; bu %1$s cihazda büyük boyutlar takılır veya çöker</string>
+    <string name="assessment_grounds_allow_large_managed">Yönetilen Bellek Bütçesi açıkken etkisi yoktur</string>
+    <string name="assessment_grounds_network_for_parallel">Yukarıda önerilen paralel bağlantıları açar</string>
+    <string name="assessment_grounds_network_parallel_only">Yalnızca paralel bağlantılar için gerekir; burada tek bağlantı yeterince hızlı</string>
+    <string name="assessment_grounds_network_untested">Yalnızca paralel bağlantılar için gerekir ve bunlara karar vermek için hiçbir yayın test edilmedi</string>
     <string name="assessment_grounds_max_buffer">%1$d MB\'lık hedef bu içeriğin \u2248%2$d s\'sini tutar (%3$s) - bunun ötesindeki saniyeler gerçekleşemez</string>
     <string name="assessment_grounds_max_buffer_nobitrate">İçeriğin bit hızı bilinmiyor - bayt tavanı hesaplanamıyor; sınır %1$d s olarak bırakılıyor</string>
     <string name="assessment_grounds_vod_auto">Otomatik, boş alana göre boyutlandırır (sınırlar içinde boş alanın %%20\'si, 1 GB yedek) - bu cihazda şu an \u2248%1$s</string>
@@ -3674,7 +3716,7 @@
     <string name="assessment_no_stream">Son oynatılan yayın yok - cihaz satırları yine de çalışır. Ölçülen satırlar için önce en zorlu tipik içeriğinizi oynatın, sonra yeniden çalıştırın.</string>
     <string name="assessment_header_title">Cihaz bilgileri</string>
     <string name="assessment_header_device">Cihaz</string>
-    <string name="assessment_header_device_value">%1$s - güvenli %2$d MB / uyarı %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - arabellek en fazla %2$d MB / %3$d MB üzeri tehlikeli</string>
     <string name="assessment_header_display">Ekran</string>
     <string name="assessment_header_display_unknown">Bu sayfadan incelenemiyor</string>
     <string name="assessment_header_stream">Son yayın</string>
@@ -3695,8 +3737,7 @@
     <string name="assessment_footer">Ölçülen satırlar bu cihazda test edildi; hesaplanan satırlar sorgulanabilir bilgilerden türetildi. Uygula yalnızca ölçülen ve hesaplanan satırları ve seçtiğiniz profili yazar - doğrulama satırları asla otomatik değiştirilmez. Geri Al en son uygulamayı geri alır.</string>
     <string name="stream_test_verdict_recommend_trade">Öneri: %1$d bağlantı / %2$d MB\'lık parça - %3$s (bu içeriğin bit hızının %4$s\u00d7 katı). %5$d \u00d7 %6$d MB (2\u00d7+) yerine seçildi, çünkü bu cihazın bellek bütçesinde %9$d MB \u2248 %10$d s yerine %7$d MB \u2248 %8$d s oynatma arabelleği bırakıyor - burada depo derinliği dolum hızından önemli.</string>
     <string name="assessment_grounds_parallel_trade">%2$d \u00d7 %3$d MB ile %1$s ölçüldü - 1.5\u00d7 bit hızını karşılıyor ve %6$d MB \u2248 %7$d s arabellek bırakıyor; 2\u00d7 yapılandırma (%4$d \u00d7 %5$d MB) yalnızca %8$d MB \u2248 %9$d s bırakırdı</string>
-    <string name="assessment_grounds_target_current_warning">Mevcut %1$d MB + %2$d MB yük = %3$d MB, uyarı bandında (%4$d-%5$d MB) - kullanılabilir, ama pay azalmış</string>
-    <string name="assessment_grounds_target_current_danger">Mevcut %1$d MB + %2$d MB yük = %3$d MB, %4$d MB uyarı sınırını aşıyor - düşük bellek yüzünden kapatılma riski var</string>
+    <string name="assessment_parallel_small_box_cap">Bu cihazda %1$s bellek var, bu yüzden en fazla 2 bağlantı önerilir</string>
     <string name="assessment_grounds_max_buffer_current">Mevcut %1$d MB hedefinizle: saniye sürgüsü ne derse desin etkin süre \u2248 %2$d s - önce baytlar sınırlar</string>
     <string name="assessment_item_engine">Dahili Oynatıcı Motoru</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -3757,7 +3798,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV görüntü altyazıların yeniden boyutlandırılmasını desteklemez. Görüntü altyazı boyutunu metinden bağımsız ayarlamak için ExoPlayer kullanın.</string>
     <string name="subtitle_style_image_size">Görüntü altyazı boyutu</string>
     <string name="v2_accent_fixed_hint">Görsel vurgusu seçilmedikçe Renk Teması kullanılır.</string>
-    <string name="about_fork_updates_subtitle">NuvioTV-Fork güncellemeleri. Tüm fork sürümleri betadır.</string>
+    <string name="about_fork_updates_subtitle">GitHub\'daki Nuvio Arc sürümlerinden güncellemeler.</string>
     <string name="playback_speculative_stream_search">Oynat\'tan önce kaynak ara</string>
     <string name="playback_speculative_stream_search_sub">Kaynak seçimini hızlandırmak için gezinirken eklentilerde arama yapar. Bazı eklentiler arama sırasında içerik ekleyebilir veya çekebilir. Kapalıyken Oynat\'a kadar bekler. Medya bağlantıları ve sağlayıcı çözümlemesi oynatma seçimini bekler; yalnızca bölüm sonuna yakın, sarma küçük resimleri sonrakini hazırlarken beklemez.</string>
     <string name="debrid_cached_playback_links">Önbellekteki oynatma bağlantılarını yeniden kullan</string>
@@ -3845,6 +3886,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Hemen oynatmaya başlar; küçük resimler duraklatılmışken ve izlemeyi bıraktıktan sonra oluşturulur.</string>
     <string name="seek_thumbnails_prepare_on">Açık</string>
     <string name="seek_thumbnails_prepare_on_desc">Bir içeriğin sarma küçük resimlerini başlamadan önce oluşturur. \"Şimdi izlemeye başla\" veya Geri, oynatmayı istediğiniz an başlatır.</string>
+    <string name="seek_thumbnails_from_copy_title">Kopyadan küçük resimler</string>
+    <string name="seek_thumbnails_from_copy_subtitle">4K içerikler için 1080p veya 720p kopyadan, Usenet içerikleri için Usenet dışındaki bir kopyadan daha hızlı küçük resimler. TorBox\'ta önbelleğe alınmış bir kopya birkaç dakikalığına listenize eklenebilir.</string>
     <string name="seek_thumbnails_clear_title">Kayıtlı küçük resimleri temizle</string>
     <string name="seek_thumbnails_clear_subtitle">Bir içeriği bir sonraki oynatışınızda yeniden oluşturulur.</string>
     <string name="seek_thumbnails_cleared">Kayıtlı küçük resimler temizlendi</string>
@@ -3859,7 +3902,7 @@
     <string name="seek_thumbnails_time_left_minutes">Yaklaşık %1$d dk %2$d s kaldı</string>
     <string name="seek_thumbnails_count">%1$d / %2$d</string>
     <string name="seek_thumbnails_start_now">Şimdi izlemeye başla</string>
-    <string name="seek_thumbnails_settings_hint">Bunu Ayarlar › Oynatma › Genel bölümünden açıp kapatabilirsiniz</string>
+    <string name="seek_thumbnails_settings_hint">Bunu Ayarlar › Oynatma › Oynatıcı Arayüzü bölümünden açıp kapatabilirsiniz</string>
     <string name="seek_thumbnails_progress_chip">Küçük resimler %%%1$d</string>
     <string name="party_title">İzleme partisi</string>
     <string name="party_settings_subtitle">Başka evlerdeki kişilerle aynı şeyi aynı anda izleyin</string>
@@ -3901,6 +3944,7 @@
     <string name="party_member_buffering">arabelleğe alıyor</string>
     <string name="party_member_catching_up">yetişiyor</string>
     <string name="party_member_away">uzakta</string>
+    <string name="party_member_needs_update">güncelleme gerekiyor</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Kopyanız ev sahibininkinden %1$s s daha uzun. Senkron kayabilir.</string>
     <string name="party_copy_shorter">Kopyanız ev sahibininkinden %1$s s daha kısa. Senkron kayabilir.</string>
@@ -3915,7 +3959,7 @@
     <string name="party_match_same">Ev sahibiyle aynı dosya</string>
     <string name="party_match_likely">Muhtemelen ev sahibinin kopyası</string>
     <string name="party_match_different">Ev sahibininkinden farklı kopya</string>
-    <string name="party_invite_text">Nuvio\'daki izleme partime katıl. Ayarlar\'ı, sonra İzleme partisi\'ni aç ve şu kodu gir: %1$s</string>
+    <string name="party_invite_text">Nuvio Arc\'daki izleme partime katıl. Ayarlar\'ı, sonra İzleme partisi\'ni aç ve şu kodu gir: %1$s</string>
     <string name="party_invite_qr">Daveti mesajla göndermek için telefonun kamerasıyla tarayın</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

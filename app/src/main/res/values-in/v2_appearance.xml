@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Otomatis</string>
     <string name="v2_scale_manual">Manual</string>
     <string name="v2_scale_fine_tune">Penyesuaian skala</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Suara pembuka</string>
+    <string name="v2_intro_sound_subtitle">Putar pembuka dengan suaranya, dalam surround jika sistem Anda mendukung</string>
 </resources>

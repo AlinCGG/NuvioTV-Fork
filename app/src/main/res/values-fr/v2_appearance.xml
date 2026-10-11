@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatique</string>
     <string name="v2_scale_manual">Manuelle</string>
     <string name="v2_scale_fine_tune">Réglage précis de l’échelle</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Son d’introduction</string>
+    <string name="v2_intro_sound_subtitle">Lire l’introduction avec son, en surround si votre système le prend en charge</string>
 </resources>

@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Otomatik</string>
     <string name="v2_scale_manual">Manuel</string>
     <string name="v2_scale_fine_tune">Ölçek ince ayarı</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Giriş sesi</string>
+    <string name="v2_intro_sound_subtitle">Girişi sesiyle oynat, sisteminiz destekliyorsa surround olarak</string>
 </resources>

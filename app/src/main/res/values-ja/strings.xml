@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="tv_channel_continue_watching">視聴を続ける</string>
     <string name="type_movie">映画</string>
     <string name="type_movies">映画</string>
@@ -324,6 +324,7 @@
     <string name="theme_color_violet">バイオレット</string>
     <string name="theme_color_emerald">エメラルド</string>
     <string name="theme_color_amber">アンバー</string>
+    <string name="theme_color_copper">カッパー</string>
     <string name="theme_color_rose">ローズ</string>
     <string name="theme_color_white">ホワイト</string>
     <string name="appearance_amoled_mode">AMOLEDモード</string>
@@ -336,7 +337,7 @@
 
     <string name="about_title">このアプリについて</string>
     <string name="about_subtitle">アプリ情報、アップデート、法的リンク</string>
-    <string name="about_made_with_love">Tapframe と仲間たちが ❤️ を込めて開発</string>
+    <string name="about_made_with_love">Tapframe と仲間たちの素晴らしい成果をもとに ❤️ · Nuvio Arc 制作: ysosrs123</string>
     <string name="about_version">バージョン %1$s</string>
     <string name="about_check_updates">アップデートを確認</string>
     <string name="about_check_updates_subtitle">最新リリースをダウンロード</string>
@@ -347,26 +348,26 @@
     <string name="about_licenses_attributions">ライセンス &amp; 帰属</string>
     <string name="about_licenses_attributions_subtitle">データソース、謝辞、Androidライセンス</string>
     <string name="licenses_attributions_title">ライセンス &amp; 帰属</string>
-    <string name="licenses_attributions_subtitle">Nuvio TVが使用するデータプロバイダー、サービス、Android再生ライセンス</string>
+    <string name="licenses_attributions_subtitle">Nuvio Arcが使用するデータプロバイダー、サービス、Android再生ライセンス</string>
     <string name="licenses_attributions_section_app">アプリライセンス</string>
     <string name="licenses_attributions_section_data">データ &amp; サービス</string>
     <string name="licenses_attributions_section_playback">Android再生ライセンス</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-test（Nuvio TVのフォーク）</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio Arc（Nuvio TVのフォーク）</string>
     <string name="licenses_attributions_nuvio_body">Nuvio TVの改変版です。このビルドのソースコードとライセンス条項はフォークのリポジトリで入手可能です。Nuvio TVは github.com/NuvioMedia/NuvioTV にあります。GNU General Public License v3.0 の下でライセンスされています。</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-    <string name="licenses_attributions_tmdb_body">Nuvioは映画・TVのメタデータ、アートワーク、予告編、キャスト、制作詳細、コレクション、レコメンドにTMDB APIを使用しています。この製品はTMDB APIを使用していますが、TMDBによって承認または認定されていません。</string>
+    <string name="licenses_attributions_tmdb_body">Nuvio Arcは映画・TVのメタデータ、アートワーク、予告編、キャスト、制作詳細、コレクション、レコメンドにTMDB APIを使用しています。この製品はTMDB APIを使用していますが、TMDBによって承認または認定されていません。</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="licenses_attributions_trakt_body">NuvioはTraktと接続し、アカウント認証、視聴履歴、進行状況同期、ライブラリデータ、評価、リスト、コメントを利用します。NuvioはTraktと提携または承認されていません。</string>
+    <string name="licenses_attributions_trakt_body">Nuvio ArcはTraktと接続し、アカウント認証、視聴履歴、進行状況同期、ライブラリデータ、評価、リスト、コメントを利用します。Nuvio ArcはTraktと提携または承認されていません。</string>
     <string name="licenses_attributions_premiumize_title">Premiumize</string>
-    <string name="licenses_attributions_premiumize_body">NuvioはPremiumizeと接続し、アカウント認証、クラウドライブラリアクセス、キャッシュチェック、クラウド再生機能を利用します。NuvioはPremiumizeと提携または承認されていません。</string>
+    <string name="licenses_attributions_premiumize_body">Nuvio ArcはPremiumizeと接続し、アカウント認証、クラウドライブラリアクセス、キャッシュチェック、クラウド再生機能を利用します。Nuvio ArcはPremiumizeと提携または承認されていません。</string>
     <string name="licenses_attributions_torbox_title">TorBox</string>
-    <string name="licenses_attributions_torbox_body">NuvioはTorBoxと接続し、アカウント認証、クラウドライブラリアクセス、キャッシュチェック、クラウド再生機能を利用します。NuvioはTorBoxと提携または承認されていません。</string>
+    <string name="licenses_attributions_torbox_body">Nuvio ArcはTorBoxと接続し、アカウント認証、クラウドライブラリアクセス、キャッシュチェック、クラウド再生機能を利用します。Nuvio ArcはTorBoxと提携または承認されていません。</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvioは評価と外部スコアプロバイダーデータにMDBListを使用します。NuvioはMDBListと提携または承認されていません。</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio Arcは評価と外部スコアプロバイダーデータにMDBListを使用します。Nuvio ArcはMDBListと提携または承認されていません。</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
-    <string name="licenses_attributions_introdb_body">Nuvioはコミュニティ提供のイントロ、リキャップ、クレジット、プレビューのタイムスタンプにIntroDB APIを使用します（スキップコントロール用）。NuvioはIntroDBと提携または承認されていません。</string>
+    <string name="licenses_attributions_introdb_body">Nuvio Arcはコミュニティ提供のイントロ、リキャップ、クレジット、プレビューのタイムスタンプにIntroDB APIを使用します（スキップコントロール用）。Nuvio ArcはIntroDBと提携または承認されていません。</string>
     <string name="licenses_attributions_imdb_title">IMDb非商用データセット</string>
-    <string name="licenses_attributions_imdb_body">NuvioはIMDb非商用データセット（title.ratings.tsv.gzを含む）を使用し、IMDb評価と投票数を取得します。情報提供: IMDb (https://www.imdb.com)。許可を得て使用。IMDbデータは個人・非商用利用に限ります。</string>
+    <string name="licenses_attributions_imdb_body">Nuvio ArcはIMDb非商用データセット（title.ratings.tsv.gzを含む）を使用し、IMDb評価と投票数を取得します。情報提供: IMDb (https://www.imdb.com)。許可を得て使用。IMDbデータは個人・非商用利用に限ります。</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Android再生エンジンとして使用。Apache License, Version 2.0 の下でライセンスされています。</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -392,7 +393,7 @@
     <string name="settings_advanced_subtitle">パフォーマンス、ナビゲーション、キャッシュ、診断</string>
     <string name="experience_mode_essential">基本</string>
     <string name="experience_mode_advanced">詳細</string>
-    <string name="experience_mode_choose_title">Nuvioのエクスペリエンスを選択</string>
+    <string name="experience_mode_choose_title">Nuvio Arcのエクスペリエンスを選択</string>
     <string name="experience_mode_choose_subtitle">シンプルに始めるか、すべてのカスタマイズを解除。いつでも切り替え可能です。</string>
     <string name="experience_mode_essential_card_subtitle">基本設定、アドオン、再生の基本、Trakt、アカウント設定に焦点。</string>
     <string name="experience_mode_advanced_card_subtitle">すべての設定、レイアウト制御、カタログ順序、コレクション、プラグイン、診断。</string>
@@ -597,8 +598,8 @@
     <string name="playback_player_ask_desc">毎回プレーヤーを選択する</string>
     <string name="playback_player_auto">自動（コンテンツに最適化）</string>
     <string name="playback_player_auto_desc">映画やドラマにはExoPlayer・アニメにはMPV</string>
-    <string name="playback_engine_exoplayer_desc">現在のNuvio機能との互換性が最も高い。</string>
-    <string name="playback_engine_mvplayer_desc">Nuvio OSDコントロール付きのlibmpvを使用。実験的。</string>
+    <string name="playback_engine_exoplayer_desc">現在のNuvio Arc機能との互換性が最も高い。</string>
+    <string name="playback_engine_mvplayer_desc">Nuvio Arc OSDコントロール付きのlibmpvを使用。実験的。</string>
 
     <string name="video_section">映像</string>
     <string name="audio_trailer_section">予告編</string>
@@ -1181,7 +1182,7 @@
     <string name="trakt_stat_watched_hours">視聴時間</string>
     <string name="trakt_disconnect">切断</string>
     <string name="trakt_disconnect_title">Traktを切断しますか？</string>
-    <string name="trakt_disconnect_subtitle">NuvioからTraktアカウントが切断されます</string>
+    <string name="trakt_disconnect_subtitle">Nuvio ArcからTraktアカウントが切断されます</string>
     <string name="trakt_login">ログイン</string>
     <string name="trakt_retry">再試行</string>
     <string name="trakt_back">戻る</string>
@@ -1367,7 +1368,7 @@
     <string name="stream_type_torrent">トレント</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">P2Pストリーミング</string>
-    <string name="p2p_consent_body">このストリームはピアツーピア（P2P）技術を使用します。P2Pを有効にすると、以下を了承したものとみなされます:\n\n\u2022 あなたのIPアドレスはネットワーク上の他のピアに公開されます\n\u2022 アクセスするコンテンツに対する責任はすべてあなた自身にあります\n\u2022 あなたの管轄区域でこのコンテンツをストリーミングする法的権利を有することを確認します\n\u2022 NuvioはP2Pコンテンツをホスト、配布、または制御しません\n\u2022 NuvioはP2Pストリーミングの使用に起因する法的結果に対して一切の責任を負いません\n\nこの機能は完全に自己責任で使用してください。P2Pはいつでも設定で無効にできます。</string>
+    <string name="p2p_consent_body">このストリームはピアツーピア（P2P）技術を使用します。P2Pを有効にすると、以下を了承したものとみなされます:\n\n\u2022 あなたのIPアドレスはネットワーク上の他のピアに公開されます\n\u2022 アクセスするコンテンツに対する責任はすべてあなた自身にあります\n\u2022 あなたの管轄区域でこのコンテンツをストリーミングする法的権利を有することを確認します\n\u2022 Nuvio ArcはP2Pコンテンツをホスト、配布、または制御しません\n\u2022 Nuvio ArcはP2Pストリーミングの使用に起因する法的結果に対して一切の責任を負いません\n\nこの機能は完全に自己責任で使用してください。P2Pはいつでも設定で無効にできます。</string>
     <string name="p2p_consent_enable">P2Pを有効にする</string>
     <string name="p2p_consent_cancel">キャンセル</string>
     <string name="settings_p2p_title">P2Pストリーミング</string>
@@ -1819,7 +1820,7 @@
     <string name="catalog_see_all_empty_title">利用可能なアイテムがありません</string>
     <string name="catalog_see_all_empty_subtitle">別のカタログを試すか、後でもう一度ご確認ください</string>
 
-    <string name="layout_selection_welcome">Nuvioへようこそ</string>
+    <string name="layout_selection_welcome">Nuvio Arcへようこそ</string>
     <string name="layout_selection_subtitle">ホーム画面のレイアウトを選択</string>
     <string name="layout_selection_continue">続ける</string>
 
@@ -1994,7 +1995,7 @@
     <string name="cd_preview">プレビュー</string>
     <string name="cd_test">テスト</string>
     <string name="cd_unlink">リンク解除</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Traktロゴ</string>
     <string name="cd_trakt_qr">Trakt認証QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -2147,7 +2148,7 @@
     <string name="collections_editor_tmdb_list_helper">例: https://www.themoviedb.org/list/8504994 または 8504994。</string>
     <string name="collections_editor_tmdb_person_id">人物ID</string>
     <string name="collections_editor_tmdb_person_helper">例: https://www.themoviedb.org/person/31-tom-hanks または 31。</string>
-    <string name="collections_editor_tmdb_title_helper">行/タブ名として表示されます。空の場合はNuvioがソースから生成します。</string>
+    <string name="collections_editor_tmdb_title_helper">行/タブ名として表示されます。空の場合はNuvio Arcがソースから生成します。</string>
     <string name="collections_editor_tmdb_quick_genres">クイックジャンル</string>
     <string name="collections_editor_tmdb_quick_languages">クイック言語</string>
     <string name="collections_editor_tmdb_quick_countries">クイック国</string>
@@ -2320,7 +2321,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">REMUX/HDRなし</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">NuvioTVの内蔵プレーヤーを使用</string>
+    <string name="playback_player_internal_desc">Nuvio Arcの内蔵プレーヤーを使用</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$dシード · %2$dピア</string>
@@ -2728,16 +2729,21 @@
     <string name="appearance_screensaver_dim_gentle">画面ははっきり見える</string>
     <string name="appearance_screensaver_dim_balanced">暗いが読める</string>
     <string name="appearance_screensaver_dim_strong">ほとんど見えない</string>
+    <string name="appearance_app_icon_mint">ミント</string>
     <string name="licenses_attributions_avatars_title">ウォッチパーティーのアバター</string>
     <string name="licenses_attributions_avatars_body">DiceBearで作成。次のデザインをリミックスしています: Davis Ucheの\"Fun Emoji\"とLisa Wischofskyの\"Adventurer\"（CC BY 4.0ライセンス、creativecommons.org/licenses/by/4.0）。Lisa Wischofskyの\"Lorelei\"、Zoishの\"Notionists\"、DiceBearの\"Pixel Art\"と\"Thumbs\"（CC0 1.0）。Pablo Stanleyの\"Bottts\"（個人・商用利用無料）。動物の顔はTwitter, Inc.およびその他の貢献者によるTwemoji（CC BY 4.0ライセンス）。</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin、Emby、Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvioはお使いのJellyfin、Emby、Siloサーバーに接続します。各名称とロゴはそれぞれの所有者に帰属します。NuvioはJellyfin、Emby、Siloと提携または承認されていません。</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arcはお使いのJellyfin、Emby、Siloサーバーに接続します。各名称とロゴはそれぞれの所有者に帰属します。Nuvio ArcはJellyfin、Emby、Siloと提携または承認されていません。</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">リリースグループの一覧。MITライセンス。</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Dolby Visionメタデータの解析。quietvoid作。MITライセンス。</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">音声デコード。LGPL 2.1 以降の下でライセンスされています。</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">AV1動画のソフトウェアデコード。VideoLANとdav1dの作者による。BSD 2-Clauseライセンス。</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">AV1デコーダー向けのプロセッサー機能の検出。Google作。Apache 2.0ライセンス。</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHDのMATパッキングと音声ダウンミックスはKodiから移植しています。GPL 2.0 以降の下でライセンスされています。</string>
     <string name="settings_experience_subtitle">基本または詳細</string>
@@ -2773,8 +2779,9 @@
     <string name="playback_section_audio_desc">音声の操作と映像の互換性。</string>
     <string name="playback_afr_open">開いている</string>
     <string name="playback_afr_closed">閉じている</string>
+    <string name="audio_tunneled_sub_prefer_app">「デコーダー優先度」が「アプリデコーダーを優先」に設定されている間は利用できません</string>
     <string name="audio_use_system_passthrough">システムパススルー</string>
-    <string name="audio_use_system_passthrough_sub">TrueHDとDTS-HDをNuvio（IEC経路）ではなくAndroid（システム経路）経由でレシーバーに送ります。ロスレス形式でノイズ、ずれ、無音が起きる場合に使用してください。</string>
+    <string name="audio_use_system_passthrough_sub">TrueHDとDTS-HDをNuvio Arc（IEC経路）ではなくAndroid（システム経路）経由でレシーバーに送ります。ロスレス形式でノイズ、ずれ、無音が起きる場合に使用してください。</string>
     <string name="audio_surround_header">サラウンドサウンド</string>
     <string name="audio_surround_reset_iec_probe">IECプローブの判定をクリア</string>
     <string name="audio_surround_reset_iec_probe_sub">IEC 61937出力をもう一度テストします。レシーバーや入力を変えた後にロスレス形式がPCMになる場合に使用してください。</string>
@@ -2823,6 +2830,10 @@
     <string name="audio_inject_hdr10_sei_sub">DVを削除してHDR10ベースレイヤーにしたDV8（Profile 8）コンテンツに、ソースのマスタリングメタデータ（MaxCLL/MaxFALLとピーク輝度）を追加し、DV非対応のHDR10テレビで正しくトーンマップされるようにします。DV処理が「DVを削除」または「HDR10ベースレイヤー」のときのみ有効です。Profile 7やDolby Vision再生には影響しません。</string>
     <string name="diag_value_not_advertised">報告なし（ネイティブ再生は動作する可能性あり）</string>
     <string name="diag_label_dv_el_type">DV7 ELタイプ</string>
+    <string name="diag_value_dv7_native_route">ネイティブのデュアルレイヤー経路を使用中（Androidの一覧には未記載）</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL、3レイヤーすべて使用</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU、8.1に変換（EL未使用）</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · BLのみ（RPUとEL未使用）</string>
     <string name="diag_label_dv_hdr_mastering">DV HDRマスタリング</string>
     <string name="diag_label_dv_rpu_drops">DV RPUドロップ</string>
     <string name="sub_tertiary_lang">第3優先言語</string>
@@ -2830,6 +2841,10 @@
     <string name="sub_addon_subtitles_desc">再生中にインストール済みアドオンから字幕を取得します。オフの場合はファイルに埋め込まれた字幕のみ利用できます。</string>
     <string name="autoplay_quality_rules_title">品質ルール</string>
     <string name="autoplay_quality_rules_subtitle">接続サービスのフィルター、並べ替え、リリースグループの階層。</string>
+    <string name="stream_sort_sources">ソースの並べ替え</string>
+    <string name="stream_sort_sources_sub">ストリーム一覧の順序です。高品質優先は品質ルールに従います。</string>
+    <string name="stream_sort_sources_source_order">ソース順</string>
+    <string name="stream_sort_sources_best_first">高品質優先</string>
     <string name="autoplay_eager_ready_title">遅いソースでも早く準備</string>
     <string name="autoplay_eager_ready_sub">最も遅いアドオンを待たず、選択タイムアウトに達した時点で再生を準備します。詳細ページと「視聴を続ける」に適用されます。</string>
     <string name="autoplay_mode_quality">最高品質</string>
@@ -2840,6 +2855,17 @@
     <string name="layout_landscape_posters_home_only_desc">ホームは横向きカード、ライブラリ・検索・リストは縦向き</string>
     <string name="layout_landscape_posters_everywhere">すべての画面</string>
     <string name="layout_landscape_posters_everywhere_desc">ホーム・ライブラリ・検索・リストで横向きカード</string>
+    <string name="layout_hide_side_icons">サイドアイコンを非表示</string>
+    <string name="layout_hide_side_icons_sub">メニューが閉じている間、左端のメニューアイコンを非表示にします。左または戻るボタンでメニューを開きます。</string>
+    <string name="layout_watched_titles">視聴済みタイトル</string>
+    <string name="layout_watched_titles_sub">見終わった映画や番組を表示、暗く表示、または非表示にします。</string>
+    <string name="layout_watched_titles_dialog_title">視聴済みタイトル</string>
+    <string name="layout_watched_titles_show">表示</string>
+    <string name="layout_watched_titles_show_desc">視聴済みタイトルはそのまま、チェックマーク付きで表示します。</string>
+    <string name="layout_watched_titles_dim">暗く表示</string>
+    <string name="layout_watched_titles_dim_desc">視聴済みタイトルは同じ位置に、暗くしてチェックマーク付きで表示します。</string>
+    <string name="layout_watched_titles_hide">非表示</string>
+    <string name="layout_watched_titles_hide_desc">視聴済みの映画と全話視聴済みの番組を、ホームの行とバナーから除外します。「視聴を続ける」には影響しません。</string>
     <string name="layout_trailer_logo">カードの予告編にロゴを表示</string>
     <string name="layout_trailer_logo_sub">カードで再生中の予告編にタイトルロゴを重ねて表示</string>
     <string name="mdblist_account_title">アカウント</string>
@@ -2862,6 +2888,8 @@
     <string name="player_layout_more_fixed_help">OKで「その他」の表示/非表示を切り替えます。位置は右端に固定です。ほかの操作をメニューの境界を越えて移動すると、ポップアップに含めるかを変更できます。</string>
     <string name="player_error_placeholder_stream">このストリームは映像ではなく、プロバイダーのエラー画面のようです。別のソースを試してください。</string>
     <string name="subtitle_panel_languages">言語</string>
+    <string name="library_sort_released_desc">公開日 ↓</string>
+    <string name="library_sort_released_asc">公開日 ↑</string>
     <string name="library_empty_mdblist_title">ウォッチリストに%1$sはありません</string>
     <string name="library_empty_mdblist_subtitle">詳細ページの「+」からMDBListのウォッチリストに追加</string>
     <string name="library_empty_mdblist_not_auth_title">MDBListが接続されていません</string>
@@ -2882,6 +2910,7 @@
     <string name="library_transfer_copy">コピー</string>
     <string name="library_transfer_move">移動（コピー後にコピー元から削除）</string>
     <string name="library_transfer_none">コピーするものはありません</string>
+    <string name="sub_mode_effects_warning">高負荷: 4Kでコマ落ちすることがあり、トンネル再生がオフになります</string>
     <string name="cd_playback_stats">再生統計</string>
     <string name="player_stats_unavailable_mpv">libmpvエンジンでは統計を利用できません</string>
     <string name="player_dead_source_failover">ソースを利用できません - 次のソースを試行中（%1$d/%2$d）</string>
@@ -2897,6 +2926,17 @@
     <string name="debrid_filters_show_everything_title">すべて表示</string>
     <string name="debrid_filters_show_everything_subtitle">すべてのフィルターと結果数の上限を解除し、スマート並べ替えは維持します。</string>
     <string name="debrid_filters_show_everything_action">すべて表示</string>
+    <string name="playback_net_device_memory_auto">このデバイスのメモリは%1$sです。アプリは最大%2$d MBを先読みし、メモリ不足時は減らします。</string>
+    <string name="playback_net_native_memory_sub">このデバイスに合わせてアプリがバッファサイズを決め、ネイティブメモリに保持します。シークも速くなります。オンにすると、下のバッファとネットワークの値もこのデバイス向けに設定されます。</string>
+    <string name="playback_buffer_custom_desc">アプリ独自の値の代わりに下の値を使います。オフの場合: ExoPlayerネイティブメモリがオンなら、このデバイス向けに選んだサイズ内で15〜45秒をバッファします。オフならMedia3の標準バッファです。</string>
+    <string name="playback_buffer_seconds_hint">%1$d MBでは4Kリマックス（80 Mbit/s）の約%2$d秒分を保持します。これより長くしても変わりません。</string>
+    <string name="playback_buffer_back_fitted">目標バッファサイズの中に保持されます。%1$d MBではアプリは最大約%2$d秒分を保持し（80 Mbit/sで%3$d MB）、少なくとも5秒分の先読みを残します。</string>
+    <string name="playback_buffer_back_fitted_none">目標バッファサイズの中に保持されます。%1$d MBでは余裕がないため、代わりに5秒分の先読みを保持します。</string>
+    <string name="playback_buffer_managed_desc">再生開始時にこのデバイスの空きメモリからバッファを決め、メモリ不足時は縮小します。目標バッファサイズを自分で選ぶにはオフにします。小さなデバイスでは大きなサイズで再生がカクつく場合があります。</string>
+    <string name="playback_buffer_target_size_sub">動画の先読みバッファに使うメモリ。上限はこのデバイスの総メモリで決まります。「管理メモリ予算」がオンの場合、再生開始時の空きメモリからアプリがサイズを決めます。メモリ不足の間はバッファが小さくなります。</string>
+    <string name="playback_buffer_target_stutter_warning">このデバイスのメモリは%1$sです。%2$d MBを超えると再生がカクつく場合があります。</string>
+    <string name="playback_buffer_allow_large_desc">目標バッファサイズを最大2 GBまで設定できます。メモリ4 GB以上のデバイス専用です。小さなデバイスでは大きなサイズでカクつきやクラッシュが起きます。</string>
+    <string name="playback_net_connection_count_small_box">このデバイスのメモリは%1$sです。接続数が2を超えると再生がカクつく場合があります。</string>
     <string name="diag_label_serving_host">配信ホスト</string>
     <string name="diag_label_file">ファイル</string>
     <string name="diag_label_dv_applied">DV適用</string>
@@ -2906,16 +2946,16 @@
     <string name="diag_value_dv_base_layer">DVを無視 - HDR10ベースレイヤー</string>
     <string name="diag_label_audio_path">音声経路</string>
     <string name="diag_label_audio_caps">音声チェーンの申告</string>
+    <string name="playback_estimated_memory_parts">推定メモリ使用量: 約%1$d MB（バッファ%2$d MB + ダウンロード%3$d MB）</string>
+    <string name="playback_estimated_memory_buffer">推定メモリ使用量: 約%1$d MB（バッファ%2$d MB）</string>
     <string name="stream_test_serving_host_label">配信ホスト: %1$s</string>
     <string name="stream_test_file_label">ファイル: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">推奨: 並列接続はオフのままにしてください - 単一接続ですでに%1$sが出ており、このタイトルのビットレートの2\u00d7を超えています。</string>
     <string name="stream_test_verdict_recommend">推奨: %1$d接続 / %2$d MBチャンク - %3$s。このタイトルのビットレートの2\u00d7を満たす、メモリ使用が最も少ない構成です。上にはより速い構成が表示される場合がありますが、メモリを多く使うだけで再生上の利点はありません。</string>
     <string name="stream_test_verdict_marginal">最良の結果: %1$d接続 / %2$d MBチャンクで%3$s - このタイトルの平均ビットレート%4$sは上回りますが、2\u00d7の余裕目標には届きません。再生は可能ですが、高ビットレートの場面やシーク時にバッファリングが起きる場合があります。</string>
     <string name="stream_test_verdict_cannot_sustain">この接続ではこのタイトルを維持できません - テストした最速の構成（%1$d接続 / %2$d MBチャンク）は%3$sで、タイトルの平均ビットレート%4$sを下回りました。バッファリングが予想されます。ビットレートの低いバージョンを検討してください。</string>
     <string name="stream_test_verdict_fastest_nobitrate">安定した最速: %1$d接続 / %2$d MBチャンクで%3$s。タイトルのビットレートが不明です - 先に動画を再生すると、それに合わせた推奨が得られます。</string>
-    <string name="stream_test_verdict_pm_suffix">" Nuvioパフォーマンスモードが必要です。"</string>
     <string name="stream_test_caveat">測定するのはダウンロードの生スループットのみです - 実際の再生はバッファリング、デコード、サーバー負荷にも左右され、目標バッファもメモリに保持します。</string>
     <string name="stream_test_label_parallel_dyn">並列接続（%1$d接続 / %2$d MBチャンク）</string>
     <string name="stream_test_btn_measuring_dyn">計測中: %1$s\u2026</string>
@@ -2948,7 +2988,6 @@
     <string name="assessment_item_parallel">並列接続</string>
     <string name="assessment_item_chunk">チャンクサイズ</string>
     <string name="assessment_item_network_master">カスタムネットワーク</string>
-    <string name="assessment_item_http2">HTTP/2を有効化</string>
     <string name="assessment_item_perf_mode">ExoPlayerネイティブメモリ</string>
     <string name="assessment_item_buffer_master">カスタム再生バッファ</string>
     <string name="assessment_item_managed_budget">管理メモリ予算</string>
@@ -2969,15 +3008,18 @@
     <string name="assessment_grounds_parallel_cannot">最速は%2$d \u00d7 %3$d MBで%1$s - タイトル自体のビットレートを下回ります。この回線ではストリームを維持できません</string>
     <string name="assessment_grounds_parallel_fastest">最速は%2$d \u00d7 %3$d MBで%1$s - タイトルのビットレートが不明なため、十分かどうかは判定できません</string>
     <string name="assessment_grounds_chunk">上の接続数と組み合わせた値。同じ計測パスの結果です</string>
-    <string name="assessment_grounds_network_master">下のHTTP/2と並列設定のマスタースイッチ</string>
-    <string name="assessment_grounds_http2">レンジリクエストを1つの接続に多重化します。幅広く有効で、計測は不要です</string>
     <string name="assessment_grounds_perf_mode">リマックス級のバッファをJavaヒープの外に置き、ガベージコレクションによるコマ落ちを防ぎます。メモリ上限はこのデバイスの%1$sクラスに合わせて調整され（安全%2$d MB / 警告%3$d MB）、%4$d接続を超える場合は必須です</string>
     <string name="assessment_grounds_perf_mode_unsupported">Android 8.0以降が必要です</string>
-    <string name="assessment_grounds_buffer_master">オフではmedia3標準のロード制御になります。バイト数で計算される目標は約13 MBで、時間の設定値に関係なくリマックスの\u2248 1 s分しか保持しません - 下の値はこのデバイスに合わせたものです</string>
-    <string name="assessment_grounds_managed_budget">管理モードは目標を安全限界に固定し、並列接続のオーバーヘッドを考慮しません。下の明示的な目標は両方を考慮します</string>
-    <string name="assessment_grounds_target_buffer">目標%1$d + 接続オーバーヘッド%2$d MB = %3$d MB \u2264 安全限界%4$d MB（収まる最大の%5$d MB刻み）</string>
-    <string name="assessment_grounds_allow_large_on">このデバイスで目標スライダーを%1$d MBまで上げるために必要です</string>
-    <string name="assessment_grounds_allow_large_off">推奨の目標は標準のスライダー範囲に収まります</string>
+    <string name="assessment_grounds_native_auto">この%1$sデバイス向けにアプリがバッファサイズを決め（最大%2$d MB、メモリ不足時は減少）、ネイティブメモリに保持します</string>
+    <string name="assessment_grounds_buffer_custom_times">下のバッファプロファイルでバッファ時間を設定します。サイズは自動のままです</string>
+    <string name="assessment_grounds_managed_on">再生開始時の空きメモリからバッファを決め、メモリ不足時は縮小します。固定サイズではどちらもできません</string>
+    <string name="assessment_value_target_auto">自動（最大%1$d MB）</string>
+    <string name="assessment_grounds_target_auto">管理メモリ予算がオンなら、再生開始時にアプリがサイズを選びます</string>
+    <string name="assessment_grounds_allow_large_small_box">メモリ4 GB以上のデバイス専用です。この%1$sデバイスでは大きなサイズでカクつきやクラッシュが起きます</string>
+    <string name="assessment_grounds_allow_large_managed">管理メモリ予算がオンの間は効果がありません</string>
+    <string name="assessment_grounds_network_for_parallel">上で推奨された並列接続をオンにします</string>
+    <string name="assessment_grounds_network_parallel_only">並列接続にのみ必要です。ここでは1接続で十分速いです</string>
+    <string name="assessment_grounds_network_untested">並列接続にのみ必要ですが、判断のためのストリームはまだテストされていません</string>
     <string name="assessment_grounds_max_buffer">%1$d MBの目標で保持できるのはこのタイトル（%3$s）の\u2248%2$d s分です - それを超える秒数は実現しません</string>
     <string name="assessment_grounds_max_buffer_nobitrate">タイトルのビットレートが不明です - バイト上限を計算できないため、上限は%1$d sのままにします</string>
     <string name="assessment_grounds_vod_auto">自動は空き容量から決めます（上限内で空きの20%%、1 GBを確保） - このデバイスでは現在\u2248%1$s</string>
@@ -3014,7 +3056,7 @@
     <string name="assessment_no_stream">最後に再生したストリームがありません - デバイスの行は実行されます。計測の行を出すには、普段見る中で最も負荷の高いタイトルを再生してから再実行してください。</string>
     <string name="assessment_header_title">デバイス情報</string>
     <string name="assessment_header_device">デバイス</string>
-    <string name="assessment_header_device_value">%1$s - 安全%2$d MB / 警告%3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - バッファ最大%2$d MB / %3$d MB超は危険</string>
     <string name="assessment_header_display">ディスプレイ</string>
     <string name="assessment_header_display_unknown">この画面からは調べられません</string>
     <string name="assessment_header_stream">最後のストリーム</string>
@@ -3035,8 +3077,7 @@
     <string name="assessment_footer">計測の行はこのデバイスでテストした結果、計算の行は取得できる情報から導いた値です。適用で書き込むのは計測と計算の行、および選択したプロファイルのみです - 確認の行が自動で変更されることはありません。元に戻すは直前の適用を取り消します。</string>
     <string name="stream_test_verdict_recommend_trade">推奨: %1$d接続 / %2$d MBチャンク - %3$s（このタイトルのビットレートの%4$s\u00d7）。%5$d \u00d7 %6$d MB（2\u00d7以上）ではなくこちらを選んだのは、このデバイスのメモリ予算では再生バッファが%9$d MB \u2248 %10$d sではなく%7$d MB \u2248 %8$d s残るためです - ここでは補充の速さよりバッファの深さが有利です。</string>
     <string name="assessment_grounds_parallel_trade">%2$d \u00d7 %3$d MBで%1$sを計測 - 1.5\u00d7ビットレートを満たし、バッファが%6$d MB \u2248 %7$d s残ります。2\u00d7の構成（%4$d \u00d7 %5$d MB）では%8$d MB \u2248 %9$d sしか残りません</string>
-    <string name="assessment_grounds_target_current_warning">現在の%1$d MB + オーバーヘッド%2$d MB = %3$d MBは警告域（%4$d-%5$d MB）です - 使えますが余裕は少なくなります</string>
-    <string name="assessment_grounds_target_current_danger">現在の%1$d MB + オーバーヘッド%2$d MB = %3$d MBは警告限界%4$d MBを超えています - メモリ不足で強制終了されるおそれがあります</string>
+    <string name="assessment_parallel_small_box_cap">このデバイスのメモリは%1$sなので、接続数は2までを推奨します</string>
     <string name="assessment_grounds_max_buffer_current">現在の目標%1$d MBでは、秒数スライダーの値に関係なく実効\u2248 %2$d sです - 先にバイト数が上限になります</string>
     <string name="assessment_item_engine">内部エンジン</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -3097,7 +3138,7 @@
     <string name="subtitle_bitmap_mpv_note">MPVは画像字幕のサイズ変更に対応していません。テキストとは別に画像字幕のサイズを調整するにはExoPlayerを使用してください。</string>
     <string name="subtitle_style_image_size">画像字幕のサイズ</string>
     <string name="v2_accent_fixed_hint">アートワークのアクセントを選択しない限り、カラーテーマを使用します。</string>
-    <string name="about_fork_updates_subtitle">NuvioTV-Forkからのアップデート。フォークのリリースはすべてベータ版です。</string>
+    <string name="about_fork_updates_subtitle">GitHub の Nuvio Arc リリースからのアップデート。</string>
     <string name="playback_speculative_stream_search">再生前にソースを検索</string>
     <string name="playback_speculative_stream_search_sub">閲覧中にアドオンを検索し、ソース選択を速くします。アドオンによっては検索時にコンテンツを追加または取得する場合があります。オフでは再生を押すまで待ちます。メディアリンクとプロバイダーの解決は再生の選択まで行いません。ただしエピソードの終わり近くでは、シーク用サムネイルが次のエピソードを準備します。</string>
     <string name="debrid_cached_playback_links">キャッシュした再生リンクを再利用</string>
@@ -3185,6 +3226,8 @@
     <string name="seek_thumbnails_prepare_off_desc">すぐに再生を開始します。サムネイルは一時停止中と視聴終了後に作成されます。</string>
     <string name="seek_thumbnails_prepare_on">オン</string>
     <string name="seek_thumbnails_prepare_on_desc">タイトルが始まる前にシーク用サムネイルを作成します。「今すぐ視聴」または戻るでいつでも再生を開始できます。</string>
+    <string name="seek_thumbnails_from_copy_title">コピーからサムネイルを作成</string>
+    <string name="seek_thumbnails_from_copy_subtitle">4Kタイトルは1080pまたは720pのコピーから、UsenetのタイトルはUsenet以外のコピーから、サムネイルをより速く作成します。TorBoxのリストにキャッシュ済みのコピーが数分間追加される場合があります。</string>
     <string name="seek_thumbnails_clear_title">保存済みサムネイルを消去</string>
     <string name="seek_thumbnails_clear_subtitle">次にタイトルを再生したときに作り直されます。</string>
     <string name="seek_thumbnails_cleared">保存済みサムネイルを消去しました</string>
@@ -3199,7 +3242,7 @@
     <string name="seek_thumbnails_time_left_minutes">残り約%1$d分%2$d秒</string>
     <string name="seek_thumbnails_count">%1$d / %2$d</string>
     <string name="seek_thumbnails_start_now">今すぐ視聴</string>
-    <string name="seek_thumbnails_settings_hint">設定 › 再生 › 一般でオン/オフを切り替えられます</string>
+    <string name="seek_thumbnails_settings_hint">設定 › 再生 › Player Interface でオン/オフを切り替えられます</string>
     <string name="seek_thumbnails_progress_chip">サムネイル %1$d%%</string>
     <string name="party_title">ウォッチパーティー</string>
     <string name="party_settings_subtitle">離れた家の人と同じ作品を同じタイミングで観る</string>
@@ -3241,6 +3284,7 @@
     <string name="party_member_buffering">バッファ中</string>
     <string name="party_member_catching_up">追いかけ中</string>
     <string name="party_member_away">離席中</string>
+    <string name="party_member_needs_update">アップデートが必要</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">あなたのファイルはホストのものより%1$s s長いです。パーティーがずれる可能性があります。</string>
     <string name="party_copy_shorter">あなたのファイルはホストのものより%1$s s短いです。パーティーがずれる可能性があります。</string>
@@ -3255,7 +3299,7 @@
     <string name="party_match_same">ホストと同じファイル</string>
     <string name="party_match_likely">おそらくホストと同じファイル</string>
     <string name="party_match_different">ホストとは別のファイル</string>
-    <string name="party_invite_text">Nuvioのウォッチパーティーに参加しませんか。設定からウォッチパーティーを開き、コード %1$s を入力してください</string>
+    <string name="party_invite_text">Nuvio Arcのウォッチパーティーに参加しませんか。設定からウォッチパーティーを開き、コード %1$s を入力してください</string>
     <string name="party_invite_qr">スマホのカメラで読み取ると招待をメッセージで送れます</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

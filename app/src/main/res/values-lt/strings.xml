@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="type_movie">Filmas</string>
     <string name="type_series">Serialas</string>
     <string name="type_unknown">Nežinoma</string>
@@ -170,7 +170,7 @@
     <!-- AboutScreen -->
     <string name="about_title">Apie</string>
     <string name="about_subtitle">Programos informacija, atnaujinimai ir teisinės nuorodos</string>
-    <string name="about_made_with_love">Sukurta su ❤️ „Tapframe“ ir draugų</string>
+    <string name="about_made_with_love">Sukurta remiantis puikiu „Tapframe“ ir draugų darbu ❤️ · Nuvio Arc – ysosrs123</string>
     <string name="about_version">Versija %1$s</string>
     <string name="about_check_updates">Tikrinti atnaujinimus</string>
     <string name="about_check_updates_subtitle">Atsisiųsti naujausią versiją</string>
@@ -560,7 +560,7 @@
     <string name="trakt_stat_watched_hours">Žiūrėta valandų</string>
     <string name="trakt_disconnect">Atsijungti</string>
     <string name="trakt_disconnect_title">Atsijungti nuo „Trakt“?</string>
-    <string name="trakt_disconnect_subtitle">Tai atsies jūsų „Trakt“ paskyrą nuo „Nuvio“.</string>
+    <string name="trakt_disconnect_subtitle">Tai atsies jūsų „Trakt“ paskyrą nuo „Nuvio Arc“.</string>
     <string name="trakt_login">Prisijungti</string>
     <string name="trakt_retry">Bandyti dar kartą</string>
     <string name="trakt_back">Atgal</string>
@@ -933,7 +933,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="catalog_see_all_empty_subtitle">Šiame kataloge turinio nerasta</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Sveiki atvykę į Nuvio</string>
+    <string name="layout_selection_welcome">Sveiki atvykę į Nuvio Arc</string>
     <string name="layout_selection_subtitle">Pasirinkite, kaip norite matyti pradinį ekraną</string>
     <string name="layout_selection_continue">Tęsti</string>
 
@@ -1015,6 +1015,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="detail_trailer_error_age_restricted">Šiam anonsui YouTube taikomas amžiaus apribojimas, todėl čia jo paleisti negalima.</string>
     <string name="detail_trailer_error_unavailable">Šis anonsas YouTube nepasiekiamas.</string>
     <string name="detail_trailer_error_sign_in">YouTube prašo prisijungti, kad būtų galima paleisti šį anonsą.</string>
+    <string name="theme_color_copper">Varis</string>
     <string name="appearance_screensaver_group_title">OLED ekrano apsauga</string>
     <string name="appearance_screensaver_group_subtitle">Pritemdyti ekraną neveikos metu, kad jis mažiau dėvėtųsi</string>
     <string name="appearance_screensaver_enabled">Pritemdyti neveikos metu</string>
@@ -1028,16 +1029,21 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="appearance_screensaver_dim_gentle">Ekranas lieka aiškiai matomas</string>
     <string name="appearance_screensaver_dim_balanced">Tamsu, bet įskaitoma</string>
     <string name="appearance_screensaver_dim_strong">Vos matoma</string>
+    <string name="appearance_app_icon_mint">Mėtinė</string>
     <string name="licenses_attributions_avatars_title">Bendro žiūrėjimo avatarai</string>
     <string name="licenses_attributions_avatars_body">Sukurta su DiceBear, perdirbant šiuos dizainus: \"Fun Emoji\" (Davis Uche) ir \"Adventurer\" (Lisa Wischofsky), licencija CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" (Lisa Wischofsky), \"Notionists\" (Zoish), \"Pixel Art\" ir \"Thumbs\" (DiceBear), CC0 1.0. \"Bottts\" (Pablo Stanley), galima laisvai naudoti asmeniniais ir komerciniais tikslais. Gyvūnų veidai iš Twemoji (Twitter, Inc. ir kiti autoriai), licencija CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby ir Silo</string>
-    <string name="licenses_attributions_media_servers_body">„Nuvio“ jungiasi prie jūsų nuosavo Jellyfin, Emby arba Silo serverio. Jų pavadinimai ir logotipai priklauso jų savininkams. „Nuvio“ nėra susijusi su Jellyfin, Emby ar Silo ir nėra jų remiama.</string>
+    <string name="licenses_attributions_media_servers_body">„Nuvio Arc“ jungiasi prie jūsų nuosavo Jellyfin, Emby arba Silo serverio. Jų pavadinimai ir logotipai priklauso jų savininkams. „Nuvio Arc“ nėra susijusi su Jellyfin, Emby ar Silo ir nėra jų remiama.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Leidimo grupių sąrašai. MIT licencija.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Dolby Vision metaduomenų analizė. Autorius quietvoid. MIT licencija.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Garso dekodavimas. Licencija LGPL 2.1 arba naujesnė.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Programinis AV1 vaizdo dekodavimas. Autoriai: VideoLAN ir dav1d kūrėjai. BSD 2-Clause licencija.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Procesoriaus funkcijų aptikimas AV1 dekoderiui. Autorius: Google. Apache 2.0 licencija.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHD MAT pakavimas ir garso kanalų sumaišymas perkelti iš Kodi. Licencija GPL 2.0 arba naujesnė.</string>
     <string name="settings_experience_subtitle">Pagrindinė arba išplėstinė</string>
@@ -1073,8 +1079,9 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="playback_section_audio_desc">Garso valdikliai ir vaizdo suderinamumas.</string>
     <string name="playback_afr_open">Atidaryta</string>
     <string name="playback_afr_closed">Uždaryta</string>
+    <string name="audio_tunneled_sub_prefer_app">Negalima naudoti, kai nustatyme „Dekoderio prioritetas“ pasirinkta „Teikti pirmenybę programos dekoderiams“</string>
     <string name="audio_use_system_passthrough">Sistemos passthrough</string>
-    <string name="audio_use_system_passthrough_sub">TrueHD ir DTS-HD į imtuvą siunčia per „Android“ (sistemos kelias), o ne per „Nuvio“ (IEC kelias). Naudokite, jei nenuostolingi formatai skleidžia triukšmą, išsiskiria su vaizdu arba nėra garso.</string>
+    <string name="audio_use_system_passthrough_sub">TrueHD ir DTS-HD į imtuvą siunčia per „Android“ (sistemos kelias), o ne per „Nuvio Arc“ (IEC kelias). Naudokite, jei nenuostolingi formatai skleidžia triukšmą, išsiskiria su vaizdu arba nėra garso.</string>
     <string name="audio_surround_header">Erdvinis garsas</string>
     <string name="audio_surround_reset_iec_probe">Išvalyti IEC patikros sprendimą</string>
     <string name="audio_surround_reset_iec_probe_sub">Dar kartą išbandyti IEC 61937 išvestį. Naudokite, jei pakeitus imtuvą ar įvestį nenuostolingi formatai persijungia į PCM.</string>
@@ -1123,6 +1130,10 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="audio_inject_hdr10_sei_sub">DV8 (Profile 8) turiniui, sumažintam iki HDR10 bazinio sluoksnio, prideda šaltinio masteringo metaduomenis (MaxCLL/MaxFALL ir didžiausią skaistį), kad HDR10 televizoriai be DV teisingai atvaizduotų tonus. Veikia tik kai Dolby Vision apdorojimas nustatytas šalinti DV arba naudoti HDR10 bazinį sluoksnį; neturi įtakos Profile 7 ar Dolby Vision atkūrimui.</string>
     <string name="diag_value_not_advertised">Nepranešta (savasis atkūrimas vis tiek gali veikti)</string>
     <string name="diag_label_dv_el_type">DV7 EL tipas</string>
+    <string name="diag_value_dv7_native_route">Naudojamas savasis dviejų sluoksnių kelias (Android apie jį nepraneša)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, naudojami visi trys sluoksniai</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, konvertuota į 8.1 (EL nenaudojamas)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · tik BL (RPU ir EL nenaudojami)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR masteringas</string>
     <string name="diag_label_dv_rpu_drops">DV RPU praradimai</string>
     <string name="sub_tertiary_lang">Trečia pageidaujama kalba</string>
@@ -1130,6 +1141,10 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="sub_addon_subtitles_desc">Atkūrimo metu gauti subtitrus iš įdiegtų priedų. Išjungus pasiekiami tik į failą įterpti subtitrai.</string>
     <string name="autoplay_quality_rules_title">Kokybės taisyklės</string>
     <string name="autoplay_quality_rules_subtitle">Filtrai, rūšiavimas ir leidimo grupių lygiai skiltyje „Susietos paslaugos“.</string>
+    <string name="stream_sort_sources">Rikiuoti šaltinius</string>
+    <string name="stream_sort_sources_sub">Srautų sąrašo tvarka. Geriausia kokybė pirmiau naudoja jūsų Kokybės taisykles.</string>
+    <string name="stream_sort_sources_source_order">Šaltinių tvarka</string>
+    <string name="stream_sort_sources_best_first">Geriausia kokybė pirmiau</string>
     <string name="autoplay_eager_ready_title">Greičiau paruošti esant lėtiems šaltiniams</string>
     <string name="autoplay_eager_ready_sub">Paruošti atkūrimą vos pasibaigus pasirinkimo laikui, nelaukiant lėčiausio priedo. Taikoma informacijos puslapiui ir „Tęsti žiūrėjimą“.</string>
     <string name="autoplay_mode_quality">Geriausia kokybė</string>
@@ -1140,6 +1155,17 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="layout_landscape_posters_home_only_desc">Gulsčios kortelės pradiniame ekrane, stačios bibliotekoje, paieškoje ir sąrašuose</string>
     <string name="layout_landscape_posters_everywhere">Visur</string>
     <string name="layout_landscape_posters_everywhere_desc">Gulsčios kortelės pradiniame ekrane, bibliotekoje, paieškoje ir sąrašuose</string>
+    <string name="layout_hide_side_icons">Slėpti šonines piktogramas</string>
+    <string name="layout_hide_side_icons_sub">Slėpti meniu piktogramas kairiajame krašte, kol meniu uždarytas. Paspauskite „Kairėn“ arba „Atgal“, kad atidarytumėte meniu.</string>
+    <string name="layout_watched_titles">Žiūrėti pavadinimai</string>
+    <string name="layout_watched_titles_sub">Rodyti, pritemdyti arba slėpti filmus ir serialus, kuriuos baigėte žiūrėti.</string>
+    <string name="layout_watched_titles_dialog_title">Žiūrėti pavadinimai</string>
+    <string name="layout_watched_titles_show">Rodyti</string>
+    <string name="layout_watched_titles_show_desc">Žiūrėti pavadinimai lieka tokie, kokie yra, su varnele.</string>
+    <string name="layout_watched_titles_dim">Pritemdyti</string>
+    <string name="layout_watched_titles_dim_desc">Žiūrėti pavadinimai lieka savo vietoje, tamsesni, su varnele.</string>
+    <string name="layout_watched_titles_hide">Slėpti</string>
+    <string name="layout_watched_titles_hide_desc">Žiūrėti filmai ir iki galo žiūrėti serialai nerodomi pradinio ekrano eilutėse ir baneryje. Skilčiai „Tęsti žiūrėjimą“ tai neturi įtakos.</string>
     <string name="layout_trailer_logo">Logotipas ant kortelės anonso</string>
     <string name="layout_trailer_logo_sub">Rodyti pavadinimo logotipą ant kortelėje leidžiamo anonso.</string>
     <string name="mdblist_account_title">Paskyra</string>
@@ -1162,6 +1188,8 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="player_layout_more_fixed_help">Paspauskite OK, kad paslėptumėte arba rodytumėte „Daugiau“. Jis lieka dešiniajame krašte. Perkelkite kitus veiksmus per jo meniu ribą, kad pakeistumėte, kas yra iškylančiajame meniu.</string>
     <string name="player_error_placeholder_stream">Šis srautas panašus į teikėjo klaidos kortelę, o ne į vaizdo įrašą. Išbandykite kitą šaltinį.</string>
     <string name="subtitle_panel_languages">Kalbos</string>
+    <string name="library_sort_released_desc">Išleista (nuo naujausių)</string>
+    <string name="library_sort_released_asc">Išleista (nuo seniausių)</string>
     <string name="library_empty_mdblist_title">Žiūrėjimo sąraše nėra: %1$s</string>
     <string name="library_empty_mdblist_subtitle">Informacijos puslapyje naudokite +, kad pridėtumėte elementus į MDBList žiūrėjimo sąrašą</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList neprijungtas</string>
@@ -1182,6 +1210,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="library_transfer_copy">Kopijuoti</string>
     <string name="library_transfer_move">Perkelti (kopijuoti, tada pašalinti iš šaltinio)</string>
     <string name="library_transfer_none">Nėra ko kopijuoti</string>
+    <string name="sub_mode_effects_warning">Didelė apkrova: 4K vaizde gali praleisti kadrus ir išjungia tunelinį atkūrimą.</string>
     <string name="cd_playback_stats">Atkūrimo statistika</string>
     <string name="player_stats_unavailable_mpv">Statistika nepasiekiama naudojant libmpv variklį</string>
     <string name="player_dead_source_failover">Šaltinis nepasiekiamas - bandomas kitas šaltinis (%1$d/%2$d)</string>
@@ -1197,6 +1226,17 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="debrid_filters_show_everything_title">Rodyti viską</string>
     <string name="debrid_filters_show_everything_subtitle">Išvalyti visus filtrus ir rezultatų ribas; išmanusis rūšiavimas lieka.</string>
     <string name="debrid_filters_show_everything_action">Rodyti viską</string>
+    <string name="playback_net_device_memory_auto">Šis įrenginys turi %1$s atminties. Programa iš anksto buferizuoja iki %2$d MB, mažiau, kai trūksta atminties.</string>
+    <string name="playback_net_native_memory_sub">Leidžia programai parinkti buferį šiam įrenginiui ir laikyti jį savojoje atmintyje, su greitesniu persukimu. Įjungus taip pat nustatomos žemiau esančios buferio ir tinklo reikšmės šiam įrenginiui.</string>
+    <string name="playback_buffer_custom_desc">Naudoja žemiau esančias reikšmes vietoj programos savųjų. Išjungus: kai įjungta „ExoPlayer savoji atmintis“, programa buferizuoja nuo 15 iki 45 s pagal šiam įrenginiui parinktą dydį; kai išjungta, naudojamas standartinis Media3 buferis.</string>
+    <string name="playback_buffer_seconds_hint">Esant %1$d MB, tai talpina apie %2$d s 4K remux įrašo (80 Mbit/s). Ilgesni nustatymai nieko nekeičia.</string>
+    <string name="playback_buffer_back_fitted">Laikoma nustatymo „Tikslinis buferio dydis“ ribose. Esant %1$d MB, programa laiko iki maždaug %2$d s (%3$d MB esant 80 Mbit/s), kad į priekį liktų bent 5 s.</string>
+    <string name="playback_buffer_back_fitted_none">Laikoma nustatymo „Tikslinis buferio dydis“ ribose. Esant %1$d MB, jam vietos nėra, todėl programa vietoj to laiko 5 s į priekį.</string>
+    <string name="playback_buffer_managed_desc">Nustato buferį pagal laisvą atmintį atkūrimo pradžioje ir jį sumažina, kai įrenginiui trūksta atminties. Išjunkite, jei norite patys nustatyti „Tikslinis buferio dydis“; mažuose įrenginiuose didesnis dydis gali sukelti atkūrimo trūkčiojimą.</string>
+    <string name="playback_buffer_target_size_sub">Atmintis, naudojama vaizdo įrašui buferizuoti iš anksto. Riba priklauso nuo bendros šio įrenginio atminties. Įjungus „Managed memory budget“, programa dydį nustato pagal laisvą atmintį atkūrimo pradžioje. Kai įrenginiui trūksta atminties, buferis sumažinamas.</string>
+    <string name="playback_buffer_target_stutter_warning">Šis įrenginys turi %1$s atminties. Virš %2$d MB atkūrimas gali trūkčioti.</string>
+    <string name="playback_buffer_allow_large_desc">Leidžia nustatymą „Tikslinis buferio dydis“ padidinti iki 2 GB. Tik įrenginiams su 4 GB ar daugiau atminties; mažesniuose dideli dydžiai sukelia trūkčiojimą arba programos lūžimą.</string>
+    <string name="playback_net_connection_count_small_box">Šis įrenginys turi %1$s atminties. Daugiau nei 2 jungtys gali sukelti atkūrimo trūkčiojimą.</string>
     <string name="diag_label_serving_host">Teikiantis serveris</string>
     <string name="diag_label_file">Failas</string>
     <string name="diag_label_dv_applied">Pritaikytas DV</string>
@@ -1206,16 +1246,16 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="diag_value_dv_base_layer">DV ignoruojamas - HDR10 bazinis sluoksnis</string>
     <string name="diag_label_audio_path">Garso kelias</string>
     <string name="diag_label_audio_caps">Garso grandinė praneša</string>
+    <string name="playback_estimated_memory_parts">Numatomas atminties naudojimas: apie %1$d MB (buferis %2$d MB + atsisiuntimai %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Numatomas atminties naudojimas: apie %1$d MB (buferis %2$d MB)</string>
     <string name="stream_test_serving_host_label">Teikiantis serveris: %1$s</string>
     <string name="stream_test_file_label">Failas: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Rekomendacija: palikite lygiagrečias jungtis išjungtas - viena jungtis jau pasiekia %1$s, daugiau nei 2\u00d7 šio pavadinimo bitų spartos.</string>
     <string name="stream_test_verdict_recommend">Rekomendacija: %1$d jungtys / %2$d MB blokai - %3$s. Mažiausiai atminties naudojanti konfigūracija, pasiekianti 2\u00d7 šio pavadinimo bitų spartą; greitesnės konfigūracijos gali būti aukščiau, bet jos naudoja daugiau atminties be naudos atkūrimui.</string>
     <string name="stream_test_verdict_marginal">Geriausias rezultatas: %1$d jungtys / %2$d MB blokai, %3$s - viršija šio pavadinimo vidutinę bitų spartą (%4$s), bet nesiekia 2\u00d7 atsargos tikslo. Atkūrimas turėtų veikti, bet gali strigti didelės bitų spartos scenose ar persukant.</string>
     <string name="stream_test_verdict_cannot_sustain">Šis ryšys negali išlaikyti šio pavadinimo - greičiausia išbandyta konfigūracija (%1$d jungtys / %2$d MB blokai) pasiekė %3$s, mažiau nei pavadinimo vidutinė bitų sparta (%4$s). Tikėtinas strigimas; apsvarstykite mažesnės bitų spartos versiją.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Greičiausia stabili: %1$d jungtys / %2$d MB blokai, %3$s. Pavadinimo bitų sparta nežinoma - pirmiausia paleiskite vaizdo įrašą, kad gautumėte pritaikytą rekomendaciją.</string>
-    <string name="stream_test_verdict_pm_suffix">" Reikalingas Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Matuojamas tik grynas atsisiuntimo pralaidumas - tikras atkūrimas priklauso ir nuo buferizavimo, dekodavimo bei serverio apkrovos, be to, atmintyje laikomas ir tikslinis buferis.</string>
     <string name="stream_test_label_parallel_dyn">Lygiagretus jungimas (%1$d jungt. / %2$d MB blokai)</string>
     <string name="stream_test_btn_measuring_dyn">Matuojama: %1$s\u2026</string>
@@ -1248,7 +1288,6 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="assessment_item_parallel">Lygiagrečios jungtys</string>
     <string name="assessment_item_chunk">Bloko dydis</string>
     <string name="assessment_item_network_master">Pasirinktinis tinklas</string>
-    <string name="assessment_item_http2">Įjungti HTTP/2</string>
     <string name="assessment_item_perf_mode">ExoPlayer savoji atmintis</string>
     <string name="assessment_item_buffer_master">Pasirinktiniai atkūrimo buferiai</string>
     <string name="assessment_item_managed_budget">Valdomas atminties limitas</string>
@@ -1269,15 +1308,18 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="assessment_grounds_parallel_cannot">Greičiausiai išmatuota %1$s su %2$d \u00d7 %3$d MB - mažiau nei paties pavadinimo bitų sparta; šis ryšys srauto neišlaikys</string>
     <string name="assessment_grounds_parallel_fastest">Greičiausiai išmatuota %1$s su %2$d \u00d7 %3$d MB - pavadinimo bitų sparta nežinoma, todėl pakankamumas neįvertintas</string>
     <string name="assessment_grounds_chunk">Suporuota su aukščiau nurodytu jungčių skaičiumi, iš to paties matavimo</string>
-    <string name="assessment_grounds_network_master">Pagrindinis jungiklis žemiau esantiems HTTP/2 ir lygiagrečių jungčių nustatymams</string>
-    <string name="assessment_grounds_http2">Multipleksuoja diapazonų užklausas per vieną jungtį; dažniausiai naudinga, patikra nereikalinga</string>
     <string name="assessment_grounds_perf_mode">Laiko remux dydžio buferius ne Java krūvoje, kad šiukšlių surinkimas nesukeltų kadrų trūkčiojimo; atminties ribos pritaikomos šio įrenginio %1$s klasei (saugu %2$d MB / įspėjimas %3$d MB), o daugiau nei %4$d jungtims to reikia</string>
     <string name="assessment_grounds_perf_mode_unsupported">Reikalinga „Android“ 8.0 arba naujesnė</string>
-    <string name="assessment_grounds_buffer_master">Išjungus naudojamas standartinis media3 įkėlimo valdymas: baitais skaičiuojamas tikslas apie 13 MB, kuris talpina \u2248 1 s remux, kad ir kokios būtų trukmės reikšmės - žemiau esančios reikšmės pritaikytos šiam įrenginiui</string>
-    <string name="assessment_grounds_managed_budget">Valdomas režimas pririša tikslą prie saugios ribos ir neatsižvelgia į lygiagrečių jungčių sąnaudas; žemiau nurodytas tikslas įskaičiuoja abu</string>
-    <string name="assessment_grounds_target_buffer">Tikslas %1$d + %2$d MB jungčių sąnaudų = %3$d MB \u2264 %4$d MB saugios ribos (didžiausias telpantis %5$d MB žingsnis)</string>
-    <string name="assessment_grounds_allow_large_on">Reikalinga, kad tikslo slankiklis šiame įrenginyje pasiektų %1$d MB</string>
-    <string name="assessment_grounds_allow_large_off">Rekomenduojamas tikslas telpa į standartinį slankiklio diapazoną</string>
+    <string name="assessment_grounds_native_auto">Programa parenka buferį šiam %1$s įrenginiui (iki %2$d MB, mažiau, kai trūksta atminties) ir laiko jį savojoje atmintyje</string>
+    <string name="assessment_grounds_buffer_custom_times">Leidžia žemiau esančiam buferio profiliui nustatyti buferio laikus; dydis lieka automatinis</string>
+    <string name="assessment_grounds_managed_on">Nustato buferį pagal laisvą atmintį atkūrimo pradžioje ir sumažina, kai įrenginiui trūksta atminties; fiksuotas dydis negali nei vieno, nei kito</string>
+    <string name="assessment_value_target_auto">Automatinis (iki %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Kai įjungtas Valdomas atminties limitas, programa dydį parenka atkūrimo pradžioje</string>
+    <string name="assessment_grounds_allow_large_small_box">Tik įrenginiams su 4 GB ar daugiau atminties; šiame %1$s įrenginyje dideli dydžiai sukelia trūkčiojimą arba programos lūžimą</string>
+    <string name="assessment_grounds_allow_large_managed">Neturi poveikio, kol įjungtas Valdomas atminties limitas</string>
+    <string name="assessment_grounds_network_for_parallel">Įjungia aukščiau rekomenduojamas lygiagrečias jungtis</string>
+    <string name="assessment_grounds_network_parallel_only">Reikia tik lygiagrečioms jungtims; čia pakanka vienos jungties</string>
+    <string name="assessment_grounds_network_untested">Reikia tik lygiagrečioms jungtims, o joms įvertinti nebuvo išbandytas joks srautas</string>
     <string name="assessment_grounds_max_buffer">%1$d MB tikslas talpina \u2248%2$d s šio pavadinimo (%3$s) - daugiau sekundžių susikaupti negali</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Pavadinimo bitų sparta nežinoma - baitų ribos apskaičiuoti negalima; riba paliekama %1$d s</string>
     <string name="assessment_grounds_vod_auto">Automatinis dydis pagal laisvą vietą (20%% laisvos vietos ribose, 1 GB rezervas) - šiuo metu šiame įrenginyje \u2248%1$s</string>
@@ -1314,7 +1356,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="assessment_no_stream">Nėra paskutinio leisto srauto - įrenginio eilutės vis tiek bus apskaičiuotos. Išmatuotoms eilutėms pirmiausia paleiskite reikliausią įprastą pavadinimą, tada paleiskite iš naujo.</string>
     <string name="assessment_header_title">Įrenginio duomenys</string>
     <string name="assessment_header_device">Įrenginys</string>
-    <string name="assessment_header_device_value">%1$s - saugu %2$d MB / įspėjimas %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buferis iki %2$d MB / pavojus virš %3$d MB</string>
     <string name="assessment_header_display">Ekranas</string>
     <string name="assessment_header_display_unknown">Iš šio lango patikrinti negalima</string>
     <string name="assessment_header_stream">Paskutinis srautas</string>
@@ -1335,8 +1377,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="assessment_footer">Išmatuotos eilutės išbandytos šiame įrenginyje; apskaičiuotos eilutės išvestos iš prieinamų duomenų. Pritaikius įrašomos tik išmatuotos ir apskaičiuotos eilutės bei jūsų pasirinktas profilis - tikrintinos eilutės niekada nekeičiamos automatiškai. Grąžinimas atšaukia paskutinį pritaikymą.</string>
     <string name="stream_test_verdict_recommend_trade">Rekomendacija: %1$d jungtys / %2$d MB blokai - %3$s (%4$s\u00d7 šio pavadinimo bitų spartos). Pasirinkta vietoj %5$d \u00d7 %6$d MB (2\u00d7+), nes šio įrenginio atminties limite lieka %7$d MB \u2248 %8$d s atkūrimo buferio vietoj %9$d MB \u2248 %10$d s - čia buferio gylis svarbiau nei pildymo greitis.</string>
     <string name="assessment_grounds_parallel_trade">Išmatuota %1$s su %2$d \u00d7 %3$d MB - pasiekia 1.5\u00d7 bitų spartą ir palieka %6$d MB \u2248 %7$d s buferio; 2\u00d7 konfigūracija (%4$d \u00d7 %5$d MB) paliktų tik %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Dabartiniai %1$d MB + %2$d MB sąnaudų = %3$d MB yra įspėjimo zonoje (%4$d-%5$d MB) - veikia, bet su mažesne atsarga</string>
-    <string name="assessment_grounds_target_current_danger">Dabartiniai %1$d MB + %2$d MB sąnaudų = %3$d MB viršija %4$d MB įspėjimo ribą - gresia uždarymas dėl atminties trūkumo</string>
+    <string name="assessment_parallel_small_box_cap">Šis įrenginys turi %1$s atminties, todėl rekomenduojamos ne daugiau kaip 2 jungtys</string>
     <string name="assessment_grounds_max_buffer_current">Su dabartiniu %1$d MB tikslu: realiai \u2248 %2$d s, kad ir ką rodytų sekundžių slankiklis - pirmiausia riboja baitai</string>
     <string name="assessment_item_engine">Vidinis variklis</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -1397,7 +1438,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="subtitle_bitmap_mpv_note">MPV nepalaiko vaizdinių subtitrų dydžio keitimo. Naudokite ExoPlayer, kad jų dydį keistumėte nepriklausomai nuo teksto.</string>
     <string name="subtitle_style_image_size">Vaizdinių subtitrų dydis</string>
     <string name="v2_accent_fixed_hint">Naudoja temos spalvą, nebent pasirinkta „Derinti prie vaizdų“.</string>
-    <string name="about_fork_updates_subtitle">Atnaujinimai iš NuvioTV-Fork. Visi šios atšakos leidimai yra beta.</string>
+    <string name="about_fork_updates_subtitle">Atnaujinimai iš Nuvio Arc leidimų GitHub.</string>
     <string name="playback_speculative_stream_search">Ieškoti šaltinių prieš paleidžiant</string>
     <string name="playback_speculative_stream_search_sub">Naršant ieškoti prieduose, kad šaltinis būtų pasirenkamas greičiau. Kai kurie priedai paieškos metu gali pridėti arba parsiųsti turinį. Išjungus laukiama, kol paspausite „Leisti“. Medijos nuorodos ir teikėjo apdorojimas laukia atkūrimo pasirinkimo, išskyrus serijos pabaigą, kai persukimo miniatiūros ruošia kitą seriją.</string>
     <string name="debrid_cached_playback_links">Pakartotinai naudoti talpykloje esančias atkūrimo nuorodas</string>
@@ -1485,6 +1526,8 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="seek_thumbnails_prepare_off_desc">Atkūrimas pradedamas iš karto; miniatiūros kuriamos pristabdžius ir baigus žiūrėti.</string>
     <string name="seek_thumbnails_prepare_on">Įjungta</string>
     <string name="seek_thumbnails_prepare_on_desc">Sukurti pavadinimo persukimo miniatiūras prieš jam prasidedant. \"Pradėti žiūrėti dabar\" arba „Atgal“ bet kada paleidžia atkūrimą.</string>
+    <string name="seek_thumbnails_from_copy_title">Miniatiūros iš kopijos</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Greitesnės miniatiūros 4K pavadinimams iš 1080p arba 720p kopijos, o Usenet pavadinimams iš kopijos, kurios nėra Usenet tinkle. TorBox talpykloje esanti kopija gali būti kelioms minutėms pridėta prie jūsų sąrašo.</string>
     <string name="seek_thumbnails_clear_title">Išvalyti išsaugotas miniatiūras</string>
     <string name="seek_thumbnails_clear_subtitle">Jos sukuriamos iš naujo, kai kitą kartą paleidžiate pavadinimą.</string>
     <string name="seek_thumbnails_cleared">Išsaugotos miniatiūros išvalytos</string>
@@ -1499,7 +1542,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="seek_thumbnails_time_left_minutes">Liko apie %1$d min %2$d s</string>
     <string name="seek_thumbnails_count">%1$d iš %2$d</string>
     <string name="seek_thumbnails_start_now">Pradėti žiūrėti dabar</string>
-    <string name="seek_thumbnails_settings_hint">Įjunkite arba išjunkite: Nustatymai › Atkūrimas › Bendra</string>
+    <string name="seek_thumbnails_settings_hint">Įjunkite arba išjunkite: Nustatymai › Atkūrimas › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Miniatiūros %1$d%%</string>
     <string name="party_title">Bendras žiūrėjimas</string>
     <string name="party_settings_subtitle">Žiūrėkite tą patį tuo pačiu metu su žmonėmis kituose namuose</string>
@@ -1541,6 +1584,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="party_member_buffering">kaupia buferį</string>
     <string name="party_member_catching_up">vejasi</string>
     <string name="party_member_away">nėra</string>
+    <string name="party_member_needs_update">reikia atnaujinti</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Jūsų kopija %1$s s ilgesnė nei šeimininko. Žiūrėjimas gali išsiskirti.</string>
     <string name="party_copy_shorter">Jūsų kopija %1$s s trumpesnė nei šeimininko. Žiūrėjimas gali išsiskirti.</string>
@@ -1555,7 +1599,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="party_match_same">Tas pats failas kaip šeimininko</string>
     <string name="party_match_likely">Tikriausiai šeimininko kopija</string>
     <string name="party_match_different">Kita kopija nei šeimininko</string>
-    <string name="party_invite_text">Prisijunk prie mano bendro žiūrėjimo programoje „Nuvio“. Atidaryk „Nustatymai“, tada „Bendras žiūrėjimas“ ir įvesk kodą %1$s</string>
+    <string name="party_invite_text">Prisijunk prie mano bendro žiūrėjimo programoje „Nuvio Arc“. Atidaryk „Nustatymai“, tada „Bendras žiūrėjimas“ ir įvesk kodą %1$s</string>
     <string name="party_invite_qr">Nuskaitykite telefono kamera, kad išsiųstumėte kvietimą žinute</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

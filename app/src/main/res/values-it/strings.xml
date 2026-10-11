@@ -1,5 +1,5 @@
 <resources>
-<string name="app_name">Nuvio-test</string>
+<string name="app_name">Nuvio Arc</string>
 <string name="tv_channel_continue_watching">Continua a guardare</string>
 <string name="type_movie">Film</string>
 <string name="type_movies">Film</string>
@@ -334,6 +334,7 @@
 <string name="theme_color_violet">Violetto</string>
 <string name="theme_color_emerald">Smeraldo</string>
 <string name="theme_color_amber">Ambra</string>
+    <string name="theme_color_copper">Rame</string>
 <string name="theme_color_rose">Rosa</string>
 <string name="theme_color_white">Bianco</string>
 <string name="appearance_amoled_mode">Modalità AMOLED</string>
@@ -343,13 +344,13 @@
 <string name="appearance_settings_style">Stile impostazioni</string>
 <string name="appearance_settings_style_subtitle">Scegli come vengono mostrate le schermate delle impostazioni</string>
 <string name="appearance_launcher_artwork">Grafica launcher</string>
-<string name="appearance_launcher_artwork_subtitle">Scegli come appare Nuvio nella home della tua TV</string>
+<string name="appearance_launcher_artwork_subtitle">Scegli come appare Nuvio Arc nella home della tua TV</string>
 <string name="appearance_app_icon_and_banner">Icona e banner dell\'app</string>
 <string name="appearance_app_icon_and_banner_subtitle">Cambia icona e banner dell\'app</string>
 <string name="appearance_app_icon_picker_title">Scegli icona e banner dell\'app</string>
 <string name="appearance_app_icon_picker_subtitle">Ogni stile include un\'icona quadrata e un banner TV coordinati</string>
 <string name="appearance_app_icon_confirmation_title">Cambiare icona dell\'app?</string>
-<string name="appearance_app_icon_confirmation_message">Passando a %1$s Nuvio verrà chiuso. Il banner TV potrebbe richiedere un riavvio del dispositivo prima di aggiornarsi. Seleziona OK per continuare.</string>
+<string name="appearance_app_icon_confirmation_message">Passando a %1$s Nuvio Arc si riavvierà con la nuova icona. La schermata Home potrebbe impiegare qualche secondo per mostrarla e il banner TV potrebbe richiedere un riavvio del dispositivo. Seleziona OK per continuare.</string>
 <string name="appearance_app_icon_change_failed">Impossibile cambiare icona e banner. Riprova.</string>
 <string name="appearance_app_icon_original">Originale</string>
 <string name="appearance_app_icon_arctic_blue">Blu artico</string>
@@ -369,7 +370,7 @@
 
 <string name="about_title">Informazioni</string>
 <string name="about_subtitle">Informazioni sull\'app, aggiornamenti e link legali</string>
-<string name="about_made_with_love">Fatto con ❤️ da Tapframe e amici</string>
+<string name="about_made_with_love">Basato sul grande lavoro di Tapframe e amici ❤️ · Nuvio Arc di ysosrs123</string>
 <string name="about_version">Versione %1$s</string>
 <string name="about_update_banner_title">Banner di aggiornamento automatico</string>
 <string name="about_update_banner_subtitle">Mostra un banner quando è disponibile una nuova versione</string>
@@ -390,28 +391,28 @@
 <string name="about_licenses_attributions">Licenze e attribuzioni</string>
 <string name="about_licenses_attributions_subtitle">Sorgenti dati, ringraziamenti e licenze Android</string>
 <string name="licenses_attributions_title">Licenze e attribuzioni</string>
-<string name="licenses_attributions_subtitle">Fornitori di dati, crediti dei servizi e licenze di riproduzione Android utilizzate da Nuvio TV.</string>
+<string name="licenses_attributions_subtitle">Fornitori di dati, crediti dei servizi e licenze di riproduzione Android utilizzate da Nuvio Arc.</string>
 <string name="licenses_attributions_section_app">LICENZA APP</string>
 <string name="licenses_attributions_section_data">DATI E SERVIZI</string>
 <string name="licenses_attributions_section_playback">LICENZE DI RIPRODUZIONE ANDROID</string>
-<string name="licenses_attributions_nuvio_title">Nuvio-test (fork di Nuvio TV)</string>
+<string name="licenses_attributions_nuvio_title">Nuvio Arc (fork di Nuvio TV)</string>
 <string name="licenses_attributions_nuvio_body">Una versione modificata di Nuvio TV. Il codice sorgente e i termini della licenza di questa build sono disponibili nel repository del fork. Nuvio TV si trova su github.com/NuvioMedia/NuvioTV. Distribuito sotto licenza GNU General Public License v3.0.</string>
 <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-<string name="licenses_attributions_tmdb_body">Nuvio utilizza l\'API di TMDB per metadati di film e serie TV, locandine, trailer, cast, dettagli di produzione, collezioni e raccomandazioni. Questo prodotto utilizza l\'API di TMDB ma non è approvato o certificato da TMDB.</string>
+<string name="licenses_attributions_tmdb_body">Nuvio Arc utilizza l\'API di TMDB per metadati di film e serie TV, locandine, trailer, cast, dettagli di produzione, collezioni e raccomandazioni. Questo prodotto utilizza l\'API di TMDB ma non è approvato o certificato da TMDB.</string>
 <string name="licenses_attributions_trakt_title">Trakt</string>
-<string name="licenses_attributions_trakt_body">Nuvio si connette a Trakt per l\'autenticazione dell\'account, la cronologia di visione, la sincronizzazione dei progressi, i dati della libreria, le valutazioni, le liste e i commenti. Nuvio non è affiliato né approvato da Trakt.</string>
+<string name="licenses_attributions_trakt_body">Nuvio Arc si connette a Trakt per l\'autenticazione dell\'account, la cronologia di visione, la sincronizzazione dei progressi, i dati della libreria, le valutazioni, le liste e i commenti. Nuvio Arc non è affiliato né approvato da Trakt.</string>
 <string name="licenses_attributions_simkl_title">Simkl</string>
-<string name="licenses_attributions_simkl_body">Nuvio si collega a Simkl per l\'autenticazione dell\'account, le watchlist, la cronologia visti, i progressi di riproduzione e lo scrobbling. I dati di tracciamento di film, serie TV e anime sono forniti da Simkl. Nuvio non è affiliata né approvata da Simkl.</string>
+<string name="licenses_attributions_simkl_body">Nuvio Arc si collega a Simkl per l\'autenticazione dell\'account, le watchlist, la cronologia visti, i progressi di riproduzione e lo scrobbling. I dati di tracciamento di film, serie TV e anime sono forniti da Simkl. Nuvio Arc non è affiliata né approvata da Simkl.</string>
 <string name="licenses_attributions_premiumize_title">Premiumize</string>
-<string name="licenses_attributions_premiumize_body">Nuvio si connette a Premiumize per l\'autenticazione dell\'account, l\'accesso alla libreria cloud, i controlli della cache e le funzioni di riproduzione cloud. Nuvio non è affiliato né approvato da Premiumize.</string>
+<string name="licenses_attributions_premiumize_body">Nuvio Arc si connette a Premiumize per l\'autenticazione dell\'account, l\'accesso alla libreria cloud, i controlli della cache e le funzioni di riproduzione cloud. Nuvio Arc non è affiliato né approvato da Premiumize.</string>
 <string name="licenses_attributions_torbox_title">TorBox</string>
-<string name="licenses_attributions_torbox_body">Nuvio si connette a TorBox per l\'autenticazione dell\'account, l\'accesso alla libreria cloud, i controlli della cache e le funzioni di riproduzione cloud. Nuvio non è affiliato né approvato da TorBox.</string>
+<string name="licenses_attributions_torbox_body">Nuvio Arc si connette a TorBox per l\'autenticazione dell\'account, l\'accesso alla libreria cloud, i controlli della cache e le funzioni di riproduzione cloud. Nuvio Arc non è affiliato né approvato da TorBox.</string>
 <string name="licenses_attributions_mdblist_title">MDBList</string>
-<string name="licenses_attributions_mdblist_body">Nuvio utilizza MDBList per le valutazioni e i dati di fornitori esterni. Nuvio non è affiliato né approvato da MDBList.</string>
+<string name="licenses_attributions_mdblist_body">Nuvio Arc utilizza MDBList per le valutazioni e i dati di fornitori esterni. Nuvio Arc non è affiliato né approvato da MDBList.</string>
 <string name="licenses_attributions_introdb_title">IntroDB</string>
-<string name="licenses_attributions_introdb_body">Nuvio utilizza l\'API di IntroDB per i timestamp di intro, riassunti, crediti e anteprime forniti dalla community, utilizzati per i controlli di salto. Nuvio non è affiliato né approvato da IntroDB.</string>
+<string name="licenses_attributions_introdb_body">Nuvio Arc utilizza l\'API di IntroDB per i timestamp di intro, riassunti, crediti e anteprime forniti dalla community, utilizzati per i controlli di salto. Nuvio Arc non è affiliato né approvato da IntroDB.</string>
 <string name="licenses_attributions_imdb_title">Dataset IMDb non commerciali</string>
-<string name="licenses_attributions_imdb_body">Nuvio utilizza i dataset non commerciali di IMDb per valutazioni e conteggio voti. Informazioni per gentile concessione di IMDb (https://www.imdb.com). Utilizzato con autorizzazione. I dati IMDb sono per uso personale e non commerciale secondo i termini di IMDb.</string>
+<string name="licenses_attributions_imdb_body">Nuvio Arc utilizza i dataset non commerciali di IMDb per valutazioni e conteggio voti. Informazioni per gentile concessione di IMDb (https://www.imdb.com). Utilizzato con autorizzazione. I dati IMDb sono per uso personale e non commerciale secondo i termini di IMDb.</string>
 <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
 <string name="licenses_attributions_exoplayer_body">Utilizzato come motore di riproduzione Android. Distribuito sotto licenza Apache, Versione 2.0.</string>
 <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -436,7 +437,7 @@
 <string name="tracking_accounts_title">Account</string>
 <string name="tracking_accounts_subtitle">Collega e gestisci i servizi di tracciamento</string>
 <string name="tracking_sources_title">Fonti</string>
-<string name="tracking_sources_subtitle">Scegli da dove Nuvio legge la tua libreria e i progressi di visione. La riproduzione viene sincronizzata (scrobbling) su ogni servizio collegato.</string>
+<string name="tracking_sources_subtitle">Scegli da dove Nuvio Arc legge la tua libreria e i progressi di visione. La riproduzione viene sincronizzata (scrobbling) su ogni servizio collegato.</string>
 <string name="tracking_trakt_features_title">Funzioni Trakt</string>
 <string name="tracking_trakt_features_subtitle">Cronologia, recensioni e consigliati specifici di Trakt</string>
 <string name="tracking_simkl_features_title">Funzioni Simkl</string>
@@ -452,8 +453,8 @@
 <string name="tracking_status_connecting">Connessione in corso</string>
 <string name="tracking_finish_connection">Completa l\'approvazione della connessione</string>
 <string name="tracking_connecting_provider">Avvio connessione %1$s…</string>
-<string name="tracking_watch_progress_dialog_subtitle">Scegli il servizio da cui Nuvio legge la ripresa e Continua a guardare. Lo scrobbling resta attivo per ogni servizio collegato.</string>
-<string name="tracking_library_source_dialog_subtitle">Scegli il servizio da cui Nuvio legge la tua Libreria. La riproduzione viene sincronizzata (scrobbling) su ogni servizio collegato.</string>
+<string name="tracking_watch_progress_dialog_subtitle">Scegli il servizio da cui Nuvio Arc legge la ripresa e Continua a guardare. Lo scrobbling resta attivo per ogni servizio collegato.</string>
+<string name="tracking_library_source_dialog_subtitle">Scegli il servizio da cui Nuvio Arc legge la tua Libreria. La riproduzione viene sincronizzata (scrobbling) su ogni servizio collegato.</string>
 <string name="tracking_trakt_progress_required">Disponibile quando Trakt è la fonte dei progressi di visione</string>
 <string name="trakt_name">Trakt</string>
 <string name="simkl_name">Simkl</string>
@@ -463,7 +464,7 @@
 <string name="settings_advanced_subtitle">Esegui diagnostica velocità di rete</string>
 <string name="experience_mode_essential">Essenziale</string>
 <string name="experience_mode_advanced">Avanzata</string>
-<string name="experience_mode_choose_title">Scegli la tua esperienza Nuvio</string>
+<string name="experience_mode_choose_title">Scegli la tua esperienza Nuvio Arc</string>
 <string name="experience_mode_choose_subtitle">Inizia in modo semplice o sblocca ogni personalizzazione. Puoi cambiare idea in qualsiasi momento.</string>
 <string name="experience_mode_essential_card_subtitle">Configurazione rapida, add-on, basi della riproduzione, Trakt e impostazioni account.</string>
 <string name="experience_mode_advanced_card_subtitle">Impostazioni complete, controlli layout, ordine catalogo, collezioni, plug-in e diagnostica.</string>
@@ -727,8 +728,8 @@
 <string name="playback_player_ask_desc">Scegli il player ogni volta</string>
 <string name="playback_player_auto">Automatico (Il migliore per i contenuti)</string>
 <string name="playback_player_auto_desc">ExoPlayer per Film e Serie TV · MPV per gli Anime</string>
-<string name="playback_engine_exoplayer_desc">Migliore compatibilità con le attuali funzioni di Nuvio.</string>
-<string name="playback_engine_mvplayer_desc">Usa libmpv con i controlli OSD di Nuvio. Sperimentale.</string>
+<string name="playback_engine_exoplayer_desc">Migliore compatibilità con le attuali funzioni di Nuvio Arc.</string>
+<string name="playback_engine_mvplayer_desc">Usa libmpv con i controlli OSD di Nuvio Arc. Sperimentale.</string>
 
 <string name="video_section">Video</string>
 <string name="audio_trailer_section">Trailer</string>
@@ -1373,7 +1374,7 @@
 <string name="trakt_stat_watched_hours">Ore di visione</string>
 <string name="trakt_disconnect">Disconnetti</string>
 <string name="trakt_disconnect_title">Disconnettere Trakt?</string>
-<string name="trakt_disconnect_subtitle">Questo disconnetterà il tuo account Trakt da Nuvio.</string>
+<string name="trakt_disconnect_subtitle">Questo disconnetterà il tuo account Trakt da Nuvio Arc.</string>
 <string name="trakt_login">Accedi</string>
 <string name="trakt_retry">Riprova</string>
 <string name="trakt_back">Indietro</string>
@@ -1603,7 +1604,7 @@
 <string name="stream_type_torrent">Torrent</string>
 <string name="stream_type_youtube">YouTube</string>
 <string name="p2p_consent_title">Streaming P2P</string>
-<string name="p2p_consent_body">Questo flusso utilizza la tecnologia peer-to-peer (P2P). Abilitando il P2P, riconosci e accetti che:\n\n\u2022 Il tuo indirizzo IP sarà visibile agli altri peer nella rete\n\u2022 Sei l\'unico responsabile per i contenuti a cui accedi\n\u2022 Confermi di avere il diritto legale di trasmettere questo contenuto nella tua giurisdizione\n\u2022 Nuvio non ospita, distribuisce o controlla alcun contenuto P2P\n\u2022 Nuvio non si assume alcuna responsabilità per eventuali conseguenze legali derivanti dall\'uso dello streaming P2P\n\nL\'utilizzo di questa funzione è interamente a tuo rischio. Il P2P può essere disabilitato in qualsiasi momento nelle Impostazioni.</string>
+<string name="p2p_consent_body">Questo flusso utilizza la tecnologia peer-to-peer (P2P). Abilitando il P2P, riconosci e accetti che:\n\n\u2022 Il tuo indirizzo IP sarà visibile agli altri peer nella rete\n\u2022 Sei l\'unico responsabile per i contenuti a cui accedi\n\u2022 Confermi di avere il diritto legale di trasmettere questo contenuto nella tua giurisdizione\n\u2022 Nuvio Arc non ospita, distribuisce o controlla alcun contenuto P2P\n\u2022 Nuvio Arc non si assume alcuna responsabilità per eventuali conseguenze legali derivanti dall\'uso dello streaming P2P\n\nL\'utilizzo di questa funzione è interamente a tuo rischio. Il P2P può essere disabilitato in qualsiasi momento nelle Impostazioni.</string>
 <string name="p2p_consent_enable">Abilita P2P</string>
 <string name="p2p_consent_cancel">Annulla</string>
 <string name="settings_p2p_title">Streaming P2P</string>
@@ -2165,7 +2166,7 @@
 <string name="catalog_see_all_empty_title">Nessun elemento disponibile</string>
 <string name="catalog_see_all_empty_subtitle">Prova un catalogo diverso o ricontrolla più tardi</string>
 
-<string name="layout_selection_welcome">Benvenuto su Nuvio</string>
+<string name="layout_selection_welcome">Benvenuto su Nuvio Arc</string>
 <string name="layout_selection_subtitle">Scegli il layout della tua schermata home</string>
 <string name="layout_selection_continue">Continua</string>
 
@@ -2350,7 +2351,7 @@
 <string name="cd_preview">Anteprima</string>
 <string name="cd_test">Test</string>
 <string name="cd_unlink">Scollega</string>
-<string name="cd_nuvio_logo">NuvioTV</string>
+<string name="cd_nuvio_logo">Nuvio Arc</string>
 <string name="cd_trakt_logo">Logo Trakt</string>
 <string name="cd_trakt_qr">QR attivazione Trakt</string>
 <string name="cd_imdb">IMDb</string>
@@ -2504,7 +2505,7 @@
 <string name="collections_editor_tmdb_list_helper">Esempio: https://www.themoviedb.org/list/8504994 o 8504994.</string>
 <string name="collections_editor_tmdb_person_id">ID Persona</string>
 <string name="collections_editor_tmdb_person_helper">Esempio: https://www.themoviedb.org/person/31-tom-hanks o 31.</string>
-<string name="collections_editor_tmdb_title_helper">Viene mostrato come nome riga/scheda. Se vuoto, Nuvio ne creerà uno dalla sorgente.</string>
+<string name="collections_editor_tmdb_title_helper">Viene mostrato come nome riga/scheda. Se vuoto, Nuvio Arc ne creerà uno dalla sorgente.</string>
 <string name="collections_editor_tmdb_quick_genres">Generi rapidi</string>
 <string name="collections_editor_tmdb_quick_languages">Lingue rapide</string>
 <string name="collections_editor_tmdb_quick_countries">Paesi rapidi</string>
@@ -2686,7 +2687,7 @@
 <string name="autoplay_regex_preset_no_remux_hdr">No REMUX/HDR</string>
 
     <!-- Playback settings sections -->
-<string name="playback_player_internal_desc">Usa il lettore integrato di NuvioTV</string>
+<string name="playback_player_internal_desc">Usa il lettore integrato di Nuvio Arc</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
 <string name="player_torrent_peer_info">%1$d seed · %2$d peer</string>
@@ -2787,9 +2788,9 @@
 <string name="simkl_visit">Visita Simkl</string>
 <string name="simkl_sync_info_action">Come funziona la sincronizzazione</string>
 <string name="simkl_sync_info_title">Come funziona la sincronizzazione con Simkl</string>
-<string name="simkl_sync_info_description">Nuvio controlla automaticamente Simkl al massimo una volta ogni %1$d minuti. Le modifiche effettuate tramite un\'altra app o il sito web di Simkl possono impiegare fino a questo tempo per comparire.</string>
+<string name="simkl_sync_info_description">Nuvio Arc controlla automaticamente Simkl al massimo una volta ogni %1$d minuti. Le modifiche effettuate tramite un\'altra app o il sito web di Simkl possono impiegare fino a questo tempo per comparire.</string>
 <string name="simkl_sync_info_activity">Ogni aggiornamento verifica prima se Simkl segnala modifiche e scarica solo gli aggiornamenti. Questo rispetta le regole dell\'API di Simkl, riduce l\'uso di dati non necessario e aiuta a mantenere stabile il servizio.</string>
-<string name="simkl_sync_info_manual">Le modifiche effettuate in Nuvio vengono inviate a Simkl immediatamente. Usa Sincronizza ora ogni volta che vuoi che Nuvio controlli prima le modifiche remote.</string>
+<string name="simkl_sync_info_manual">Le modifiche effettuate in Nuvio Arc vengono inviate a Simkl immediatamente. Usa Sincronizza ora ogni volta che vuoi che Nuvio Arc controlli prima le modifiche remote.</string>
 <string name="simkl_sync_info_library_statuses">I contenuti inseriti nelle liste "In pausa" o "Abbandonati" di Simkl sono nascosti da Continua a guardare. Restano nascosti finché rimangono in una di queste liste.</string>
 <string name="simkl_sync_info_docs">Leggi la guida alla sincronizzazione Simkl</string>
 <string name="error_open_browser_failed">Impossibile aprire il browser</string>
@@ -3163,16 +3164,21 @@
     <string name="appearance_screensaver_dim_gentle">Lo schermo resta ben visibile</string>
     <string name="appearance_screensaver_dim_balanced">Scuro ma leggibile</string>
     <string name="appearance_screensaver_dim_strong">Appena visibile</string>
+    <string name="appearance_app_icon_mint">Menta</string>
     <string name="licenses_attributions_avatars_title">Avatar del watch party</string>
     <string name="licenses_attributions_avatars_body">Realizzati con DiceBear, rielaborando questi design: \"Fun Emoji\" di Davis Uche e \"Adventurer\" di Lisa Wischofsky, con licenza CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" di Lisa Wischofsky, \"Notionists\" di Zoish, \"Pixel Art\" e \"Thumbs\" di DiceBear, CC0 1.0. \"Bottts\" di Pablo Stanley, libero per uso personale e commerciale. Musi di animali da Twemoji di Twitter, Inc. e altri collaboratori, con licenza CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby e Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio si connette al tuo server Jellyfin, Emby o Silo. I loro nomi e loghi appartengono ai rispettivi proprietari. Nuvio non è affiliato né approvato da Jellyfin, Emby o Silo.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc si connette al tuo server Jellyfin, Emby o Silo. I loro nomi e loghi appartengono ai rispettivi proprietari. Nuvio Arc non è affiliato né approvato da Jellyfin, Emby o Silo.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Elenchi dei gruppi release. Licenza MIT.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Analisi dei metadati Dolby Vision. Di quietvoid. Licenza MIT.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Decodifica audio. Distribuito sotto licenza LGPL 2.1 o successiva.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Decodifica software dei video AV1. Di VideoLAN e degli autori di dav1d. Licenza BSD 2-Clause.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Rilevamento delle funzionalità del processore per il decoder AV1. Di Google. Licenza Apache 2.0.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">L\'impacchettamento TrueHD MAT e il downmix audio sono ripresi da Kodi. Distribuito sotto licenza GPL 2.0 o successiva.</string>
     <string name="settings_experience_subtitle">Essenziale o Avanzata</string>
@@ -3208,8 +3214,9 @@
     <string name="playback_section_audio_desc">Controlli audio e compatibilità video.</string>
     <string name="playback_afr_open">Aperto</string>
     <string name="playback_afr_closed">Chiuso</string>
+    <string name="audio_tunneled_sub_prefer_app">Non disponibile quando Priorità decoder è impostata su Preferisci decoder dell\'app</string>
     <string name="audio_use_system_passthrough">Passthrough di sistema</string>
-    <string name="audio_use_system_passthrough_sub">Invia TrueHD e DTS-HD al ricevitore tramite Android (percorso di sistema) invece che tramite Nuvio (percorso IEC). Usalo se i formati lossless producono rumore, ritardi o nessun audio.</string>
+    <string name="audio_use_system_passthrough_sub">Invia TrueHD e DTS-HD al ricevitore tramite Android (percorso di sistema) invece che tramite Nuvio Arc (percorso IEC). Usalo se i formati lossless producono rumore, ritardi o nessun audio.</string>
     <string name="audio_surround_header">Audio surround</string>
     <string name="audio_surround_reset_iec_probe">Cancella esito del test IEC</string>
     <string name="audio_surround_reset_iec_probe_sub">Ripete il test dell\'uscita IEC 61937. Usalo se i formati lossless tornano a PCM dopo aver cambiato ricevitore o ingresso.</string>
@@ -3258,6 +3265,10 @@
     <string name="audio_inject_hdr10_sei_sub">Per i contenuti DV8 (Profile 8) ridotti al livello base HDR10, aggiunge i metadati di mastering della sorgente (MaxCLL/MaxFALL e luminanza di picco) così le TV HDR10 senza DV applicano il tone-mapping corretto. Attivo solo quando la gestione DV è su Rimuovi sempre DV o Livello base HDR10; nessun effetto sul Profile 7 né sulla riproduzione Dolby Vision.</string>
     <string name="diag_value_not_advertised">Non dichiarato (la riproduzione nativa può funzionare comunque)</string>
     <string name="diag_label_dv_el_type">Tipo EL DV7</string>
+    <string name="diag_value_dv7_native_route">Percorso nativo dual-layer in uso (Android non lo dichiara)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, tutti e tre i livelli usati</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, convertito in 8.1 (EL non usato)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · solo BL (RPU ed EL non usati)</string>
     <string name="diag_label_dv_hdr_mastering">Mastering HDR DV</string>
     <string name="diag_label_dv_rpu_drops">RPU DV persi</string>
     <string name="sub_tertiary_lang">Terza lingua preferita</string>
@@ -3265,6 +3276,10 @@
     <string name="sub_addon_subtitles_desc">Recupera i sottotitoli dagli addon installati durante la riproduzione. Se disattivato, sono disponibili solo i sottotitoli incorporati nel file.</string>
     <string name="autoplay_quality_rules_title">Regole di qualità</string>
     <string name="autoplay_quality_rules_subtitle">Filtri, ordinamento e livelli dei gruppi release in Servizi collegati.</string>
+    <string name="stream_sort_sources">Ordina fonti</string>
+    <string name="stream_sort_sources_sub">Ordine della lista dei flussi. Migliore qualità prima usa le tue Regole di qualità.</string>
+    <string name="stream_sort_sources_source_order">Ordine delle fonti</string>
+    <string name="stream_sort_sources_best_first">Migliore qualità prima</string>
     <string name="autoplay_eager_ready_title">Pronto prima con sorgenti lente</string>
     <string name="autoplay_eager_ready_sub">Prepara la riproduzione appena scade il timeout di selezione, senza aspettare l\'addon più lento. Vale per la pagina dei dettagli e per Continua a guardare.</string>
     <string name="autoplay_mode_quality">Qualità migliore</string>
@@ -3275,6 +3290,17 @@
     <string name="layout_landscape_posters_home_only_desc">Schede orizzontali in Home, verticali in Libreria, Cerca ed elenchi</string>
     <string name="layout_landscape_posters_everywhere">Ovunque</string>
     <string name="layout_landscape_posters_everywhere_desc">Schede orizzontali in Home, Libreria, Cerca ed elenchi</string>
+    <string name="layout_hide_side_icons">Nascondi icone laterali</string>
+    <string name="layout_hide_side_icons_sub">Nascondi le icone del menu sul bordo sinistro quando il menu è chiuso. Premi Sinistra o Indietro per aprire il menu.</string>
+    <string name="layout_watched_titles">Titoli visti</string>
+    <string name="layout_watched_titles_sub">Mostra, attenua o nascondi film e serie che hai finito.</string>
+    <string name="layout_watched_titles_dialog_title">Titoli visti</string>
+    <string name="layout_watched_titles_show">Mostra</string>
+    <string name="layout_watched_titles_show_desc">I titoli visti restano come sono, con una spunta.</string>
+    <string name="layout_watched_titles_dim">Attenua</string>
+    <string name="layout_watched_titles_dim_desc">I titoli visti restano al loro posto, più scuri, con una spunta.</string>
+    <string name="layout_watched_titles_hide">Nascondi</string>
+    <string name="layout_watched_titles_hide_desc">I film visti e le serie viste per intero non compaiono nelle righe della Home né nel banner. Continua a guardare non cambia.</string>
     <string name="layout_trailer_logo">Logo sul trailer della scheda</string>
     <string name="layout_trailer_logo_sub">Mostra il logo del titolo sul trailer riprodotto in una scheda.</string>
     <string name="mdblist_account_title">Account</string>
@@ -3297,6 +3323,8 @@
     <string name="player_layout_more_fixed_help">Premi OK per nascondere/mostrare Altro. Resta all\'estrema destra. Sposta le altre azioni oltre il confine del suo menu per cambiare cosa contiene.</string>
     <string name="player_error_placeholder_stream">Questo stream sembra una schermata di errore del provider, non il video. Prova un\'altra sorgente.</string>
     <string name="subtitle_panel_languages">Lingue</string>
+    <string name="library_sort_released_desc">Data di uscita ↓</string>
+    <string name="library_sort_released_asc">Data di uscita ↑</string>
     <string name="library_empty_mdblist_title">Nessun %1$s nella tua watchlist</string>
     <string name="library_empty_mdblist_subtitle">Usa + nei dettagli per aggiungere elementi alla tua watchlist MDBList</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList non collegato</string>
@@ -3317,6 +3345,7 @@
     <string name="library_transfer_copy">Copia</string>
     <string name="library_transfer_move">Sposta (copia, poi rimuovi dall\'origine)</string>
     <string name="library_transfer_none">Niente da copiare</string>
+    <string name="sub_mode_effects_warning">Pesante: può perdere fotogrammi in 4K e disattiva la riproduzione tunneled.</string>
     <string name="cd_playback_stats">Statistiche di riproduzione</string>
     <string name="player_stats_unavailable_mpv">Le statistiche non sono disponibili con il motore libmpv</string>
     <string name="player_dead_source_failover">Sorgente non disponibile - passaggio alla successiva (%1$d/%2$d)</string>
@@ -3332,6 +3361,17 @@
     <string name="debrid_filters_show_everything_title">Mostra tutto</string>
     <string name="debrid_filters_show_everything_subtitle">Rimuove tutti i filtri e i limiti dei risultati; mantiene l\'ordinamento intelligente.</string>
     <string name="debrid_filters_show_everything_action">Mostra tutto</string>
+    <string name="playback_net_device_memory_auto">Questo box ha %1$s di memoria. L\'app mette in buffer fino a %2$d MB in anticipo, meno quando la memoria scarseggia.</string>
+    <string name="playback_net_native_memory_sub">Lascia che l\'app dimensioni il buffer per questo box e lo tenga in memoria nativa, per scorrere il video più velocemente. Se attivata, imposta anche i valori di buffer e rete qui sotto per questo box.</string>
+    <string name="playback_buffer_custom_desc">Usa i valori qui sotto invece di quelli dell\'app. Se disattivato: con Memoria nativa ExoPlayer attiva, l\'app mette in buffer da 15 a 45 s entro la dimensione scelta per questo box; senza, il buffer standard di Media3.</string>
+    <string name="playback_buffer_seconds_hint">Con %1$d MB contiene circa %2$d s di un remux 4K (80 Mbit/s). Durate più lunghe non cambiano nulla.</string>
+    <string name="playback_buffer_back_fitted">Tenuto dentro la Dimensione buffer target. Con %1$d MB l\'app ne tiene fino a circa %2$d s (%3$d MB a 80 Mbit/s), così restano almeno 5 s in anticipo.</string>
+    <string name="playback_buffer_back_fitted_none">Tenuto dentro la Dimensione buffer target. Con %1$d MB non c\'è spazio, quindi l\'app tiene invece 5 s in anticipo.</string>
+    <string name="playback_buffer_managed_desc">Imposta il buffer in base alla memoria libera del box all\'avvio della riproduzione e lo riduce quando il box è a corto di memoria. Disattivalo per scegliere tu la Dimensione buffer target; sui box piccoli una dimensione maggiore può far scattare la riproduzione.</string>
+    <string name="playback_buffer_target_size_sub">Memoria usata per il buffering in avanti del video. Il limite segue la memoria totale di questo box. Con Budget memoria gestito attivo, l\'app sceglie la dimensione in base alla memoria libera all\'avvio della riproduzione. Il buffer si riduce mentre il box è a corto di memoria.</string>
+    <string name="playback_buffer_target_stutter_warning">Questo box ha %1$s di memoria. Oltre %2$d MB, la riproduzione può scattare.</string>
+    <string name="playback_buffer_allow_large_desc">Consente alla Dimensione buffer target di arrivare a 2 GB. Solo per box con 4 GB di memoria o più; sui box più piccoli le dimensioni grandi scattano o vanno in crash.</string>
+    <string name="playback_net_connection_count_small_box">Questo box ha %1$s di memoria. Più di 2 connessioni possono far scattare la riproduzione.</string>
     <string name="diag_label_serving_host">Host di origine</string>
     <string name="diag_label_file">File</string>
     <string name="diag_label_dv_applied">DV applicato</string>
@@ -3341,16 +3381,16 @@
     <string name="diag_value_dv_base_layer">DV ignorato - livello base HDR10</string>
     <string name="diag_label_audio_path">Percorso audio</string>
     <string name="diag_label_audio_caps">Capacità audio dichiarate</string>
+    <string name="playback_estimated_memory_parts">Uso memoria stimato: circa %1$d MB (buffer %2$d MB + download %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Uso memoria stimato: circa %1$d MB (buffer %2$d MB)</string>
     <string name="stream_test_serving_host_label">Host di origine: %1$s</string>
     <string name="stream_test_file_label">File: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Consiglio: lascia disattivate le connessioni parallele - una sola connessione fornisce già %1$s, più di 2\u00d7 il bitrate di questo titolo.</string>
     <string name="stream_test_verdict_recommend">Consiglio: %1$d connessioni / chunk da %2$d MB - %3$s. È la configurazione con meno memoria che raggiunge 2\u00d7 il bitrate di questo titolo; qui sopra possono comparire configurazioni più veloci, ma usano più memoria senza vantaggi in riproduzione.</string>
     <string name="stream_test_verdict_marginal">Risultato migliore: %1$d connessioni / chunk da %2$d MB a %3$s - sopra il bitrate medio di questo titolo (%4$s), ma sotto il margine di 2\u00d7. La riproduzione dovrebbe funzionare, ma può andare in buffering nelle scene ad alto bitrate o quando scorri il video.</string>
     <string name="stream_test_verdict_cannot_sustain">Questa connessione non regge questo titolo - la configurazione più veloce provata (%1$d connessioni / chunk da %2$d MB) ha raggiunto %3$s, sotto il bitrate medio del titolo (%4$s). Aspettati buffering; valuta una versione con bitrate più basso.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Più veloce stabile: %1$d connessioni / chunk da %2$d MB a %3$s. Bitrate del titolo sconosciuto - riproduci prima un video per un consiglio su misura.</string>
-    <string name="stream_test_verdict_pm_suffix">" Richiede la modalità Performance di Nuvio."</string>
     <string name="stream_test_caveat">Misura solo la velocità di download grezza - la riproduzione reale dipende anche da buffering, decodifica e carico del server, e in più tiene in memoria il buffer target.</string>
     <string name="stream_test_label_parallel_dyn">Connessione parallela (%1$d conn. / chunk da %2$d MB)</string>
     <string name="stream_test_btn_measuring_dyn">Misurazione: %1$s\u2026</string>
@@ -3383,7 +3423,6 @@
     <string name="assessment_item_parallel">Connessioni parallele</string>
     <string name="assessment_item_chunk">Dimensione chunk</string>
     <string name="assessment_item_network_master">Rete personalizzata</string>
-    <string name="assessment_item_http2">Abilita HTTP/2</string>
     <string name="assessment_item_perf_mode">Memoria nativa ExoPlayer</string>
     <string name="assessment_item_buffer_master">Buffer di riproduzione personalizzati</string>
     <string name="assessment_item_managed_budget">Budget memoria gestito</string>
@@ -3404,15 +3443,18 @@
     <string name="assessment_grounds_parallel_cannot">Massimo misurato: %1$s a %2$d \u00d7 %3$d MB - sotto il bitrate del titolo; questa connessione non regge lo stream</string>
     <string name="assessment_grounds_parallel_fastest">Massimo misurato: %1$s a %2$d \u00d7 %3$d MB - bitrate del titolo sconosciuto, quindi nessun giudizio di sufficienza</string>
     <string name="assessment_grounds_chunk">Abbinato al numero di connessioni qui sopra, dalla stessa misurazione</string>
-    <string name="assessment_grounds_network_master">Interruttore generale per le impostazioni HTTP/2 e parallele qui sotto</string>
-    <string name="assessment_grounds_http2">Unisce le richieste di intervallo su una sola connessione; utile quasi sempre, nessun test necessario</string>
     <string name="assessment_grounds_perf_mode">Tiene i buffer di dimensione remux fuori dall\'heap Java, così la garbage collection non fa scattare i fotogrammi; i limiti di memoria si adattano alla fascia %1$s di questo dispositivo (sicuro %2$d MB / avviso %3$d MB) ed è richiesta oltre %4$d connessioni</string>
     <string name="assessment_grounds_perf_mode_unsupported">Richiede Android 8.0 o successivo</string>
-    <string name="assessment_grounds_buffer_master">Disattivato significa il controllo di caricamento standard di media3: un target calcolato in byte di circa 13 MB, cioè \u2248 1 s di un remux qualunque siano le durate impostate - i valori qui sotto sono invece dimensionati per questo dispositivo</string>
-    <string name="assessment_grounds_managed_budget">La modalità gestita fissa il target al limite sicuro e ignora il costo delle connessioni parallele; il target esplicito qui sotto tiene conto di entrambi</string>
-    <string name="assessment_grounds_target_buffer">Target %1$d + %2$d MB di costo delle connessioni = %3$d MB \u2264 il limite sicuro di %4$d MB (il passo da %5$d MB più grande che ci sta)</string>
-    <string name="assessment_grounds_allow_large_on">Serve perché il cursore del target arrivi a %1$d MB su questo dispositivo</string>
-    <string name="assessment_grounds_allow_large_off">Il target consigliato rientra nell\'intervallo standard del cursore</string>
+    <string name="assessment_grounds_native_auto">L\'app dimensiona il buffer per questo box da %1$s (fino a %2$d MB, meno quando la memoria scarseggia) e lo tiene in memoria nativa</string>
+    <string name="assessment_grounds_buffer_custom_times">Lascia che il profilo di buffer qui sotto imposti le durate del buffer; la dimensione resta automatica</string>
+    <string name="assessment_grounds_managed_on">Imposta il buffer in base alla memoria libera all\'avvio della riproduzione e lo riduce quando il box è a corto di memoria; una dimensione fissa non fa né l\'una né l\'altra cosa</string>
+    <string name="assessment_value_target_auto">Auto (fino a %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Con Budget memoria gestito attivo, l\'app la sceglie all\'avvio della riproduzione</string>
+    <string name="assessment_grounds_allow_large_small_box">Solo per box con 4 GB di memoria o più; su questo box da %1$s le dimensioni grandi scattano o vanno in crash</string>
+    <string name="assessment_grounds_allow_large_managed">Non ha effetto finché Budget memoria gestito è attivo</string>
+    <string name="assessment_grounds_network_for_parallel">Attiva le connessioni parallele consigliate sopra</string>
+    <string name="assessment_grounds_network_parallel_only">Serve solo per le connessioni parallele; qui una connessione è abbastanza veloce</string>
+    <string name="assessment_grounds_network_untested">Serve solo per le connessioni parallele, e nessuno stream è stato testato per decidere</string>
     <string name="assessment_grounds_max_buffer">Un target di %1$d MB contiene \u2248%2$d s di questo titolo (%3$s) - i secondi oltre questo valore non possono esistere</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Bitrate del titolo sconosciuto - il tetto in byte non si può calcolare; il limite resta a %1$d s</string>
     <string name="assessment_grounds_vod_auto">Auto dimensiona in base allo spazio libero (20%% dello spazio libero entro i limiti, 1 GB di riserva) - \u2248%1$s su questo dispositivo in questo momento</string>
@@ -3449,7 +3491,7 @@
     <string name="assessment_no_stream">Nessuno stream riprodotto di recente - le righe del dispositivo verranno comunque eseguite. Per le righe misurate, riproduci prima il tuo titolo abituale più impegnativo, poi ripeti.</string>
     <string name="assessment_header_title">Dati del dispositivo</string>
     <string name="assessment_header_device">Dispositivo</string>
-    <string name="assessment_header_device_value">%1$s - sicuro %2$d MB / avviso %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buffer fino a %2$d MB / pericolo oltre %3$d MB</string>
     <string name="assessment_header_display">Display</string>
     <string name="assessment_header_display_unknown">Non esaminabile da questa schermata</string>
     <string name="assessment_header_stream">Ultimo stream</string>
@@ -3470,8 +3512,7 @@
     <string name="assessment_footer">Le righe misurate sono state provate su questo dispositivo; le righe calcolate derivano da dati interrogabili. Applica scrive solo le righe misurate e calcolate più il profilo che selezioni - le righe da verificare non vengono mai cambiate automaticamente. Ripristina annulla l\'ultima applicazione.</string>
     <string name="stream_test_verdict_recommend_trade">Consiglio: %1$d connessioni / chunk da %2$d MB - %3$s (%4$s\u00d7 il bitrate di questo titolo). Preferito a %5$d \u00d7 %6$d MB (2\u00d7+) perché, con il budget di memoria di questo dispositivo, lascia %7$d MB \u2248 %8$d s di buffer di riproduzione invece di %9$d MB \u2248 %10$d s - qui conta più la capienza del serbatoio che la velocità di riempimento.</string>
     <string name="assessment_grounds_parallel_trade">Misurati %1$s a %2$d \u00d7 %3$d MB - raggiunge 1,5\u00d7 il bitrate e lascia %6$d MB \u2248 %7$d s di buffer; la configurazione 2\u00d7 (%4$d \u00d7 %5$d MB) lascerebbe solo %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Attuale: %1$d MB + %2$d MB di costo = %3$d MB, nella fascia di avviso (%4$d-%5$d MB) - utilizzabile, con margine ridotto</string>
-    <string name="assessment_grounds_target_current_danger">Attuale: %1$d MB + %2$d MB di costo = %3$d MB, oltre il limite di avviso di %4$d MB - rischio di chiusura per memoria insufficiente</string>
+    <string name="assessment_parallel_small_box_cap">Questo box ha %1$s di memoria, quindi si consigliano al massimo 2 connessioni</string>
     <string name="assessment_grounds_max_buffer_current">Con il tuo target attuale di %1$d MB: \u2248 %2$d s effettivi, qualunque cosa dica il cursore dei secondi - i byte limitano per primi</string>
     <string name="assessment_item_engine">Motore interno</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -3532,7 +3573,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV non supporta il ridimensionamento dei sottotitoli immagine. Usa ExoPlayer per regolarne la dimensione separatamente dal testo.</string>
     <string name="subtitle_style_image_size">Dimensione sottotitoli immagine</string>
     <string name="v2_accent_fixed_hint">Usa il Tema Colore, a meno che non sia selezionato Adatta alle immagini.</string>
-    <string name="about_fork_updates_subtitle">Aggiornamenti da NuvioTV-Fork. Tutte le versioni del fork sono beta.</string>
+    <string name="about_fork_updates_subtitle">Aggiornamenti dalle release di Nuvio Arc su GitHub.</string>
     <string name="playback_speculative_stream_search">Cerca le sorgenti prima di Riproduci</string>
     <string name="playback_speculative_stream_search_sub">Interroga gli addon mentre navighi per velocizzare la scelta della sorgente. Alcuni addon possono aggiungere o scaricare contenuti durante le ricerche. Disattivato: attende Riproduci. I link multimediali e la risoluzione del provider attendono la scelta della sorgente, tranne verso la fine di un episodio, quando le miniature di scorrimento preparano il successivo.</string>
     <string name="debrid_cached_playback_links">Riusa i link di riproduzione in cache</string>
@@ -3620,6 +3661,8 @@
     <string name="seek_thumbnails_prepare_off_desc">La riproduzione parte subito; le miniature vengono create in pausa e dopo che hai smesso di guardare.</string>
     <string name="seek_thumbnails_prepare_on">Attivo</string>
     <string name="seek_thumbnails_prepare_on_desc">Crea le miniature di scorrimento di un titolo prima che inizi. \"Inizia a guardare ora\" o Indietro avvia la riproduzione in qualsiasi momento.</string>
+    <string name="seek_thumbnails_from_copy_title">Miniature da una copia</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Miniature più rapide per i titoli 4K da una copia 1080p o 720p, e per i titoli Usenet da una copia che non è su Usenet. Una copia presente nella cache di TorBox può essere aggiunta alla tua lista per qualche minuto.</string>
     <string name="seek_thumbnails_clear_title">Cancella le miniature salvate</string>
     <string name="seek_thumbnails_clear_subtitle">Vengono ricreate alla prossima riproduzione di un titolo.</string>
     <string name="seek_thumbnails_cleared">Miniature salvate cancellate</string>
@@ -3634,7 +3677,7 @@
     <string name="seek_thumbnails_time_left_minutes">Circa %1$d min %2$d s rimanenti</string>
     <string name="seek_thumbnails_count">%1$d di %2$d</string>
     <string name="seek_thumbnails_start_now">Inizia a guardare ora</string>
-    <string name="seek_thumbnails_settings_hint">Attiva o disattiva in Impostazioni › Riproduzione › Generale</string>
+    <string name="seek_thumbnails_settings_hint">Attiva o disattiva in Impostazioni › Riproduzione › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Miniature %1$d%%</string>
     <string name="party_title">Watch party</string>
     <string name="party_settings_subtitle">Guarda la stessa cosa nello stesso momento con persone in altre case</string>
@@ -3676,6 +3719,7 @@
     <string name="party_member_buffering">buffering</string>
     <string name="party_member_catching_up">in recupero</string>
     <string name="party_member_away">assente</string>
+    <string name="party_member_needs_update">deve aggiornare</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">La tua copia dura %1$s s in più di quella dell\'host. Il party potrebbe sfasarsi.</string>
     <string name="party_copy_shorter">La tua copia dura %1$s s in meno di quella dell\'host. Il party potrebbe sfasarsi.</string>
@@ -3690,7 +3734,7 @@
     <string name="party_match_same">Stesso file dell\'host</string>
     <string name="party_match_likely">Probabilmente la copia dell\'host</string>
     <string name="party_match_different">Copia diversa da quella dell\'host</string>
-    <string name="party_invite_text">Partecipa al mio watch party su Nuvio. Apri Impostazioni, poi Watch party, e inserisci il codice %1$s</string>
+    <string name="party_invite_text">Partecipa al mio watch party su Nuvio Arc. Apri Impostazioni, poi Watch party, e inserisci il codice %1$s</string>
     <string name="party_invite_qr">Inquadra con la fotocamera del telefono per inviare l\'invito via SMS</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

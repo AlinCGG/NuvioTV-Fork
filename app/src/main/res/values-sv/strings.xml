@@ -181,7 +181,7 @@
     <!-- AboutScreen -->
     <string name="about_title">Om appen</string>
     <string name="about_subtitle">Appinformation, uppdateringar, och rättsliga dokument</string>
-    <string name="about_made_with_love">Tillverkad med ❤️ av Tapframe och vänner</string>
+    <string name="about_made_with_love">Byggd på det fina arbetet från Tapframe och vänner ❤️ · Nuvio Arc av ysosrs123</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_check_updates">Sök efter uppdateringar</string>
     <string name="about_check_updates_subtitle">Ladda ner senaste versionen</string>
@@ -571,7 +571,7 @@
     <string name="trakt_stat_watched_hours">Tittade timmar</string>
     <string name="trakt_disconnect">Koppla från</string>
     <string name="trakt_disconnect_title">Koppla från Trakt?</string>
-    <string name="trakt_disconnect_subtitle">Detta kopplar från ditt Trakt-konto från Nuvio.</string>
+    <string name="trakt_disconnect_subtitle">Detta kopplar från ditt Trakt-konto från Nuvio Arc.</string>
     <string name="trakt_login">Logga in</string>
     <string name="trakt_retry">Försök igen</string>
     <string name="trakt_back">Tillbaka</string>
@@ -985,7 +985,7 @@
     <string name="catalog_see_all_empty_subtitle">Prova en annan katalog eller kom tillbaka senare</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Välkommen till Nuvio</string>
+    <string name="layout_selection_welcome">Välkommen till Nuvio Arc</string>
     <string name="layout_selection_subtitle">Välj din hemskärmslayout</string>
     <string name="layout_selection_continue">Fortsätt</string>
 
@@ -1210,7 +1210,7 @@
     <string name="playback_player_auto_desc">ExoPlayer för filmer och serier · MPV för anime</string>
 
     <!-- App name -->
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
 
     <!-- WebConfigServers -->
     <string name="web_manage_addons_title">Hantera tillägg</string>
@@ -1302,8 +1302,8 @@
     <string name="playback_afr_capability_disable_button">Inaktivera AFR</string>
     <string name="playback_afr_capability_disable_resolution_button">Inaktivera upplösningsmatchning</string>
     <string name="playback_afr_capability_disable_both_button">Inaktivera båda</string>
-    <string name="playback_engine_exoplayer_desc">Bästa kompatibilitet med nuvarande Nuvio-funktioner.</string>
-    <string name="playback_engine_mvplayer_desc">Använder libmpv med Nuvios OSD-kontroller. Experimentellt.</string>
+    <string name="playback_engine_exoplayer_desc">Bästa kompatibilitet med nuvarande Nuvio Arc-funktioner.</string>
+    <string name="playback_engine_mvplayer_desc">Använder libmpv med Nuvio Arcs OSD-kontroller. Experimentellt.</string>
 
     <!-- PlaybackAudioSettings -->
     <string name="audio_lang_original">Originalspråk</string>
@@ -1356,7 +1356,7 @@
 
     <!-- StreamScreen / P2P -->
     <string name="p2p_consent_title">P2P-streaming</string>
-    <string name="p2p_consent_body">Denna ström använder peer-to-peer (P2P)-teknik. Genom att aktivera P2P bekräftar och godkänner du att:\n\n• Din IP-adress kommer att vara synlig för andra peers i nätverket\n• Du är ensam ansvarig för det innehåll du ser\n• Du bekräftar att du har laglig rätt att se detta innehåll i din jurisdiktion\n• Nuvio är inte värd för, distribuerar eller kontrollerar något P2P-innehåll\n• Nuvio bär inget ansvar för rättsliga konsekvenser som uppstår vid din användning av P2P-streaming\n\nDu använder denna funktion helt på egen risk. P2P kan inaktiveras när som helst i Inställningar.</string>
+    <string name="p2p_consent_body">Denna ström använder peer-to-peer (P2P)-teknik. Genom att aktivera P2P bekräftar och godkänner du att:\n\n• Din IP-adress kommer att vara synlig för andra peers i nätverket\n• Du är ensam ansvarig för det innehåll du ser\n• Du bekräftar att du har laglig rätt att se detta innehåll i din jurisdiktion\n• Nuvio Arc är inte värd för, distribuerar eller kontrollerar något P2P-innehåll\n• Nuvio Arc bär inget ansvar för rättsliga konsekvenser som uppstår vid din användning av P2P-streaming\n\nDu använder denna funktion helt på egen risk. P2P kan inaktiveras när som helst i Inställningar.</string>
     <string name="p2p_consent_enable">Aktivera P2P</string>
     <string name="p2p_consent_cancel">Avbryt</string>
     <string name="settings_p2p_title">P2P-streaming</string>
@@ -1517,7 +1517,7 @@
     <string name="cd_preview">Förhandsvisning</string>
     <string name="cd_test">Testa</string>
     <string name="cd_unlink">Avlänka</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Trakt-logotyp</string>
     <string name="cd_trakt_qr">Trakt-aktiverings-QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -1627,6 +1627,7 @@
     <string name="detail_trailer_error_age_restricted">Den här trailern har åldersgräns på YouTube och kan inte spelas här.</string>
     <string name="detail_trailer_error_unavailable">Den här trailern finns inte på YouTube.</string>
     <string name="detail_trailer_error_sign_in">YouTube kräver inloggning för att spela den här trailern.</string>
+    <string name="theme_color_copper">Koppar</string>
     <string name="appearance_screensaver_group_title">OLED-skärmskydd</string>
     <string name="appearance_screensaver_group_subtitle">Dämpa skärmen vid inaktivitet för att minska slitage på panelen</string>
     <string name="appearance_screensaver_enabled">Dämpa vid inaktivitet</string>
@@ -1640,16 +1641,21 @@
     <string name="appearance_screensaver_dim_gentle">Skärmen syns fortfarande tydligt</string>
     <string name="appearance_screensaver_dim_balanced">Mörk men läsbar</string>
     <string name="appearance_screensaver_dim_strong">Knappt synlig</string>
+    <string name="appearance_app_icon_mint">Mint</string>
     <string name="licenses_attributions_avatars_title">Avatarer för tittarfest</string>
     <string name="licenses_attributions_avatars_body">Skapade med DiceBear, som remixar dessa designer: \"Fun Emoji\" av Davis Uche och \"Adventurer\" av Lisa Wischofsky, licensierade under CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" av Lisa Wischofsky, \"Notionists\" av Zoish, \"Pixel Art\" och \"Thumbs\" av DiceBear, CC0 1.0. \"Bottts\" av Pablo Stanley, fri för personligt och kommersiellt bruk. Djuransikten från Twemoji av Twitter, Inc. och andra bidragsgivare, licensierade under CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby och Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio ansluter till din egen Jellyfin-, Emby- eller Silo-server. Namnen och logotyperna tillhör sina ägare. Nuvio har ingen koppling till och är inte godkänt av Jellyfin, Emby eller Silo.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc ansluter till din egen Jellyfin-, Emby- eller Silo-server. Namnen och logotyperna tillhör sina ägare. Nuvio Arc har ingen koppling till och är inte godkänt av Jellyfin, Emby eller Silo.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Listor över releasegrupper. MIT-licens.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Tolkning av Dolby Vision-metadata. Av quietvoid. MIT-licens.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Ljudavkodning. Licensierat under LGPL 2.1 eller senare.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Programvaruavkodning av AV1-video. Av VideoLAN och dav1d:s upphovspersoner. BSD 2-Clause-licens.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Identifiering av processorfunktioner för AV1-avkodaren. Av Google. Apache 2.0-licens.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">MAT-paketering av TrueHD och nedmixning av ljud är portade från Kodi. Licensierat under GPL 2.0 eller senare.</string>
     <string name="settings_experience_subtitle">Grundläggande eller Avancerat</string>
@@ -1685,8 +1691,9 @@
     <string name="playback_section_audio_desc">Ljudkontroller och videokompatibilitet.</string>
     <string name="playback_afr_open">Öppen</string>
     <string name="playback_afr_closed">Stängd</string>
+    <string name="audio_tunneled_sub_prefer_app">Inte tillgängligt när Avkodarprioritet är inställd på Föredra appens avkodare</string>
     <string name="audio_use_system_passthrough">Systemgenomströmning</string>
-    <string name="audio_use_system_passthrough_sub">Skickar TrueHD och DTS-HD till din receiver via Android (systemvägen) i stället för Nuvio (IEC-vägen). Använd detta om förlustfria format ger brus, glidning eller inget ljud.</string>
+    <string name="audio_use_system_passthrough_sub">Skickar TrueHD och DTS-HD till din receiver via Android (systemvägen) i stället för Nuvio Arc (IEC-vägen). Använd detta om förlustfria format ger brus, glidning eller inget ljud.</string>
     <string name="audio_surround_header">Surroundljud</string>
     <string name="audio_surround_reset_iec_probe">Rensa IEC-testbeslut</string>
     <string name="audio_surround_reset_iec_probe_sub">Testa IEC 61937-utmatning igen. Använd detta om förlustfria format faller tillbaka till PCM efter byte av receiver eller ingång.</string>
@@ -1735,6 +1742,10 @@
     <string name="audio_inject_hdr10_sei_sub">För DV8-innehåll (Profil 8) som strippats till ett HDR10-baslager läggs källans mastringsmetadata (MaxCLL/MaxFALL och toppluminans) till så att HDR10-TV-apparater utan DV tonmappar rätt. Bara aktivt när DV-hantering är Strippa DV eller HDR10-baslager; ingen effekt på Profil 7 eller vid Dolby Vision-uppspelning.</string>
     <string name="diag_value_not_advertised">Anges inte (inbyggd uppspelning kan ändå fungera)</string>
     <string name="diag_label_dv_el_type">DV7 EL-typ</string>
+    <string name="diag_value_dv7_native_route">Inbyggd dubbellagerväg används (Android anger den inte)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, alla tre lager används</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, konverterat till 8.1 (EL används inte)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · endast BL (RPU och EL används inte)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR-mastring</string>
     <string name="diag_label_dv_rpu_drops">DV RPU-tapp</string>
     <string name="sub_tertiary_lang">Tredje föredragna språk</string>
@@ -1742,6 +1753,10 @@
     <string name="sub_addon_subtitles_desc">Hämta undertexter från installerade tillägg under uppspelning. När detta är av finns bara undertexter som är inbäddade i filen.</string>
     <string name="autoplay_quality_rules_title">Kvalitetsregler</string>
     <string name="autoplay_quality_rules_subtitle">Filter, sortering och nivåer för releasegrupper i Anslutna tjänster.</string>
+    <string name="stream_sort_sources">Sortera källor</string>
+    <string name="stream_sort_sources_sub">Ordningen i strömlistan. Bästa kvalitet först använder dina Kvalitetsregler.</string>
+    <string name="stream_sort_sources_source_order">Källornas ordning</string>
+    <string name="stream_sort_sources_best_first">Bästa kvalitet först</string>
     <string name="autoplay_eager_ready_title">Snabbare redo med långsamma källor</string>
     <string name="autoplay_eager_ready_sub">Förbered uppspelningen så snart tidsgränsen för valet nås, i stället för att vänta på det långsammaste tillägget. Gäller detaljsidan och Fortsätt titta.</string>
     <string name="autoplay_mode_quality">Bästa kvalitet</string>
@@ -1752,6 +1767,17 @@
     <string name="layout_landscape_posters_home_only_desc">Liggande kort på Hem, stående i Bibliotek, Sök och listor</string>
     <string name="layout_landscape_posters_everywhere">Överallt</string>
     <string name="layout_landscape_posters_everywhere_desc">Liggande kort på Hem, i Bibliotek, Sök och listor</string>
+    <string name="layout_hide_side_icons">Dölj sidoikoner</string>
+    <string name="layout_hide_side_icons_sub">Dölj menyikonerna vid vänsterkanten medan menyn är stängd. Tryck på Vänster eller Tillbaka för att öppna menyn.</string>
+    <string name="layout_watched_titles">Sedda titlar</string>
+    <string name="layout_watched_titles_sub">Visa, dämpa eller dölj filmer och serier som du har sett klart.</string>
+    <string name="layout_watched_titles_dialog_title">Sedda titlar</string>
+    <string name="layout_watched_titles_show">Visa</string>
+    <string name="layout_watched_titles_show_desc">Sedda titlar förblir som de är, med en bock.</string>
+    <string name="layout_watched_titles_dim">Dämpa</string>
+    <string name="layout_watched_titles_dim_desc">Sedda titlar stannar på sin plats, mörkare, med en bock.</string>
+    <string name="layout_watched_titles_hide">Dölj</string>
+    <string name="layout_watched_titles_hide_desc">Sedda filmer och färdigsedda serier utelämnas från raderna på Hem och bannern. Fortsätt titta påverkas inte.</string>
     <string name="layout_trailer_logo">Logotyp över korttrailer</string>
     <string name="layout_trailer_logo_sub">Visa titellogotypen över en trailer som spelas i ett kort.</string>
     <string name="mdblist_account_title">Konto</string>
@@ -1774,6 +1800,8 @@
     <string name="player_layout_more_fixed_help">Tryck OK för att dölja/visa Mer. Den ligger kvar längst till höger. Flytta andra åtgärder över menygränsen för att ändra vad popupen innehåller.</string>
     <string name="player_error_placeholder_stream">Den här strömmen ser ut som ett felkort från leverantören, inte videon. Prova en annan källa.</string>
     <string name="subtitle_panel_languages">Språk</string>
+    <string name="library_sort_released_desc">Utgivningsdatum ↓</string>
+    <string name="library_sort_released_asc">Utgivningsdatum ↑</string>
     <string name="library_empty_mdblist_title">Inga %1$s i din bevakningslista</string>
     <string name="library_empty_mdblist_subtitle">Använd + i detaljer för att lägga till i din bevakningslista på MDBList</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList inte anslutet</string>
@@ -1794,6 +1822,7 @@
     <string name="library_transfer_copy">Kopiera</string>
     <string name="library_transfer_move">Flytta (kopiera, ta sedan bort från källan)</string>
     <string name="library_transfer_none">Inget att kopiera</string>
+    <string name="sub_mode_effects_warning">Krävande: kan tappa bildrutor i 4K och stänger av tunneluppspelning.</string>
     <string name="cd_playback_stats">Uppspelningsstatistik</string>
     <string name="player_stats_unavailable_mpv">Statistik är inte tillgänglig för libmpv-motorn</string>
     <string name="player_dead_source_failover">Källan är inte tillgänglig - provar nästa källa (%1$d/%2$d)</string>
@@ -1809,6 +1838,17 @@
     <string name="debrid_filters_show_everything_title">Visa allt</string>
     <string name="debrid_filters_show_everything_subtitle">Rensa alla filter och resultatgränser; behåll smart sortering.</string>
     <string name="debrid_filters_show_everything_action">Visa alla</string>
+    <string name="playback_net_device_memory_auto">Den här boxen har %1$s minne. Appen buffrar upp till %2$d MB i förväg, mindre när minnet är knappt.</string>
+    <string name="playback_net_native_memory_sub">Låter appen anpassa bufferten för den här boxen och hålla den i nativt minne, med snabbare spolning. När den slås på ställs även buffert- och nätverksvärdena nedan in för den här boxen.</string>
+    <string name="playback_buffer_custom_desc">Använd värdena nedan i stället för appens egna. Av: med ExoPlayer native memory på buffrar appen 15 till 45 s inom den storlek den väljer för den här boxen; annars Media3:s standardbuffert.</string>
+    <string name="playback_buffer_seconds_hint">Vid %1$d MB rymmer detta ungefär %2$d s av en 4K-remux (80 Mbit/s). Längre inställningar gör ingen skillnad.</string>
+    <string name="playback_buffer_back_fitted">Ryms inom Målbuffertstorlek. Vid %1$d MB behåller appen upp till ungefär %2$d s av den (%3$d MB vid 80 Mbit/s), så att minst 5 s ligger före.</string>
+    <string name="playback_buffer_back_fitted_none">Ryms inom Målbuffertstorlek. Vid %1$d MB finns det ingen plats för den, så appen håller 5 s före i stället.</string>
+    <string name="playback_buffer_managed_desc">Ställer in bufferten utifrån ledigt minne när uppspelningen startar och krymper den när boxen får ont om minne. Stäng av för att välja Målbuffertstorlek själv; på små boxar kan ett större värde få uppspelningen att hacka.</string>
+    <string name="playback_buffer_target_size_sub">Minne som används för att buffra video i förväg. Gränsen följer boxens totala minne. Med Managed memory budget på väljer appen storleken utifrån ledigt minne när uppspelningen startar. Bufferten krymper medan boxen har ont om minne.</string>
+    <string name="playback_buffer_target_stutter_warning">Den här boxen har %1$s minne. Över %2$d MB kan uppspelningen hacka.</string>
+    <string name="playback_buffer_allow_large_desc">Låter Målbuffertstorlek gå upp till 2 GB. Bara för boxar med 4 GB minne eller mer; på mindre boxar hackar eller kraschar stora värden.</string>
+    <string name="playback_net_connection_count_small_box">Den här boxen har %1$s minne. Fler än 2 anslutningar kan få uppspelningen att hacka.</string>
     <string name="diag_label_serving_host">Levererande värd</string>
     <string name="diag_label_file">Fil</string>
     <string name="diag_label_dv_applied">DV tillämpat</string>
@@ -1818,16 +1858,16 @@
     <string name="diag_value_dv_base_layer">DV ignoreras - HDR10-baslager</string>
     <string name="diag_label_audio_path">Ljudväg</string>
     <string name="diag_label_audio_caps">Ljudkedjan uppger</string>
+    <string name="playback_estimated_memory_parts">Uppskattad minnesanvändning: cirka %1$d MB (buffert %2$d MB + nedladdningar %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Uppskattad minnesanvändning: cirka %1$d MB (buffert %2$d MB)</string>
     <string name="stream_test_serving_host_label">Levererande värd: %1$s</string>
     <string name="stream_test_file_label">Fil: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Rekommendation: låt parallella anslutningar vara av - en enda anslutning ger redan %1$s, mer än 2\u00d7 titelns bitrate.</string>
     <string name="stream_test_verdict_recommend">Rekommendation: %1$d anslutningar / %2$d MB-block - %3$s. Den minnessnålaste konfigurationen som når 2\u00d7 titelns bitrate; snabbare konfigurationer kan visas ovan men använder mer minne utan nytta för uppspelningen.</string>
     <string name="stream_test_verdict_marginal">Bästa resultat: %1$d anslutningar / %2$d MB-block med %3$s - över titelns genomsnittliga bitrate på %4$s, men under målet på 2\u00d7 marginal. Uppspelningen bör fungera men kan buffra i scener med hög bitrate eller vid spolning.</string>
     <string name="stream_test_verdict_cannot_sustain">Den här anslutningen klarar inte titeln - den snabbaste testade konfigurationen (%1$d anslutningar / %2$d MB-block) nådde %3$s, under titelns genomsnittliga bitrate på %4$s. Räkna med buffring; överväg en version med lägre bitrate.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Snabbaste stabila: %1$d anslutningar / %2$d MB-block med %3$s. Titelns bitrate är okänd - spela en video först för en anpassad rekommendation.</string>
-    <string name="stream_test_verdict_pm_suffix">" Kräver Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Mäter bara rå nedladdningshastighet - verklig uppspelning beror också på buffring, avkodning och serverbelastning, och håller dessutom målbufferten i minnet.</string>
     <string name="stream_test_label_parallel_dyn">Parallell anslutning (%1$d ansl. / %2$d MB-block)</string>
     <string name="stream_test_btn_measuring_dyn">Mäter: %1$s\u2026</string>
@@ -1860,7 +1900,6 @@
     <string name="assessment_item_parallel">Parallella anslutningar</string>
     <string name="assessment_item_chunk">Blockstorlek</string>
     <string name="assessment_item_network_master">Anpassat nätverk</string>
-    <string name="assessment_item_http2">Aktivera HTTP/2</string>
     <string name="assessment_item_perf_mode">ExoPlayer Native Memory</string>
     <string name="assessment_item_buffer_master">Anpassade uppspelningsbuffertar</string>
     <string name="assessment_item_managed_budget">Hanterad minnesbudget</string>
@@ -1881,15 +1920,18 @@
     <string name="assessment_grounds_parallel_cannot">Snabbaste uppmätta %1$s med %2$d \u00d7 %3$d MB - under titelns egen bitrate; den här länken klarar inte strömmen</string>
     <string name="assessment_grounds_parallel_fastest">Snabbaste uppmätta %1$s med %2$d \u00d7 %3$d MB - ingen bitrate för titeln var känd, så ingen bedömning av om det räcker</string>
     <string name="assessment_grounds_chunk">Hör ihop med antalet anslutningar ovan, från samma mätomgång</string>
-    <string name="assessment_grounds_network_master">Huvudbrytare för HTTP/2- och parallellinställningarna nedan</string>
-    <string name="assessment_grounds_http2">Multiplexar range-förfrågningar över en anslutning; nyttigt i de flesta fall, inget test behövs</string>
     <string name="assessment_grounds_perf_mode">Håller remux-stora buffertar utanför Java-heapen så att skräpinsamlingen inte kan få bilden att hacka; minnesgränserna anpassas till enhetens nivå %1$s (säker %2$d MB / varning %3$d MB) och fler än %4$d anslutningar kräver det</string>
     <string name="assessment_grounds_perf_mode_unsupported">Kräver Android 8.0 eller senare</string>
-    <string name="assessment_grounds_buffer_master">Av betyder media3:s vanliga laddningsstyrning: ett byteberäknat mål på omkring 13 MB, som rymmer \u2248 1 s av en remux oavsett tidsvärdena - värdena nedan är anpassade till den här enheten i stället</string>
-    <string name="assessment_grounds_managed_budget">Hanterat läge låser målet vid den säkra gränsen och bortser från de parallella anslutningarnas overhead; det uttryckliga målet nedan räknar med båda</string>
-    <string name="assessment_grounds_target_buffer">Mål %1$d + %2$d MB anslutningsoverhead = %3$d MB \u2264 den säkra gränsen på %4$d MB (största steget om %5$d MB som ryms)</string>
-    <string name="assessment_grounds_allow_large_on">Behövs för att målreglaget ska nå %1$d MB på den här enheten</string>
-    <string name="assessment_grounds_allow_large_off">Det rekommenderade målet ryms inom reglagets vanliga intervall</string>
+    <string name="assessment_grounds_native_auto">Appen anpassar bufferten för den här boxen med %1$s (upp till %2$d MB, mindre när minnet är knappt) och håller den i nativt minne</string>
+    <string name="assessment_grounds_buffer_custom_times">Låter buffertprofilen nedan bestämma bufferttiderna; storleken förblir automatisk</string>
+    <string name="assessment_grounds_managed_on">Anpassar bufferten efter ledigt minne vid uppspelningsstart och krymper den när boxen får ont om minne; en fast storlek klarar ingetdera</string>
+    <string name="assessment_value_target_auto">Auto (upp till %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Med Hanterad minnesbudget på väljer appen detta vid uppspelningsstart</string>
+    <string name="assessment_grounds_allow_large_small_box">Bara för boxar med 4 GB minne eller mer; på den här boxen med %1$s hackar eller kraschar stora värden</string>
+    <string name="assessment_grounds_allow_large_managed">Har ingen effekt medan Hanterad minnesbudget är på</string>
+    <string name="assessment_grounds_network_for_parallel">Slår på de parallella anslutningar som rekommenderas ovan</string>
+    <string name="assessment_grounds_network_parallel_only">Behövs bara för parallella anslutningar; en anslutning är snabb nog här</string>
+    <string name="assessment_grounds_network_untested">Behövs bara för parallella anslutningar, och ingen ström testades för att avgöra det</string>
     <string name="assessment_grounds_max_buffer">Ett mål på %1$d MB rymmer \u2248%2$d s av den här titeln (%3$s) - sekunder utöver det kan inte uppstå</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Ingen bitrate för titeln är känd - bytetaket kan inte beräknas; taket lämnas på %1$d s</string>
     <string name="assessment_grounds_vod_auto">Auto anpassar efter ledigt utrymme (20%% av det lediga inom gränserna, 1 GB reserv) - \u2248%1$s på den här enheten just nu</string>
@@ -1926,7 +1968,7 @@
     <string name="assessment_no_stream">Ingen senast spelad ström - enhetsraderna körs ändå. För uppmätta rader, spela först din mest krävande vanliga titel och kör sedan igen.</string>
     <string name="assessment_header_title">Enhetsfakta</string>
     <string name="assessment_header_device">Enhet</string>
-    <string name="assessment_header_device_value">%1$s - säker %2$d MB / varning %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buffert upp till %2$d MB / fara över %3$d MB</string>
     <string name="assessment_header_display">Skärm</string>
     <string name="assessment_header_display_unknown">Kan inte undersökas härifrån</string>
     <string name="assessment_header_stream">Senaste ström</string>
@@ -1947,8 +1989,7 @@
     <string name="assessment_footer">Uppmätta rader testades på den här enheten; beräknade rader bygger på fakta som går att läsa av. Tillämpa skriver bara uppmätta och beräknade rader plus den profil du väljer - kontrollrader ändras aldrig automatiskt. Återställ ångrar den senaste tillämpningen.</string>
     <string name="stream_test_verdict_recommend_trade">Rekommendation: %1$d anslutningar / %2$d MB-block - %3$s (%4$s\u00d7 titelns bitrate). Valdes framför %5$d \u00d7 %6$d MB (2\u00d7+) eftersom det med enhetens minnesbudget lämnar %7$d MB \u2248 %8$d s uppspelningsbuffert i stället för %9$d MB \u2248 %10$d s - här väger buffertdjup tyngre än påfyllningstakt.</string>
     <string name="assessment_grounds_parallel_trade">Uppmätt %1$s med %2$d \u00d7 %3$d MB - når 1.5\u00d7 bitrate och lämnar %6$d MB \u2248 %7$d s buffert; konfigurationen för 2\u00d7 (%4$d \u00d7 %5$d MB) skulle bara lämna %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Nuvarande %1$d MB + %2$d MB overhead = %3$d MB ligger i varningszonen (%4$d-%5$d MB) - fungerar, med mindre marginal</string>
-    <string name="assessment_grounds_target_current_danger">Nuvarande %1$d MB + %2$d MB overhead = %3$d MB överskrider varningsgränsen på %4$d MB - risk att appen stängs vid minnesbrist</string>
+    <string name="assessment_parallel_small_box_cap">Den här boxen har %1$s minne, så högst 2 anslutningar rekommenderas</string>
     <string name="assessment_grounds_max_buffer_current">Med ditt nuvarande mål på %1$d MB: \u2248 %2$d s i praktiken, oavsett sekundreglaget - antalet byte begränsar först</string>
     <string name="assessment_item_engine">Intern motor</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -2009,7 +2050,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV kan inte ändra storlek på bildundertexter. Använd ExoPlayer för att justera bildundertexternas storlek oberoende av texten.</string>
     <string name="subtitle_style_image_size">Storlek på bildundertexter</string>
     <string name="v2_accent_fixed_hint">Använder Färgtema om inte accent från bilder är vald.</string>
-    <string name="about_fork_updates_subtitle">Uppdateringar från NuvioTV-Fork. Alla fork-versioner är beta.</string>
+    <string name="about_fork_updates_subtitle">Uppdateringar från Nuvio Arc-utgåvorna på GitHub.</string>
     <string name="playback_speculative_stream_search">Sök källor före Spela</string>
     <string name="playback_speculative_stream_search_sub">Sök i tillägg medan du bläddrar för att snabba upp källvalet. Vissa tillägg kan lägga till eller hämta innehåll vid sökningar. Av väntar till Spela. Medielänkar och uppslag hos leverantören väntar tills du väljer att spela, utom nära slutet av ett avsnitt när spolningsminiatyrer förbereder nästa.</string>
     <string name="debrid_cached_playback_links">Återanvänd cachade uppspelningslänkar</string>
@@ -2097,6 +2138,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Börja spela direkt; miniatyrer skapas vid paus och när du slutat titta.</string>
     <string name="seek_thumbnails_prepare_on">På</string>
     <string name="seek_thumbnails_prepare_on_desc">Skapa en titels spolningsminiatyrer innan den startar. \"Börja titta nu\" eller Tillbaka startar uppspelningen när som helst.</string>
+    <string name="seek_thumbnails_from_copy_title">Miniatyrer från en kopia</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Snabbare miniatyrer för 4K-titlar från en 1080p- eller 720p-kopia, och för Usenet-titlar från en kopia som inte ligger på Usenet. En cachad TorBox-kopia kan läggas till i din lista i några minuter.</string>
     <string name="seek_thumbnails_clear_title">Rensa sparade miniatyrer</string>
     <string name="seek_thumbnails_clear_subtitle">De skapas på nytt nästa gång du spelar en titel.</string>
     <string name="seek_thumbnails_cleared">Sparade miniatyrer rensade</string>
@@ -2111,7 +2154,7 @@
     <string name="seek_thumbnails_time_left_minutes">Ungefär %1$d min %2$d s kvar</string>
     <string name="seek_thumbnails_count">%1$d av %2$d</string>
     <string name="seek_thumbnails_start_now">Börja titta nu</string>
-    <string name="seek_thumbnails_settings_hint">Slå på eller av detta i Inställningar › Uppspelning › Allmänt</string>
+    <string name="seek_thumbnails_settings_hint">Slå på eller av detta i Inställningar › Uppspelning › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Miniatyrer %1$d%%</string>
     <string name="party_title">Tittarfest</string>
     <string name="party_settings_subtitle">Titta på samma sak i samma ögonblick med folk i andra hem</string>
@@ -2153,6 +2196,7 @@
     <string name="party_member_buffering">buffrar</string>
     <string name="party_member_catching_up">kommer ikapp</string>
     <string name="party_member_away">borta</string>
+    <string name="party_member_needs_update">behöver uppdatera</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Din kopia är %1$s s längre än värdens. Festen kan komma i otakt.</string>
     <string name="party_copy_shorter">Din kopia är %1$s s kortare än värdens. Festen kan komma i otakt.</string>
@@ -2167,7 +2211,7 @@
     <string name="party_match_same">Samma fil som värden</string>
     <string name="party_match_likely">Troligen värdens kopia</string>
     <string name="party_match_different">Annan kopia än värdens</string>
-    <string name="party_invite_text">Gå med i min tittarfest i Nuvio. Öppna Inställningar, sedan Tittarfest, och ange koden %1$s</string>
+    <string name="party_invite_text">Gå med i min tittarfest i Nuvio Arc. Öppna Inställningar, sedan Tittarfest, och ange koden %1$s</string>
     <string name="party_invite_qr">Skanna med mobilens kamera för att sms:a inbjudan</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

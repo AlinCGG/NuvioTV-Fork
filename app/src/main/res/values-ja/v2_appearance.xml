@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">自動</string>
     <string name="v2_scale_manual">手動</string>
     <string name="v2_scale_fine_tune">倍率の微調整</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">イントロサウンド</string>
+    <string name="v2_intro_sound_subtitle">イントロをサウンド付きで再生します。対応システムではサラウンドで再生します</string>
 </resources>

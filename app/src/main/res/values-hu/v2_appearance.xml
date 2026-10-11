@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatikus</string>
     <string name="v2_scale_manual">Kézi</string>
     <string name="v2_scale_fine_tune">Méretezés finomhangolása</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Bevezető hang</string>
+    <string name="v2_intro_sound_subtitle">A bevezető lejátszása hanggal, térhatású hangzással, ha a rendszered támogatja</string>
 </resources>

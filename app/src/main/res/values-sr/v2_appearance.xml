@@ -3,6 +3,8 @@
 
     <!-- Nuvio-test additions -->
     <string name="v2_experience_title">Изглед интерфејса</string>
+    <string name="v2_intro_sound_title">Уводни звук</string>
+    <string name="v2_intro_sound_subtitle">Пушта увод са звуком, у surround звуку ако га ваш систем подржава</string>
     <string name="v2_experience_subtitle">Изаберите интерфејс за овај уређај</string>
     <string name="v2_visual_style_title">Визуелни стил</string>
     <string name="v2_scale_resolved">Примењена величина: %1$d%%</string>

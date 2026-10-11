@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatyczna</string>
     <string name="v2_scale_manual">Ręczna</string>
     <string name="v2_scale_fine_tune">Dostrajanie skali</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Dźwięk wstępu</string>
+    <string name="v2_intro_sound_subtitle">Odtwarzaj wstęp z dźwiękiem, w dźwięku przestrzennym, jeśli twój system go obsługuje</string>
 </resources>

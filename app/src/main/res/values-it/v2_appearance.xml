@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatica</string>
     <string name="v2_scale_manual">Manuale</string>
     <string name="v2_scale_fine_tune">Regolazione fine della scala</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Suono introduttivo</string>
+    <string name="v2_intro_sound_subtitle">Riproduci l\'introduzione con il suo suono, in surround se il tuo impianto lo supporta</string>
 </resources>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="type_movie">फ़िल्म</string>
     <string name="type_series">सीरीज़</string>
     <string name="type_unknown">अज्ञात</string>
@@ -179,7 +179,7 @@
     <!-- AboutScreen -->
     <string name="about_title">ऐप के बारे में</string>
     <string name="about_subtitle">ऐप जानकारी, अपडेट और कानूनी लिंक</string>
-    <string name="about_made_with_love">Tapframe और दोस्तों द्वारा ❤️ के साथ बनाया गया</string>
+    <string name="about_made_with_love">Tapframe और दोस्तों के शानदार काम पर आधारित ❤️ · Nuvio Arc, ysosrs123 द्वारा</string>
     <string name="about_version">वर्ज़न %1$s</string>
     <string name="about_check_updates">अपडेट जांचें</string>
     <string name="about_check_updates_subtitle">नवीनतम रिलीज़ डाउनलोड करें</string>
@@ -561,7 +561,7 @@
     <string name="trakt_stat_watched_hours">देखे गए घंटे</string>
     <string name="trakt_disconnect">डिस्कनेक्ट</string>
     <string name="trakt_disconnect_title">Trakt डिस्कनेक्ट करें?</string>
-    <string name="trakt_disconnect_subtitle">यह आपके Trakt अकाउंट को Nuvio से डिस्कनेक्ट कर देगा।</string>
+    <string name="trakt_disconnect_subtitle">यह आपके Trakt अकाउंट को Nuvio Arc से डिस्कनेक्ट कर देगा।</string>
     <string name="trakt_login">लॉगिन</string>
     <string name="trakt_retry">फिर से कोशिश करें</string>
     <string name="trakt_back">वापस</string>
@@ -931,7 +931,7 @@
     <string name="catalog_see_all_empty_subtitle">कोई दूसरा कैटलॉग आज़माएँ या बाद में देखें</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Nuvio में आपका स्वागत है</string>
+    <string name="layout_selection_welcome">Nuvio Arc में आपका स्वागत है</string>
     <string name="layout_selection_subtitle">अपना होम स्क्रीन लेआउट चुनें</string>
     <string name="layout_selection_continue">जारी रखें</string>
 
@@ -1011,6 +1011,7 @@
     <string name="detail_trailer_error_age_restricted">यह ट्रेलर YouTube पर उम्र-प्रतिबंधित है और यहाँ नहीं चल सकता।</string>
     <string name="detail_trailer_error_unavailable">यह ट्रेलर YouTube पर उपलब्ध नहीं है।</string>
     <string name="detail_trailer_error_sign_in">इस ट्रेलर को चलाने के लिए YouTube साइन-इन माँगता है।</string>
+    <string name="theme_color_copper">कॉपर</string>
     <string name="appearance_screensaver_group_title">OLED स्क्रीन सुरक्षा</string>
     <string name="appearance_screensaver_group_subtitle">पैनल का घिसाव कम करने के लिए निष्क्रिय होने पर स्क्रीन डिम करें</string>
     <string name="appearance_screensaver_enabled">निष्क्रिय होने पर डिम करें</string>
@@ -1024,16 +1025,21 @@
     <string name="appearance_screensaver_dim_gentle">स्क्रीन साफ़ दिखती रहती है</string>
     <string name="appearance_screensaver_dim_balanced">गहरा पर पढ़ने लायक</string>
     <string name="appearance_screensaver_dim_strong">मुश्किल से दिखता है</string>
+    <string name="appearance_app_icon_mint">मिंट</string>
     <string name="licenses_attributions_avatars_title">वॉच पार्टी अवतार</string>
     <string name="licenses_attributions_avatars_body">DiceBear से बनाए गए, इन डिज़ाइनों को रीमिक्स करके: Davis Uche का \"Fun Emoji\" और Lisa Wischofsky का \"Adventurer\", CC BY 4.0 (creativecommons.org/licenses/by/4.0) के तहत लाइसेंस्ड। Lisa Wischofsky का \"Lorelei\", Zoish का \"Notionists\", DiceBear के \"Pixel Art\" और \"Thumbs\", CC0 1.0। Pablo Stanley का \"Bottts\", निजी और व्यावसायिक इस्तेमाल के लिए मुफ़्त। जानवरों के चेहरे Twitter, Inc. और अन्य योगदानकर्ताओं के Twemoji से, CC BY 4.0 के तहत लाइसेंस्ड।</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby और Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio आपके अपने Jellyfin, Emby या Silo सर्वर से कनेक्ट होता है। उनके नाम और लोगो उनके मालिकों के हैं। Nuvio का Jellyfin, Emby या Silo से कोई संबंध नहीं है और न ही यह उनके द्वारा समर्थित है।</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc आपके अपने Jellyfin, Emby या Silo सर्वर से कनेक्ट होता है। उनके नाम और लोगो उनके मालिकों के हैं। Nuvio Arc का Jellyfin, Emby या Silo से कोई संबंध नहीं है और न ही यह उनके द्वारा समर्थित है।</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">रिलीज़ ग्रुप सूचियाँ। MIT लाइसेंस।</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Dolby Vision मेटाडेटा पार्सिंग। quietvoid द्वारा। MIT लाइसेंस।</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">ऑडियो डिकोडिंग। LGPL 2.1 या बाद के संस्करण के तहत लाइसेंस्ड।</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">सॉफ़्टवेयर AV1 वीडियो डिकोडिंग। VideoLAN और dav1d के लेखकों द्वारा। BSD 2-Clause लाइसेंस।</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">AV1 डिकोडर के लिए प्रोसेसर की क्षमताओं की पहचान। Google द्वारा। Apache 2.0 लाइसेंस।</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHD MAT पैकिंग और ऑडियो डाउनमिक्स Kodi से पोर्ट किए गए हैं। GPL 2.0 या बाद के संस्करण के तहत लाइसेंस्ड।</string>
     <string name="settings_experience_subtitle">ज़रूरी या एडवांस्ड</string>
@@ -1069,8 +1075,9 @@
     <string name="playback_section_audio_desc">ऑडियो कंट्रोल और वीडियो कम्पैटिबिलिटी।</string>
     <string name="playback_afr_open">खुला</string>
     <string name="playback_afr_closed">बंद</string>
+    <string name="audio_tunneled_sub_prefer_app">जब \"डिकोडर प्राथमिकता\" \"ऐप डिकोडर को प्राथमिकता दें\" पर सेट हो, तब उपलब्ध नहीं</string>
     <string name="audio_use_system_passthrough">सिस्टम पासथ्रू</string>
-    <string name="audio_use_system_passthrough_sub">TrueHD और DTS-HD को Nuvio (IEC पाथ) की जगह Android (सिस्टम पाथ) से रिसीवर को भेजता है। लॉसलेस फ़ॉर्मेट में शोर, ड्रिफ़्ट या आवाज़ न आने पर इसे इस्तेमाल करें।</string>
+    <string name="audio_use_system_passthrough_sub">TrueHD और DTS-HD को Nuvio Arc (IEC पाथ) की जगह Android (सिस्टम पाथ) से रिसीवर को भेजता है। लॉसलेस फ़ॉर्मेट में शोर, ड्रिफ़्ट या आवाज़ न आने पर इसे इस्तेमाल करें।</string>
     <string name="audio_surround_header">सराउंड साउंड</string>
     <string name="audio_surround_reset_iec_probe">IEC जाँच का फ़ैसला साफ़ करें</string>
     <string name="audio_surround_reset_iec_probe_sub">IEC 61937 आउटपुट फिर टेस्ट करें। रिसीवर या इनपुट बदलने के बाद लॉसलेस फ़ॉर्मेट PCM पर आ जाएँ तो इसे इस्तेमाल करें।</string>
@@ -1119,6 +1126,10 @@
     <string name="audio_inject_hdr10_sei_sub">HDR10 बेस लेयर तक स्ट्रिप किए गए DV8 (Profile 8) कंटेंट में सोर्स का मास्टरिंग मेटाडेटा (MaxCLL/MaxFALL और पीक ल्यूमिनेंस) जोड़ता है ताकि बिना DV वाले HDR10 टीवी सही टोन-मैप करें। तभी सक्रिय जब DV हैंडलिंग Strip DV या HDR10 बेस लेयर पर हो; Profile 7 या Dolby Vision प्लेबैक पर कोई असर नहीं।</string>
     <string name="diag_value_not_advertised">घोषित नहीं (नेटिव प्लेबैक फिर भी चल सकता है)</string>
     <string name="diag_label_dv_el_type">DV7 EL प्रकार</string>
+    <string name="diag_value_dv7_native_route">नेटिव डुअल-लेयर रूट इस्तेमाल में (Android इसे सूचीबद्ध नहीं करता)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, तीनों लेयर इस्तेमाल में</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, 8.1 में कन्वर्ट किया (EL इस्तेमाल नहीं)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · सिर्फ़ BL (RPU और EL इस्तेमाल नहीं)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR मास्टरिंग</string>
     <string name="diag_label_dv_rpu_drops">DV RPU ड्रॉप</string>
     <string name="sub_tertiary_lang">तीसरी पसंदीदा भाषा</string>
@@ -1126,6 +1137,10 @@
     <string name="sub_addon_subtitles_desc">प्लेबैक के दौरान इंस्टॉल किए ऐडऑन से सबटाइटल लाएँ। बंद होने पर केवल फ़ाइल में मौजूद सबटाइटल उपलब्ध रहते हैं।</string>
     <string name="autoplay_quality_rules_title">क्वालिटी नियम</string>
     <string name="autoplay_quality_rules_subtitle">कनेक्टेड सर्विसेज़ में फ़िल्टर, सॉर्टिंग और रिलीज़-ग्रुप टियर।</string>
+    <string name="stream_sort_sources">सोर्स क्रमबद्ध करें</string>
+    <string name="stream_sort_sources_sub">स्ट्रीम लिस्ट का क्रम। बेस्ट क्वालिटी पहले आपके क्वालिटी नियमों का इस्तेमाल करता है।</string>
+    <string name="stream_sort_sources_source_order">सोर्स का क्रम</string>
+    <string name="stream_sort_sources_best_first">बेस्ट क्वालिटी पहले</string>
     <string name="autoplay_eager_ready_title">धीमे सोर्स पर जल्दी तैयार</string>
     <string name="autoplay_eager_ready_sub">सबसे धीमे ऐडऑन का इंतज़ार करने की जगह, चयन टाइमआउट पूरा होते ही प्लेबैक तैयार करें। डिटेल्स पेज और देखना जारी रखें पर लागू।</string>
     <string name="autoplay_mode_quality">सबसे अच्छी क्वालिटी</string>
@@ -1136,6 +1151,17 @@
     <string name="layout_landscape_posters_home_only_desc">होम पर लैंडस्केप कार्ड, लाइब्रेरी, खोज और सूचियों में पोर्ट्रेट</string>
     <string name="layout_landscape_posters_everywhere">हर जगह</string>
     <string name="layout_landscape_posters_everywhere_desc">होम, लाइब्रेरी, खोज और सूचियों में लैंडस्केप कार्ड</string>
+    <string name="layout_hide_side_icons">साइड आइकन छुपाएँ</string>
+    <string name="layout_hide_side_icons_sub">मेन्यू बंद होने पर बाएँ किनारे के मेन्यू आइकन छुपाएँ। मेन्यू खोलने के लिए बायाँ या बैक दबाएँ।</string>
+    <string name="layout_watched_titles">देखे गए टाइटल</string>
+    <string name="layout_watched_titles_sub">जो मूवी और शो आप पूरे देख चुके हैं, उन्हें दिखाएँ, डिम करें या छुपाएँ।</string>
+    <string name="layout_watched_titles_dialog_title">देखे गए टाइटल</string>
+    <string name="layout_watched_titles_show">दिखाएँ</string>
+    <string name="layout_watched_titles_show_desc">देखे गए टाइटल जैसे हैं वैसे ही रहते हैं, टिक के साथ।</string>
+    <string name="layout_watched_titles_dim">डिम करें</string>
+    <string name="layout_watched_titles_dim_desc">देखे गए टाइटल अपनी जगह पर रहते हैं, थोड़े गहरे और टिक के साथ।</string>
+    <string name="layout_watched_titles_hide">छुपाएँ</string>
+    <string name="layout_watched_titles_hide_desc">देखी गई मूवी और पूरे देखे गए शो होम की रो और बैनर में नहीं दिखते। \"देखना जारी रखें\" पर असर नहीं पड़ता।</string>
     <string name="layout_trailer_logo">कार्ड ट्रेलर पर लोगो</string>
     <string name="layout_trailer_logo_sub">कार्ड में चल रहे ट्रेलर के ऊपर टाइटल लोगो दिखाएँ।</string>
     <string name="mdblist_account_title">अकाउंट</string>
@@ -1158,6 +1184,8 @@
     <string name="player_layout_more_fixed_help">अधिक बटन को छिपाने/दिखाने के लिए OK दबाएँ। यह सबसे दाईं ओर रहता है। पॉपअप में क्या रहे यह बदलने के लिए दूसरे एक्शन उसकी मेन्यू सीमा के पार ले जाएँ।</string>
     <string name="player_error_placeholder_stream">यह स्ट्रीम वीडियो नहीं, प्रोवाइडर का एरर कार्ड लगती है। कोई दूसरा सोर्स आज़माएँ।</string>
     <string name="subtitle_panel_languages">भाषाएँ</string>
+    <string name="library_sort_released_desc">रिलीज़ ↓</string>
+    <string name="library_sort_released_asc">रिलीज़ ↑</string>
     <string name="library_empty_mdblist_title">आपकी वॉचलिस्ट में कोई %1$s नहीं</string>
     <string name="library_empty_mdblist_subtitle">अपनी MDBList वॉचलिस्ट में आइटम जोड़ने के लिए डिटेल्स में + उपयोग करें</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList कनेक्ट नहीं है</string>
@@ -1178,6 +1206,7 @@
     <string name="library_transfer_copy">कॉपी</string>
     <string name="library_transfer_move">मूव (कॉपी करें, फिर सोर्स से हटाएँ)</string>
     <string name="library_transfer_none">कॉपी करने को कुछ नहीं</string>
+    <string name="sub_mode_effects_warning">भारी: 4K पर फ़्रेम छूट सकते हैं और टनल्ड प्लेबैक बंद हो जाता है।</string>
     <string name="cd_playback_stats">प्लेबैक स्टैट्स</string>
     <string name="player_stats_unavailable_mpv">libmpv इंजन के लिए स्टैट्स उपलब्ध नहीं हैं</string>
     <string name="player_dead_source_failover">सोर्स उपलब्ध नहीं - अगला सोर्स आज़माया जा रहा है (%1$d/%2$d)</string>
@@ -1193,6 +1222,17 @@
     <string name="debrid_filters_show_everything_title">सब कुछ दिखाएँ</string>
     <string name="debrid_filters_show_everything_subtitle">सभी फ़िल्टर और नतीजों की सीमाएँ हटाएँ; स्मार्ट सॉर्टिंग बनी रहे।</string>
     <string name="debrid_filters_show_everything_action">सब दिखाएँ</string>
+    <string name="playback_net_device_memory_auto">इस डिवाइस में %1$s मेमोरी है। ऐप %2$d MB तक आगे बफर करता है, मेमोरी कम होने पर कम।</string>
+    <string name="playback_net_native_memory_sub">ऐप को इस डिवाइस के लिए बफर का साइज़ तय करने और उसे नेटिव मेमोरी में रखने देता है, जिससे सीक तेज़ होता है। इसे चालू करने पर नीचे की बफर और नेटवर्क वैल्यू भी इस डिवाइस के हिसाब से सेट हो जाती हैं।</string>
+    <string name="playback_buffer_custom_desc">ऐप की अपनी वैल्यू की जगह नीचे की वैल्यू इस्तेमाल करें। बंद होने पर: ExoPlayer नेटिव मेमोरी चालू हो तो ऐप इस डिवाइस के लिए चुने साइज़ में 15 से 45 सेकंड बफर करता है; बंद हो तो Media3 का स्टैंडर्ड बफर।</string>
+    <string name="playback_buffer_seconds_hint">%1$d MB में 4K remux (80 Mbit/s) के करीब %2$d सेकंड आते हैं। इससे लंबी सेटिंग से कोई फ़र्क नहीं पड़ता।</string>
+    <string name="playback_buffer_back_fitted">टारगेट बफर साइज़ के अंदर रखा जाता है। %1$d MB पर ऐप इसमें से करीब %2$d सेकंड तक रखता है (80 Mbit/s पर %3$d MB), ताकि कम से कम 5 सेकंड आगे बफर रहें।</string>
+    <string name="playback_buffer_back_fitted_none">टारगेट बफर साइज़ के अंदर रखा जाता है। %1$d MB पर इसके लिए जगह नहीं है, इसलिए ऐप इसकी जगह 5 सेकंड आगे बफर रखता है।</string>
+    <string name="playback_buffer_managed_desc">प्लेबैक शुरू होते समय इस डिवाइस की खाली मेमोरी से बफर तय करता है, और मेमोरी कम होने पर उसे छोटा करता है। टारगेट बफर साइज़ खुद चुनने के लिए बंद करें; छोटे डिवाइस पर बड़ा साइज़ प्लेबैक को रुक-रुक कर चला सकता है।</string>
+    <string name="playback_buffer_target_size_sub">वीडियो को आगे बफर करने के लिए इस्तेमाल होने वाली मेमोरी। सीमा इस डिवाइस की कुल मेमोरी पर निर्भर है। Managed memory budget चालू होने पर ऐप प्लेबैक शुरू होते समय खाली मेमोरी से साइज़ तय करता है। डिवाइस में मेमोरी कम होने पर बफर छोटा हो जाता है।</string>
+    <string name="playback_buffer_target_stutter_warning">इस डिवाइस में %1$s मेमोरी है। %2$d MB से ऊपर प्लेबैक रुक-रुक कर चल सकता है।</string>
+    <string name="playback_buffer_allow_large_desc">टारगेट बफर साइज़ को 2 GB तक जाने देता है। सिर्फ़ 4 GB या ज़्यादा मेमोरी वाले डिवाइस के लिए; छोटे डिवाइस पर बड़े साइज़ अटकते हैं या क्रैश होते हैं।</string>
+    <string name="playback_net_connection_count_small_box">इस डिवाइस में %1$s मेमोरी है। 2 से ज़्यादा कनेक्शन से प्लेबैक रुक-रुक कर चल सकता है।</string>
     <string name="diag_label_serving_host">सर्विंग होस्ट</string>
     <string name="diag_label_file">फ़ाइल</string>
     <string name="diag_label_dv_applied">लागू DV</string>
@@ -1202,16 +1242,16 @@
     <string name="diag_value_dv_base_layer">DV अनदेखा - HDR10 बेस लेयर</string>
     <string name="diag_label_audio_path">ऑडियो पाथ</string>
     <string name="diag_label_audio_caps">ऑडियो चेन के दावे</string>
+    <string name="playback_estimated_memory_parts">अनुमानित मेमोरी उपयोग: करीब %1$d MB (बफर %2$d MB + डाउनलोड %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">अनुमानित मेमोरी उपयोग: करीब %1$d MB (बफर %2$d MB)</string>
     <string name="stream_test_serving_host_label">सर्विंग होस्ट: %1$s</string>
     <string name="stream_test_file_label">फ़ाइल: %1$s</string>
     <string name="stream_test_row_warning_suffix">" ⚠"</string>
-    <string name="stream_test_row_pm_suffix">" · PM"</string>
     <string name="stream_test_verdict_leave_off">सलाह: पैरेलल कनेक्शन बंद रखें - एक ही कनेक्शन %1$s दे रहा है, जो इस टाइटल के बिटरेट के 2× से ज़्यादा है।</string>
     <string name="stream_test_verdict_recommend">सलाह: %1$d कनेक्शन / %2$d MB चंक - %3$s। सबसे कम मेमोरी वाली सेटिंग जो इस टाइटल के बिटरेट का 2× देती है; ऊपर तेज़ सेटिंग दिख सकती हैं पर वे प्लेबैक में फ़ायदे के बिना ज़्यादा मेमोरी लेती हैं।</string>
     <string name="stream_test_verdict_marginal">सबसे अच्छा नतीजा: %1$d कनेक्शन / %2$d MB चंक, %3$s पर - इस टाइटल के %4$s औसत बिटरेट से ऊपर, पर 2× हेडरूम लक्ष्य से कम। प्लेबैक चलना चाहिए, पर हाई-बिटरेट सीन या सीक में बफर हो सकता है।</string>
     <string name="stream_test_verdict_cannot_sustain">यह कनेक्शन इस टाइटल को नहीं संभाल सकता - सबसे तेज़ टेस्ट की गई सेटिंग (%1$d कनेक्शन / %2$d MB चंक) %3$s तक पहुँची, जो टाइटल के %4$s औसत बिटरेट से कम है। बफरिंग होगी; कम बिटरेट वाला वर्ज़न देखें।</string>
     <string name="stream_test_verdict_fastest_nobitrate">सबसे तेज़ स्थिर: %1$d कनेक्शन / %2$d MB चंक, %3$s पर। टाइटल का बिटरेट अज्ञात - सही सलाह के लिए पहले कोई वीडियो चलाएँ।</string>
-    <string name="stream_test_verdict_pm_suffix">" Nuvio Performance Mode ज़रूरी है।"</string>
     <string name="stream_test_caveat">केवल रॉ डाउनलोड थ्रूपुट मापता है - असली प्लेबैक बफरिंग, डिकोडिंग और सर्वर लोड पर भी निर्भर है, और टारगेट बफर भी मेमोरी में रखता है।</string>
     <string name="stream_test_label_parallel_dyn">पैरेलल कनेक्ट (%1$d कनेक्शन / %2$d MB चंक)</string>
     <string name="stream_test_btn_measuring_dyn">मापा जा रहा है: %1$s…</string>
@@ -1244,7 +1284,6 @@
     <string name="assessment_item_parallel">पैरेलल कनेक्शन</string>
     <string name="assessment_item_chunk">चंक साइज़</string>
     <string name="assessment_item_network_master">कस्टम नेटवर्क</string>
-    <string name="assessment_item_http2">HTTP/2 चालू करें</string>
     <string name="assessment_item_perf_mode">ExoPlayer नेटिव मेमोरी</string>
     <string name="assessment_item_buffer_master">कस्टम प्लेबैक बफर</string>
     <string name="assessment_item_managed_budget">मैनेज्ड मेमोरी बजट</string>
@@ -1265,15 +1304,18 @@
     <string name="assessment_grounds_parallel_cannot">सबसे तेज़ ने %2$d × %3$d MB पर %1$s मापा - टाइटल के अपने बिटरेट से कम; यह लिंक स्ट्रीम नहीं संभाल सकता</string>
     <string name="assessment_grounds_parallel_fastest">सबसे तेज़ ने %2$d × %3$d MB पर %1$s मापा - टाइटल का बिटरेट पता नहीं था, इसलिए पर्याप्तता पर कोई फ़ैसला नहीं</string>
     <string name="assessment_grounds_chunk">ऊपर की कनेक्शन संख्या के साथ जोड़ा गया, उसी मापे गए पास से</string>
-    <string name="assessment_grounds_network_master">नीचे की HTTP/2 और पैरेलल सेटिंग्स का मास्टर स्विच</string>
-    <string name="assessment_grounds_http2">रेंज अनुरोधों को एक कनेक्शन पर मल्टीप्लेक्स करता है; आमतौर पर फ़ायदेमंद, जाँच की ज़रूरत नहीं</string>
     <string name="assessment_grounds_perf_mode">remux आकार के बफर को Java heap से बाहर रखता है ताकि गार्बेज कलेक्शन से फ़्रेम न अटकें; मेमोरी सीमाएँ इस डिवाइस के %1$s टियर के अनुसार हैं (सुरक्षित %2$d MB / चेतावनी %3$d MB) और %4$d से ज़्यादा कनेक्शन के लिए यह ज़रूरी है</string>
     <string name="assessment_grounds_perf_mode_unsupported">Android 8.0 या नया ज़रूरी है</string>
-    <string name="assessment_grounds_buffer_master">बंद का मतलब media3 का स्टॉक लोड कंट्रोल: बाइट से गिना करीब 13 MB का टारगेट, जो अवधि के मान चाहे जो हों remux का ≈ 1 s ही रखता है - नीचे के मान इस डिवाइस के हिसाब से हैं</string>
-    <string name="assessment_grounds_managed_budget">मैनेज्ड मोड टारगेट को सुरक्षित सीमा पर टिका देता है और पैरेलल-कनेक्शन ओवरहेड नहीं गिनता; नीचे का स्पष्ट टारगेट दोनों गिनता है</string>
-    <string name="assessment_grounds_target_buffer">टारगेट %1$d + %2$d MB कनेक्शन ओवरहेड = %3$d MB ≤ %4$d MB सुरक्षित सीमा (सबसे बड़ा %5$d MB स्टेप जो फ़िट होता है)</string>
-    <string name="assessment_grounds_allow_large_on">इस डिवाइस पर टारगेट स्लाइडर को %1$d MB तक ले जाने के लिए ज़रूरी</string>
-    <string name="assessment_grounds_allow_large_off">अनुशंसित टारगेट सामान्य स्लाइडर रेंज में आ जाता है</string>
+    <string name="assessment_grounds_native_auto">ऐप इस %1$s डिवाइस के लिए बफर का साइज़ तय करता है (%2$d MB तक, मेमोरी कम होने पर कम) और उसे नेटिव मेमोरी में रखता है</string>
+    <string name="assessment_grounds_buffer_custom_times">नीचे की बफर प्रोफाइल को बफर का समय तय करने देता है; साइज़ ऑटो रहता है</string>
+    <string name="assessment_grounds_managed_on">प्लेबैक शुरू होते समय खाली मेमोरी से बफर तय करता है और मेमोरी कम होने पर उसे छोटा करता है; फ़िक्स्ड साइज़ इनमें से कुछ नहीं कर सकता</string>
+    <string name="assessment_value_target_auto">ऑटो (%1$d MB तक)</string>
+    <string name="assessment_grounds_target_auto">मैनेज्ड मेमोरी बजट चालू होने पर ऐप इसे प्लेबैक शुरू होते समय चुनता है</string>
+    <string name="assessment_grounds_allow_large_small_box">सिर्फ़ 4 GB या ज़्यादा मेमोरी वाले डिवाइस के लिए; इस %1$s डिवाइस पर बड़े साइज़ अटकते हैं या क्रैश होते हैं</string>
+    <string name="assessment_grounds_allow_large_managed">मैनेज्ड मेमोरी बजट चालू रहते इसका कोई असर नहीं</string>
+    <string name="assessment_grounds_network_for_parallel">ऊपर सुझाए गए पैरेलल कनेक्शन चालू करता है</string>
+    <string name="assessment_grounds_network_parallel_only">सिर्फ़ पैरेलल कनेक्शन के लिए ज़रूरी; यहाँ एक कनेक्शन काफ़ी तेज़ है</string>
+    <string name="assessment_grounds_network_untested">सिर्फ़ पैरेलल कनेक्शन के लिए ज़रूरी, और इन्हें तय करने के लिए कोई स्ट्रीम टेस्ट नहीं हुई</string>
     <string name="assessment_grounds_max_buffer">%1$d MB का टारगेट इस टाइटल (%3$s) का ≈%2$d s रखता है - उससे आगे के सेकंड बन ही नहीं सकते</string>
     <string name="assessment_grounds_max_buffer_nobitrate">टाइटल का बिटरेट पता नहीं - बाइट सीमा नहीं निकाली जा सकती; कैप %1$d s पर रहेगा</string>
     <string name="assessment_grounds_vod_auto">ऑटो खाली जगह से साइज़ तय करता है (सीमाओं के भीतर खाली जगह का 20%%, 1 GB रिज़र्व) - इस डिवाइस पर अभी ≈%1$s</string>
@@ -1310,7 +1352,7 @@
     <string name="assessment_no_stream">कोई पिछली चली स्ट्रीम नहीं - डिवाइस वाली पंक्तियाँ फिर भी चलेंगी। मापी गई पंक्तियों के लिए पहले अपना सबसे भारी आम टाइटल चलाएँ, फिर दोबारा चलाएँ।</string>
     <string name="assessment_header_title">डिवाइस तथ्य</string>
     <string name="assessment_header_device">डिवाइस</string>
-    <string name="assessment_header_device_value">%1$s - सुरक्षित %2$d MB / चेतावनी %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - बफर %2$d MB तक / %3$d MB से ऊपर खतरा</string>
     <string name="assessment_header_display">डिस्प्ले</string>
     <string name="assessment_header_display_unknown">इस स्क्रीन से जाँचा नहीं जा सकता</string>
     <string name="assessment_header_stream">पिछली स्ट्रीम</string>
@@ -1331,8 +1373,7 @@
     <string name="assessment_footer">मापी गई पंक्तियाँ इस डिवाइस पर टेस्ट हुईं; गणना वाली पंक्तियाँ जाँचे जा सकने वाले तथ्यों से निकली हैं। लागू करने पर केवल मापी और गणना वाली पंक्तियाँ तथा आपकी चुनी प्रोफाइल लिखी जाती हैं - जाँच वाली पंक्तियाँ अपने आप कभी नहीं बदलतीं। वापसी से पिछली बार लागू किए गए बदलाव हट जाते हैं।</string>
     <string name="stream_test_verdict_recommend_trade">सलाह: %1$d कनेक्शन / %2$d MB चंक - %3$s (इस टाइटल के बिटरेट का %4$s×)। %5$d × %6$d MB (2×+) की जगह चुना गया क्योंकि इस डिवाइस के मेमोरी बजट में यह %9$d MB ≈ %10$d s की जगह %7$d MB ≈ %8$d s प्लेबैक बफर छोड़ता है - यहाँ टंकी की गहराई भरने की रफ़्तार से ज़्यादा काम की है।</string>
     <string name="assessment_grounds_parallel_trade">%2$d × %3$d MB पर %1$s मापा - 1.5× बिटरेट देता है और %6$d MB ≈ %7$d s बफर छोड़ता है; 2× सेटिंग (%4$d × %5$d MB) केवल %8$d MB ≈ %9$d s छोड़ती</string>
-    <string name="assessment_grounds_target_current_warning">मौजूदा %1$d MB + %2$d MB ओवरहेड = %3$d MB चेतावनी बैंड (%4$d-%5$d MB) में है - चल जाएगा, पर हेडरूम कम</string>
-    <string name="assessment_grounds_target_current_danger">मौजूदा %1$d MB + %2$d MB ओवरहेड = %3$d MB, %4$d MB चेतावनी सीमा से ऊपर है - कम मेमोरी पर ऐप बंद होने का जोखिम</string>
+    <string name="assessment_parallel_small_box_cap">इस डिवाइस में %1$s मेमोरी है, इसलिए ज़्यादा से ज़्यादा 2 कनेक्शन की सलाह है</string>
     <string name="assessment_grounds_max_buffer_current">आपके मौजूदा %1$d MB टारगेट पर: असल में ≈ %2$d s, सेकंड स्लाइडर चाहे जो कहे - बाइट पहले सीमा बनते हैं</string>
     <string name="assessment_item_engine">इंटरनल इंजन</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -1393,7 +1434,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV इमेज सबटाइटल का साइज़ बदलना सपोर्ट नहीं करता। इमेज सबटाइटल का साइज़ टेक्स्ट से अलग बदलने के लिए ExoPlayer इस्तेमाल करें।</string>
     <string name="subtitle_style_image_size">इमेज सबटाइटल साइज़</string>
     <string name="v2_accent_fixed_hint">रंग थीम इस्तेमाल करता है, जब तक आर्टवर्क एक्सेंट न चुना गया हो।</string>
-    <string name="about_fork_updates_subtitle">NuvioTV-Fork से अपडेट। फ़ोर्क की सभी रिलीज़ बीटा हैं।</string>
+    <string name="about_fork_updates_subtitle">GitHub पर Nuvio Arc रिलीज़ से अपडेट।</string>
     <string name="playback_speculative_stream_search">प्ले से पहले सोर्स खोजें</string>
     <string name="playback_speculative_stream_search_sub">सोर्स चयन तेज़ करने के लिए ब्राउज़ करते समय ऐडऑन खोजें। कुछ ऐडऑन खोज के दौरान कंटेंट जोड़ या ला सकते हैं। बंद होने पर प्ले तक इंतज़ार होता है। मीडिया लिंक और प्रोवाइडर रिज़ॉल्यूशन प्लेबैक चयन तक रुकते हैं, सिवाय एपिसोड के अंत के पास जब सीक थंबनेल अगला एपिसोड तैयार करते हैं।</string>
     <string name="debrid_cached_playback_links">कैश किए प्लेबैक लिंक फिर इस्तेमाल करें</string>
@@ -1481,6 +1522,8 @@
     <string name="seek_thumbnails_prepare_off_desc">तुरंत चलाना शुरू करें; थंबनेल पॉज़ में और देखना बंद करने के बाद बनते हैं।</string>
     <string name="seek_thumbnails_prepare_on">चालू</string>
     <string name="seek_thumbnails_prepare_on_desc">टाइटल के शुरू होने से पहले उसके सीक थंबनेल बनाएँ। \"अभी देखना शुरू करें\" या बैक से प्लेबैक कभी भी शुरू हो जाता है।</string>
+    <string name="seek_thumbnails_from_copy_title">कॉपी से थंबनेल</string>
+    <string name="seek_thumbnails_from_copy_subtitle">4K टाइटल के लिए 1080p या 720p कॉपी से, और Usenet टाइटल के लिए Usenet से बाहर की कॉपी से तेज़ थंबनेल। TorBox पर कैश की गई कॉपी कुछ मिनटों के लिए आपकी लिस्ट में जोड़ी जा सकती है।</string>
     <string name="seek_thumbnails_clear_title">सेव किए थंबनेल साफ़ करें</string>
     <string name="seek_thumbnails_clear_subtitle">अगली बार टाइटल चलाने पर ये फिर बन जाते हैं।</string>
     <string name="seek_thumbnails_cleared">सेव किए थंबनेल साफ़ हुए</string>
@@ -1495,7 +1538,7 @@
     <string name="seek_thumbnails_time_left_minutes">करीब %1$d min %2$d s बाकी</string>
     <string name="seek_thumbnails_count">%2$d में से %1$d</string>
     <string name="seek_thumbnails_start_now">अभी देखना शुरू करें</string>
-    <string name="seek_thumbnails_settings_hint">इसे सेटिंग्स › प्लेबैक › सामान्य में चालू या बंद करें</string>
+    <string name="seek_thumbnails_settings_hint">इसे सेटिंग्स › प्लेबैक › Player Interface में चालू या बंद करें</string>
     <string name="seek_thumbnails_progress_chip">थंबनेल %1$d%%</string>
     <string name="party_title">वॉच पार्टी</string>
     <string name="party_settings_subtitle">दूसरे घरों के लोगों के साथ एक ही चीज़ एक ही पल में देखें</string>
@@ -1537,6 +1580,7 @@
     <string name="party_member_buffering">बफ़रिंग</string>
     <string name="party_member_catching_up">बराबर आ रहे हैं</string>
     <string name="party_member_away">मौजूद नहीं</string>
+    <string name="party_member_needs_update">अपडेट ज़रूरी है</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">आपकी कॉपी होस्ट की कॉपी से %1$s s लंबी है। पार्टी का सिंक खिसक सकता है।</string>
     <string name="party_copy_shorter">आपकी कॉपी होस्ट की कॉपी से %1$s s छोटी है। पार्टी का सिंक खिसक सकता है।</string>
@@ -1551,7 +1595,7 @@
     <string name="party_match_same">होस्ट वाली ही फ़ाइल</string>
     <string name="party_match_likely">शायद होस्ट वाली कॉपी</string>
     <string name="party_match_different">होस्ट से अलग कॉपी</string>
-    <string name="party_invite_text">Nuvio में मेरी वॉच पार्टी से जुड़ें। सेटिंग्स खोलें, फिर वॉच पार्टी, और कोड %1$s डालें</string>
+    <string name="party_invite_text">Nuvio Arc में मेरी वॉच पार्टी से जुड़ें। सेटिंग्स खोलें, फिर वॉच पार्टी, और कोड %1$s डालें</string>
     <string name="party_invite_qr">इनवाइट मैसेज करने के लिए फ़ोन के कैमरे से स्कैन करें</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

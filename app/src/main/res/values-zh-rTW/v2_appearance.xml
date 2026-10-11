@@ -11,4 +11,6 @@
     <!-- Nuvio-test additions -->
     <string name="v2_intro_animation_title">開場動畫</string>
     <string name="v2_intro_animation_subtitle">在背景載入首頁和海報時顯示開場動畫</string>
+    <string name="v2_intro_sound_title">開場音效</string>
+    <string name="v2_intro_sound_subtitle">播放開場動畫的音效，系統支援時使用環繞聲</string>
 </resources>

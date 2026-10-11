@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatinis</string>
     <string name="v2_scale_manual">Rankinis</string>
     <string name="v2_scale_fine_tune">Tikslus mastelio reguliavimas</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Įžanginis garsas</string>
+    <string name="v2_intro_sound_subtitle">Leisti įžangą su garsu, erdviniu garsu, jei jūsų sistema tai palaiko</string>
 </resources>

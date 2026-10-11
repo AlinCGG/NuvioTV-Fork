@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Αυτόματα</string>
     <string name="v2_scale_manual">Χειροκίνητα</string>
     <string name="v2_scale_fine_tune">Λεπτομερής ρύθμιση κλίμακας</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Ήχος εισαγωγής</string>
+    <string name="v2_intro_sound_subtitle">Αναπαραγωγή της εισαγωγής με ήχο, σε surround όπου το σύστημά σας το υποστηρίζει</string>
 </resources>

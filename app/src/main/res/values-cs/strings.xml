@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="tv_channel_continue_watching">Pokračovat ve sledování</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmy</string>
@@ -330,6 +330,7 @@
     <string name="theme_color_violet">Fialová</string>
     <string name="theme_color_emerald">Smaragdová</string>
     <string name="theme_color_amber">Jantarová</string>
+    <string name="theme_color_copper">Měděná</string>
     <string name="theme_color_rose">Růžová</string>
     <string name="theme_color_white">Bílá</string>
     <string name="appearance_amoled_mode">AMOLED režim</string>
@@ -350,7 +351,7 @@
 
     <string name="about_title">O aplikaci</string>
     <string name="about_subtitle">Informace o aplikaci, aktualizace a právní odkazy</string>
-    <string name="about_made_with_love">Vytvořeno s ❤️ týmem Tapframe a přáteli</string>
+    <string name="about_made_with_love">Postaveno na skvělé práci týmu Tapframe a přátel ❤️ · Nuvio Arc od ysosrs123</string>
     <string name="about_version">Verze %1$s</string>
     <string name="about_check_updates">Zkontrolovat aktualizace</string>
     <string name="about_check_updates_subtitle">Stáhnout nejnovější verzi</string>
@@ -361,26 +362,26 @@
     <string name="about_licenses_attributions">Licence a atribuce</string>
     <string name="about_licenses_attributions_subtitle">Zdroje dat, poděkování a licence Android</string>
     <string name="licenses_attributions_title">Licence a atribuce</string>
-    <string name="licenses_attributions_subtitle">Poskytovatelé dat, servisní kredity a licence pro přehrávání Android používané Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Poskytovatelé dat, servisní kredity a licence pro přehrávání Android používané Nuvio Arc.</string>
     <string name="licenses_attributions_section_app">LICENCE APLIKACE</string>
     <string name="licenses_attributions_section_data">DATA A SLUŽBY</string>
     <string name="licenses_attributions_section_playback">LICENCE PRO PŘEHRÁVÁNÍ ANDROID</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-test (fork Nuvio TV)</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio Arc (fork Nuvio TV)</string>
     <string name="licenses_attributions_nuvio_body">Upravená verze Nuvio TV. Zdrojový kód a licenční podmínky tohoto sestavení jsou v repozitáři forku. Nuvio TV najdete na github.com/NuvioMedia/NuvioTV. Licencováno pod GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-    <string name="licenses_attributions_tmdb_body">Nuvio používá API TMDB pro metadata filmů a seriálů, artwork, trailery, obsazení, produkční detaily, kolekce a doporučení. Tento produkt používá API TMDB, ale není schválen ani certifikován TMDB.</string>
+    <string name="licenses_attributions_tmdb_body">Nuvio Arc používá API TMDB pro metadata filmů a seriálů, artwork, trailery, obsazení, produkční detaily, kolekce a doporučení. Tento produkt používá API TMDB, ale není schválen ani certifikován TMDB.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="licenses_attributions_trakt_body">Nuvio se připojuje k Trakt pro autentizaci účtu, historii sledování, synchronizaci postupu, data knihovny, hodnocení, seznamy a komentáře. Nuvio není spojen ani schválen Trakt.</string>
+    <string name="licenses_attributions_trakt_body">Nuvio Arc se připojuje k Trakt pro autentizaci účtu, historii sledování, synchronizaci postupu, data knihovny, hodnocení, seznamy a komentáře. Nuvio Arc není spojen ani schválen Trakt.</string>
     <string name="licenses_attributions_premiumize_title">Premiumize</string>
-    <string name="licenses_attributions_premiumize_body">Nuvio se připojuje k Premiumize kvůli ověření účtu, přístupu ke cloudové knihovně, kontrole cache a funkcím cloudového přehrávání. Nuvio není s Premiumize spjaté ani jím podporované.</string>
+    <string name="licenses_attributions_premiumize_body">Nuvio Arc se připojuje k Premiumize kvůli ověření účtu, přístupu ke cloudové knihovně, kontrole cache a funkcím cloudového přehrávání. Nuvio Arc není s Premiumize spjaté ani jím podporované.</string>
     <string name="licenses_attributions_torbox_title">TorBox</string>
-    <string name="licenses_attributions_torbox_body">Nuvio se připojuje k TorBox kvůli ověření účtu, přístupu ke cloudové knihovně, kontrole cache a funkcím cloudového přehrávání. Nuvio není s TorBox spjaté ani jím podporované.</string>
+    <string name="licenses_attributions_torbox_body">Nuvio Arc se připojuje k TorBox kvůli ověření účtu, přístupu ke cloudové knihovně, kontrole cache a funkcím cloudového přehrávání. Nuvio Arc není s TorBox spjaté ani jím podporované.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvio používá MDBList pro hodnocení a data externích poskytovatelů skóre. Nuvio není spojen ani schválen MDBList.</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio Arc používá MDBList pro hodnocení a data externích poskytovatelů skóre. Nuvio Arc není spojen ani schválen MDBList.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
-    <string name="licenses_attributions_introdb_body">Nuvio používá API IntroDB pro komunitně poskytované časové značky intra, rekapitulace, titulků a náhledů používané ovládacími prvky přeskočení. Nuvio není spojen ani schválen IntroDB.</string>
+    <string name="licenses_attributions_introdb_body">Nuvio Arc používá API IntroDB pro komunitně poskytované časové značky intra, rekapitulace, titulků a náhledů používané ovládacími prvky přeskočení. Nuvio Arc není spojen ani schválen IntroDB.</string>
     <string name="licenses_attributions_imdb_title">IMDb nekomerční datové sady</string>
-    <string name="licenses_attributions_imdb_body">Nuvio používá IMDb nekomerční datové sady, včetně title.ratings.tsv.gz, pro hodnocení IMDb a počty hlasů. Informace s laskavým svolením IMDb (https://www.imdb.com). Použito se svolením. Data IMDb jsou pro osobní a nekomerční použití podle podmínek IMDb.</string>
+    <string name="licenses_attributions_imdb_body">Nuvio Arc používá IMDb nekomerční datové sady, včetně title.ratings.tsv.gz, pro hodnocení IMDb a počty hlasů. Informace s laskavým svolením IMDb (https://www.imdb.com). Použito se svolením. Data IMDb jsou pro osobní a nekomerční použití podle podmínek IMDb.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Používá se jako přehrávací engine Android. Licencováno pod Apache License, Version 2.0.</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -406,7 +407,7 @@
     <string name="settings_advanced_subtitle">Výkon, navigace, mezipaměť a diagnostika</string>
     <string name="experience_mode_essential">Základní</string>
     <string name="experience_mode_advanced">Pokročilý</string>
-    <string name="experience_mode_choose_title">Vyberte si režim Nuvio</string>
+    <string name="experience_mode_choose_title">Vyberte si režim Nuvio Arc</string>
     <string name="experience_mode_choose_subtitle">Začněte jednoduše nebo si odemkněte veškeré přizpůsobení. Kdykoli můžete přepnout.</string>
     <string name="experience_mode_essential_card_subtitle">Základní nastavení, doplňky, základy přehrávání, Trakt a účet.</string>
     <string name="experience_mode_advanced_card_subtitle">Plné nastavení, ovládání rozvržení, pořadí katalogů, kolekce, pluginy a diagnostika.</string>
@@ -638,8 +639,8 @@
     <string name="playback_player_ask_desc">Vybrat přehrávač pokaždé</string>
     <string name="playback_player_auto">Auto (Nejlepší pro obsah)</string>
     <string name="playback_player_auto_desc">ExoPlayer pro filmy a seriály · MPV pro anime</string>
-    <string name="playback_engine_exoplayer_desc">Nejlepší kompatibilita s aktuálními funkcemi Nuvio.</string>
-    <string name="playback_engine_mvplayer_desc">Používá libmpv s OSD ovládacími prvky Nuvio. Experimentální.</string>
+    <string name="playback_engine_exoplayer_desc">Nejlepší kompatibilita s aktuálními funkcemi Nuvio Arc.</string>
+    <string name="playback_engine_mvplayer_desc">Používá libmpv s OSD ovládacími prvky Nuvio Arc. Experimentální.</string>
 
     <string name="video_section">Video</string>
     <string name="audio_trailer_section">Trailer</string>
@@ -1249,7 +1250,7 @@
     <string name="trakt_stat_watched_hours">Zhlédnuté hodiny</string>
     <string name="trakt_disconnect">Odpojit</string>
     <string name="trakt_disconnect_title">Odpojit Trakt?</string>
-    <string name="trakt_disconnect_subtitle">Toto odpojí váš účet Trakt od Nuvio.</string>
+    <string name="trakt_disconnect_subtitle">Toto odpojí váš účet Trakt od Nuvio Arc.</string>
     <string name="trakt_login">Přihlásit</string>
     <string name="trakt_retry">Opakovat</string>
     <string name="trakt_back">Zpět</string>
@@ -1441,7 +1442,7 @@
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">P2P streamování</string>
-    <string name="p2p_consent_body">Tento stream používá technologii peer-to-peer (P2P). Povolením P2P berete na vědomí a souhlasíte, že:\n\n\u2022 Vaše IP adresa bude viditelná pro ostatní peer v síti\n\u2022 Jste výhradně odpovědní za obsah, ke kterému přistupujete\n\u2022 Potvrzujete, že máte zákonné právo streamovat tento obsah ve vaší jurisdikci\n\u2022 Nuvio nehostuje, nedistribuuje ani nekontroluje žádný P2P obsah\n\u2022 Nuvio nenese žádnou odpovědnost za jakékoli právní důsledky vyplývající z vašeho použití P2P streamování\n\nTuto funkci používáte výhradně na vlastní riziko. P2P lze kdykoli zakázat v Nastavení.</string>
+    <string name="p2p_consent_body">Tento stream používá technologii peer-to-peer (P2P). Povolením P2P berete na vědomí a souhlasíte, že:\n\n\u2022 Vaše IP adresa bude viditelná pro ostatní peer v síti\n\u2022 Jste výhradně odpovědní za obsah, ke kterému přistupujete\n\u2022 Potvrzujete, že máte zákonné právo streamovat tento obsah ve vaší jurisdikci\n\u2022 Nuvio Arc nehostuje, nedistribuuje ani nekontroluje žádný P2P obsah\n\u2022 Nuvio Arc nenese žádnou odpovědnost za jakékoli právní důsledky vyplývající z vašeho použití P2P streamování\n\nTuto funkci používáte výhradně na vlastní riziko. P2P lze kdykoli zakázat v Nastavení.</string>
     <string name="p2p_consent_enable">Povolit P2P</string>
     <string name="p2p_consent_cancel">Zrušit</string>
     <string name="settings_p2p_title">P2P streamování</string>
@@ -1920,7 +1921,7 @@
     <string name="catalog_see_all_empty_title">Žádné položky nejsou k dispozici</string>
     <string name="catalog_see_all_empty_subtitle">Zkuste jiný katalog nebo to zkontrolujte později</string>
 
-    <string name="layout_selection_welcome">Vítejte v Nuvio</string>
+    <string name="layout_selection_welcome">Vítejte v Nuvio Arc</string>
     <string name="layout_selection_subtitle">Vyberte rozvržení domovské obrazovky</string>
     <string name="layout_selection_continue">Pokračovat</string>
 
@@ -2098,7 +2099,7 @@
     <string name="cd_preview">Náhled</string>
     <string name="cd_test">Test</string>
     <string name="cd_unlink">Odpojit</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Logo Trakt</string>
     <string name="cd_trakt_qr">QR kód aktivace Trakt</string>
     <string name="cd_imdb">IMDb</string>
@@ -2251,7 +2252,7 @@
     <string name="collections_editor_tmdb_list_helper">Příklad: https://www.themoviedb.org/list/8504994 nebo 8504994.</string>
     <string name="collections_editor_tmdb_person_id">ID osoby</string>
     <string name="collections_editor_tmdb_person_helper">Příklad: https://www.themoviedb.org/person/31-tom-hanks nebo 31.</string>
-    <string name="collections_editor_tmdb_title_helper">Zobrazuje se jako název řádku/karty. Pokud je prázdné, Nuvio jej vytvoří ze zdroje.</string>
+    <string name="collections_editor_tmdb_title_helper">Zobrazuje se jako název řádku/karty. Pokud je prázdné, Nuvio Arc jej vytvoří ze zdroje.</string>
     <string name="collections_editor_tmdb_quick_genres">Rychlé žánry</string>
     <string name="collections_editor_tmdb_quick_languages">Rychlé jazyky</string>
     <string name="collections_editor_tmdb_quick_countries">Rychlé země</string>
@@ -2424,7 +2425,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">Bez REMUX/HDR</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">Použít vestavěný přehrávač NuvioTV</string>
+    <string name="playback_player_internal_desc">Použít vestavěný přehrávač Nuvio Arc</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d seedů · %2$d peerů</string>
@@ -2863,16 +2864,21 @@
     <string name="appearance_screensaver_dim_gentle">Obrazovka zůstává dobře viditelná</string>
     <string name="appearance_screensaver_dim_balanced">Tmavé, ale čitelné</string>
     <string name="appearance_screensaver_dim_strong">Sotva viditelné</string>
+    <string name="appearance_app_icon_mint">Mátová</string>
     <string name="licenses_attributions_avatars_title">Avatary společného sledování</string>
     <string name="licenses_attributions_avatars_body">Vytvořeno pomocí DiceBear s úpravou těchto návrhů: \"Fun Emoji\" (Davis Uche) a \"Adventurer\" (Lisa Wischofsky), licence CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" (Lisa Wischofsky), \"Notionists\" (Zoish), \"Pixel Art\" a \"Thumbs\" (DiceBear), CC0 1.0. \"Bottts\" (Pablo Stanley), zdarma pro osobní i komerční použití. Zvířecí obličeje z Twemoji od Twitter, Inc. a dalších přispěvatelů, licence CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby a Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio se připojuje k vašemu vlastnímu serveru Jellyfin, Emby nebo Silo. Jejich názvy a loga patří jejich vlastníkům. Nuvio není s Jellyfin, Emby ani Silo spjaté ani jimi podporované.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc se připojuje k vašemu vlastnímu serveru Jellyfin, Emby nebo Silo. Jejich názvy a loga patří jejich vlastníkům. Nuvio Arc není s Jellyfin, Emby ani Silo spjaté ani jimi podporované.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Seznamy release skupin. Licence MIT.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Zpracování metadat Dolby Vision. Autor: quietvoid. Licence MIT.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Dekódování zvuku. Licencováno pod LGPL 2.1 nebo novější.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Softwarové dekódování videa AV1. Autoři: VideoLAN a tvůrci dav1d. Licence BSD 2-Clause.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Zjišťování funkcí procesoru pro dekodér AV1. Autor: Google. Licence Apache 2.0.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">Balení TrueHD MAT a downmix zvuku jsou převzaty z Kodi. Licencováno pod GPL 2.0 nebo novější.</string>
     <string name="settings_experience_subtitle">Základní nebo pokročilý</string>
@@ -2908,8 +2914,9 @@
     <string name="playback_section_audio_desc">Ovládání zvuku a kompatibilita videa.</string>
     <string name="playback_afr_open">Otevřeno</string>
     <string name="playback_afr_closed">Zavřeno</string>
+    <string name="audio_tunneled_sub_prefer_app">Nedostupné, když je Priorita dekodéru nastavena na Preferovat dekodéry aplikace</string>
     <string name="audio_use_system_passthrough">Systémový passthrough</string>
-    <string name="audio_use_system_passthrough_sub">Posílá TrueHD a DTS-HD do receiveru přes Android (systémová cesta) místo přes Nuvio (cesta IEC). Použijte, pokud bezztrátové formáty šumí, rozcházejí se nebo nehrají.</string>
+    <string name="audio_use_system_passthrough_sub">Posílá TrueHD a DTS-HD do receiveru přes Android (systémová cesta) místo přes Nuvio Arc (cesta IEC). Použijte, pokud bezztrátové formáty šumí, rozcházejí se nebo nehrají.</string>
     <string name="audio_surround_header">Prostorový zvuk</string>
     <string name="audio_surround_reset_iec_probe">Vymazat výsledek testu IEC</string>
     <string name="audio_surround_reset_iec_probe_sub">Znovu otestuje výstup IEC 61937. Použijte, pokud po změně receiveru nebo vstupu bezztrátové formáty přecházejí na PCM.</string>
@@ -2958,6 +2965,10 @@
     <string name="audio_inject_hdr10_sei_sub">U obsahu DV8 (Profile 8) převedeného na HDR10 base layer přidá masteringová metadata zdroje (MaxCLL/MaxFALL a špičkový jas), aby TV s HDR10 bez DV správně mapovaly tóny. Aktivní jen při zpracování DV nastaveném na Odstranit DV nebo HDR10 base layer; nemá vliv na Profile 7 ani na přehrávání Dolby Vision.</string>
     <string name="diag_value_not_advertised">Nehlášeno (nativní přehrávání může přesto fungovat)</string>
     <string name="diag_label_dv_el_type">Typ EL DV7</string>
+    <string name="diag_value_dv7_native_route">Používá se nativní dvouvrstvá cesta (Android ji nehlásí)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, použity všechny tři vrstvy</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, převedeno na 8.1 (EL se nepoužívá)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · jen BL (RPU a EL se nepoužívají)</string>
     <string name="diag_label_dv_hdr_mastering">HDR mastering DV</string>
     <string name="diag_label_dv_rpu_drops">Zahozená RPU DV</string>
     <string name="sub_tertiary_lang">Třetí preferovaný jazyk</string>
@@ -2965,6 +2976,10 @@
     <string name="sub_addon_subtitles_desc">Během přehrávání načítat titulky z nainstalovaných doplňků. Při vypnutí jsou dostupné jen titulky vložené v souboru.</string>
     <string name="autoplay_quality_rules_title">Pravidla kvality</string>
     <string name="autoplay_quality_rules_subtitle">Filtry, řazení a úrovně release groups v Připojených službách.</string>
+    <string name="stream_sort_sources">Řazení zdrojů</string>
+    <string name="stream_sort_sources_sub">Pořadí seznamu streamů. Nejlepší kvalita první používá vaše Pravidla kvality.</string>
+    <string name="stream_sort_sources_source_order">Pořadí zdrojů</string>
+    <string name="stream_sort_sources_best_first">Nejlepší kvalita první</string>
     <string name="autoplay_eager_ready_title">Rychlejší připravenost u pomalých zdrojů</string>
     <string name="autoplay_eager_ready_sub">Připraví přehrávání hned po uplynutí časového limitu výběru, místo čekání na nejpomalejší doplněk. Platí pro stránku podrobností a Pokračovat ve sledování.</string>
     <string name="autoplay_mode_quality">Nejlepší kvalita</string>
@@ -2975,6 +2990,17 @@
     <string name="layout_landscape_posters_home_only_desc">Karty na šířku na obrazovce Domů, na výšku v Knihovně, Hledání a seznamech</string>
     <string name="layout_landscape_posters_everywhere">Všude</string>
     <string name="layout_landscape_posters_everywhere_desc">Karty na šířku na obrazovce Domů, v Knihovně, Hledání a seznamech</string>
+    <string name="layout_hide_side_icons">Skrýt boční ikony</string>
+    <string name="layout_hide_side_icons_sub">Skrýt ikony nabídky u levého okraje, když je nabídka zavřená. Nabídku otevřete stisknutím Vlevo nebo Zpět.</string>
+    <string name="layout_watched_titles">Zhlédnuté tituly</string>
+    <string name="layout_watched_titles_sub">Zobrazit, ztlumit nebo skrýt filmy a seriály, které jste dokoukali.</string>
+    <string name="layout_watched_titles_dialog_title">Zhlédnuté tituly</string>
+    <string name="layout_watched_titles_show">Zobrazit</string>
+    <string name="layout_watched_titles_show_desc">Zhlédnuté tituly zůstanou beze změny, se zaškrtnutím.</string>
+    <string name="layout_watched_titles_dim">Ztlumit</string>
+    <string name="layout_watched_titles_dim_desc">Zhlédnuté tituly zůstanou na místě, tmavší, se zaškrtnutím.</string>
+    <string name="layout_watched_titles_hide">Skrýt</string>
+    <string name="layout_watched_titles_hide_desc">Zhlédnuté filmy a celé zhlédnuté seriály se nezobrazí v řádcích na domovské obrazovce ani v banneru. Pokračovat ve sledování se nemění.</string>
     <string name="layout_trailer_logo">Logo přes trailer v kartě</string>
     <string name="layout_trailer_logo_sub">Zobrazit logo titulu přes trailer přehrávaný v kartě.</string>
     <string name="mdblist_account_title">Účet</string>
@@ -2997,6 +3023,8 @@
     <string name="player_layout_more_fixed_help">Stiskem OK skryjete nebo zobrazíte Více. Zůstává úplně vpravo. Přesouváním ostatních akcí přes hranici jeho nabídky měníte obsah nabídky.</string>
     <string name="player_error_placeholder_stream">Tento stream vypadá jako chybová karta poskytovatele, ne jako video. Zkuste jiný zdroj.</string>
     <string name="subtitle_panel_languages">Jazyky</string>
+    <string name="library_sort_released_desc">Vydáno ↓</string>
+    <string name="library_sort_released_asc">Vydáno ↑</string>
     <string name="library_empty_mdblist_title">Žádné %1$s ve watchlistu</string>
     <string name="library_empty_mdblist_subtitle">Použijte + v podrobnostech pro přidání položek do watchlistu MDBList</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList není připojen</string>
@@ -3017,6 +3045,7 @@
     <string name="library_transfer_copy">Kopírovat</string>
     <string name="library_transfer_move">Přesunout (zkopírovat, pak odebrat ze zdroje)</string>
     <string name="library_transfer_none">Není co kopírovat</string>
+    <string name="sub_mode_effects_warning">Náročné: ve 4K může vynechávat snímky a vypíná tunelované přehrávání.</string>
     <string name="cd_playback_stats">Statistiky přehrávání</string>
     <string name="player_stats_unavailable_mpv">Statistiky nejsou pro engine libmpv dostupné</string>
     <string name="player_dead_source_failover">Zdroj nedostupný - zkouší se další zdroj (%1$d/%2$d)</string>
@@ -3032,6 +3061,17 @@
     <string name="debrid_filters_show_everything_title">Zobrazit vše</string>
     <string name="debrid_filters_show_everything_subtitle">Zruší všechny filtry a limity výsledků; chytré řazení zůstane.</string>
     <string name="debrid_filters_show_everything_action">Zobrazit vše</string>
+    <string name="playback_net_device_memory_auto">Toto zařízení má %1$s paměti. Aplikace bufferuje dopředu až %2$d MB, při nedostatku paměti méně.</string>
+    <string name="playback_net_native_memory_sub">Nechá aplikaci určit velikost bufferu pro toto zařízení a držet ho v nativní paměti, s rychlejším přetáčením. Zapnutím se také nastaví hodnoty bufferu a sítě níže pro toto zařízení.</string>
+    <string name="playback_buffer_custom_desc">Použít hodnoty níže místo vlastních hodnot aplikace. Vypnuto: se zapnutou Nativní pamětí ExoPlayer aplikace bufferuje 15 až 45 s v rámci velikosti zvolené pro toto zařízení; bez ní standardní buffer Media3.</string>
+    <string name="playback_buffer_seconds_hint">Při %1$d MB to pojme asi %2$d s 4K remuxu (80 Mbit/s). Delší nastavení nic nezmění.</string>
+    <string name="playback_buffer_back_fitted">Drží se v rámci Cílové velikosti bufferu. Při %1$d MB aplikace ponechá až asi %2$d s (%3$d MB při 80 Mbit/s), takže alespoň 5 s zůstane dopředu.</string>
+    <string name="playback_buffer_back_fitted_none">Drží se v rámci Cílové velikosti bufferu. Při %1$d MB pro něj není místo, takže aplikace místo toho drží 5 s dopředu.</string>
+    <string name="playback_buffer_managed_desc">Nastaví buffer podle volné paměti při spuštění přehrávání a zmenší ho, když zařízení dochází paměť. Vypněte pro ruční volbu Cílové velikosti bufferu; na malých zařízeních může větší hodnota způsobit trhání přehrávání.</string>
+    <string name="playback_buffer_target_size_sub">Paměť pro předbufferování videa. Limit se řídí celkovou pamětí tohoto zařízení. Když je zapnutý Spravovaný rozpočet paměti, aplikace určí velikost podle volné paměti při spuštění přehrávání. Když zařízení dochází paměť, buffer se zmenší.</string>
+    <string name="playback_buffer_target_stutter_warning">Toto zařízení má %1$s paměti. Nad %2$d MB se může přehrávání trhat.</string>
+    <string name="playback_buffer_allow_large_desc">Umožní Cílovou velikost bufferu až 2 GB. Jen pro zařízení se 4 GB paměti a více; na menších způsobí velké hodnoty trhání nebo pády.</string>
+    <string name="playback_net_connection_count_small_box">Toto zařízení má %1$s paměti. Více než 2 spojení mohou způsobit trhání přehrávání.</string>
     <string name="diag_label_serving_host">Obsluhující hostitel</string>
     <string name="diag_label_file">Soubor</string>
     <string name="diag_label_dv_applied">Použité DV</string>
@@ -3041,16 +3081,16 @@
     <string name="diag_value_dv_base_layer">DV ignorováno - HDR10 base layer</string>
     <string name="diag_label_audio_path">Zvuková cesta</string>
     <string name="diag_label_audio_caps">Zvukový řetězec hlásí</string>
+    <string name="playback_estimated_memory_parts">Odhadované využití paměti: asi %1$d MB (buffer %2$d MB + stahování %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Odhadované využití paměti: asi %1$d MB (buffer %2$d MB)</string>
     <string name="stream_test_serving_host_label">Obsluhující hostitel: %1$s</string>
     <string name="stream_test_file_label">Soubor: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Doporučení: nechte paralelní spojení vypnutá - jedno spojení už dává %1$s, více než 2\u00d7 datový tok tohoto titulu.</string>
     <string name="stream_test_verdict_recommend">Doporučení: %1$d spojení / bloky %2$d MB - %3$s. Paměťově nejúspornější konfigurace, která dosáhne 2\u00d7 datového toku tohoto titulu; rychlejší konfigurace mohou být výše, ale zabírají víc paměti bez přínosu pro přehrávání.</string>
     <string name="stream_test_verdict_marginal">Nejlepší výsledek: %1$d spojení / bloky %2$d MB při %3$s - nad průměrným datovým tokem tohoto titulu (%4$s), ale pod cílovou rezervou 2\u00d7. Přehrávání by mělo fungovat, ale ve scénách s vysokým datovým tokem nebo při přetáčení se může načítat.</string>
     <string name="stream_test_verdict_cannot_sustain">Toto připojení tento titul neutáhne - nejrychlejší testovaná konfigurace (%1$d spojení / bloky %2$d MB) dosáhla %3$s, pod průměrným datovým tokem titulu (%4$s). Počítejte s načítáním; zvažte verzi s nižším datovým tokem.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Nejrychlejší stabilní: %1$d spojení / bloky %2$d MB při %3$s. Datový tok titulu není známý - nejdřív přehrajte video a dostanete doporučení na míru.</string>
-    <string name="stream_test_verdict_pm_suffix">" Vyžaduje Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Měří jen hrubou rychlost stahování - skutečné přehrávání závisí i na bufferování, dekódování a zatížení serveru a navíc drží v paměti cílový buffer.</string>
     <string name="stream_test_label_parallel_dyn">Paralelní spojení (%1$d spoj. / bloky %2$d MB)</string>
     <string name="stream_test_btn_measuring_dyn">Měření: %1$s\u2026</string>
@@ -3083,7 +3123,6 @@
     <string name="assessment_item_parallel">Paralelní spojení</string>
     <string name="assessment_item_chunk">Velikost bloku</string>
     <string name="assessment_item_network_master">Vlastní síť</string>
-    <string name="assessment_item_http2">Zapnout HTTP/2</string>
     <string name="assessment_item_perf_mode">Nativní paměť ExoPlayer</string>
     <string name="assessment_item_buffer_master">Vlastní buffery přehrávání</string>
     <string name="assessment_item_managed_budget">Spravovaný rozpočet paměti</string>
@@ -3104,15 +3143,18 @@
     <string name="assessment_grounds_parallel_cannot">Nejrychlejší měření %1$s při %2$d \u00d7 %3$d MB - pod datovým tokem samotného titulu; tato linka stream neutáhne</string>
     <string name="assessment_grounds_parallel_fastest">Nejrychlejší měření %1$s při %2$d \u00d7 %3$d MB - datový tok titulu nebyl známý, proto bez verdiktu o dostatečnosti</string>
     <string name="assessment_grounds_chunk">V páru s počtem spojení výše, ze stejného měření</string>
-    <string name="assessment_grounds_network_master">Hlavní přepínač pro nastavení HTTP/2 a paralelních spojení níže</string>
-    <string name="assessment_grounds_http2">Slučuje rozsahové požadavky do jednoho spojení; obecně přínosné, test není potřeba</string>
     <string name="assessment_grounds_perf_mode">Drží buffery velikosti remuxu mimo haldu Javy, takže úklid paměti nezpůsobí zadrhávání snímků; limity paměti odpovídají třídě tohoto zařízení (%1$s: bezpečné %2$d MB / varování %3$d MB) a více než %4$d spojení ji vyžaduje</string>
     <string name="assessment_grounds_perf_mode_unsupported">Vyžaduje Android 8.0 nebo novější</string>
-    <string name="assessment_grounds_buffer_master">Vypnuto znamená výchozí řízení načítání media3: cíl počítaný v bajtech kolem 13 MB, což pojme \u2248 1 s remuxu bez ohledu na časové hodnoty - hodnoty níže jsou místo toho nastavené pro toto zařízení</string>
-    <string name="assessment_grounds_managed_budget">Spravovaný režim nastaví cíl na bezpečný limit a nepočítá s režií paralelních spojení; výslovný cíl níže počítá s obojím</string>
-    <string name="assessment_grounds_target_buffer">Cíl %1$d + %2$d MB režie spojení = %3$d MB \u2264 bezpečný limit %4$d MB (největší krok po %5$d MB, který se vejde)</string>
-    <string name="assessment_grounds_allow_large_on">Potřebné, aby posuvník cíle na tomto zařízení dosáhl %1$d MB</string>
-    <string name="assessment_grounds_allow_large_off">Doporučený cíl se vejde do běžného rozsahu posuvníku</string>
+    <string name="assessment_grounds_native_auto">Aplikace určí velikost bufferu pro toto zařízení s pamětí %1$s (až %2$d MB, při nedostatku paměti méně) a drží ho v nativní paměti</string>
+    <string name="assessment_grounds_buffer_custom_times">Nechá profil bufferu níže nastavit časy bufferu; velikost zůstává automatická</string>
+    <string name="assessment_grounds_managed_on">Určí buffer podle volné paměti při spuštění přehrávání a zmenší ho, když zařízení dochází paměť; pevná velikost neumí ani jedno</string>
+    <string name="assessment_value_target_auto">Automaticky (až %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Se zapnutým Spravovaným rozpočtem paměti ji aplikace zvolí při spuštění přehrávání</string>
+    <string name="assessment_grounds_allow_large_small_box">Jen pro zařízení se 4 GB paměti a více; na tomto zařízení s pamětí %1$s způsobí velké hodnoty trhání nebo pády</string>
+    <string name="assessment_grounds_allow_large_managed">Nemá vliv, dokud je zapnutý Spravovaný rozpočet paměti</string>
+    <string name="assessment_grounds_network_for_parallel">Zapne paralelní spojení doporučená výše</string>
+    <string name="assessment_grounds_network_parallel_only">Potřeba jen pro paralelní spojení; jedno spojení je tu dost rychlé</string>
+    <string name="assessment_grounds_network_untested">Potřeba jen pro paralelní spojení a nebyl otestován žádný stream, podle kterého by se dalo rozhodnout</string>
     <string name="assessment_grounds_max_buffer">Cíl %1$d MB pojme \u2248%2$d s tohoto titulu (%3$s) - víc sekund se stejně nenačte</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Datový tok titulu není známý - strop v bajtech nelze spočítat; limit zůstává na %1$d s</string>
     <string name="assessment_grounds_vod_auto">Automaticky určí velikost podle volného místa (20%% volného v rámci limitů, rezerva 1 GB) - na tomto zařízení nyní \u2248%1$s</string>
@@ -3149,7 +3191,7 @@
     <string name="assessment_no_stream">Žádný naposledy přehraný stream - řádky zařízení se přesto vyhodnotí. Pro měřené řádky nejdřív přehrajte svůj nejnáročnější běžný titul a spusťte znovu.</string>
     <string name="assessment_header_title">Údaje o zařízení</string>
     <string name="assessment_header_device">Zařízení</string>
-    <string name="assessment_header_device_value">%1$s - bezpečné %2$d MB / varování %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buffer až %2$d MB / nebezpečí nad %3$d MB</string>
     <string name="assessment_header_display">Displej</string>
     <string name="assessment_header_display_unknown">Z této obrazovky nelze prověřit</string>
     <string name="assessment_header_stream">Poslední stream</string>
@@ -3170,8 +3212,7 @@
     <string name="assessment_footer">Měřené řádky byly otestovány na tomto zařízení; vypočtené řádky vycházejí ze zjistitelných údajů. Použití zapíše jen měřené a vypočtené řádky a zvolený profil - řádky k ověření se nikdy nemění automaticky. Vrácení zruší poslední použití.</string>
     <string name="stream_test_verdict_recommend_trade">Doporučení: %1$d spojení / bloky %2$d MB - %3$s (%4$s\u00d7 datový tok tohoto titulu). Zvoleno místo %5$d \u00d7 %6$d MB (2\u00d7+), protože při rozpočtu paměti tohoto zařízení nechává %7$d MB \u2248 %8$d s bufferu přehrávání místo %9$d MB \u2248 %10$d s - tady je hloubka bufferu důležitější než rychlost plnění.</string>
     <string name="assessment_grounds_parallel_trade">Naměřeno %1$s při %2$d \u00d7 %3$d MB - dosáhne 1,5\u00d7 datového toku a nechá %6$d MB \u2248 %7$d s bufferu; konfigurace 2\u00d7 (%4$d \u00d7 %5$d MB) by nechala jen %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Aktuálních %1$d MB + %2$d MB režie = %3$d MB leží ve varovném pásmu (%4$d-%5$d MB) - použitelné, s menší rezervou</string>
-    <string name="assessment_grounds_target_current_danger">Aktuálních %1$d MB + %2$d MB režie = %3$d MB překračuje varovný limit %4$d MB - hrozí ukončení aplikace kvůli nedostatku paměti</string>
+    <string name="assessment_parallel_small_box_cap">Toto zařízení má %1$s paměti, proto se doporučují nejvýše 2 spojení</string>
     <string name="assessment_grounds_max_buffer_current">Při aktuálním cíli %1$d MB: efektivně \u2248 %2$d s, ať posuvník sekund ukazuje cokoli - bajty omezují dřív</string>
     <string name="assessment_item_engine">Interní engine</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -3232,7 +3273,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV změnu velikosti obrázkových titulků nepodporuje. Pro nastavení jejich velikosti nezávisle na textu použijte ExoPlayer.</string>
     <string name="subtitle_style_image_size">Velikost obrázkových titulků</string>
     <string name="v2_accent_fixed_hint">Použije barevné téma, pokud není vybrán akcent z obrázku.</string>
-    <string name="about_fork_updates_subtitle">Aktualizace z NuvioTV-Fork. Všechna vydání forku jsou beta.</string>
+    <string name="about_fork_updates_subtitle">Aktualizace z vydání Nuvio Arc na GitHubu.</string>
     <string name="playback_speculative_stream_search">Hledat zdroje před Přehrát</string>
     <string name="playback_speculative_stream_search_sub">Prohledává doplňky už při procházení, aby byl výběr zdroje rychlejší. Některé doplňky mohou při hledání přidávat nebo stahovat obsah. Vypnuto čeká až na Přehrát. Odkazy na média a zpracování u poskytovatele čekají na výběr zdroje, kromě konce epizody, kdy miniatury při přetáčení připravují další.</string>
     <string name="debrid_cached_playback_links">Znovu použít uložené odkazy přehrávání</string>
@@ -3320,6 +3361,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Přehrávání začne hned; miniatury se vytvářejí při pozastavení a po skončení sledování.</string>
     <string name="seek_thumbnails_prepare_on">Zapnuto</string>
     <string name="seek_thumbnails_prepare_on_desc">Vytvoří miniatury titulu pro přetáčení před spuštěním. \"Začít sledovat hned\" nebo Zpět spustí přehrávání kdykoli.</string>
+    <string name="seek_thumbnails_from_copy_title">Miniatury z kopie</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Rychlejší miniatury pro tituly 4K z kopie 1080p nebo 720p a pro tituly ze sítě Usenet z kopie mimo síť Usenet. Kopie uložená v cache služby TorBox se může na několik minut přidat do vašeho seznamu.</string>
     <string name="seek_thumbnails_clear_title">Vymazat uložené miniatury</string>
     <string name="seek_thumbnails_clear_subtitle">Vytvoří se znovu při příštím přehrání titulu.</string>
     <string name="seek_thumbnails_cleared">Uložené miniatury vymazány</string>
@@ -3334,7 +3377,7 @@
     <string name="seek_thumbnails_time_left_minutes">Zbývá asi %1$d min %2$d s</string>
     <string name="seek_thumbnails_count">%1$d z %2$d</string>
     <string name="seek_thumbnails_start_now">Začít sledovat hned</string>
-    <string name="seek_thumbnails_settings_hint">Zapněte nebo vypněte v Nastavení › Přehrávání › Obecné</string>
+    <string name="seek_thumbnails_settings_hint">Zapněte nebo vypněte v Nastavení › Přehrávání › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Miniatury %1$d%%</string>
     <string name="party_title">Společné sledování</string>
     <string name="party_settings_subtitle">Sledujte totéž ve stejnou chvíli s lidmi v jiných domácnostech</string>
@@ -3376,6 +3419,7 @@
     <string name="party_member_buffering">načítá</string>
     <string name="party_member_catching_up">dohání</string>
     <string name="party_member_away">pryč</string>
+    <string name="party_member_needs_update">potřebuje aktualizaci</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Vaše kopie je o %1$s s delší než kopie hostitele. Párty se může rozcházet.</string>
     <string name="party_copy_shorter">Vaše kopie je o %1$s s kratší než kopie hostitele. Párty se může rozcházet.</string>
@@ -3390,7 +3434,7 @@
     <string name="party_match_same">Stejný soubor jako u hostitele</string>
     <string name="party_match_likely">Pravděpodobně kopie hostitele</string>
     <string name="party_match_different">Jiná kopie než u hostitele</string>
-    <string name="party_invite_text">Připojte se k mému společnému sledování v Nuvio. Otevřete Nastavení, pak Společné sledování, a zadejte kód %1$s</string>
+    <string name="party_invite_text">Připojte se k mému společnému sledování v Nuvio Arc. Otevřete Nastavení, pak Společné sledování, a zadejte kód %1$s</string>
     <string name="party_invite_qr">Naskenujte fotoaparátem telefonu a pošlete pozvánku zprávou</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

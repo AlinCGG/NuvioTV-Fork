@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="type_movie">Film</string>
     <string name="type_series">Serial</string>
 
@@ -114,7 +114,7 @@
     <!-- AboutScreen -->
     <string name="about_title">Despre</string>
     <string name="about_subtitle">Informații despre aplicație, actualizări și legături legale</string>
-    <string name="about_made_with_love">Făcut cu ❤️ de Tapframe și prieteni</string>
+    <string name="about_made_with_love">Construit pe munca extraordinară a Tapframe și a prietenilor ❤️ · Nuvio Arc de ysosrs123</string>
     <string name="about_version">Versiunea %1$s</string>
     <string name="about_check_updates">Verifică actualizările</string>
     <string name="about_check_updates_subtitle">Descarcă cea mai recentă versiune</string>
@@ -440,7 +440,7 @@
     <string name="trakt_stat_watched_hours">Ore vizionate</string>
     <string name="trakt_disconnect">Deconectare</string>
     <string name="trakt_disconnect_title">Deconectare Trakt?</string>
-    <string name="trakt_disconnect_subtitle">Aceasta va deconecta contul tău Trakt de Nuvio.</string>
+    <string name="trakt_disconnect_subtitle">Aceasta va deconecta contul tău Trakt de Nuvio Arc.</string>
     <string name="trakt_login">Autentificare</string>
     <string name="trakt_retry">Reîncercare</string>
     <string name="trakt_back">Înapoi</string>
@@ -767,7 +767,7 @@
     <string name="catalog_see_all_empty_subtitle">Încearcă un catalog diferit sau revino mai târziu</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Bine ai venit la Nuvio</string>
+    <string name="layout_selection_welcome">Bine ai venit la Nuvio Arc</string>
     <string name="layout_selection_subtitle">Alege aspectul ecranului de pornire</string>
     <string name="layout_selection_continue">Continuă</string>
 
@@ -843,6 +843,7 @@
     <string name="detail_trailer_error_age_restricted">Acest trailer are restricție de vârstă pe YouTube și nu poate fi redat aici.</string>
     <string name="detail_trailer_error_unavailable">Acest trailer nu este disponibil pe YouTube.</string>
     <string name="detail_trailer_error_sign_in">YouTube cere autentificare pentru a reda acest trailer.</string>
+    <string name="theme_color_copper">Cupru</string>
     <string name="appearance_screensaver_group_title">Protecție ecran OLED</string>
     <string name="appearance_screensaver_group_subtitle">Întunecă ecranul în inactivitate pentru a reduce uzura panoului</string>
     <string name="appearance_screensaver_enabled">Întunecă în inactivitate</string>
@@ -856,16 +857,21 @@
     <string name="appearance_screensaver_dim_gentle">Ecranul rămâne clar vizibil</string>
     <string name="appearance_screensaver_dim_balanced">Întunecat, dar lizibil</string>
     <string name="appearance_screensaver_dim_strong">Abia vizibil</string>
+    <string name="appearance_app_icon_mint">Mentă</string>
     <string name="licenses_attributions_avatars_title">Avataruri pentru petrecerea de vizionare</string>
     <string name="licenses_attributions_avatars_body">Realizate cu DiceBear, pornind de la aceste modele: \"Fun Emoji\" de Davis Uche și \"Adventurer\" de Lisa Wischofsky, sub licența CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" de Lisa Wischofsky, \"Notionists\" de Zoish, \"Pixel Art\" și \"Thumbs\" de DiceBear, CC0 1.0. \"Bottts\" de Pablo Stanley, gratuit pentru uz personal și comercial. Fețe de animale din Twemoji, de Twitter, Inc. și alți contribuitori, sub licența CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby și Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio se conectează la propriul tău server Jellyfin, Emby sau Silo. Numele și siglele aparțin proprietarilor lor. Nuvio nu este afiliat cu Jellyfin, Emby sau Silo și nu este susținut de acestea.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc se conectează la propriul tău server Jellyfin, Emby sau Silo. Numele și siglele aparțin proprietarilor lor. Nuvio Arc nu este afiliat cu Jellyfin, Emby sau Silo și nu este susținut de acestea.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Liste de grupuri de release. Licență MIT.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Analiza metadatelor Dolby Vision. De quietvoid. Licență MIT.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Decodare audio. Sub licența LGPL 2.1 sau ulterioară.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Decodare video AV1 prin software. De VideoLAN și autorii dav1d. Licență BSD 2-Clause.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Detectarea funcțiilor procesorului pentru decodorul AV1. De Google. Licență Apache 2.0.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">Împachetarea TrueHD MAT și downmixul audio sunt portate din Kodi. Sub licența GPL 2.0 sau ulterioară.</string>
     <string name="settings_experience_subtitle">Esențial sau Avansat</string>
@@ -901,8 +907,9 @@
     <string name="playback_section_audio_desc">Controale audio și compatibilitate video.</string>
     <string name="playback_afr_open">Deschis</string>
     <string name="playback_afr_closed">Închis</string>
+    <string name="audio_tunneled_sub_prefer_app">Indisponibil cât timp Prioritate decodor este setată la Preferă decoderele aplicației</string>
     <string name="audio_use_system_passthrough">Passthrough de sistem</string>
-    <string name="audio_use_system_passthrough_sub">Trimite TrueHD și DTS-HD către receptor prin Android (calea de sistem) în loc de Nuvio (calea IEC). Folosește opțiunea dacă formatele lossless produc zgomot, desincronizare sau nu au sunet.</string>
+    <string name="audio_use_system_passthrough_sub">Trimite TrueHD și DTS-HD către receptor prin Android (calea de sistem) în loc de Nuvio Arc (calea IEC). Folosește opțiunea dacă formatele lossless produc zgomot, desincronizare sau nu au sunet.</string>
     <string name="audio_surround_header">Sunet surround</string>
     <string name="audio_surround_reset_iec_probe">Șterge decizia testului IEC</string>
     <string name="audio_surround_reset_iec_probe_sub">Testează din nou ieșirea IEC 61937. Folosește opțiunea dacă formatele lossless trec pe PCM după schimbarea receptorului sau a intrării.</string>
@@ -951,6 +958,10 @@
     <string name="audio_inject_hdr10_sei_sub">Pentru conținutul DV8 (Profile 8) redus la stratul de bază HDR10, adaugă metadatele de masterizare ale sursei (MaxCLL/MaxFALL și luminanța de vârf), astfel încât televizoarele HDR10 fără DV să facă tone mapping corect. Activ doar când Gestionarea DV este Elimină DV sau Strat de bază HDR10; fără efect pe Profile 7 sau la redarea Dolby Vision.</string>
     <string name="diag_value_not_advertised">Nedeclarat (redarea nativă poate funcționa totuși)</string>
     <string name="diag_label_dv_el_type">Tip EL DV7</string>
+    <string name="diag_value_dv7_native_route">Rută nativă cu strat dublu în uz (Android nu o declară)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, toate cele trei straturi folosite</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, convertit în 8.1 (EL nefolosit)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · doar BL (RPU și EL nefolosite)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR mastering</string>
     <string name="diag_label_dv_rpu_drops">Pierderi DV RPU</string>
     <string name="sub_tertiary_lang">Limba preferată terțiară</string>
@@ -958,6 +969,10 @@
     <string name="sub_addon_subtitles_desc">Preia subtitrări din suplimentele instalate în timpul redării. Când e dezactivat, sunt disponibile doar subtitrările încorporate în fișier.</string>
     <string name="autoplay_quality_rules_title">Reguli de calitate</string>
     <string name="autoplay_quality_rules_subtitle">Filtre, sortare și niveluri de grupuri de release în Servicii conectate.</string>
+    <string name="stream_sort_sources">Sortează sursele</string>
+    <string name="stream_sort_sources_sub">Ordinea listei de fluxuri. Cea mai bună calitate întâi folosește Regulile tale de calitate.</string>
+    <string name="stream_sort_sources_source_order">Ordinea surselor</string>
+    <string name="stream_sort_sources_best_first">Cea mai bună calitate întâi</string>
     <string name="autoplay_eager_ready_title">Gata mai repede pe surse lente</string>
     <string name="autoplay_eager_ready_sub">Pregătește redarea imediat ce expiră timpul de selecție, fără să aștepte cel mai lent supliment. Se aplică paginii de detalii și secțiunii Continuă vizionarea.</string>
     <string name="autoplay_mode_quality">Cea mai bună calitate</string>
@@ -968,6 +983,17 @@
     <string name="layout_landscape_posters_home_only_desc">Carduri peisaj pe Acasă, portret în Bibliotecă, Căutare și liste</string>
     <string name="layout_landscape_posters_everywhere">Peste tot</string>
     <string name="layout_landscape_posters_everywhere_desc">Carduri peisaj pe Acasă, în Bibliotecă, Căutare și liste</string>
+    <string name="layout_hide_side_icons">Ascunde pictogramele laterale</string>
+    <string name="layout_hide_side_icons_sub">Ascunde pictogramele meniului de pe marginea stângă cât timp meniul este închis. Apasă Stânga sau Înapoi pentru a deschide meniul.</string>
+    <string name="layout_watched_titles">Titluri vizionate</string>
+    <string name="layout_watched_titles_sub">Afișează, întunecă sau ascunde filmele și serialele pe care le-ai terminat.</string>
+    <string name="layout_watched_titles_dialog_title">Titluri vizionate</string>
+    <string name="layout_watched_titles_show">Afișează</string>
+    <string name="layout_watched_titles_show_desc">Titlurile vizionate rămân neschimbate, cu o bifă.</string>
+    <string name="layout_watched_titles_dim">Întunecă</string>
+    <string name="layout_watched_titles_dim_desc">Titlurile vizionate rămân pe loc, mai întunecate, cu o bifă.</string>
+    <string name="layout_watched_titles_hide">Ascunde</string>
+    <string name="layout_watched_titles_hide_desc">Filmele vizionate și serialele vizionate complet nu apar în rândurile din Acasă și în banner. Rândul Continuă vizionarea nu este afectat.</string>
     <string name="layout_trailer_logo">Logo peste trailerul din card</string>
     <string name="layout_trailer_logo_sub">Afișează logo-ul titlului peste trailerul redat într-un card.</string>
     <string name="mdblist_account_title">Cont</string>
@@ -990,6 +1016,8 @@
     <string name="player_layout_more_fixed_help">Apasă OK pentru a ascunde/afișa Mai multe. Rămâne în extrema dreaptă. Mută alte acțiuni peste limita meniului său pentru a schimba ce conține meniul.</string>
     <string name="player_error_placeholder_stream">Acest flux pare a fi un card de eroare al furnizorului, nu videoclipul. Încearcă altă sursă.</string>
     <string name="subtitle_panel_languages">Limbi</string>
+    <string name="library_sort_released_desc">Data lansării ↓</string>
+    <string name="library_sort_released_asc">Data lansării ↑</string>
     <string name="library_empty_mdblist_title">Niciun element %1$s în lista de vizionare</string>
     <string name="library_empty_mdblist_subtitle">Folosește + în detalii pentru a adăuga elemente în lista de vizionare MDBList</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList nu este conectat</string>
@@ -1010,6 +1038,7 @@
     <string name="library_transfer_copy">Copiază</string>
     <string name="library_transfer_move">Mută (copiază, apoi elimină din sursă)</string>
     <string name="library_transfer_none">Nimic de copiat</string>
+    <string name="sub_mode_effects_warning">Solicitant: poate pierde cadre la 4K și dezactivează redarea prin tunel.</string>
     <string name="cd_playback_stats">Statistici de redare</string>
     <string name="player_stats_unavailable_mpv">Statisticile nu sunt disponibile pentru motorul libmpv</string>
     <string name="player_dead_source_failover">Sursă indisponibilă - se încearcă sursa următoare (%1$d/%2$d)</string>
@@ -1025,6 +1054,17 @@
     <string name="debrid_filters_show_everything_title">Arată tot</string>
     <string name="debrid_filters_show_everything_subtitle">Șterge toate filtrele și limitele de rezultate; păstrează sortarea inteligentă.</string>
     <string name="debrid_filters_show_everything_action">Arată tot</string>
+    <string name="playback_net_device_memory_auto">Acest dispozitiv are %1$s de memorie. Aplicația pune în buffer până la %2$d MB în avans, mai puțin când memoria e puțină.</string>
+    <string name="playback_net_native_memory_sub">Lasă aplicația să dimensioneze bufferul pentru acest dispozitiv și să-l țină în memoria nativă, cu derulare mai rapidă. Activarea setează și valorile de buffer și rețea de mai jos pentru acest dispozitiv.</string>
+    <string name="playback_buffer_custom_desc">Folosește valorile de mai jos în locul celor ale aplicației. Dezactivat: cu Memorie nativă ExoPlayer activată, aplicația pune în buffer între 15 și 45 s în dimensiunea aleasă pentru acest dispozitiv; fără ea, bufferul standard Media3.</string>
+    <string name="playback_buffer_seconds_hint">La %1$d MB, acesta ține circa %2$d s dintr-un remux 4K (80 Mbit/s). Valorile mai lungi nu schimbă nimic.</string>
+    <string name="playback_buffer_back_fitted">Păstrat în „Dimensiune buffer țintă”. La %1$d MB aplicația păstrează până la circa %2$d s din el (%3$d MB la 80 Mbit/s), ca să rămână cel puțin 5 s în avans.</string>
+    <string name="playback_buffer_back_fitted_none">Păstrat în „Dimensiune buffer țintă”. La %1$d MB nu mai are loc, așa că aplicația păstrează în schimb 5 s în avans.</string>
+    <string name="playback_buffer_managed_desc">Stabilește bufferul după memoria liberă a dispozitivului la pornirea redării și îl micșorează când memoria e puțină. Dezactivează pentru a alege singur „Dimensiune buffer țintă”; pe dispozitivele mici, o dimensiune mai mare poate face redarea sacadată.</string>
+    <string name="playback_buffer_target_size_sub">Memorie folosită pentru bufferul video în avans. Limita depinde de memoria totală a acestui dispozitiv. Cu Managed memory budget activat, aplicația stabilește dimensiunea după memoria liberă la pornirea redării. Bufferul se micșorează cât timp dispozitivul are puțină memorie.</string>
+    <string name="playback_buffer_target_stutter_warning">Acest dispozitiv are %1$s de memorie. Peste %2$d MB, redarea poate fi sacadată.</string>
+    <string name="playback_buffer_allow_large_desc">Permite ca „Dimensiune buffer țintă” să ajungă la 2 GB. Doar pentru dispozitive cu 4 GB de memorie sau mai mult; pe cele mai mici, dimensiunile mari duc la sacadări sau blocări.</string>
+    <string name="playback_net_connection_count_small_box">Acest dispozitiv are %1$s de memorie. Peste 2 conexiuni, redarea poate fi sacadată.</string>
     <string name="diag_label_serving_host">Gazdă de livrare</string>
     <string name="diag_label_file">Fișier</string>
     <string name="diag_label_dv_applied">DV aplicat</string>
@@ -1034,16 +1074,16 @@
     <string name="diag_value_dv_base_layer">DV ignorat - strat de bază HDR10</string>
     <string name="diag_label_audio_path">Cale audio</string>
     <string name="diag_label_audio_caps">Ce declară lanțul audio</string>
+    <string name="playback_estimated_memory_parts">Utilizare estimată a memoriei: circa %1$d MB (buffer %2$d MB + descărcări %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Utilizare estimată a memoriei: circa %1$d MB (buffer %2$d MB)</string>
     <string name="stream_test_serving_host_label">Gazdă de livrare: %1$s</string>
     <string name="stream_test_file_label">Fișier: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Recomandare: lasă conexiunile paralele dezactivate - o singură conexiune livrează deja %1$s, peste 2\u00d7 bitrate-ul acestui titlu.</string>
     <string name="stream_test_verdict_recommend">Recomandare: %1$d conexiuni / fragmente de %2$d MB - %3$s. Configurația cu cea mai puțină memorie care atinge 2\u00d7 bitrate-ul acestui titlu; mai sus pot apărea configurații mai rapide, dar folosesc mai multă memorie fără beneficii la redare.</string>
     <string name="stream_test_verdict_marginal">Cel mai bun rezultat: %1$d conexiuni / fragmente de %2$d MB la %3$s - peste bitrate-ul mediu de %4$s al titlului, dar sub ținta de rezervă de 2\u00d7. Redarea ar trebui să meargă, dar poate face buffering la scenele cu bitrate mare sau la derulare.</string>
     <string name="stream_test_verdict_cannot_sustain">Această conexiune nu poate susține acest titlu - cea mai rapidă configurație testată (%1$d conexiuni / fragmente de %2$d MB) a atins %3$s, sub bitrate-ul mediu de %4$s al titlului. Așteaptă-te la buffering; ia în calcul o versiune cu bitrate mai mic.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Cea mai rapidă stabilă: %1$d conexiuni / fragmente de %2$d MB la %3$s. Bitrate-ul titlului e necunoscut - redă mai întâi un video pentru o recomandare adaptată.</string>
-    <string name="stream_test_verdict_pm_suffix">" Necesită Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Măsoară doar viteza brută de descărcare - redarea reală depinde și de buffering, decodare și încărcarea serverului, și ține în memorie și bufferul țintă.</string>
     <string name="stream_test_label_parallel_dyn">Conectare paralelă (%1$d conex. / fragmente de %2$d MB)</string>
     <string name="stream_test_btn_measuring_dyn">Se măsoară: %1$s\u2026</string>
@@ -1076,7 +1116,6 @@
     <string name="assessment_item_parallel">Conexiuni paralele</string>
     <string name="assessment_item_chunk">Dimensiune fragment</string>
     <string name="assessment_item_network_master">Rețea personalizată</string>
-    <string name="assessment_item_http2">Activează HTTP/2</string>
     <string name="assessment_item_perf_mode">Memorie nativă ExoPlayer</string>
     <string name="assessment_item_buffer_master">Buffere de redare personalizate</string>
     <string name="assessment_item_managed_budget">Buget de memorie gestionat</string>
@@ -1097,15 +1136,18 @@
     <string name="assessment_grounds_parallel_cannot">Cel mai rapid măsurat: %1$s la %2$d \u00d7 %3$d MB - sub bitrate-ul titlului; această conexiune nu poate susține fluxul</string>
     <string name="assessment_grounds_parallel_fastest">Cel mai rapid măsurat: %1$s la %2$d \u00d7 %3$d MB - bitrate-ul titlului nu era cunoscut, deci fără verdict de suficiență</string>
     <string name="assessment_grounds_chunk">Asociată cu numărul de conexiuni de mai sus, din aceeași măsurătoare</string>
-    <string name="assessment_grounds_network_master">Comutator principal pentru setările HTTP/2 și de conexiuni paralele de mai jos</string>
-    <string name="assessment_grounds_http2">Multiplexează cererile de interval pe o singură conexiune; util în general, nu necesită test</string>
     <string name="assessment_grounds_perf_mode">Ține bufferele de mărimea unui remux în afara heap-ului Java, ca garbage collection să nu sacadeze cadrele; limitele de memorie se adaptează la nivelul %1$s al acestui dispozitiv (sigur %2$d MB / avertizare %3$d MB), iar peste %4$d conexiuni este obligatorie</string>
     <string name="assessment_grounds_perf_mode_unsupported">Necesită Android 8.0 sau mai nou</string>
-    <string name="assessment_grounds_buffer_master">Dezactivat înseamnă controlul de încărcare standard din media3: o țintă calculată în octeți de circa 13 MB, care ține \u2248 1 s dintr-un remux indiferent de valorile de durată - valorile de mai jos sunt dimensionate pentru acest dispozitiv</string>
-    <string name="assessment_grounds_managed_budget">Modul gestionat fixează ținta la limita sigură și ignoră surplusul conexiunilor paralele; ținta explicită de mai jos le ia în calcul pe amândouă</string>
-    <string name="assessment_grounds_target_buffer">Țintă %1$d + %2$d MB surplus de conexiuni = %3$d MB \u2264 limita sigură de %4$d MB (cel mai mare pas de %5$d MB care încape)</string>
-    <string name="assessment_grounds_allow_large_on">Necesar pentru ca glisorul țintei să ajungă la %1$d MB pe acest dispozitiv</string>
-    <string name="assessment_grounds_allow_large_off">Ținta recomandată încape în intervalul standard al glisorului</string>
+    <string name="assessment_grounds_native_auto">Aplicația dimensionează bufferul pentru acest dispozitiv de %1$s (până la %2$d MB, mai puțin când memoria e puțină) și îl ține în memoria nativă</string>
+    <string name="assessment_grounds_buffer_custom_times">Lasă profilul de buffer de mai jos să seteze duratele bufferului; dimensiunea rămâne automată</string>
+    <string name="assessment_grounds_managed_on">Stabilește bufferul după memoria liberă la pornirea redării și îl micșorează când dispozitivul rămâne fără memorie; o dimensiune fixă nu face niciuna dintre ele</string>
+    <string name="assessment_value_target_auto">Automat (până la %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Cu Buget de memorie gestionat activat, aplicația o alege la pornirea redării</string>
+    <string name="assessment_grounds_allow_large_small_box">Doar pentru dispozitive cu 4 GB de memorie sau mai mult; pe acest dispozitiv de %1$s, dimensiunile mari duc la sacadări sau blocări</string>
+    <string name="assessment_grounds_allow_large_managed">Nu are efect cât timp Buget de memorie gestionat este activat</string>
+    <string name="assessment_grounds_network_for_parallel">Activează conexiunile paralele recomandate mai sus</string>
+    <string name="assessment_grounds_network_parallel_only">Necesar doar pentru conexiuni paralele; aici o singură conexiune e destul de rapidă</string>
+    <string name="assessment_grounds_network_untested">Necesar doar pentru conexiuni paralele și niciun stream nu a fost testat pentru a decide</string>
     <string name="assessment_grounds_max_buffer">O țintă de %1$d MB ține \u2248%2$d s din acest titlu (%3$s) - secundele peste această valoare nu se pot materializa</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Bitrate-ul titlului e necunoscut - plafonul în octeți nu poate fi calculat; limita rămâne la %1$d s</string>
     <string name="assessment_grounds_vod_auto">Automat dimensionează după spațiul liber (20%% din spațiul liber, în limite, cu rezervă de 1 GB) - \u2248%1$s pe acest dispozitiv acum</string>
@@ -1142,7 +1184,7 @@
     <string name="assessment_no_stream">Niciun flux redat recent - rândurile dispozitivului vor rula oricum. Pentru rândurile măsurate, redă mai întâi cel mai solicitant titlu obișnuit, apoi rulează din nou.</string>
     <string name="assessment_header_title">Datele dispozitivului</string>
     <string name="assessment_header_device">Dispozitiv</string>
-    <string name="assessment_header_device_value">%1$s - sigur %2$d MB / avertizare %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buffer până la %2$d MB / pericol peste %3$d MB</string>
     <string name="assessment_header_display">Ecran</string>
     <string name="assessment_header_display_unknown">Nu poate fi inspectat din acest ecran</string>
     <string name="assessment_header_stream">Ultimul flux</string>
@@ -1163,8 +1205,7 @@
     <string name="assessment_footer">Rândurile măsurate au fost testate pe acest dispozitiv; cele calculate sunt derivate din date care pot fi interogate. Aplică scrie doar rândurile măsurate și calculate plus profilul pe care îl selectezi - rândurile de verificat nu sunt schimbate niciodată automat. Revino anulează cea mai recentă aplicare.</string>
     <string name="stream_test_verdict_recommend_trade">Recomandare: %1$d conexiuni / fragmente de %2$d MB - %3$s (%4$s\u00d7 bitrate-ul acestui titlu). Aleasă în locul %5$d \u00d7 %6$d MB (2\u00d7+) deoarece, la bugetul de memorie al acestui dispozitiv, lasă %7$d MB \u2248 %8$d s de buffer de redare în loc de %9$d MB \u2248 %10$d s - aici adâncimea bufferului contează mai mult decât viteza de reumplere.</string>
     <string name="assessment_grounds_parallel_trade">Măsurat %1$s la %2$d \u00d7 %3$d MB - atinge 1.5\u00d7 bitrate-ul și lasă %6$d MB \u2248 %7$d s de buffer; configurația 2\u00d7 (%4$d \u00d7 %5$d MB) ar lăsa doar %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Actual %1$d MB + %2$d MB surplus = %3$d MB, în banda de avertizare (%4$d-%5$d MB) - funcționează, cu rezervă redusă</string>
-    <string name="assessment_grounds_target_current_danger">Actual %1$d MB + %2$d MB surplus = %3$d MB, peste limita de avertizare de %4$d MB - risc de închidere din lipsă de memorie</string>
+    <string name="assessment_parallel_small_box_cap">Acest dispozitiv are %1$s de memorie, deci se recomandă cel mult 2 conexiuni</string>
     <string name="assessment_grounds_max_buffer_current">La ținta ta actuală de %1$d MB: \u2248 %2$d s efectiv, orice ar arăta glisorul de secunde - octeții limitează primii</string>
     <string name="assessment_item_engine">Motor intern</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -1225,7 +1266,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV nu acceptă redimensionarea subtitrărilor imagine. Folosește ExoPlayer pentru a le regla dimensiunea independent de text.</string>
     <string name="subtitle_style_image_size">Dimensiune subtitrări imagine</string>
     <string name="v2_accent_fixed_hint">Folosește Tema de culoare, dacă nu este selectat accentul din ilustrație.</string>
-    <string name="about_fork_updates_subtitle">Actualizări din NuvioTV-Fork. Toate versiunile forkului sunt beta.</string>
+    <string name="about_fork_updates_subtitle">Actualizări din versiunile Nuvio Arc de pe GitHub.</string>
     <string name="playback_speculative_stream_search">Caută surse înainte de Redă</string>
     <string name="playback_speculative_stream_search_sub">Caută în suplimente în timp ce navighezi, pentru o selecție mai rapidă a sursei. Unele suplimente pot adăuga sau prelua conținut în timpul căutărilor. Când e dezactivat, așteaptă până la Redă. Linkurile media și rezolvarea furnizorului așteaptă selecția de redare, cu excepția finalului unui episod, când miniaturile de derulare îl pregătesc pe următorul.</string>
     <string name="debrid_cached_playback_links">Refolosește linkurile de redare din cache</string>
@@ -1313,6 +1354,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Redarea începe imediat; miniaturile se creează în pauză și după ce te oprești din vizionare.</string>
     <string name="seek_thumbnails_prepare_on">Activat</string>
     <string name="seek_thumbnails_prepare_on_desc">Creează miniaturile de derulare ale unui titlu înainte să înceapă. \"Începe vizionarea acum\" sau Înapoi pornește redarea oricând.</string>
+    <string name="seek_thumbnails_from_copy_title">Miniaturi dintr-o copie</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Miniaturi mai rapide pentru titlurile 4K dintr-o copie 1080p sau 720p, iar pentru titlurile de pe Usenet dintr-o copie din afara rețelei Usenet. O copie din cache-ul TorBox poate fi adăugată în lista ta pentru câteva minute.</string>
     <string name="seek_thumbnails_clear_title">Șterge miniaturile salvate</string>
     <string name="seek_thumbnails_clear_subtitle">Sunt refăcute data viitoare când redai un titlu.</string>
     <string name="seek_thumbnails_cleared">Miniaturile salvate au fost șterse</string>
@@ -1327,7 +1370,7 @@
     <string name="seek_thumbnails_time_left_minutes">Au mai rămas circa %1$d min %2$d s</string>
     <string name="seek_thumbnails_count">%1$d din %2$d</string>
     <string name="seek_thumbnails_start_now">Începe vizionarea acum</string>
-    <string name="seek_thumbnails_settings_hint">Activează sau dezactivează în Setări › Redare › General</string>
+    <string name="seek_thumbnails_settings_hint">Activează sau dezactivează în Setări › Redare › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Miniaturi %1$d%%</string>
     <string name="party_title">Petrecere de vizionare</string>
     <string name="party_settings_subtitle">Vizionează același lucru în același moment cu oameni din alte case</string>
@@ -1369,6 +1412,7 @@
     <string name="party_member_buffering">în buffering</string>
     <string name="party_member_catching_up">recuperează</string>
     <string name="party_member_away">lipsește</string>
+    <string name="party_member_needs_update">trebuie să actualizeze</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Copia ta este cu %1$s s mai lungă decât a gazdei. Petrecerea se poate decala.</string>
     <string name="party_copy_shorter">Copia ta este cu %1$s s mai scurtă decât a gazdei. Petrecerea se poate decala.</string>
@@ -1383,7 +1427,7 @@
     <string name="party_match_same">Același fișier ca al gazdei</string>
     <string name="party_match_likely">Probabil copia gazdei</string>
     <string name="party_match_different">Altă copie decât a gazdei</string>
-    <string name="party_invite_text">Vino la petrecerea mea de vizionare în Nuvio. Deschide Setări, apoi Petrecere de vizionare, și introdu codul %1$s</string>
+    <string name="party_invite_text">Vino la petrecerea mea de vizionare în Nuvio Arc. Deschide Setări, apoi Petrecere de vizionare, și introdu codul %1$s</string>
     <string name="party_invite_qr">Scanează cu camera telefonului ca să trimiți invitația prin mesaj</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

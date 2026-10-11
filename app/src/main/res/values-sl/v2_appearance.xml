@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Samodejno</string>
     <string name="v2_scale_manual">Ročno</string>
     <string name="v2_scale_fine_tune">Natančna nastavitev merila</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Uvodni zvok</string>
+    <string name="v2_intro_sound_subtitle">Predvajaj uvod z zvokom, v prostorskem zvoku, če ga sistem podpira</string>
 </resources>

@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatisk</string>
     <string name="v2_scale_manual">Manuell</string>
     <string name="v2_scale_fine_tune">Finjuster skalering</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Introlyd</string>
+    <string name="v2_intro_sound_subtitle">Spill av introen med lyd, i surround der systemet ditt støtter det</string>
 </resources>

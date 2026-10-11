@@ -11,4 +11,6 @@
     <!-- Nuvio-test additions -->
     <string name="v2_intro_animation_title">Animação de introdução</string>
     <string name="v2_intro_animation_subtitle">Mostra a introdução enquanto a página inicial e os cartazes carregam em segundo plano</string>
+    <string name="v2_intro_sound_title">Som de introdução</string>
+    <string name="v2_intro_sound_subtitle">Reproduz a introdução com som, em surround quando o seu sistema o suporta</string>
 </resources>

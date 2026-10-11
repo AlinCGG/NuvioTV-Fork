@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">אוטומטי</string>
     <string name="v2_scale_manual">ידני</string>
     <string name="v2_scale_fine_tune">כוונון עדין של קנה המידה</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">צליל פתיחה</string>
+    <string name="v2_intro_sound_subtitle">הפעלת הפתיחה עם הצליל שלה, בסראונד אם המערכת שלך תומכת בכך</string>
 </resources>

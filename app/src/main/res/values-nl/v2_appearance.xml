@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automatisch</string>
     <string name="v2_scale_manual">Handmatig</string>
     <string name="v2_scale_fine_tune">Schaal nauwkeurig aanpassen</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Intro-geluid</string>
+    <string name="v2_intro_sound_subtitle">Speel de intro af met geluid, in surround als je systeem dat ondersteunt</string>
 </resources>

@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">स्वचालित</string>
     <string name="v2_scale_manual">मैन्युअल</string>
     <string name="v2_scale_fine_tune">स्केल का सूक्ष्म समायोजन</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">इंट्रो साउंड</string>
+    <string name="v2_intro_sound_subtitle">इंट्रो को साउंड के साथ चलाएँ, जहाँ आपका सिस्टम सपोर्ट करे वहाँ सराउंड में</string>
 </resources>

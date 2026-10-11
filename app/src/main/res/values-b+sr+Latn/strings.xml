@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="tv_channel_continue_watching">Nastavi gledanje</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmovi</string>
@@ -338,6 +338,7 @@
     <string name="theme_color_violet">Ljubičasta</string>
     <string name="theme_color_emerald">Smaragdna</string>
     <string name="theme_color_amber">Ćilibar</string>
+    <string name="theme_color_copper">Bakarna</string>
     <string name="theme_color_rose">Ružičasta</string>
     <string name="theme_color_white">Bela</string>
     <string name="theme_color_custom">Prilagođeno</string>
@@ -370,13 +371,13 @@
     <string name="appearance_settings_style">Stil podešavanja</string>
     <string name="appearance_settings_style_subtitle">Izaberite kako su prikazani ekrani sa podešavanjima</string>
     <string name="appearance_launcher_artwork">Grafika pokretača</string>
-    <string name="appearance_launcher_artwork_subtitle">Izaberite kako se Nuvio prikazuje na početnom ekranu vašeg TV-a</string>
+    <string name="appearance_launcher_artwork_subtitle">Izaberite kako se Nuvio Arc prikazuje na početnom ekranu vašeg TV-a</string>
     <string name="appearance_app_icon_and_banner">Ikonica i baner aplikacije</string>
     <string name="appearance_app_icon_and_banner_subtitle">Promenite ikonice i baner aplikacije</string>
     <string name="appearance_app_icon_picker_title">Izaberite ikonicu i baner aplikacije</string>
     <string name="appearance_app_icon_picker_subtitle">Svaki stil uključuje odgovarajuću kvadratnu ikonicu i TV baner</string>
     <string name="appearance_app_icon_confirmation_title">Promeniti ikonicu aplikacije?</string>
-    <string name="appearance_app_icon_confirmation_message">Promena na %1$s će zatvoriti Nuvio. TV baner može zahtevati ponovno pokretanje uređaja pre nego što se ažurira. Izaberite OK za nastavak.</string>
+    <string name="appearance_app_icon_confirmation_message">Promena na %1$s će ponovo pokrenuti Nuvio Arc sa novom ikonom. Početnom ekranu može trebati nekoliko sekundi da je prikaže, a TV baner može zahtevati ponovno pokretanje uređaja. Izaberite OK za nastavak.</string>
     <string name="appearance_app_icon_change_failed">Ikonica i baner nisu mogli biti promenjeni. Pokušajte ponovo.</string>
     <string name="appearance_app_icon_original">Original</string>
     <string name="appearance_app_icon_arctic_blue">Arktičko plava</string>
@@ -396,7 +397,7 @@
 
     <string name="about_title">O aplikaciji</string>
     <string name="about_subtitle">Informacije o aplikaciji, ažuriranja i pravne veze</string>
-    <string name="about_made_with_love">Napravljeno sa ❤️ od strane Tapframe-a i prijatelja</string>
+    <string name="about_made_with_love">Zasnovano na sjajnom radu Tapframe-a i prijatelja ❤️ · Nuvio Arc od ysosrs123</string>
     <string name="about_version">Verzija %1$s</string>
     <string name="about_update_banner_title">Baner za automatsko ažuriranje</string>
     <string name="about_update_banner_subtitle">Prikaži baner kada je dostupna nova verzija</string>
@@ -417,28 +418,28 @@
     <string name="about_licenses_attributions">Licence i pripisivanja</string>
     <string name="about_licenses_attributions_subtitle">Izvori podataka, zahvalnice i Android licence</string>
     <string name="licenses_attributions_title">Licence i pripisivanja</string>
-    <string name="licenses_attributions_subtitle">Provajderi podataka, zasluge za usluge i Android licence za reprodukciju koje koristi Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Provajderi podataka, zasluge za usluge i Android licence za reprodukciju koje koristi Nuvio Arc.</string>
     <string name="licenses_attributions_section_app">LICENCA APLIKACIJE</string>
     <string name="licenses_attributions_section_data">PODACI I USLUGE</string>
     <string name="licenses_attributions_section_playback">ANDROID LICENCE ZA REPRODUKCIJU</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-test (fork aplikacije Nuvio TV)</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio Arc (fork aplikacije Nuvio TV)</string>
     <string name="licenses_attributions_nuvio_body">Izmenjena verzija aplikacije Nuvio TV. Izvorni kod i uslovi licenciranja za ovu verziju dostupni su u spremištu forka. Nuvio TV se nalazi na github.com/NuvioMedia/NuvioTV. Licencirano pod GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-    <string name="licenses_attributions_tmdb_body">Nuvio koristi TMDB API za metapodatke o filmovima i TV serijama, grafiku, trejlere, glumačku ekipu, detalje o produkciji, kolekcije i preporuke. Ovaj proizvod koristi TMDB API, ali nije podržan niti sertifikovan od strane TMDB-a.</string>
+    <string name="licenses_attributions_tmdb_body">Nuvio Arc koristi TMDB API za metapodatke o filmovima i TV serijama, grafiku, trejlere, glumačku ekipu, detalje o produkciji, kolekcije i preporuke. Ovaj proizvod koristi TMDB API, ali nije podržan niti sertifikovan od strane TMDB-a.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="licenses_attributions_trakt_body">Nuvio se povezuje sa Trakt-om radi autentifikacije naloga, istorije gledanja, sinhronizacije napretka, podataka biblioteke, ocena, lista i komentara. Nuvio nije povezan niti podržan od strane Trakt-a.</string>
+    <string name="licenses_attributions_trakt_body">Nuvio Arc se povezuje sa Trakt-om radi autentifikacije naloga, istorije gledanja, sinhronizacije napretka, podataka biblioteke, ocena, lista i komentara. Nuvio Arc nije povezan niti podržan od strane Trakt-a.</string>
     <string name="licenses_attributions_simkl_title">Simkl</string>
-    <string name="licenses_attributions_simkl_body">Nuvio se povezuje sa Simkl-om radi autentifikacije naloga, lista gledanja, istorije gledanja, napretka reprodukcije i skrobovanja. Podatke o praćenju filmova, TV-a i animesa obezbeđuje Simkl. Nuvio nije povezan niti podržan od strane Simkl-a.</string>
+    <string name="licenses_attributions_simkl_body">Nuvio Arc se povezuje sa Simkl-om radi autentifikacije naloga, lista gledanja, istorije gledanja, napretka reprodukcije i skrobovanja. Podatke o praćenju filmova, TV-a i animesa obezbeđuje Simkl. Nuvio Arc nije povezan niti podržan od strane Simkl-a.</string>
     <string name="licenses_attributions_premiumize_title">Premiumize</string>
-    <string name="licenses_attributions_premiumize_body">Nuvio se povezuje sa Premiumize-om radi autentifikacije naloga, pristupa biblioteci u oblaku, provere keša i funkcija reprodukcije iz oblaka. Nuvio nije povezan niti podržan od strane Premiumize-a.</string>
+    <string name="licenses_attributions_premiumize_body">Nuvio Arc se povezuje sa Premiumize-om radi autentifikacije naloga, pristupa biblioteci u oblaku, provere keša i funkcija reprodukcije iz oblaka. Nuvio Arc nije povezan niti podržan od strane Premiumize-a.</string>
     <string name="licenses_attributions_torbox_title">TorBox</string>
-    <string name="licenses_attributions_torbox_body">Nuvio se povezuje sa TorBox-om radi autentifikacije naloga, pristupa biblioteci u oblaku, provere keša i funkcija reprodukcije iz oblaka. Nuvio nije povezan niti podržan od strane TorBox-a.</string>
+    <string name="licenses_attributions_torbox_body">Nuvio Arc se povezuje sa TorBox-om radi autentifikacije naloga, pristupa biblioteci u oblaku, provere keša i funkcija reprodukcije iz oblaka. Nuvio Arc nije povezan niti podržan od strane TorBox-a.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvio koristi MDBList za ocene i podatke eksternih provajdera rezulata. Nuvio nije povezan niti podržan od strane MDBList-a.</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio Arc koristi MDBList za ocene i podatke eksternih provajdera rezulata. Nuvio Arc nije povezan niti podržan od strane MDBList-a.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
-    <string name="licenses_attributions_introdb_body">Nuvio koristi IntroDB API za vremenske oznake uvodnih špica, rezimea, odjavnih špica i pregleda koje obezbeđuje zajednica, a koje se koriste za preskakanje. Nuvio nije povezan niti podržan od strane IntroDB-a.</string>
+    <string name="licenses_attributions_introdb_body">Nuvio Arc koristi IntroDB API za vremenske oznake uvodnih špica, rezimea, odjavnih špica i pregleda koje obezbeđuje zajednica, a koje se koriste za preskakanje. Nuvio Arc nije povezan niti podržan od strane IntroDB-a.</string>
     <string name="licenses_attributions_imdb_title">IMDb nekomercijalni skupovi podataka</string>
-    <string name="licenses_attributions_imdb_body">Nuvio koristi IMDb nekomercijalne skupove podataka, uključujući title.ratings.tsv.gz, za IMDb ocene i broj glasova. Podaci ljubaznošću IMDb-a (https://www.imdb.com). Korišćeno uz dozvolu. IMDb podaci su za ličnu i nekomercijalnu upotrebu pod IMDb uslovima.</string>
+    <string name="licenses_attributions_imdb_body">Nuvio Arc koristi IMDb nekomercijalne skupove podataka, uključujući title.ratings.tsv.gz, za IMDb ocene i broj glasova. Podaci ljubaznošću IMDb-a (https://www.imdb.com). Korišćeno uz dozvolu. IMDb podaci su za ličnu i nekomercijalnu upotrebu pod IMDb uslovima.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Koristi se kao Android mehanizam za reprodukciju. Licencirano pod Apache licencom, verzija 2.0.</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -463,7 +464,7 @@
     <string name="tracking_accounts_title">Nalozi</string>
     <string name="tracking_accounts_subtitle">Povežite i upravljajte uslugama praćenja</string>
     <string name="tracking_sources_title">Izvori</string>
-    <string name="tracking_sources_subtitle">Izaberite odakle Nuvio čita vašu biblioteku i napredak gledanja. Reprodukcija se skrobluje na svaku povezanu uslugu.</string>
+    <string name="tracking_sources_subtitle">Izaberite odakle Nuvio Arc čita vašu biblioteku i napredak gledanja. Reprodukcija se skrobluje na svaku povezanu uslugu.</string>
     <string name="tracking_trakt_features_title">Trakt funkcije</string>
     <string name="tracking_trakt_features_subtitle">Istorija, recenzije i preporuke specifične za Trakt</string>
     <string name="tracking_simkl_features_title">Simkl funkcije</string>
@@ -479,8 +480,8 @@
     <string name="tracking_status_connecting">Povezivanje</string>
     <string name="tracking_finish_connection">Završi odobrenje veze</string>
     <string name="tracking_connecting_provider">Pokretanje %1$s veze…</string>
-    <string name="tracking_watch_progress_dialog_subtitle">Izaberite uslugu koju Nuvio čita za nastavak i Nastavak gledanja. Skrobovanje ostaje aktivno za svaku povezanu uslugu.</string>
-    <string name="tracking_library_source_dialog_subtitle">Izaberite uslugu koju Nuvio čita za vašu Biblioteku. Reprodukcija se skrobluje na svaku povezanu uslugu.</string>
+    <string name="tracking_watch_progress_dialog_subtitle">Izaberite uslugu koju Nuvio Arc čita za nastavak i Nastavak gledanja. Skrobovanje ostaje aktivno za svaku povezanu uslugu.</string>
+    <string name="tracking_library_source_dialog_subtitle">Izaberite uslugu koju Nuvio Arc čita za vašu Biblioteku. Reprodukcija se skrobluje na svaku povezanu uslugu.</string>
     <string name="tracking_trakt_progress_required">Dostupno kada je Trakt izvor napretka gledanja</string>
     <string name="trakt_name">Trakt</string>
     <string name="simkl_name">Simkl</string>
@@ -490,7 +491,7 @@
     <string name="settings_advanced_subtitle">Performanse, navigacija, keš i dijagnostika</string>
     <string name="experience_mode_essential">Osnovno</string>
     <string name="experience_mode_advanced">Napredno</string>
-    <string name="experience_mode_choose_title">Izaberite vaše Nuvio iskustvo</string>
+    <string name="experience_mode_choose_title">Izaberite vaše Nuvio Arc iskustvo</string>
     <string name="experience_mode_choose_subtitle">Počnite jednostavno ili otključajte svako prilagođavanje. Možete promeniti bilo kada.</string>
     <string name="experience_mode_essential_card_subtitle">Fokusirano podešavanje, dodaci, osnove reprodukcije, Trakt i podešavanja naloga.</string>
     <string name="experience_mode_advanced_card_subtitle">Puna podešavanja, kontrole rasporeda, redosled kataloga, kolekcije, priključci i dijagnostika.</string>
@@ -754,8 +755,8 @@
     <string name="playback_player_ask_desc">Izaberi plejer svaki put</string>
     <string name="playback_player_auto">Automatski (Najbolje za sadržaj)</string>
     <string name="playback_player_auto_desc">ExoPlayer za filmove i TV serije · MPV za anime</string>
-    <string name="playback_engine_exoplayer_desc">Najbolja kompatibilnost sa trenutnim Nuvio funkcijama.</string>
-    <string name="playback_engine_mvplayer_desc">Koristi libmpv sa Nuvio OSD kontrolama. Eksperimentalno.</string>
+    <string name="playback_engine_exoplayer_desc">Najbolja kompatibilnost sa trenutnim Nuvio Arc funkcijama.</string>
+    <string name="playback_engine_mvplayer_desc">Koristi libmpv sa Nuvio Arc OSD kontrolama. Eksperimentalno.</string>
 
     <string name="video_section">Video</string>
     <string name="audio_trailer_section">Trejler</string>
@@ -1366,7 +1367,7 @@
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_library_source_title">Izvor biblioteke</string>
-    <string name="trakt_library_source_subtitle">Izaberite koji izvor Nuvio čita za vašu Biblioteku</string>
+    <string name="trakt_library_source_subtitle">Izaberite koji izvor Nuvio Arc čita za vašu Biblioteku</string>
     <string name="trakt_library_source_dialog_title">Izvor biblioteke</string>
     <string name="trakt_library_source_dialog_subtitle">Izaberite gde ćete čuvati i upravljati stavkama vaše biblioteke</string>
     <string name="trakt_library_source_trakt">Trakt</string>
@@ -1404,7 +1405,7 @@
     <string name="trakt_stat_watched_hours">Odgledano sati</string>
     <string name="trakt_disconnect">Prekini vezu</string>
     <string name="trakt_disconnect_title">Prekinuti vezu sa Trakt-om?</string>
-    <string name="trakt_disconnect_subtitle">Ovo će odspojiti vaš Trakt nalog sa Nuvio-a.</string>
+    <string name="trakt_disconnect_subtitle">Ovo će odspojiti vaš Trakt nalog sa Nuvio Arca.</string>
     <string name="trakt_login">Prijava</string>
     <string name="trakt_retry">Pokušaj ponovo</string>
     <string name="trakt_back">Nazad</string>
@@ -1634,7 +1635,7 @@
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">P2P strimovanje</string>
-    <string name="p2p_consent_body">Ovaj strim koristi peer-to-peer (P2P) tehnologiju. Omogućavanjem P2P-a potvrđujete i saglasni ste da:\n\n\u2022 Vaša IP adresa će biti vidljiva drugim korisnicima u mreži\n\u2022 Vi ste isključivo odgovorni za sadržaj kom pristupate\n\u2022 Potvrđujete da imate zakonsko pravo na strimovanje ovog sadržaja u vašoj jurisdikciji\n\u2022 Nuvio ne hostuje, ne distribuira i ne kontroliše P2P sadržaj\n\u2022 Nuvio ne snosi nikakvu odgovornost za pravne posledice proistekle iz vašeg korišćenja P2P strimovanja\n\nOvu funkciju koristite isključivo na sopstvenu odgovornost. P2P se može onemogućiti u bilo kom trenutku u Podešavanjima.</string>
+    <string name="p2p_consent_body">Ovaj strim koristi peer-to-peer (P2P) tehnologiju. Omogućavanjem P2P-a potvrđujete i saglasni ste da:\n\n\u2022 Vaša IP adresa će biti vidljiva drugim korisnicima u mreži\n\u2022 Vi ste isključivo odgovorni za sadržaj kom pristupate\n\u2022 Potvrđujete da imate zakonsko pravo na strimovanje ovog sadržaja u vašoj jurisdikciji\n\u2022 Nuvio Arc ne hostuje, ne distribuira i ne kontroliše P2P sadržaj\n\u2022 Nuvio Arc ne snosi nikakvu odgovornost za pravne posledice proistekle iz vašeg korišćenja P2P strimovanja\n\nOvu funkciju koristite isključivo na sopstvenu odgovornost. P2P se može onemogućiti u bilo kom trenutku u Podešavanjima.</string>
     <string name="p2p_consent_enable">Omogući P2P</string>
     <string name="p2p_consent_cancel">Otkaži</string>
     <string name="settings_p2p_title">P2P strimovanje</string>
@@ -2199,7 +2200,7 @@
     <string name="catalog_see_all_empty_title">Nema dostupnih stavki</string>
     <string name="catalog_see_all_empty_subtitle">Pokušajte sa drugim katalogom ili proverite ponovo kasnije</string>
 
-    <string name="layout_selection_welcome">Welcome to Nuvio</string>
+    <string name="layout_selection_welcome">Welcome to Nuvio Arc</string>
     <string name="layout_selection_subtitle">Izaberite raspored početnog ekrana</string>
     <string name="layout_selection_continue">Continue</string>
 
@@ -2384,7 +2385,7 @@
     <string name="cd_preview">Pregled</string>
     <string name="cd_test">Testiraj</string>
     <string name="cd_unlink">Prekini vezu</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Trakt logotip</string>
     <string name="cd_trakt_qr">QR kod za Trakt aktivaciju</string>
     <string name="cd_imdb">IMDb</string>
@@ -2538,7 +2539,7 @@
     <string name="collections_editor_tmdb_list_helper">Primer: https://www.themoviedb.org/list/8504994 ili 8504994.</string>
     <string name="collections_editor_tmdb_person_id">ID osobe</string>
     <string name="collections_editor_tmdb_person_helper">Primer: https://www.themoviedb.org/person/31-tom-hanks ili 31.</string>
-    <string name="collections_editor_tmdb_title_helper">Prikazuje se kao naziv reda/kartice. Ako ostavite prazno, Nuvio će ga kreirati na osnovu izvora.</string>
+    <string name="collections_editor_tmdb_title_helper">Prikazuje se kao naziv reda/kartice. Ako ostavite prazno, Nuvio Arc će ga kreirati na osnovu izvora.</string>
     <string name="collections_editor_tmdb_quick_genres">Brzi žanrovi</string>
     <string name="collections_editor_tmdb_quick_languages">Brzi jezici</string>
     <string name="collections_editor_tmdb_quick_countries">Brze zemlje</string>
@@ -2720,7 +2721,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">Bez REMUX/HDR</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">Koristi ugrađeni NuvioTV plejer</string>
+    <string name="playback_player_internal_desc">Koristi ugrađeni Nuvio Arc plejer</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d sedera · %2$d pira</string>
@@ -2821,9 +2822,9 @@
     <string name="simkl_visit">Poseti Simkl</string>
     <string name="simkl_sync_info_action">Kako funkcioniše sinhronizacija</string>
     <string name="simkl_sync_info_title">Kako funkcioniše Simkl sinhronizacija</string>
-    <string name="simkl_sync_info_description">Nuvio automatski proverava Simkl najviše jednom u %1$d minuta. Promenama napravljenim putem druge aplikacije ili Simkl veb-sajta može biti potrebno toliko vremena da se prikažu.</string>
+    <string name="simkl_sync_info_description">Nuvio Arc automatski proverava Simkl najviše jednom u %1$d minuta. Promenama napravljenim putem druge aplikacije ili Simkl veb-sajta može biti potrebno toliko vremena da se prikažu.</string>
     <string name="simkl_sync_info_activity">Svako osvežavanje prvo proverava da li Simkl prijavljuje promene i preuzima samo ažuriranja. Ovo prati pravila Simkl API-ja, smanjuje nepotrebnu potrošnju podataka i pomaže u održavanju stabilnosti usluge.</string>
-    <string name="simkl_sync_info_manual">Promene napravljene u Nuvio aplikaciji se odmah šalju na Simkl. Koristite „Sinhronizuj sada“ kad god želite da Nuvio ranije proveri ima li udaljenih promena.</string>
+    <string name="simkl_sync_info_manual">Promene napravljene u Nuvio Arc aplikaciji se odmah šalju na Simkl. Koristite „Sinhronizuj sada“ kad god želite da Nuvio Arc ranije proveri ima li udaljenih promena.</string>
     <string name="simkl_sync_info_library_statuses">Serije koje su na Simkl-u stavljene na liste „Na čekanju“ ili „Odbačeno“ sakrivene su iz odeljka „Nastavi gledanje“. Ostaju sakrivene sve dok se nalaze na bilo kojoj od te dve liste.</string>
     <string name="simkl_sync_info_docs">Pročitajte vodič za Simkl sinhronizaciju</string>
     <string name="error_open_browser_failed">Otvaranje veb-pregledača nije uspelo</string>
@@ -3198,16 +3199,21 @@
     <string name="appearance_screensaver_dim_gentle">Ekran ostaje jasno vidljiv</string>
     <string name="appearance_screensaver_dim_balanced">Tamno, ali čitljivo</string>
     <string name="appearance_screensaver_dim_strong">Jedva vidljivo</string>
+    <string name="appearance_app_icon_mint">Menta</string>
     <string name="licenses_attributions_avatars_title">Avatari za zajedničko gledanje</string>
     <string name="licenses_attributions_avatars_body">Napravljeno uz DiceBear, preradom ovih dizajna: \"Fun Emoji\" autora Davis Uche i \"Adventurer\" autorke Lisa Wischofsky, pod licencom CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" autorke Lisa Wischofsky, \"Notionists\" autora Zoish, \"Pixel Art\" i \"Thumbs\" autora DiceBear, CC0 1.0. \"Bottts\" autora Pablo Stanley, slobodno za ličnu i komercijalnu upotrebu. Životinjska lica iz Twemoji-ja kompanije Twitter, Inc. i drugih saradnika, pod licencom CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby i Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio se povezuje sa vašim sopstvenim Jellyfin, Emby ili Silo serverom. Njihovi nazivi i logotipi pripadaju njihovim vlasnicima. Nuvio nije povezan niti podržan od strane Jellyfin-a, Emby-ja ili Silo-a.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc se povezuje sa vašim sopstvenim Jellyfin, Emby ili Silo serverom. Njihovi nazivi i logotipi pripadaju njihovim vlasnicima. Nuvio Arc nije povezan niti podržan od strane Jellyfin-a, Emby-ja ili Silo-a.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Liste grupa izdanja. MIT licenca.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Obrada Dolby Vision metapodataka. Autor: quietvoid. MIT licenca.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Dekodiranje zvuka. Licencirano pod LGPL 2.1 ili novijom.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Softversko dekodiranje AV1 videa. Autori: VideoLAN i tvorci dav1d-a. BSD 2-Clause licenca.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Prepoznavanje mogućnosti procesora za AV1 dekoder. Autor: Google. Apache licenca 2.0.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHD MAT pakovanje i miksovanje zvuka na manje kanala (downmix) preuzeti su iz Kodi-ja. Licencirano pod GPL 2.0 ili novijom.</string>
     <string name="settings_experience_subtitle">Osnovno ili napredno</string>
@@ -3243,8 +3249,9 @@
     <string name="playback_section_audio_desc">Kontrole zvuka i kompatibilnost videa.</string>
     <string name="playback_afr_open">Otvoreno</string>
     <string name="playback_afr_closed">Zatvoreno</string>
+    <string name="audio_tunneled_sub_prefer_app">Nije dostupno dok je Prioritet dekodera podešen na Daj prednost dekoderima aplikacije</string>
     <string name="audio_use_system_passthrough">Sistemski passthrough</string>
-    <string name="audio_use_system_passthrough_sub">Šalje TrueHD i DTS-HD prijemniku preko Android-a (sistemska putanja) umesto preko Nuvio (IEC putanja). Koristite ako formati bez gubitaka daju šum, gube sinhronizaciju ili nemaju zvuk.</string>
+    <string name="audio_use_system_passthrough_sub">Šalje TrueHD i DTS-HD prijemniku preko Android-a (sistemska putanja) umesto preko Nuvio Arc (IEC putanja). Koristite ako formati bez gubitaka daju šum, gube sinhronizaciju ili nemaju zvuk.</string>
     <string name="audio_surround_header">Surround zvuk</string>
     <string name="audio_surround_reset_iec_probe">Obriši odluku IEC provere</string>
     <string name="audio_surround_reset_iec_probe_sub">Ponovo testira IEC 61937 izlaz. Koristite ako formati bez gubitaka prelaze na PCM posle promene prijemnika ili ulaza.</string>
@@ -3293,6 +3300,10 @@
     <string name="audio_inject_hdr10_sei_sub">Za DV8 (profil 8) sadržaj sveden na HDR10 osnovni sloj dodaje mastering metapodatke izvora (MaxCLL/MaxFALL i vršnu osvetljenost) da HDR10 TV bez DV ispravno mapiraju tonove. Aktivno samo kada je Rukovanje Dolby Vision sadržajem postavljeno na Uvek ukloni DV ili HDR10 osnovni sloj; bez uticaja na profil 7 i Dolby Vision reprodukciju.</string>
     <string name="diag_value_not_advertised">Nije prijavljeno (nativna reprodukcija možda ipak radi)</string>
     <string name="diag_label_dv_el_type">DV7 EL tip</string>
+    <string name="diag_value_dv7_native_route">Koristi se nativna dvoslojna ruta (Android je ne prijavljuje)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, korišćena sva tri sloja</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, konvertovano u 8.1 (EL se ne koristi)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · samo BL (RPU i EL se ne koriste)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR mastering</string>
     <string name="diag_label_dv_rpu_drops">DV RPU gubici</string>
     <string name="sub_tertiary_lang">Treći željeni jezik</string>
@@ -3300,6 +3311,10 @@
     <string name="sub_addon_subtitles_desc">Preuzima titlove iz instaliranih dodataka tokom reprodukcije. Kada je isključeno, dostupni su samo titlovi ugrađeni u fajl.</string>
     <string name="autoplay_quality_rules_title">Pravila kvaliteta</string>
     <string name="autoplay_quality_rules_subtitle">Filteri, sortiranje i nivoi grupa izdanja u Povezanim uslugama.</string>
+    <string name="stream_sort_sources">Sortiraj izvore</string>
+    <string name="stream_sort_sources_sub">Redosled liste strimova. Prvo najbolji kvalitet koristi vaša Pravila kvaliteta.</string>
+    <string name="stream_sort_sources_source_order">Redosled izvora</string>
+    <string name="stream_sort_sources_best_first">Prvo najbolji kvalitet</string>
     <string name="autoplay_eager_ready_title">Brže spremno na sporim izvorima</string>
     <string name="autoplay_eager_ready_sub">Pripremi reprodukciju čim istekne vreme za izbor, bez čekanja najsporijeg dodatka. Važi za stranicu detalja i Nastavak gledanja.</string>
     <string name="autoplay_mode_quality">Najbolji kvalitet</string>
@@ -3310,6 +3325,17 @@
     <string name="layout_landscape_posters_home_only_desc">Horizontalne kartice na Početnoj, vertikalne u Biblioteci, Pretrazi i listama</string>
     <string name="layout_landscape_posters_everywhere">Svuda</string>
     <string name="layout_landscape_posters_everywhere_desc">Horizontalne kartice na Početnoj, u Biblioteci, Pretrazi i listama</string>
+    <string name="layout_hide_side_icons">Sakrij bočne ikonice</string>
+    <string name="layout_hide_side_icons_sub">Sakrij ikonice menija na levoj ivici dok je meni zatvoren. Pritisnite Levo ili Nazad da otvorite meni.</string>
+    <string name="layout_watched_titles">Odgledani naslovi</string>
+    <string name="layout_watched_titles_sub">Prikaži, zatamni ili sakrij filmove i serije koje ste odgledali do kraja.</string>
+    <string name="layout_watched_titles_dialog_title">Odgledani naslovi</string>
+    <string name="layout_watched_titles_show">Prikaži</string>
+    <string name="layout_watched_titles_show_desc">Odgledani naslovi ostaju kakvi jesu, sa kvačicom.</string>
+    <string name="layout_watched_titles_dim">Zatamni</string>
+    <string name="layout_watched_titles_dim_desc">Odgledani naslovi ostaju na mestu, tamniji, sa kvačicom.</string>
+    <string name="layout_watched_titles_hide">Sakrij</string>
+    <string name="layout_watched_titles_hide_desc">Odgledani filmovi i potpuno odgledane serije izostavljaju se iz redova Početne i banera. Nastavi gledanje se ne menja.</string>
     <string name="layout_trailer_logo">Logo preko trejlera na kartici</string>
     <string name="layout_trailer_logo_sub">Prikaži logo naslova preko trejlera koji se pušta na kartici.</string>
     <string name="mdblist_account_title">Nalog</string>
@@ -3332,6 +3358,8 @@
     <string name="player_layout_more_fixed_help">Pritisnite OK da sakrijete/prikažete Još. Ostaje sasvim desno. Pomerajte druge akcije preko granice njegovog menija da promenite šta je u iskačućem meniju.</string>
     <string name="player_error_placeholder_stream">Ovaj strim izgleda kao kartica greške provajdera, a ne video. Probajte drugi izvor.</string>
     <string name="subtitle_panel_languages">Jezici</string>
+    <string name="library_sort_released_desc">Datum izlaska ↓</string>
+    <string name="library_sort_released_asc">Datum izlaska ↑</string>
     <string name="library_empty_mdblist_title">Nema %1$s na listi za gledanje</string>
     <string name="library_empty_mdblist_subtitle">Koristite + u detaljima da dodate stavke na MDBList listu za gledanje</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList nije povezan</string>
@@ -3352,6 +3380,7 @@
     <string name="library_transfer_copy">Kopiraj</string>
     <string name="library_transfer_move">Premesti (kopiraj, pa ukloni iz izvora)</string>
     <string name="library_transfer_none">Nema šta da se kopira</string>
+    <string name="sub_mode_effects_warning">Zahtevno: u 4K može da preskače kadrove i isključuje tuneliranu reprodukciju.</string>
     <string name="cd_playback_stats">Statistika reprodukcije</string>
     <string name="player_stats_unavailable_mpv">Statistika nije dostupna za libmpv mehanizam</string>
     <string name="player_dead_source_failover">Izvor nedostupan - pokušaj sa sledećim izvorom (%1$d/%2$d)</string>
@@ -3367,6 +3396,17 @@
     <string name="debrid_filters_show_everything_title">Prikaži sve</string>
     <string name="debrid_filters_show_everything_subtitle">Uklanja sve filtere i ograničenja broja rezultata; pametno sortiranje ostaje.</string>
     <string name="debrid_filters_show_everything_action">Prikaži sve</string>
+    <string name="playback_net_device_memory_auto">Ovaj uređaj ima %1$s memorije. Aplikacija baferuje do %2$d MB unapred, manje kada nedostaje memorije.</string>
+    <string name="playback_net_native_memory_sub">Aplikacija određuje bafer za ovaj uređaj i drži ga u nativnoj memoriji, uz brže premotavanje. Uključivanje podešava i vrednosti bafera i mreže ispod za ovaj uređaj.</string>
+    <string name="playback_buffer_custom_desc">Koristi vrednosti ispod umesto vrednosti aplikacije. Isključeno: sa uključenom nativnom memorijom ExoPlayer-a aplikacija baferuje od 15 do 45 s u veličini izabranoj za uređaj; bez nje standardni bafer Media3.</string>
+    <string name="playback_buffer_seconds_hint">Pri %1$d MB ovo drži oko %2$d s 4K remuksa (80 Mbit/s). Duža podešavanja ništa ne menjaju.</string>
+    <string name="playback_buffer_back_fitted">Čuva se unutar ciljne veličine bafera. Pri %1$d MB aplikacija čuva do oko %2$d s (%3$d MB pri 80 Mbit/s), pa najmanje 5 s ostaje unapred.</string>
+    <string name="playback_buffer_back_fitted_none">Čuva se unutar ciljne veličine bafera. Pri %1$d MB za njega nema mesta, pa aplikacija umesto toga drži 5 s unapred.</string>
+    <string name="playback_buffer_managed_desc">Određuje bafer prema slobodnoj memoriji uređaja na početku reprodukcije i smanjuje ga kad memorije ponestane. Isključite da biste sami izabrali ciljnu veličinu bafera; na slabijim uređajima veća veličina može da izazove seckanje.</string>
+    <string name="playback_buffer_target_size_sub">Memorija za baferovanje videa unapred. Ograničenje prati ukupnu memoriju ovog uređaja. Kada je Upravljano ograničenje memorije uključeno, aplikacija određuje veličinu prema slobodnoj memoriji pri pokretanju reprodukcije. Bafer se smanjuje dok uređaju nedostaje memorije.</string>
+    <string name="playback_buffer_target_stutter_warning">Ovaj uređaj ima %1$s memorije. Iznad %2$d MB reprodukcija može da secka.</string>
+    <string name="playback_buffer_allow_large_desc">Dozvoljava ciljnu veličinu bafera do 2 GB. Samo za uređaje sa 4 GB memorije ili više; na manjim velike veličine seckaju ili ruše aplikaciju.</string>
+    <string name="playback_net_connection_count_small_box">Ovaj uređaj ima %1$s memorije. Sa više od 2 veze reprodukcija može da secka.</string>
     <string name="diag_label_serving_host">Host koji isporučuje</string>
     <string name="diag_label_file">Fajl</string>
     <string name="diag_label_dv_applied">DV primenjen</string>
@@ -3376,16 +3416,16 @@
     <string name="diag_value_dv_base_layer">DV zanemaren - HDR10 osnovni sloj</string>
     <string name="diag_label_audio_path">Audio putanja</string>
     <string name="diag_label_audio_caps">Audio lanac prijavljuje</string>
+    <string name="playback_estimated_memory_parts">Procenjena potrošnja memorije: oko %1$d MB (bafer %2$d MB + preuzimanja %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Procenjena potrošnja memorije: oko %1$d MB (bafer %2$d MB)</string>
     <string name="stream_test_serving_host_label">Host koji isporučuje: %1$s</string>
     <string name="stream_test_file_label">Fajl: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Preporuka: ostavite paralelne veze isključene - jedna veza već daje %1$s, više od 2\u00d7 bitrejta ovog naslova.</string>
     <string name="stream_test_verdict_recommend">Preporuka: %1$d veza / blokovi od %2$d MB - %3$s. Konfiguracija sa najmanje memorije koja dostiže 2\u00d7 bitrejt ovog naslova; brže konfiguracije mogu biti iznad, ali troše više memorije bez koristi za reprodukciju.</string>
     <string name="stream_test_verdict_marginal">Najbolji rezultat: %1$d veza / blokovi od %2$d MB pri %3$s - iznad prosečnog bitrejta naslova (%4$s), ali ispod cilja od 2\u00d7 rezerve. Reprodukcija bi trebalo da radi, ali može baferovati u scenama visokog bitrejta ili pri premotavanju.</string>
     <string name="stream_test_verdict_cannot_sustain">Ova veza ne može da izdrži ovaj naslov - najbrža testirana konfiguracija (%1$d veza / blokovi od %2$d MB) dostigla je %3$s, ispod prosečnog bitrejta naslova (%4$s). Očekujte baferovanje; razmislite o verziji nižeg bitrejta.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Najbrža stabilna: %1$d veza / blokovi od %2$d MB pri %3$s. Bitrejt naslova nije poznat - prvo pustite video za prilagođenu preporuku.</string>
-    <string name="stream_test_verdict_pm_suffix">" Zahteva Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Meri samo sirovi protok preuzimanja - stvarna reprodukcija zavisi i od baferovanja, dekodiranja i opterećenja servera, a u memoriji drži i ciljni bafer.</string>
     <string name="stream_test_label_parallel_dyn">Paralelno povezivanje (%1$d veza / blokovi od %2$d MB)</string>
     <string name="stream_test_btn_measuring_dyn">Merenje: %1$s\u2026</string>
@@ -3418,7 +3458,6 @@
     <string name="assessment_item_parallel">Paralelne veze</string>
     <string name="assessment_item_chunk">Veličina bloka (Chunk)</string>
     <string name="assessment_item_network_master">Prilagođena mreža</string>
-    <string name="assessment_item_http2">Omogući HTTP/2</string>
     <string name="assessment_item_perf_mode">ExoPlayer nativna memorija</string>
     <string name="assessment_item_buffer_master">Prilagođeni baferi reprodukcije</string>
     <string name="assessment_item_managed_budget">Upravljano ograničenje memorije</string>
@@ -3439,15 +3478,18 @@
     <string name="assessment_grounds_parallel_cannot">Najbrže izmereno %1$s pri %2$d \u00d7 %3$d MB - ispod bitrejta samog naslova; ova veza ne može da izdrži strim</string>
     <string name="assessment_grounds_parallel_fastest">Najbrže izmereno %1$s pri %2$d \u00d7 %3$d MB - bitrejt naslova nije bio poznat, pa nema ocene dovoljnosti</string>
     <string name="assessment_grounds_chunk">Upareno sa brojem veza iznad, iz istog merenog prolaza</string>
-    <string name="assessment_grounds_network_master">Glavni prekidač za HTTP/2 i paralelna podešavanja ispod</string>
-    <string name="assessment_grounds_http2">Multipleksira zahteve za opsege preko jedne veze; uglavnom korisno, provera nije potrebna</string>
     <string name="assessment_grounds_perf_mode">Drži bafere veličine remuksa van Java heap-a da čišćenje memorije ne izaziva trzanje slike; ograničenja memorije se prilagođavaju klasi ovog uređaja %1$s (bezbedno %2$d MB / upozorenje %3$d MB), a više od %4$d veza to zahteva</string>
     <string name="assessment_grounds_perf_mode_unsupported">Zahteva Android 8.0 ili noviji</string>
-    <string name="assessment_grounds_buffer_master">Isključeno znači fabričku kontrolu učitavanja media3: cilj računat u bajtovima, oko 13 MB, što drži \u2248 1 s remuksa bez obzira na vrednosti trajanja - vrednosti ispod su prilagođene ovom uređaju</string>
-    <string name="assessment_grounds_managed_budget">Upravljani režim vezuje cilj za bezbednu granicu i zanemaruje trošak paralelnih veza; izričiti cilj ispod uračunava oba</string>
-    <string name="assessment_grounds_target_buffer">Cilj %1$d + %2$d MB troška veza = %3$d MB \u2264 bezbedne granice od %4$d MB (najveći korak od %5$d MB koji staje)</string>
-    <string name="assessment_grounds_allow_large_on">Potrebno da klizač cilja dostigne %1$d MB na ovom uređaju</string>
-    <string name="assessment_grounds_allow_large_off">Preporučeni cilj staje u standardni opseg klizača</string>
+    <string name="assessment_grounds_native_auto">Aplikacija određuje bafer za ovaj uređaj od %1$s (do %2$d MB, manje kad nedostaje memorije) i drži ga u nativnoj memoriji</string>
+    <string name="assessment_grounds_buffer_custom_times">Profil bafera ispod određuje vremena bafera; veličina ostaje automatska</string>
+    <string name="assessment_grounds_managed_on">Određuje bafer prema slobodnoj memoriji na početku reprodukcije i smanjuje ga kad memorije ponestane; fiksna veličina ne može ni jedno ni drugo</string>
+    <string name="assessment_value_target_auto">Automatski (do %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Kada je upravljano ograničenje memorije uključeno, aplikacija ovo bira na početku reprodukcije</string>
+    <string name="assessment_grounds_allow_large_small_box">Samo za uređaje sa 4 GB memorije ili više; na ovom uređaju od %1$s velike veličine seckaju ili ruše aplikaciju</string>
+    <string name="assessment_grounds_allow_large_managed">Nema efekta dok je upravljano ograničenje memorije uključeno</string>
+    <string name="assessment_grounds_network_for_parallel">Uključuje paralelne veze preporučene iznad</string>
+    <string name="assessment_grounds_network_parallel_only">Potrebno samo za paralelne veze; jedna veza je ovde dovoljno brza</string>
+    <string name="assessment_grounds_network_untested">Potrebno samo za paralelne veze, a nijedan strim nije testiran da bi se o njima odlučilo</string>
     <string name="assessment_grounds_max_buffer">Cilj od %1$d MB drži \u2248%2$d s ovog naslova (%3$s) - sekunde preko toga ne mogu da se ostvare</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Bitrejt naslova nije poznat - granica u bajtovima ne može da se izračuna; ograničenje ostaje %1$d s</string>
     <string name="assessment_grounds_vod_auto">Automatski određuje veličinu prema slobodnom prostoru (20%% slobodnog u okviru granica, 1 GB rezerve) - \u2248%1$s na ovom uređaju sada</string>
@@ -3484,7 +3526,7 @@
     <string name="assessment_no_stream">Nema poslednjeg puštenog strima - redovi o uređaju će se ipak izračunati. Za merene redove prvo pustite svoj najzahtevniji uobičajeni naslov, pa pokrenite ponovo.</string>
     <string name="assessment_header_title">Podaci o uređaju</string>
     <string name="assessment_header_device">Uređaj</string>
-    <string name="assessment_header_device_value">%1$s - bezbedno %2$d MB / upozorenje %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - bafer do %2$d MB / opasnost iznad %3$d MB</string>
     <string name="assessment_header_display">Ekran</string>
     <string name="assessment_header_display_unknown">Ne može se ispitati sa ovog ekrana</string>
     <string name="assessment_header_stream">Poslednji strim</string>
@@ -3505,8 +3547,7 @@
     <string name="assessment_footer">Mereni redovi su testirani na ovom uređaju; izračunati redovi su izvedeni iz dostupnih podataka. Primena upisuje samo merene i izračunate redove i profil koji izaberete - redovi za proveru se nikada ne menjaju automatski. Vraćanje poništava poslednju primenu.</string>
     <string name="stream_test_verdict_recommend_trade">Preporuka: %1$d veza / blokovi od %2$d MB - %3$s (%4$s\u00d7 bitrejta ovog naslova). Izabrano umesto %5$d \u00d7 %6$d MB (2\u00d7+) jer u ograničenju memorije ovog uređaja ostavlja %7$d MB \u2248 %8$d s bafera reprodukcije umesto %9$d MB \u2248 %10$d s - dubina rezerve je ovde važnija od brzine punjenja.</string>
     <string name="assessment_grounds_parallel_trade">Izmereno %1$s pri %2$d \u00d7 %3$d MB - dostiže 1.5\u00d7 bitrejt i ostavlja %6$d MB \u2248 %7$d s bafera; konfiguracija za 2\u00d7 (%4$d \u00d7 %5$d MB) ostavila bi samo %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Trenutnih %1$d MB + %2$d MB troška = %3$d MB je u zoni upozorenja (%4$d-%5$d MB) - upotrebljivo, uz manju rezervu</string>
-    <string name="assessment_grounds_target_current_danger">Trenutnih %1$d MB + %2$d MB troška = %3$d MB prelazi granicu upozorenja od %4$d MB - rizik od gašenja zbog malo memorije</string>
+    <string name="assessment_parallel_small_box_cap">Ovaj uređaj ima %1$s memorije, pa se preporučuju najviše 2 veze</string>
     <string name="assessment_grounds_max_buffer_current">Sa trenutnim ciljem od %1$d MB: \u2248 %2$d s stvarno, šta god pokazivao klizač sekundi - bajtovi ograničavaju prvi</string>
     <string name="assessment_item_engine">Interni mehanizam</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -3570,7 +3611,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV ne podržava promenu veličine slikovnih titlova. Koristite ExoPlayer da podesite njihovu veličinu nezavisno od teksta.</string>
     <string name="subtitle_style_image_size">Veličina slikovnih titlova</string>
     <string name="v2_accent_fixed_hint">Koristi temu boja, osim kada je izabrano Prilagodi slikama.</string>
-    <string name="about_fork_updates_subtitle">Ažuriranja sa NuvioTV-Fork. Sva izdanja forka su beta.</string>
+    <string name="about_fork_updates_subtitle">Ažuriranja iz Nuvio Arc izdanja na GitHubu.</string>
     <string name="playback_speculative_stream_search">Traži izvore pre puštanja</string>
     <string name="playback_speculative_stream_search_sub">Pretražuje dodatke tokom pregledanja radi bržeg izbora izvora. Neki dodaci mogu dodati ili preuzeti sadržaj tokom pretrage. Isključeno čeka do puštanja. Medijske veze i razrešavanje kod provajdera čekaju izbor za reprodukciju, osim pred kraj epizode kada sličice za premotavanje pripremaju sledeću.</string>
     <string name="debrid_cached_playback_links">Ponovo koristi keširane veze za reprodukciju</string>
@@ -3658,6 +3699,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Puštanje počinje odmah; sličice se prave tokom pauze i kada prestanete da gledate.</string>
     <string name="seek_thumbnails_prepare_on">Uključeno</string>
     <string name="seek_thumbnails_prepare_on_desc">Pravi sličice za premotavanje naslova pre nego što počne. \"Počni gledanje odmah\" ili Nazad pokreće reprodukciju u bilo kom trenutku.</string>
+    <string name="seek_thumbnails_from_copy_title">Sličice iz kopije</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Brže sličice za 4K naslove iz 1080p ili 720p kopije, a za Usenet naslove iz kopije koja nije na Usenet mreži. Keširana TorBox kopija može biti dodata na vašu listu na nekoliko minuta.</string>
     <string name="seek_thumbnails_clear_title">Obriši sačuvane sličice</string>
     <string name="seek_thumbnails_clear_subtitle">Ponovo se prave sledeći put kada pustite naslov.</string>
     <string name="seek_thumbnails_cleared">Sačuvane sličice su obrisane</string>
@@ -3672,7 +3715,7 @@
     <string name="seek_thumbnails_time_left_minutes">Još oko %1$d min %2$d s</string>
     <string name="seek_thumbnails_count">%1$d od %2$d</string>
     <string name="seek_thumbnails_start_now">Počni gledanje odmah</string>
-    <string name="seek_thumbnails_settings_hint">Uključite ili isključite u Podešavanja › Reprodukcija › Opšte</string>
+    <string name="seek_thumbnails_settings_hint">Uključite ili isključite u Podešavanja › Reprodukcija › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Sličice %1$d%%</string>
     <string name="party_title">Zajedničko gledanje</string>
     <string name="party_settings_subtitle">Gledajte isto u istom trenutku sa ljudima u drugim domovima</string>
@@ -3714,6 +3757,7 @@
     <string name="party_member_buffering">baferovanje</string>
     <string name="party_member_catching_up">sustiže</string>
     <string name="party_member_away">nije tu</string>
+    <string name="party_member_needs_update">treba ažuriranje</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Vaša kopija je %1$s s duža od domaćinove. Gledanje može da se raziđe.</string>
     <string name="party_copy_shorter">Vaša kopija je %1$s s kraća od domaćinove. Gledanje može da se raziđe.</string>
@@ -3728,7 +3772,7 @@
     <string name="party_match_same">Isti fajl kao kod domaćina</string>
     <string name="party_match_likely">Verovatno domaćinova kopija</string>
     <string name="party_match_different">Drugačija kopija od domaćinove</string>
-    <string name="party_invite_text">Pridruži se mom zajedničkom gledanju u aplikaciji Nuvio. Otvori Podešavanja, zatim Zajedničko gledanje, i unesi kod %1$s</string>
+    <string name="party_invite_text">Pridruži se mom zajedničkom gledanju u aplikaciji Nuvio Arc. Otvori Podešavanja, zatim Zajedničko gledanje, i unesi kod %1$s</string>
     <string name="party_invite_qr">Skenirajte kamerom telefona da pošaljete pozivnicu porukom</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="type_movie">Film</string>
     <string name="type_series">Serie</string>
     <string name="type_unknown">Ukjent</string>
@@ -205,7 +205,7 @@
     <!-- AboutScreen -->
     <string name="about_title">Om</string>
     <string name="about_subtitle">Appinformasjon, oppdateringer og juridiske lenker</string>
-    <string name="about_made_with_love">Laget med ❤️ av Tapframe og venner</string>
+    <string name="about_made_with_love">Bygget på det flotte arbeidet til Tapframe og venner ❤️ · Nuvio Arc av ysosrs123</string>
     <string name="about_version">Versjon %1$s</string>
     <string name="about_check_updates">Se etter oppdateringer</string>
     <string name="about_check_updates_subtitle">Last ned siste versjon</string>
@@ -628,7 +628,7 @@
     <string name="trakt_stat_watched_hours">Sette timer</string>
     <string name="trakt_disconnect">Koble fra</string>
     <string name="trakt_disconnect_title">Koble fra Trakt?</string>
-    <string name="trakt_disconnect_subtitle">Dette vil koble fra Trakt-kontoen din fra Nuvio.</string>
+    <string name="trakt_disconnect_subtitle">Dette vil koble fra Trakt-kontoen din fra Nuvio Arc.</string>
     <string name="trakt_login">Logge inn</string>
     <string name="trakt_retry">Prøv igjen</string>
     <string name="trakt_back">Tilbake</string>
@@ -1051,7 +1051,7 @@
     <string name="catalog_see_all_empty_subtitle">Prøv en annen katalog eller kom tilbake senere</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Velkommen til Nuvio</string>
+    <string name="layout_selection_welcome">Velkommen til Nuvio Arc</string>
     <string name="layout_selection_subtitle">Velg oppsettet for hjemmeskjermen</string>
     <string name="layout_selection_continue">Fortsett</string>
 
@@ -1136,6 +1136,7 @@
     <string name="detail_trailer_error_age_restricted">Denne traileren har aldersgrense på YouTube og kan ikke spilles av her.</string>
     <string name="detail_trailer_error_unavailable">Denne traileren er ikke tilgjengelig på YouTube.</string>
     <string name="detail_trailer_error_sign_in">YouTube krever innlogging for å spille av denne traileren.</string>
+    <string name="theme_color_copper">Kobber</string>
     <string name="appearance_screensaver_group_title">OLED-skjermbeskyttelse</string>
     <string name="appearance_screensaver_group_subtitle">Demp skjermen ved inaktivitet for å redusere slitasje på panelet</string>
     <string name="appearance_screensaver_enabled">Demp ved inaktivitet</string>
@@ -1149,16 +1150,21 @@
     <string name="appearance_screensaver_dim_gentle">Skjermen er fortsatt godt synlig</string>
     <string name="appearance_screensaver_dim_balanced">Mørk, men lesbar</string>
     <string name="appearance_screensaver_dim_strong">Knapt synlig</string>
+    <string name="appearance_app_icon_mint">Mint</string>
     <string name="licenses_attributions_avatars_title">Avatarer for seerfest</string>
     <string name="licenses_attributions_avatars_body">Laget med DiceBear, som remikser disse designene: \"Fun Emoji\" av Davis Uche og \"Adventurer\" av Lisa Wischofsky, lisensiert under CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" av Lisa Wischofsky, \"Notionists\" av Zoish, \"Pixel Art\" og \"Thumbs\" av DiceBear, CC0 1.0. \"Bottts\" av Pablo Stanley, fri til personlig og kommersiell bruk. Dyreansikter fra Twemoji av Twitter, Inc. og andre bidragsytere, lisensiert under CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby og Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio kobler til din egen Jellyfin-, Emby- eller Silo-server. Navnene og logoene tilhører eierne sine. Nuvio er ikke tilknyttet eller godkjent av Jellyfin, Emby eller Silo.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc kobler til din egen Jellyfin-, Emby- eller Silo-server. Navnene og logoene tilhører eierne sine. Nuvio Arc er ikke tilknyttet eller godkjent av Jellyfin, Emby eller Silo.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Lister over release-grupper. MIT-lisens.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Tolking av Dolby Vision-metadata. Av quietvoid. MIT-lisens.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Lyddekoding. Lisensiert under LGPL 2.1 eller nyere.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Programvaredekoding av AV1-video. Av VideoLAN og dav1d-forfatterne. BSD 2-Clause-lisens.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Gjenkjenning av prosessorfunksjoner for AV1-dekoderen. Av Google. Apache 2.0-lisens.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHD MAT-pakking og nedmiksing av lyd er portert fra Kodi. Lisensiert under GPL 2.0 eller nyere.</string>
     <string name="settings_experience_subtitle">Grunnleggende eller Avansert</string>
@@ -1194,8 +1200,9 @@
     <string name="playback_section_audio_desc">Lydkontroller og videokompatibilitet.</string>
     <string name="playback_afr_open">Åpen</string>
     <string name="playback_afr_closed">Lukket</string>
+    <string name="audio_tunneled_sub_prefer_app">Ikke tilgjengelig når Dekoder prioritering er satt til Foretrekk appdekodere</string>
     <string name="audio_use_system_passthrough">Systemgjennomgang</string>
-    <string name="audio_use_system_passthrough_sub">Sender TrueHD og DTS-HD til mottakeren din gjennom Android (systemveien) i stedet for Nuvio (IEC-veien). Bruk dette hvis tapsfrie formater gir støy, lydforskyvning eller ingen lyd.</string>
+    <string name="audio_use_system_passthrough_sub">Sender TrueHD og DTS-HD til mottakeren din gjennom Android (systemveien) i stedet for Nuvio Arc (IEC-veien). Bruk dette hvis tapsfrie formater gir støy, lydforskyvning eller ingen lyd.</string>
     <string name="audio_surround_header">Surroundlyd</string>
     <string name="audio_surround_reset_iec_probe">Nullstill IEC-testresultat</string>
     <string name="audio_surround_reset_iec_probe_sub">Test IEC 61937-utgang på nytt. Bruk dette hvis tapsfrie formater faller tilbake til PCM etter bytte av mottaker eller inngang.</string>
@@ -1244,6 +1251,10 @@
     <string name="audio_inject_hdr10_sei_sub">For DV8-innhold (Profil 8) som er strippet til et HDR10-basislag, legges kildens mastringsmetadata (MaxCLL/MaxFALL og toppluminans) til, slik at HDR10-TV-er uten DV tonemapper riktig. Bare aktiv når DV-håndtering er Fjern DV eller HDR10-basislag; ingen effekt på Profil 7 eller ved Dolby Vision-avspilling.</string>
     <string name="diag_value_not_advertised">Ikke oppgitt (innebygd avspilling kan likevel fungere)</string>
     <string name="diag_label_dv_el_type">DV7 EL-type</string>
+    <string name="diag_value_dv7_native_route">Innebygd dobbeltlagsrute i bruk (Android oppgir den ikke)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, alle tre lag brukes</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, konvertert til 8.1 (EL brukes ikke)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · kun BL (RPU og EL brukes ikke)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR-mastring</string>
     <string name="diag_label_dv_rpu_drops">DV RPU-tap</string>
     <string name="sub_tertiary_lang">Tredje foretrukne språk</string>
@@ -1251,6 +1262,10 @@
     <string name="sub_addon_subtitles_desc">Hent undertekster fra installerte tillegg under avspilling. Når dette er av, er bare undertekster som ligger i filen tilgjengelige.</string>
     <string name="autoplay_quality_rules_title">Kvalitetsregler</string>
     <string name="autoplay_quality_rules_subtitle">Filtre, sortering og nivåer for utgivelsesgrupper i Tilkoblede tjenester.</string>
+    <string name="stream_sort_sources">Sorter kilder</string>
+    <string name="stream_sort_sources_sub">Rekkefølgen i strømlisten. Beste kvalitet først bruker Kvalitetsreglene dine.</string>
+    <string name="stream_sort_sources_source_order">Kildenes rekkefølge</string>
+    <string name="stream_sort_sources_best_first">Beste kvalitet først</string>
     <string name="autoplay_eager_ready_title">Raskere klar med trege kilder</string>
     <string name="autoplay_eager_ready_sub">Klargjør avspillingen så snart tidsavbruddet for valget er nådd, i stedet for å vente på det tregeste tillegget. Gjelder detaljsiden og Fortsett å se.</string>
     <string name="autoplay_mode_quality">Beste kvalitet</string>
@@ -1261,6 +1276,17 @@
     <string name="layout_landscape_posters_home_only_desc">Landskapskort på Hjem, portrett i Bibliotek, Søk og lister</string>
     <string name="layout_landscape_posters_everywhere">Overalt</string>
     <string name="layout_landscape_posters_everywhere_desc">Landskapskort på Hjem, i Bibliotek, Søk og lister</string>
+    <string name="layout_hide_side_icons">Skjul sideikoner</string>
+    <string name="layout_hide_side_icons_sub">Skjul menyikonene i venstre kant mens menyen er lukket. Trykk Venstre eller Tilbake for å åpne menyen.</string>
+    <string name="layout_watched_titles">Sette titler</string>
+    <string name="layout_watched_titles_sub">Vis, demp eller skjul filmer og serier du har sett ferdig.</string>
+    <string name="layout_watched_titles_dialog_title">Sette titler</string>
+    <string name="layout_watched_titles_show">Vis</string>
+    <string name="layout_watched_titles_show_desc">Sette titler blir som de er, med en hake.</string>
+    <string name="layout_watched_titles_dim">Demp</string>
+    <string name="layout_watched_titles_dim_desc">Sette titler blir stående, mørkere, med en hake.</string>
+    <string name="layout_watched_titles_hide">Skjul</string>
+    <string name="layout_watched_titles_hide_desc">Sette filmer og ferdigsette serier utelates fra radene på Hjem og banneret. Fortsett å se påvirkes ikke.</string>
     <string name="layout_trailer_logo">Logo over korttrailer</string>
     <string name="layout_trailer_logo_sub">Vis tittellogoen over en trailer som spilles i et kort.</string>
     <string name="mdblist_account_title">Konto</string>
@@ -1283,6 +1309,8 @@
     <string name="player_layout_more_fixed_help">Trykk OK for å skjule/vise Mer. Den blir stående helt til høyre. Flytt andre handlinger over menygrensen for å endre hva popupen inneholder.</string>
     <string name="player_error_placeholder_stream">Denne strømmen ser ut som et feilkort fra leverandøren, ikke videoen. Prøv en annen kilde.</string>
     <string name="subtitle_panel_languages">Språk</string>
+    <string name="library_sort_released_desc">Utgitt ↓</string>
+    <string name="library_sort_released_asc">Utgitt ↑</string>
     <string name="library_empty_mdblist_title">Ingen %1$s på ønskelisten din</string>
     <string name="library_empty_mdblist_subtitle">Bruk + i detaljer for å legge til på MDBList-ønskelisten din</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList er ikke tilkoblet</string>
@@ -1303,6 +1331,7 @@
     <string name="library_transfer_copy">Kopier</string>
     <string name="library_transfer_move">Flytt (kopier, og fjern deretter fra kilden)</string>
     <string name="library_transfer_none">Ingenting å kopiere</string>
+    <string name="sub_mode_effects_warning">Krevende: kan miste bilder i 4K og slår av tunnelert avspilling.</string>
     <string name="cd_playback_stats">Avspillingsstatistikk</string>
     <string name="player_stats_unavailable_mpv">Statistikk er ikke tilgjengelig for libmpv-motoren</string>
     <string name="player_dead_source_failover">Kilden er utilgjengelig - prøver neste kilde (%1$d/%2$d)</string>
@@ -1318,6 +1347,17 @@
     <string name="debrid_filters_show_everything_title">Vis alt</string>
     <string name="debrid_filters_show_everything_subtitle">Fjern alle filtre og resultatgrenser; behold smart sortering.</string>
     <string name="debrid_filters_show_everything_action">Vis alle</string>
+    <string name="playback_net_device_memory_auto">Denne boksen har %1$s minne. Appen bufrer opptil %2$d MB på forhånd, mindre når minnet er knapt.</string>
+    <string name="playback_net_native_memory_sub">Lar appen tilpasse bufferen til denne boksen og holde den i nativt minne, med raskere spoling. Når den slås på, settes også buffer- og nettverksverdiene nedenfor for denne boksen.</string>
+    <string name="playback_buffer_custom_desc">Bruk verdiene nedenfor i stedet for appens egne. Av: med ExoPlayer native memory på bufrer appen 15 til 45 s innenfor størrelsen den velger for denne boksen; ellers Media3s standardbuffer.</string>
+    <string name="playback_buffer_seconds_hint">Ved %1$d MB rommer dette omtrent %2$d s av en 4K-remux (80 Mbit/s). Lengre innstillinger gjør ingen forskjell.</string>
+    <string name="playback_buffer_back_fitted">Holdes innenfor Målbufferstørrelse. Ved %1$d MB beholder appen opptil omtrent %2$d s av den (%3$d MB ved 80 Mbit/s), så minst 5 s ligger foran.</string>
+    <string name="playback_buffer_back_fitted_none">Holdes innenfor Målbufferstørrelse. Ved %1$d MB er det ikke plass til den, så appen holder 5 s foran i stedet.</string>
+    <string name="playback_buffer_managed_desc">Setter bufferen ut fra ledig minne når avspillingen starter, og krymper den når boksen får lite minne. Slå av for å velge Målbufferstørrelse selv; på små bokser kan en større verdi få avspillingen til å hakke.</string>
+    <string name="playback_buffer_target_size_sub">Minne som brukes til å bufre video på forhånd. Grensen følger boksens totale minne. Med Managed memory budget på velger appen størrelsen ut fra ledig minne ved avspillingsstart. Bufferen krymper mens boksen har lite minne.</string>
+    <string name="playback_buffer_target_stutter_warning">Denne boksen har %1$s minne. Over %2$d MB kan avspillingen hakke.</string>
+    <string name="playback_buffer_allow_large_desc">Lar Målbufferstørrelse gå opptil 2 GB. Bare for bokser med 4 GB minne eller mer; på mindre bokser hakker eller krasjer store verdier.</string>
+    <string name="playback_net_connection_count_small_box">Denne boksen har %1$s minne. Flere enn 2 tilkoblinger kan få avspillingen til å hakke.</string>
     <string name="diag_label_serving_host">Leverende vert</string>
     <string name="diag_label_file">Fil</string>
     <string name="diag_label_dv_applied">DV brukt</string>
@@ -1327,16 +1367,16 @@
     <string name="diag_value_dv_base_layer">DV ignorert - HDR10-basislag</string>
     <string name="diag_label_audio_path">Lydvei</string>
     <string name="diag_label_audio_caps">Lydkjeden oppgir</string>
+    <string name="playback_estimated_memory_parts">Anslått minnebruk: omtrent %1$d MB (buffer %2$d MB + nedlastinger %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Anslått minnebruk: omtrent %1$d MB (buffer %2$d MB)</string>
     <string name="stream_test_serving_host_label">Leverende vert: %1$s</string>
     <string name="stream_test_file_label">Fil: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Anbefaling: la parallelle tilkoblinger være av - en enkelt tilkobling leverer allerede %1$s, mer enn 2\u00d7 tittelens bitrate.</string>
     <string name="stream_test_verdict_recommend">Anbefaling: %1$d tilkoblinger / %2$d MB-blokker - %3$s. Oppsettet med lavest minnebruk som når 2\u00d7 tittelens bitrate; raskere oppsett kan stå ovenfor, men bruker mer minne uten nytte for avspillingen.</string>
     <string name="stream_test_verdict_marginal">Beste resultat: %1$d tilkoblinger / %2$d MB-blokker med %3$s - over tittelens gjennomsnittlige bitrate på %4$s, men under målet på 2\u00d7 margin. Avspilling bør fungere, men kan bufre i scener med høy bitrate eller ved spoling.</string>
     <string name="stream_test_verdict_cannot_sustain">Denne tilkoblingen klarer ikke tittelen - det raskeste testede oppsettet (%1$d tilkoblinger / %2$d MB-blokker) nådde %3$s, under tittelens gjennomsnittlige bitrate på %4$s. Regn med bufring; vurder en versjon med lavere bitrate.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Raskeste stabile: %1$d tilkoblinger / %2$d MB-blokker med %3$s. Tittelens bitrate er ukjent - spill av en video først for å få en tilpasset anbefaling.</string>
-    <string name="stream_test_verdict_pm_suffix">" Krever Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Måler bare rå nedlastingshastighet - virkelig avspilling avhenger også av bufring, dekoding og serverbelastning, og holder i tillegg målbufferen i minnet.</string>
     <string name="stream_test_label_parallel_dyn">Parallell tilkobling (%1$d tilk. / %2$d MB-blokker)</string>
     <string name="stream_test_btn_measuring_dyn">Måler: %1$s\u2026</string>
@@ -1369,7 +1409,6 @@
     <string name="assessment_item_parallel">Parallelle tilkoblinger</string>
     <string name="assessment_item_chunk">Blokkstørrelse</string>
     <string name="assessment_item_network_master">Tilpasset nettverk</string>
-    <string name="assessment_item_http2">Aktiver HTTP/2</string>
     <string name="assessment_item_perf_mode">ExoPlayer Native Memory</string>
     <string name="assessment_item_buffer_master">Tilpassede avspillingsbuffere</string>
     <string name="assessment_item_managed_budget">Styrt minnebudsjett</string>
@@ -1390,15 +1429,18 @@
     <string name="assessment_grounds_parallel_cannot">Raskeste målte %1$s med %2$d \u00d7 %3$d MB - under tittelens egen bitrate; denne tilkoblingen klarer ikke strømmen</string>
     <string name="assessment_grounds_parallel_fastest">Raskeste målte %1$s med %2$d \u00d7 %3$d MB - tittelens bitrate var ukjent, så ingen vurdering av om det holder</string>
     <string name="assessment_grounds_chunk">Hører sammen med antallet tilkoblinger ovenfor, fra samme målerunde</string>
-    <string name="assessment_grounds_network_master">Hovedbryter for HTTP/2- og parallellinnstillingene nedenfor</string>
-    <string name="assessment_grounds_http2">Multiplekser range-forespørsler over én tilkobling; nyttig i de fleste tilfeller, ingen test nødvendig</string>
     <string name="assessment_grounds_perf_mode">Holder buffere i remux-størrelse utenfor Java-heapen, slik at søppelinnsamling ikke kan få bildet til å hakke; minnegrensene tilpasses enhetens nivå %1$s (trygg %2$d MB / advarsel %3$d MB), og flere enn %4$d tilkoblinger krever det</string>
     <string name="assessment_grounds_perf_mode_unsupported">Krever Android 8.0 eller nyere</string>
-    <string name="assessment_grounds_buffer_master">Av betyr media3 sin vanlige lastekontroll: et byteberegnet mål på rundt 13 MB, som rommer \u2248 1 s av en remux uansett varighetsverdiene - verdiene nedenfor er i stedet tilpasset denne enheten</string>
-    <string name="assessment_grounds_managed_budget">Styrt modus låser målet til den trygge grensen og ser bort fra de parallelle tilkoblingenes overhead; det uttrykkelige målet nedenfor tar hensyn til begge</string>
-    <string name="assessment_grounds_target_buffer">Mål %1$d + %2$d MB tilkoblingsoverhead = %3$d MB \u2264 den trygge grensen på %4$d MB (største trinn på %5$d MB som får plass)</string>
-    <string name="assessment_grounds_allow_large_on">Nødvendig for at målglidebryteren skal nå %1$d MB på denne enheten</string>
-    <string name="assessment_grounds_allow_large_off">Det anbefalte målet får plass innenfor glidebryterens vanlige område</string>
+    <string name="assessment_grounds_native_auto">Appen tilpasser bufferen til denne boksen med %1$s (opptil %2$d MB, mindre når minnet er knapt) og holder den i nativt minne</string>
+    <string name="assessment_grounds_buffer_custom_times">Lar bufferprofilen nedenfor bestemme buffertidene; størrelsen forblir automatisk</string>
+    <string name="assessment_grounds_managed_on">Tilpasser bufferen etter ledig minne ved avspillingsstart og krymper den når boksen får lite minne; en fast størrelse kan ingen av delene</string>
+    <string name="assessment_value_target_auto">Auto (opptil %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Med Styrt minnebudsjett på velger appen dette ved avspillingsstart</string>
+    <string name="assessment_grounds_allow_large_small_box">Bare for bokser med 4 GB minne eller mer; på denne boksen med %1$s hakker eller krasjer store verdier</string>
+    <string name="assessment_grounds_allow_large_managed">Har ingen effekt mens Styrt minnebudsjett er på</string>
+    <string name="assessment_grounds_network_for_parallel">Slår på de parallelle tilkoblingene som anbefales ovenfor</string>
+    <string name="assessment_grounds_network_parallel_only">Bare nødvendig for parallelle tilkoblinger; én tilkobling er rask nok her</string>
+    <string name="assessment_grounds_network_untested">Bare nødvendig for parallelle tilkoblinger, og ingen strøm ble testet for å avgjøre det</string>
     <string name="assessment_grounds_max_buffer">Et mål på %1$d MB rommer \u2248%2$d s av denne tittelen (%3$s) - sekunder ut over det kan ikke oppstå</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Tittelens bitrate er ukjent - bytetaket kan ikke beregnes; taket blir stående på %1$d s</string>
     <string name="assessment_grounds_vod_auto">Auto tilpasser etter ledig plass (20%% av det ledige innenfor grensene, 1 GB reserve) - \u2248%1$s på denne enheten akkurat nå</string>
@@ -1435,7 +1477,7 @@
     <string name="assessment_no_stream">Ingen sist avspilt strøm - enhetsradene kjøres likevel. For målte rader spiller du først av den mest krevende vanlige tittelen din og kjører deretter på nytt.</string>
     <string name="assessment_header_title">Enhetsfakta</string>
     <string name="assessment_header_device">Enhet</string>
-    <string name="assessment_header_device_value">%1$s - trygg %2$d MB / advarsel %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buffer opptil %2$d MB / fare over %3$d MB</string>
     <string name="assessment_header_display">Skjerm</string>
     <string name="assessment_header_display_unknown">Kan ikke undersøkes herfra</string>
     <string name="assessment_header_stream">Siste strøm</string>
@@ -1456,8 +1498,7 @@
     <string name="assessment_footer">Målte rader ble testet på denne enheten; beregnede rader bygger på fakta som kan leses av. Bruk skriver bare målte og beregnede rader pluss profilen du velger - sjekk-rader endres aldri automatisk. Tilbakestill angrer den siste bruken.</string>
     <string name="stream_test_verdict_recommend_trade">Anbefaling: %1$d tilkoblinger / %2$d MB-blokker - %3$s (%4$s\u00d7 tittelens bitrate). Valgt framfor %5$d \u00d7 %6$d MB (2\u00d7+) fordi det med denne enhetens minnebudsjett gir %7$d MB \u2248 %8$d s avspillingsbuffer i stedet for %9$d MB \u2248 %10$d s - her veier bufferdybde tyngre enn påfyllingshastighet.</string>
     <string name="assessment_grounds_parallel_trade">Målt %1$s med %2$d \u00d7 %3$d MB - når 1.5\u00d7 bitrate og gir %6$d MB \u2248 %7$d s buffer; oppsettet for 2\u00d7 (%4$d \u00d7 %5$d MB) ville bare gitt %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Gjeldende %1$d MB + %2$d MB overhead = %3$d MB ligger i advarselsområdet (%4$d-%5$d MB) - brukbart, med mindre margin</string>
-    <string name="assessment_grounds_target_current_danger">Gjeldende %1$d MB + %2$d MB overhead = %3$d MB overskrider advarselsgrensen på %4$d MB - fare for at appen avsluttes ved lite minne</string>
+    <string name="assessment_parallel_small_box_cap">Denne boksen har %1$s minne, så maks 2 tilkoblinger anbefales</string>
     <string name="assessment_grounds_max_buffer_current">Med det gjeldende målet ditt på %1$d MB: \u2248 %2$d s i praksis, uansett sekundglidebryteren - byte begrenser først</string>
     <string name="assessment_item_engine">Intern motor</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -1518,7 +1559,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV kan ikke endre størrelsen på bildeundertekster. Bruk ExoPlayer for å justere størrelsen på bildeundertekster uavhengig av tekst.</string>
     <string name="subtitle_style_image_size">Størrelse på bildeundertekster</string>
     <string name="v2_accent_fixed_hint">Bruker Fargetema med mindre aksent fra bilder er valgt.</string>
-    <string name="about_fork_updates_subtitle">Oppdateringer fra NuvioTV-Fork. Alle fork-utgivelser er beta.</string>
+    <string name="about_fork_updates_subtitle">Oppdateringer fra Nuvio Arc-utgivelsene på GitHub.</string>
     <string name="playback_speculative_stream_search">Søk etter kilder før Spill av</string>
     <string name="playback_speculative_stream_search_sub">Søk i tillegg mens du blar, for å gjøre kildevalget raskere. Noen tillegg kan legge til eller hente innhold under søk. Av venter til Spill av. Medielenker og oppslag hos leverandøren venter til du velger å spille av, unntatt nær slutten av en episode når spoleminiatyrer klargjør den neste.</string>
     <string name="debrid_cached_playback_links">Gjenbruk bufrede avspillingslenker</string>
@@ -1606,6 +1647,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Start avspillingen med en gang; miniatyrer lages under pause og etter at du har sluttet å se.</string>
     <string name="seek_thumbnails_prepare_on">På</string>
     <string name="seek_thumbnails_prepare_on_desc">Lag spoleminiatyrene til en tittel før den starter. \"Begynn å se nå\" eller Tilbake starter avspillingen når som helst.</string>
+    <string name="seek_thumbnails_from_copy_title">Miniatyrer fra en kopi</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Raskere miniatyrer for 4K-titler fra en 1080p- eller 720p-kopi, og for Usenet-titler fra en kopi som ikke ligger på Usenet. En bufret TorBox-kopi kan bli lagt til i listen din i noen minutter.</string>
     <string name="seek_thumbnails_clear_title">Fjern lagrede miniatyrer</string>
     <string name="seek_thumbnails_clear_subtitle">De lages på nytt neste gang du spiller av en tittel.</string>
     <string name="seek_thumbnails_cleared">Lagrede miniatyrer fjernet</string>
@@ -1620,7 +1663,7 @@
     <string name="seek_thumbnails_time_left_minutes">Omtrent %1$d min %2$d s igjen</string>
     <string name="seek_thumbnails_count">%1$d av %2$d</string>
     <string name="seek_thumbnails_start_now">Begynn å se nå</string>
-    <string name="seek_thumbnails_settings_hint">Slå dette på eller av i Innstillinger › Avspilling › Generelt</string>
+    <string name="seek_thumbnails_settings_hint">Slå dette på eller av i Innstillinger › Avspilling › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Miniatyrer %1$d%%</string>
     <string name="party_title">Seerfest</string>
     <string name="party_settings_subtitle">Se det samme i samme øyeblikk med folk i andre hjem</string>
@@ -1662,6 +1705,7 @@
     <string name="party_member_buffering">bufrer</string>
     <string name="party_member_catching_up">tar igjen</string>
     <string name="party_member_away">borte</string>
+    <string name="party_member_needs_update">må oppdatere</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Kopien din er %1$s s lengre enn vertens. Festen kan komme i utakt.</string>
     <string name="party_copy_shorter">Kopien din er %1$s s kortere enn vertens. Festen kan komme i utakt.</string>
@@ -1676,7 +1720,7 @@
     <string name="party_match_same">Samme fil som verten</string>
     <string name="party_match_likely">Sannsynligvis vertens kopi</string>
     <string name="party_match_different">Annen kopi enn vertens</string>
-    <string name="party_invite_text">Bli med på seerfesten min i Nuvio. Åpne Innstillinger, deretter Seerfest, og skriv inn koden %1$s</string>
+    <string name="party_invite_text">Bli med på seerfesten min i Nuvio Arc. Åpne Innstillinger, deretter Seerfest, og skriv inn koden %1$s</string>
     <string name="party_invite_qr">Skann med mobilkameraet for å sende invitasjonen som SMS</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

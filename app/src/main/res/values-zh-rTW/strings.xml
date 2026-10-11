@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="tv_channel_continue_watching">繼續觀看</string>
     <string name="type_movie">電影</string>
     <string name="type_movies">電影</string>
@@ -336,6 +336,7 @@
     <string name="theme_color_violet">紫羅蘭</string>
     <string name="theme_color_emerald">翡翠綠</string>
     <string name="theme_color_amber">琥珀</string>
+    <string name="theme_color_copper">銅色</string>
     <string name="theme_color_rose">玫瑰</string>
     <string name="theme_color_white">白色</string>
     <string name="theme_color_custom">自訂</string>
@@ -368,13 +369,13 @@
     <string name="appearance_settings_style">設定樣式</string>
     <string name="appearance_settings_style_subtitle">選擇設定介面的呈現方式</string>
     <string name="appearance_launcher_artwork">啟動器圖示</string>
-    <string name="appearance_launcher_artwork_subtitle">選擇 Nuvio 在電視主畫面上的顯示方式</string>
+    <string name="appearance_launcher_artwork_subtitle">選擇 Nuvio Arc 在電視主畫面上的顯示方式</string>
     <string name="appearance_app_icon_and_banner">應用程式圖示與橫幅</string>
     <string name="appearance_app_icon_and_banner_subtitle">變更應用程式圖示和橫幅</string>
     <string name="appearance_app_icon_picker_title">選擇應用程式圖示與橫幅</string>
     <string name="appearance_app_icon_picker_subtitle">每種樣式都包含匹配的方形圖示和電視橫幅</string>
     <string name="appearance_app_icon_confirmation_title">變更應用程式圖示？</string>
-    <string name="appearance_app_icon_confirmation_message">切換到 %1$s 將關閉 Nuvio。電視橫幅可能需要重新啟動裝置才能更新。選擇「確定」以繼續。</string>
+    <string name="appearance_app_icon_confirmation_message">切換到 %1$s 將以新圖示重新啟動 Nuvio Arc。主畫面可能需要幾秒鐘才會顯示，電視橫幅可能需要重新啟動裝置才能更新。選擇「確定」以繼續。</string>
     <string name="appearance_app_icon_change_failed">無法變更圖示和橫幅。請重試。</string>
     <string name="appearance_app_icon_original">原始</string>
     <string name="appearance_app_icon_arctic_blue">極地藍</string>
@@ -394,7 +395,7 @@
 
     <string name="about_title">關於</string>
     <string name="about_subtitle">應用程式資訊、更新和法律連結</string>
-    <string name="about_made_with_love">由 Tapframe 和朋友們 ❤️ 製作</string>
+    <string name="about_made_with_love">基於 Tapframe 和朋友們的出色成果 ❤️ · Nuvio Arc 由 ysosrs123 打造</string>
     <string name="about_version">版本 %1$s</string>
     <string name="about_update_banner_title">自動更新橫幅</string>
     <string name="about_update_banner_subtitle">有新版本時顯示橫幅</string>
@@ -415,31 +416,31 @@
     <string name="about_licenses_attributions">授權與出處</string>
     <string name="about_licenses_attributions_subtitle">資料來源、致謝與 Android 授權</string>
     <string name="licenses_attributions_title">授權與出處</string>
-    <string name="licenses_attributions_subtitle">Nuvio TV 使用的資料提供者、服務致謝與 Android 播放授權。</string>
+    <string name="licenses_attributions_subtitle">Nuvio Arc 使用的資料提供者、服務致謝與 Android 播放授權。</string>
     <string name="licenses_attributions_section_app">應用程式授權</string>
     <string name="licenses_attributions_section_data">資料與服務</string>
     <string name="licenses_attributions_section_playback">Android 播放授權</string>
     <string name="licenses_attributions_section_ui">UI 函式庫</string>
     <string name="licenses_attributions_haze_title">Haze 1.7.2</string>
     <string name="licenses_attributions_haze_body">用於背景模糊效果。由 Chris Banes 建立。基於 Apache License, Version 2.0 授權。</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-test (Nuvio TV 的分支)</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio Arc (Nuvio TV 的分支)</string>
     <string name="licenses_attributions_nuvio_body">Nuvio TV 的修改版。此版本的原始碼和授權條款可在分支的倉庫中取得。Nuvio TV 位於 github.com/NuvioMedia/NuvioTV。基於 GNU General Public License v3.0 授權。</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-    <string name="licenses_attributions_tmdb_body">Nuvio 使用 TMDB API 獲取電影和電視節目的中繼資料、美術圖、預告片、演員、製作細節、收藏和推薦內容。本產品使用 TMDB API，但未經 TMDB 認可或認證。</string>
+    <string name="licenses_attributions_tmdb_body">Nuvio Arc 使用 TMDB API 獲取電影和電視節目的中繼資料、美術圖、預告片、演員、製作細節、收藏和推薦內容。本產品使用 TMDB API，但未經 TMDB 認可或認證。</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="licenses_attributions_trakt_body">Nuvio 連線至 Trakt 以進行帳戶驗證、觀看歷史、進度同步、媒體庫資料、評分、清單和評論。Nuvio 與 Trakt 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_trakt_body">Nuvio Arc 連線至 Trakt 以進行帳戶驗證、觀看歷史、進度同步、媒體庫資料、評分、清單和評論。Nuvio Arc 與 Trakt 無關聯或未經其認可。</string>
     <string name="licenses_attributions_simkl_title">Simkl</string>
-    <string name="licenses_attributions_simkl_body">Nuvio 連線至 Simkl 以進行帳戶驗證、觀看清單、觀看歷史、播放進度和記錄。電影、電視和動畫追蹤資料由 Simkl 提供。Nuvio 與 Simkl 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_simkl_body">Nuvio Arc 連線至 Simkl 以進行帳戶驗證、觀看清單、觀看歷史、播放進度和記錄。電影、電視和動畫追蹤資料由 Simkl 提供。Nuvio Arc 與 Simkl 無關聯或未經其認可。</string>
     <string name="licenses_attributions_premiumize_title">Premiumize</string>
-    <string name="licenses_attributions_premiumize_body">Nuvio 連線至 Premiumize 以進行帳戶驗證、雲端媒體庫存取、快取檢查和雲端播放功能。Nuvio 與 Premiumize 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_premiumize_body">Nuvio Arc 連線至 Premiumize 以進行帳戶驗證、雲端媒體庫存取、快取檢查和雲端播放功能。Nuvio Arc 與 Premiumize 無關聯或未經其認可。</string>
     <string name="licenses_attributions_torbox_title">TorBox</string>
-    <string name="licenses_attributions_torbox_body">Nuvio 連線至 TorBox 以進行帳戶驗證、雲端媒體庫存取、快取檢查和雲端播放功能。Nuvio 與 TorBox 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_torbox_body">Nuvio Arc 連線至 TorBox 以進行帳戶驗證、雲端媒體庫存取、快取檢查和雲端播放功能。Nuvio Arc 與 TorBox 無關聯或未經其認可。</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvio 使用 MDBList 獲取評分、觀看歷史和播放追蹤。Nuvio 與 MDBList 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio Arc 使用 MDBList 獲取評分、觀看歷史和播放追蹤。Nuvio Arc 與 MDBList 無關聯或未經其認可。</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
-    <string name="licenses_attributions_introdb_body">Nuvio 使用 IntroDB API 獲取社群提供的片頭、前情提要、片尾和工作人員名單時間戳，用於跳過控制。Nuvio 與 IntroDB 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_introdb_body">Nuvio Arc 使用 IntroDB API 獲取社群提供的片頭、前情提要、片尾和工作人員名單時間戳，用於跳過控制。Nuvio Arc 與 IntroDB 無關聯或未經其認可。</string>
     <string name="licenses_attributions_imdb_title">IMDb 非商業資料集</string>
-    <string name="licenses_attributions_imdb_body">Nuvio 使用 IMDb 非商業資料集，包括 title.ratings.tsv.gz，以獲取 IMDb 評分和投票數。資訊由 IMDb 提供 (https://www.imdb.com)。經許可使用。IMDb 資料根據 IMDb 條款僅供個人和非商業使用。</string>
+    <string name="licenses_attributions_imdb_body">Nuvio Arc 使用 IMDb 非商業資料集，包括 title.ratings.tsv.gz，以獲取 IMDb 評分和投票數。資訊由 IMDb 提供 (https://www.imdb.com)。經許可使用。IMDb 資料根據 IMDb 條款僅供個人和非商業使用。</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">用作 Android 播放引擎。基於 Apache License, Version 2.0 授權。</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -464,7 +465,7 @@
     <string name="tracking_accounts_title">帳戶</string>
     <string name="tracking_accounts_subtitle">連接並管理追蹤服務</string>
     <string name="tracking_sources_title">來源</string>
-    <string name="tracking_sources_subtitle">選擇 Nuvio 從哪裡讀取您的媒體庫和觀看進度。播放記錄會同步到所有已連接的服務。</string>
+    <string name="tracking_sources_subtitle">選擇 Nuvio Arc 從哪裡讀取您的媒體庫和觀看進度。播放記錄會同步到所有已連接的服務。</string>
     <string name="tracking_trakt_features_title">Trakt 功能</string>
     <string name="tracking_trakt_features_subtitle">Trakt 專屬的歷史記錄、評論和推薦</string>
     <string name="tracking_simkl_features_title">Simkl 功能</string>
@@ -481,8 +482,8 @@
     <string name="tracking_status_connecting">正在連線</string>
     <string name="tracking_finish_connection">完成連線批准</string>
     <string name="tracking_connecting_provider">正在啟動 %1$s 連線…</string>
-    <string name="tracking_watch_progress_dialog_subtitle">選擇 Nuvio 從哪裡讀取繼續播放和繼續觀看資料。所有已連接的服務仍會保持記錄。</string>
-    <string name="tracking_library_source_dialog_subtitle">選擇 Nuvio 從哪裡讀取您的媒體庫。播放記錄會同步到所有已連接的服務。</string>
+    <string name="tracking_watch_progress_dialog_subtitle">選擇 Nuvio Arc 從哪裡讀取繼續播放和繼續觀看資料。所有已連接的服務仍會保持記錄。</string>
+    <string name="tracking_library_source_dialog_subtitle">選擇 Nuvio Arc 從哪裡讀取您的媒體庫。播放記錄會同步到所有已連接的服務。</string>
     <string name="tracking_trakt_progress_required">當 Trakt 為觀看進度來源時可用</string>
     <string name="trakt_name">Trakt</string>
     <string name="simkl_name">Simkl</string>
@@ -492,7 +493,7 @@
     <string name="settings_advanced_subtitle">效能、導航、快取與診斷</string>
     <string name="experience_mode_essential">基礎模式</string>
     <string name="experience_mode_advanced">進階模式</string>
-    <string name="experience_mode_choose_title">選擇您的 Nuvio 使用體驗</string>
+    <string name="experience_mode_choose_title">選擇您的 Nuvio Arc 使用體驗</string>
     <string name="experience_mode_choose_subtitle">從簡潔開始或解鎖所有自訂選項。您隨時可以切換。</string>
     <string name="experience_mode_essential_card_subtitle">專注於設定、擴充套件、播放基礎、Trakt 和帳戶設定。</string>
     <string name="experience_mode_advanced_card_subtitle">完整設定、佈局控制、目錄順序、收藏、外掛和診斷。</string>
@@ -760,8 +761,8 @@
     <string name="playback_player_ask_desc">每次都選擇播放器</string>
     <string name="playback_player_auto">自動 (最適合內容)</string>
     <string name="playback_player_auto_desc">電影與電視節目使用 ExoPlayer · 動畫使用 MPV</string>
-    <string name="playback_engine_exoplayer_desc">與目前 Nuvio 功能相容性最佳。</string>
-    <string name="playback_engine_mvplayer_desc">使用帶有 Nuvio OSD 控制的 libmpv。實驗性功能。</string>
+    <string name="playback_engine_exoplayer_desc">與目前 Nuvio Arc 功能相容性最佳。</string>
+    <string name="playback_engine_mvplayer_desc">使用帶有 Nuvio Arc OSD 控制的 libmpv。實驗性功能。</string>
 
     <string name="video_section">影片</string>
     <string name="audio_trailer_section">預告片</string>
@@ -1421,7 +1422,7 @@
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_library_source_title">媒體庫來源</string>
-    <string name="trakt_library_source_subtitle">選擇 Nuvio 從哪裡讀取您的媒體庫</string>
+    <string name="trakt_library_source_subtitle">選擇 Nuvio Arc 從哪裡讀取您的媒體庫</string>
     <string name="trakt_library_source_dialog_title">媒體庫來源</string>
     <string name="trakt_library_source_dialog_subtitle">選擇儲存和管理媒體庫項目的位置</string>
     <string name="trakt_library_source_trakt">Trakt</string>
@@ -1459,7 +1460,7 @@
     <string name="trakt_stat_watched_hours">觀看時數</string>
     <string name="trakt_disconnect">中斷連線</string>
     <string name="trakt_disconnect_title">中斷 Trakt 連線？</string>
-    <string name="trakt_disconnect_subtitle">這將中斷您的 Trakt 帳戶與 Nuvio 的連線。</string>
+    <string name="trakt_disconnect_subtitle">這將中斷您的 Trakt 帳戶與 Nuvio Arc 的連線。</string>
     <string name="trakt_login">登入</string>
     <string name="trakt_retry">重試</string>
     <string name="trakt_back">返回</string>
@@ -1689,7 +1690,7 @@
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">P2P 串流</string>
-    <string name="p2p_consent_body">此串流使用點對點 (P2P) 技術。啟用 P2P 即表示您知悉並同意：\n\n\u2022 您的 IP 位址將對網路中的其他對等節點可見\n\u2022 您對所存取的內容負全部責任\n\u2022 您確認在您的司法管轄區內擁有串流此內容的合法權利\n\u2022 Nuvio 不託管、散佈或控制任何 P2P 內容\n\u2022 Nuvio 對您因使用 P2P 串流而產生的任何法律後果不承擔任何責任\n\n您完全自行承擔使用此功能的風險。P2P 可隨時在設定中停用。</string>
+    <string name="p2p_consent_body">此串流使用點對點 (P2P) 技術。啟用 P2P 即表示您知悉並同意：\n\n\u2022 您的 IP 位址將對網路中的其他對等節點可見\n\u2022 您對所存取的內容負全部責任\n\u2022 您確認在您的司法管轄區內擁有串流此內容的合法權利\n\u2022 Nuvio Arc 不託管、散佈或控制任何 P2P 內容\n\u2022 Nuvio Arc 對您因使用 P2P 串流而產生的任何法律後果不承擔任何責任\n\n您完全自行承擔使用此功能的風險。P2P 可隨時在設定中停用。</string>
     <string name="p2p_consent_enable">啟用 P2P</string>
     <string name="p2p_consent_cancel">取消</string>
     <string name="settings_p2p_title">P2P 串流</string>
@@ -2253,7 +2254,7 @@
     <string name="catalog_see_all_empty_title">沒有可用的項目</string>
     <string name="catalog_see_all_empty_subtitle">請嘗試其他目錄或稍後再查看</string>
 
-    <string name="layout_selection_welcome">歡迎使用 Nuvio</string>
+    <string name="layout_selection_welcome">歡迎使用 Nuvio Arc</string>
     <string name="layout_selection_subtitle">選擇您的首頁畫面佈局</string>
     <string name="layout_selection_continue">繼續</string>
 
@@ -2438,7 +2439,7 @@
     <string name="cd_preview">預覽</string>
     <string name="cd_test">測試</string>
     <string name="cd_unlink">取消連結</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Trakt 標誌</string>
     <string name="cd_trakt_qr">Trakt 啟用 QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -2592,7 +2593,7 @@
     <string name="collections_editor_tmdb_list_helper">範例：https://www.themoviedb.org/list/8504994 或 8504994。</string>
     <string name="collections_editor_tmdb_person_id">人物 ID</string>
     <string name="collections_editor_tmdb_person_helper">範例：https://www.themoviedb.org/person/31-tom-hanks 或 31。</string>
-    <string name="collections_editor_tmdb_title_helper">顯示為列/標籤名稱。若留空，Nuvio 會從來源自動建立。</string>
+    <string name="collections_editor_tmdb_title_helper">顯示為列/標籤名稱。若留空，Nuvio Arc 會從來源自動建立。</string>
     <string name="collections_editor_tmdb_quick_genres">快速類型</string>
     <string name="collections_editor_tmdb_quick_languages">快速語言</string>
     <string name="collections_editor_tmdb_quick_countries">快速國家</string>
@@ -2774,7 +2775,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">無 REMUX/HDR</string>
 
     <!-- 播放設定區段 -->
-    <string name="playback_player_internal_desc">使用 NuvioTV 的內建播放器</string>
+    <string name="playback_player_internal_desc">使用 Nuvio Arc 的內建播放器</string>
 
     <!-- 播放器執行時期：torrent 覆蓋層 + 音軌 -->
     <string name="player_torrent_peer_info">%1$d 個種子 · %2$d 個對等節點</string>
@@ -2875,9 +2876,9 @@
     <string name="simkl_visit">造訪 Simkl</string>
     <string name="simkl_sync_info_action">同步如何運作</string>
     <string name="simkl_sync_info_title">Simkl 同步如何運作</string>
-    <string name="simkl_sync_info_description">Nuvio 每隔 %1$d 分鐘最多自動檢查一次 Simkl。透過其他應用程式或 Simkl 網站所做的變更可能需要等這麼久才會顯示。</string>
+    <string name="simkl_sync_info_description">Nuvio Arc 每隔 %1$d 分鐘最多自動檢查一次 Simkl。透過其他應用程式或 Simkl 網站所做的變更可能需要等這麼久才會顯示。</string>
     <string name="simkl_sync_info_activity">每次重新整理都會先檢查 Simkl 是否回報任何變更，並僅下載更新內容。這遵循 Simkl 的 API 規則，減少不必要的資料使用，並有助於保持服務穩定。</string>
-    <string name="simkl_sync_info_manual">在 Nuvio 中所做的變更會立即傳送到 Simkl。當您希望 Nuvio 更快檢查遠端變更時，可使用「立即同步」。</string>
+    <string name="simkl_sync_info_manual">在 Nuvio Arc 中所做的變更會立即傳送到 Simkl。當您希望 Nuvio Arc 更快檢查遠端變更時，可使用「立即同步」。</string>
     <string name="simkl_sync_info_library_statuses">放入 Simkl 的「暫時擱置」或「已放棄」清單的節目會從繼續觀看中隱藏。只要它們留在任一清單中，就會保持隱藏。</string>
     <string name="simkl_sync_info_docs">閱讀 Simkl 同步指南</string>
     <string name="error_open_browser_failed">無法開啟瀏覽器</string>
@@ -3259,16 +3260,21 @@
     <string name="appearance_screensaver_dim_gentle">畫面仍清晰可見</string>
     <string name="appearance_screensaver_dim_balanced">較暗但可辨識</string>
     <string name="appearance_screensaver_dim_strong">幾乎看不見</string>
+    <string name="appearance_app_icon_mint">薄荷</string>
     <string name="licenses_attributions_avatars_title">觀影派對頭像</string>
     <string name="licenses_attributions_avatars_body">使用 DiceBear 製作，改編自以下設計：Davis Uche 的 \"Fun Emoji\" 和 Lisa Wischofsky 的 \"Adventurer\"，採用 CC BY 4.0 授權 (creativecommons.org/licenses/by/4.0)。Lisa Wischofsky 的 \"Lorelei\"、Zoish 的 \"Notionists\"、DiceBear 的 \"Pixel Art\" 和 \"Thumbs\"，採用 CC0 1.0。Pablo Stanley 的 \"Bottts\"，可免費用於個人和商業用途。動物臉孔來自 Twitter, Inc. 及其他貢獻者的 Twemoji，採用 CC BY 4.0 授權。</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin、Emby 和 Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio 連線至您自己的 Jellyfin、Emby 或 Silo 伺服器。其名稱和標誌歸各自擁有者所有。Nuvio 與 Jellyfin、Emby 或 Silo 無關聯或未經其認可。</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc 連線至您自己的 Jellyfin、Emby 或 Silo 伺服器。其名稱和標誌歸各自擁有者所有。Nuvio Arc 與 Jellyfin、Emby 或 Silo 無關聯或未經其認可。</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">發行組清單。基於 MIT 授權。</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">用於解析 Dolby Vision 中繼資料。由 quietvoid 建立。基於 MIT 授權。</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">用於音訊解碼。基於 LGPL 2.1 或更新版本授權。</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">用於軟體解碼 AV1 影片。由 VideoLAN 與 dav1d 作者建立。基於 BSD 2-Clause 授權。</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">用於為 AV1 解碼器偵測處理器特性。由 Google 建立。基於 Apache 2.0 授權。</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">TrueHD MAT 封裝和音訊混音下轉移植自 Kodi。基於 GPL 2.0 或更新版本授權。</string>
     <string name="settings_experience_subtitle">基礎模式或進階模式</string>
@@ -3304,8 +3310,9 @@
     <string name="playback_section_audio_desc">音訊控制和影片相容性。</string>
     <string name="playback_afr_open">展開</string>
     <string name="playback_afr_closed">收合</string>
+    <string name="audio_tunneled_sub_prefer_app">「解碼器優先順序」設為「偏好應用程式解碼器」時無法使用</string>
     <string name="audio_use_system_passthrough">系統穿透</string>
-    <string name="audio_use_system_passthrough_sub">透過 Android (系統路徑) 而非 Nuvio (IEC 路徑) 將 TrueHD 和 DTS-HD 傳送至接收器。如果無損格式出現雜音、漂移或無聲，請使用此選項。</string>
+    <string name="audio_use_system_passthrough_sub">透過 Android (系統路徑) 而非 Nuvio Arc (IEC 路徑) 將 TrueHD 和 DTS-HD 傳送至接收器。如果無損格式出現雜音、漂移或無聲，請使用此選項。</string>
     <string name="audio_surround_header">環繞音效</string>
     <string name="audio_surround_reset_iec_probe">清除 IEC 偵測結果</string>
     <string name="audio_surround_reset_iec_probe_sub">重新測試 IEC 61937 輸出。如果更換接收器或輸入後無損格式退回 PCM，請使用此選項。</string>
@@ -3354,6 +3361,10 @@
     <string name="audio_inject_hdr10_sei_sub">對於移除為 HDR10 基礎層的 DV8 (Profile 8) 內容，加入來源的母帶中繼資料 (MaxCLL/MaxFALL 和峰值亮度)，讓不支援 DV 的 HDR10 電視正確進行色調對應。僅當 DV 處理為「移除 DV」或「HDR10 基礎層」時生效；對 Profile 7 和 Dolby Vision 播放沒有影響。</string>
     <string name="diag_value_not_advertised">未宣告 (原生播放仍可能正常)</string>
     <string name="diag_label_dv_el_type">DV7 EL 類型</string>
+    <string name="diag_value_dv7_native_route">正在使用原生雙層路徑 (Android 未列出)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL，三層全部使用</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU，已轉換為 8.1 (未使用 EL)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · 僅 BL (未使用 RPU 與 EL)</string>
     <string name="diag_label_dv_hdr_mastering">DV HDR 母帶</string>
     <string name="diag_label_dv_rpu_drops">DV RPU 遺失</string>
     <string name="sub_tertiary_lang">第三偏好語言</string>
@@ -3361,6 +3372,10 @@
     <string name="sub_addon_subtitles_desc">播放時從已安裝的擴充套件取得字幕。關閉後僅可使用檔案內嵌的字幕。</string>
     <string name="autoplay_quality_rules_title">品質規則</string>
     <string name="autoplay_quality_rules_subtitle">「已連線的服務」中的篩選、排序和發行組分級。</string>
+    <string name="stream_sort_sources">排序來源</string>
+    <string name="stream_sort_sources_sub">串流清單的順序。最佳品質優先會使用您的品質規則。</string>
+    <string name="stream_sort_sources_source_order">來源順序</string>
+    <string name="stream_sort_sources_best_first">最佳品質優先</string>
     <string name="autoplay_eager_ready_title">來源較慢時更快就緒</string>
     <string name="autoplay_eager_ready_sub">達到選擇逾時後立即準備播放，而不等待最慢的擴充套件。適用於詳情頁面和繼續觀看。</string>
     <string name="autoplay_mode_quality">最佳品質</string>
@@ -3371,6 +3386,17 @@
     <string name="layout_landscape_posters_home_only_desc">首頁使用橫向卡片，媒體庫、搜尋和清單使用直向</string>
     <string name="layout_landscape_posters_everywhere">所有頁面</string>
     <string name="layout_landscape_posters_everywhere_desc">首頁、媒體庫、搜尋和清單都使用橫向卡片</string>
+    <string name="layout_hide_side_icons">隱藏側邊圖示</string>
+    <string name="layout_hide_side_icons_sub">選單關閉時隱藏左側邊緣的選單圖示。按左鍵或返回鍵開啟選單。</string>
+    <string name="layout_watched_titles">已觀看內容</string>
+    <string name="layout_watched_titles_sub">顯示、調暗或隱藏您已看完的電影和節目。</string>
+    <string name="layout_watched_titles_dialog_title">已觀看內容</string>
+    <string name="layout_watched_titles_show">顯示</string>
+    <string name="layout_watched_titles_show_desc">已觀看內容保持原樣，並帶有勾號。</string>
+    <string name="layout_watched_titles_dim">調暗</string>
+    <string name="layout_watched_titles_dim_desc">已觀看內容保持原位，顏色變暗，並帶有勾號。</string>
+    <string name="layout_watched_titles_hide">隱藏</string>
+    <string name="layout_watched_titles_hide_desc">已看完的電影和已全部看完的節目不會出現在首頁各列和橫幅中。繼續觀看不受影響。</string>
     <string name="layout_trailer_logo">卡片預告片上顯示標誌</string>
     <string name="layout_trailer_logo_sub">在卡片中播放的預告片上顯示標題標誌。</string>
     <string name="mdblist_account_title">帳戶</string>
@@ -3393,6 +3419,8 @@
     <string name="player_layout_more_fixed_help">按 OK 隱藏/顯示「更多」。它固定在最右側。將其他操作移過選單分界即可變更彈出選單的內容。</string>
     <string name="player_error_placeholder_stream">此串流看起來是提供者的錯誤卡片，而不是影片。請嘗試其他來源。</string>
     <string name="subtitle_panel_languages">語言</string>
+    <string name="library_sort_released_desc">發行日期 ↓</string>
+    <string name="library_sort_released_asc">發行日期 ↑</string>
     <string name="library_empty_mdblist_title">您的觀看清單中沒有 %1$s</string>
     <string name="library_empty_mdblist_subtitle">在詳情中使用 + 將項目加入 MDBList 觀看清單</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList 未連線</string>
@@ -3413,6 +3441,7 @@
     <string name="library_transfer_copy">複製</string>
     <string name="library_transfer_move">移動 (複製後從來源移除)</string>
     <string name="library_transfer_none">沒有可複製的內容</string>
+    <string name="sub_mode_effects_warning">高負載：4K 下可能掉幀，並會關閉通道化播放。</string>
     <string name="cd_playback_stats">播放統計</string>
     <string name="player_stats_unavailable_mpv">libmpv 引擎不提供統計資訊</string>
     <string name="player_dead_source_failover">來源無法使用 - 正在嘗試下一個來源 (%1$d/%2$d)</string>
@@ -3428,6 +3457,17 @@
     <string name="debrid_filters_show_everything_title">顯示全部</string>
     <string name="debrid_filters_show_everything_subtitle">清除所有篩選和結果數量上限；保留智慧排序。</string>
     <string name="debrid_filters_show_everything_action">顯示全部</string>
+    <string name="playback_net_device_memory_auto">此裝置有 %1$s 記憶體。應用程式最多預先緩衝 %2$d MB，記憶體不足時會減少。</string>
+    <string name="playback_net_native_memory_sub">讓應用程式為此裝置設定緩衝大小並保存在原生記憶體中，跳轉更快。開啟後也會為此裝置設定下方的緩衝和網路值。</string>
+    <string name="playback_buffer_custom_desc">使用下方的值，而非應用程式自己的值。關閉時：若開啟「ExoPlayer 原生記憶體」，應用程式會在為此裝置選定的大小內緩衝 15 至 45 秒；若未開啟，則使用 Media3 的標準緩衝。</string>
+    <string name="playback_buffer_seconds_hint">%1$d MB 可容納約 %2$d 秒的 4K 原盤 (80 Mbit/s)。設定更長也沒有差別。</string>
+    <string name="playback_buffer_back_fitted">保留在「目標緩衝大小」之內。在 %1$d MB 下，應用程式最多保留約 %2$d 秒 (80 Mbit/s 時為 %3$d MB)，確保至少還有 5 秒預先緩衝。</string>
+    <string name="playback_buffer_back_fitted_none">保留在「目標緩衝大小」之內。在 %1$d MB 下沒有空間，因此應用程式改為保留 5 秒預先緩衝。</string>
+    <string name="playback_buffer_managed_desc">依播放開始時此裝置的可用記憶體設定緩衝，並在記憶體不足時縮小。關閉後可自行選擇「目標緩衝大小」；在小記憶體裝置上，較大的值可能導致播放卡頓。</string>
+    <string name="playback_buffer_target_size_sub">用於向前緩衝影片的記憶體。上限取決於此裝置的總記憶體。開啟「受管記憶體預算」後，應用程式會依播放開始時的可用記憶體設定大小。裝置記憶體不足時，緩衝會縮小。</string>
+    <string name="playback_buffer_target_stutter_warning">此裝置有 %1$s 記憶體。超過 %2$d MB 時，播放可能會卡頓。</string>
+    <string name="playback_buffer_allow_large_desc">允許「目標緩衝大小」最高達 2 GB。僅適用於記憶體 4 GB 以上的裝置；在較小的裝置上，大緩衝會卡頓或當機。</string>
+    <string name="playback_net_connection_count_small_box">此裝置有 %1$s 記憶體。超過 2 個連線可能導致播放卡頓。</string>
     <string name="diag_label_serving_host">服務主機</string>
     <string name="diag_label_file">檔案</string>
     <string name="diag_label_dv_applied">DV 已套用</string>
@@ -3437,16 +3477,16 @@
     <string name="diag_value_dv_base_layer">已忽略 DV - HDR10 基礎層</string>
     <string name="diag_label_audio_path">音訊路徑</string>
     <string name="diag_label_audio_caps">音訊鏈路宣告</string>
+    <string name="playback_estimated_memory_parts">預估記憶體使用量：約 %1$d MB (緩衝 %2$d MB + 下載 %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">預估記憶體使用量：約 %1$d MB (緩衝 %2$d MB)</string>
     <string name="stream_test_serving_host_label">服務主機：%1$s</string>
     <string name="stream_test_file_label">檔案：%1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">建議：保持並行連線關閉 - 單一連線已達到 %1$s，超過此標題位元率的 2\u00d7。</string>
     <string name="stream_test_verdict_recommend">建議：%1$d 個連線 / %2$d MB 區塊 - %3$s。這是達到此標題位元率 2\u00d7 且記憶體用量最低的配置；上方可能有更快的配置，但會占用更多記憶體，對播放沒有幫助。</string>
     <string name="stream_test_verdict_marginal">最佳結果：%1$d 個連線 / %2$d MB 區塊，速度 %3$s - 高於此標題 %4$s 的平均位元率，但未達 2\u00d7 餘裕目標。可以播放，但在高位元率場景或跳轉時可能緩衝。</string>
     <string name="stream_test_verdict_cannot_sustain">此連線無法支撐此標題 - 測試中最快的配置 (%1$d 個連線 / %2$d MB 區塊) 達到 %3$s，低於此標題 %4$s 的平均位元率。預期會緩衝；建議選擇位元率較低的版本。</string>
     <string name="stream_test_verdict_fastest_nobitrate">最快且穩定：%1$d 個連線 / %2$d MB 區塊，速度 %3$s。標題位元率未知 - 請先播放影片以取得更貼切的建議。</string>
-    <string name="stream_test_verdict_pm_suffix">" 需要 Nuvio 效能模式。"</string>
     <string name="stream_test_caveat">僅測量原始下載吞吐量 - 實際播放還取決於緩衝、解碼和伺服器負載，而且目標緩衝也會占用記憶體。</string>
     <string name="stream_test_label_parallel_dyn">並行連線 (%1$d 個連線 / %2$d MB 區塊)</string>
     <string name="stream_test_btn_measuring_dyn">正在測量：%1$s\u2026</string>
@@ -3479,7 +3519,6 @@
     <string name="assessment_item_parallel">並行連線</string>
     <string name="assessment_item_chunk">區塊大小</string>
     <string name="assessment_item_network_master">自訂網路</string>
-    <string name="assessment_item_http2">啟用 HTTP/2</string>
     <string name="assessment_item_perf_mode">ExoPlayer 原生記憶體</string>
     <string name="assessment_item_buffer_master">自訂播放緩衝</string>
     <string name="assessment_item_managed_budget">受管記憶體預算</string>
@@ -3500,15 +3539,18 @@
     <string name="assessment_grounds_parallel_cannot">最快在 %2$d \u00d7 %3$d MB 下測得 %1$s - 低於標題本身的位元率；此線路無法支撐該串流</string>
     <string name="assessment_grounds_parallel_fastest">最快在 %2$d \u00d7 %3$d MB 下測得 %1$s - 標題位元率未知，因此無法判斷是否足夠</string>
     <string name="assessment_grounds_chunk">與上方的連線數搭配，來自同一輪測量</string>
-    <string name="assessment_grounds_network_master">下方 HTTP/2 和並行設定的總開關</string>
-    <string name="assessment_grounds_http2">在一個連線上多工處理範圍請求；普遍有益，無需偵測</string>
     <string name="assessment_grounds_perf_mode">將原盤等級大小的緩衝放在 Java 堆積之外，避免記憶體回收造成畫面卡頓；記憶體限制依此裝置的 %1$s 等級調整 (安全 %2$d MB / 警告 %3$d MB)，連線數超過 %4$d 時必須開啟</string>
     <string name="assessment_grounds_perf_mode_unsupported">需要 Android 8.0 或更新版本</string>
-    <string name="assessment_grounds_buffer_master">關閉即使用 media3 的預設載入控制：依位元組計算的目標約為 13 MB，無論時長設定為何，只能容納原盤 \u2248 1 s 的內容 - 下方的值則是依此裝置設定的</string>
-    <string name="assessment_grounds_managed_budget">受管模式將目標固定在安全限制，並忽略並行連線的開銷；下方的明確目標會同時考慮這兩項</string>
-    <string name="assessment_grounds_target_buffer">目標 %1$d + 連線開銷 %2$d MB = %3$d MB \u2264 %4$d MB 安全限制 (可容納的最大 %5$d MB 級距)</string>
-    <string name="assessment_grounds_allow_large_on">需要開啟，目標滑桿才能在此裝置上達到 %1$d MB</string>
-    <string name="assessment_grounds_allow_large_off">建議的目標在標準滑桿範圍內</string>
+    <string name="assessment_grounds_native_auto">應用程式為這台 %1$s 裝置設定緩衝大小 (最多 %2$d MB，記憶體不足時更少)，並保存在原生記憶體中</string>
+    <string name="assessment_grounds_buffer_custom_times">由下方的緩衝方案設定緩衝時間；大小維持自動</string>
+    <string name="assessment_grounds_managed_on">依播放開始時的可用記憶體設定緩衝，並在裝置記憶體不足時縮小；固定大小兩者都做不到</string>
+    <string name="assessment_value_target_auto">自動 (最多 %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">開啟「受管記憶體預算」後，應用程式會在播放開始時選擇大小</string>
+    <string name="assessment_grounds_allow_large_small_box">僅適用於記憶體 4 GB 以上的裝置；在這台 %1$s 裝置上，大緩衝會卡頓或當機</string>
+    <string name="assessment_grounds_allow_large_managed">開啟「受管記憶體預算」時無效</string>
+    <string name="assessment_grounds_network_for_parallel">開啟上方建議的並行連線</string>
+    <string name="assessment_grounds_network_parallel_only">僅並行連線需要；此處單一連線已足夠快</string>
+    <string name="assessment_grounds_network_untested">僅並行連線需要，且尚未測試任何串流來做決定</string>
     <string name="assessment_grounds_max_buffer">%1$d MB 的目標可容納此標題 (%3$s) \u2248%2$d s 的內容 - 超出的秒數無法實現</string>
     <string name="assessment_grounds_max_buffer_nobitrate">標題位元率未知 - 無法計算位元組上限；上限維持為 %1$d s</string>
     <string name="assessment_grounds_vod_auto">自動會依可用空間決定大小 (限制範圍內取可用空間的 20%%，保留 1 GB) - 此裝置目前 \u2248%1$s</string>
@@ -3545,7 +3587,7 @@
     <string name="assessment_no_stream">沒有上次播放的串流 - 裝置相關的列仍會執行。要取得測量列，請先播放您常看內容中要求最高的標題，然後重新執行。</string>
     <string name="assessment_header_title">裝置資訊</string>
     <string name="assessment_header_device">裝置</string>
-    <string name="assessment_header_device_value">%1$s - 安全 %2$d MB / 警告 %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - 緩衝上限 %2$d MB / 超過 %3$d MB 危險</string>
     <string name="assessment_header_display">顯示器</string>
     <string name="assessment_header_display_unknown">無法從此畫面檢查</string>
     <string name="assessment_header_stream">上次的串流</string>
@@ -3566,8 +3608,7 @@
     <string name="assessment_footer">測量列是在此裝置上測試得出的；計算列由可查詢的資訊推導得出。套用時只寫入測量列、計算列以及您選擇的方案 - 確認列絕不會被自動變更。還原會復原最近一次套用。</string>
     <string name="stream_test_verdict_recommend_trade">建議：%1$d 個連線 / %2$d MB 區塊 - %3$s (此標題位元率的 %4$s\u00d7)。之所以不選 %5$d \u00d7 %6$d MB (2\u00d7 以上)，是因為在此裝置的記憶體預算下，這樣可留出 %7$d MB \u2248 %8$d s 的播放緩衝，而不是 %9$d MB \u2248 %10$d s - 在這裡緩衝深度比補充速度更重要。</string>
     <string name="assessment_grounds_parallel_trade">在 %2$d \u00d7 %3$d MB 下測得 %1$s - 達到 1.5\u00d7 位元率並留出 %6$d MB \u2248 %7$d s 的緩衝；2\u00d7 配置 (%4$d \u00d7 %5$d MB) 只能留出 %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">目前 %1$d MB + %2$d MB 開銷 = %3$d MB，處於警告區間 (%4$d-%5$d MB) - 可用，但餘裕減少</string>
-    <string name="assessment_grounds_target_current_danger">目前 %1$d MB + %2$d MB 開銷 = %3$d MB，超過 %4$d MB 警告限制 - 有因記憶體不足被系統終止的風險</string>
+    <string name="assessment_parallel_small_box_cap">此裝置有 %1$s 記憶體，因此建議最多 2 個連線</string>
     <string name="assessment_grounds_max_buffer_current">依您目前 %1$d MB 的目標：實際 \u2248 %2$d s，無論秒數滑桿設為多少 - 位元組數先達到上限</string>
     <string name="assessment_item_engine">內部引擎</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -3631,7 +3672,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV 不支援調整圖像字幕大小。請使用 ExoPlayer 獨立於文字調整圖像字幕大小。</string>
     <string name="subtitle_style_image_size">圖像字幕大小</string>
     <string name="v2_accent_fixed_hint">除非選擇了隨封面調整的強調色，否則使用主題色。</string>
-    <string name="about_fork_updates_subtitle">來自 NuvioTV-Fork 的更新。所有 fork 版本均為測試版。</string>
+    <string name="about_fork_updates_subtitle">來自 GitHub 上 Nuvio Arc 發行版本的更新。</string>
     <string name="playback_speculative_stream_search">播放前搜尋來源</string>
     <string name="playback_speculative_stream_search_sub">瀏覽時搜尋擴充套件，以加快來源選擇。部分擴充套件可能會在搜尋時新增或抓取內容。關閉後會等到按下播放。媒體連結和提供者解析會等到選擇播放時才進行，但在一集接近結束、跳轉縮圖準備下一集時除外。</string>
     <string name="debrid_cached_playback_links">重複使用已快取的播放連結</string>
@@ -3719,6 +3760,8 @@
     <string name="seek_thumbnails_prepare_off_desc">立即開始播放；縮圖在暫停時和停止觀看後產生。</string>
     <string name="seek_thumbnails_prepare_on">開啟</string>
     <string name="seek_thumbnails_prepare_on_desc">在標題開始前產生其跳轉縮圖。隨時可按「立即觀看」或返回鍵開始播放。</string>
+    <string name="seek_thumbnails_from_copy_title">用副本產生縮圖</string>
+    <string name="seek_thumbnails_from_copy_subtitle">更快產生縮圖：4K 標題使用 1080p 或 720p 副本，Usenet 標題使用不在 Usenet 上的副本。TorBox 上已快取的副本可能會被新增到您的清單中，停留幾分鐘。</string>
     <string name="seek_thumbnails_clear_title">清除已儲存的縮圖</string>
     <string name="seek_thumbnails_clear_subtitle">下次播放標題時會重新產生。</string>
     <string name="seek_thumbnails_cleared">已清除儲存的縮圖</string>
@@ -3733,7 +3776,7 @@
     <string name="seek_thumbnails_time_left_minutes">剩餘約 %1$d 分 %2$d 秒</string>
     <string name="seek_thumbnails_count">%1$d / %2$d</string>
     <string name="seek_thumbnails_start_now">立即觀看</string>
-    <string name="seek_thumbnails_settings_hint">可在 設定 › 播放 › 一般 中開啟或關閉</string>
+    <string name="seek_thumbnails_settings_hint">可在 設定 › 播放 › Player Interface 中開啟或關閉</string>
     <string name="seek_thumbnails_progress_chip">縮圖 %1$d%%</string>
     <string name="party_title">觀影派對</string>
     <string name="party_settings_subtitle">與其他家庭的人在同一時刻觀看同一內容</string>
@@ -3775,6 +3818,7 @@
     <string name="party_member_buffering">緩衝中</string>
     <string name="party_member_catching_up">追趕中</string>
     <string name="party_member_away">暫離</string>
+    <string name="party_member_needs_update">需要更新</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">您的檔案比主持人的長 %1$s s。派對可能會逐漸不同步。</string>
     <string name="party_copy_shorter">您的檔案比主持人的短 %1$s s。派對可能會逐漸不同步。</string>
@@ -3789,7 +3833,7 @@
     <string name="party_match_same">與主持人相同的檔案</string>
     <string name="party_match_likely">很可能與主持人的檔案相同</string>
     <string name="party_match_different">與主持人的檔案不同</string>
-    <string name="party_invite_text">來 Nuvio 加入我的觀影派對。開啟設定，進入觀影派對，然後輸入代碼 %1$s</string>
+    <string name="party_invite_text">來 Nuvio Arc 加入我的觀影派對。開啟設定，進入觀影派對，然後輸入代碼 %1$s</string>
     <string name="party_invite_qr">用手機相機掃描，即可用簡訊傳送邀請</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

@@ -11,4 +11,6 @@
     <!-- Nuvio-test additions -->
     <string name="v2_intro_animation_title">Uvodna animacija</string>
     <string name="v2_intro_animation_subtitle">Prikaži uvod dok se početna stranica i posteri učitavaju u pozadini</string>
+    <string name="v2_intro_sound_title">Uvodni zvuk</string>
+    <string name="v2_intro_sound_subtitle">Pušta uvod sa zvukom, u surround zvuku ako ga vaš sistem podržava</string>
 </resources>

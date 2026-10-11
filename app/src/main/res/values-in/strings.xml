@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio-test</string>
+    <string name="app_name">Nuvio Arc</string>
     <string name="tv_channel_continue_watching">Lanjutkan Menonton</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Film</string>
@@ -336,6 +336,7 @@
     <string name="theme_color_violet">Lavender</string>
     <string name="theme_color_emerald">Zamrud</string>
     <string name="theme_color_amber">Amber</string>
+    <string name="theme_color_copper">Tembaga</string>
     <string name="theme_color_rose">Mawar</string>
     <string name="theme_color_white">Melati</string>
     <string name="appearance_amoled_mode">Mode AMOLED</string>
@@ -349,7 +350,7 @@
     <!-- AboutScreen -->
     <string name="about_title">Tentang</string>
     <string name="about_subtitle">Informasi aplikasi, pembaruan, dan tautan hukum</string>
-    <string name="about_made_with_love">Dibuat dengan ❤️ oleh Tapframe dan teman-teman</string>
+    <string name="about_made_with_love">Dibangun di atas karya hebat Tapframe dan teman-teman ❤️ · Nuvio Arc oleh ysosrs123</string>
     <string name="about_version">Versi %1$s</string>
     <string name="about_check_updates">Periksa pembaruan</string>
     <string name="about_check_updates_subtitle">Unduh rilis terbaru</string>
@@ -360,22 +361,22 @@
     <string name="about_licenses_attributions">Lisensi &amp; Atribusi</string>
     <string name="about_licenses_attributions_subtitle">Sumber data, pengakuan, dan lisensi Android</string>
     <string name="licenses_attributions_title">Lisensi &amp; Atribusi</string>
-    <string name="licenses_attributions_subtitle">Penyedia data, kredit layanan, dan lisensi pemutaran Android yang digunakan oleh Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Penyedia data, kredit layanan, dan lisensi pemutaran Android yang digunakan oleh Nuvio Arc.</string>
     <string name="licenses_attributions_section_app">LISENSI APLIKASI</string>
     <string name="licenses_attributions_section_data">DATA &amp; LAYANAN</string>
     <string name="licenses_attributions_section_playback">LISENSI PEMUTARAN ANDROID</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio-test (fork dari Nuvio TV)</string>
+    <string name="licenses_attributions_nuvio_title">Nuvio Arc (fork dari Nuvio TV)</string>
     <string name="licenses_attributions_nuvio_body">Versi modifikasi dari Nuvio TV. Kode sumber dan ketentuan lisensi untuk build ini tersedia di repositori fork. Nuvio TV ada di github.com/NuvioMedia/NuvioTV. Dilisensikan di bawah GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
-    <string name="licenses_attributions_tmdb_body">Nuvio menggunakan API TMDB untuk metadata film dan TV, poster dan latar belakang, trailer, pemeran, detail produksi, koleksi, dan rekomendasi. Produk ini menggunakan API TMDB namun tidak didukung atau disertifikasi oleh TMDB.</string>
+    <string name="licenses_attributions_tmdb_body">Nuvio Arc menggunakan API TMDB untuk metadata film dan TV, poster dan latar belakang, trailer, pemeran, detail produksi, koleksi, dan rekomendasi. Produk ini menggunakan API TMDB namun tidak didukung atau disertifikasi oleh TMDB.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="licenses_attributions_trakt_body">Nuvio terhubung ke Trakt untuk autentikasi akun, riwayat tonton, sinkronisasi progres, data pustaka, rating, daftar, dan komentar. Nuvio tidak berafiliasi dengan atau didukung oleh Trakt.</string>
+    <string name="licenses_attributions_trakt_body">Nuvio Arc terhubung ke Trakt untuk autentikasi akun, riwayat tonton, sinkronisasi progres, data pustaka, rating, daftar, dan komentar. Nuvio Arc tidak berafiliasi dengan atau didukung oleh Trakt.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
-    <string name="licenses_attributions_mdblist_body">Nuvio menggunakan MDBList untuk rating dan data penyedia skor eksternal. Nuvio tidak berafiliasi dengan atau didukung oleh MDBList.</string>
+    <string name="licenses_attributions_mdblist_body">Nuvio Arc menggunakan MDBList untuk rating dan data penyedia skor eksternal. Nuvio Arc tidak berafiliasi dengan atau didukung oleh MDBList.</string>
     <string name="licenses_attributions_introdb_title">IntroDB</string>
-    <string name="licenses_attributions_introdb_body">Nuvio menggunakan API IntroDB untuk cap waktu intro, rekap, kredit, dan pratinjau dari komunitas yang digunakan oleh kontrol lewati. Nuvio tidak berafiliasi dengan atau didukung oleh IntroDB.</string>
+    <string name="licenses_attributions_introdb_body">Nuvio Arc menggunakan API IntroDB untuk cap waktu intro, rekap, kredit, dan pratinjau dari komunitas yang digunakan oleh kontrol lewati. Nuvio Arc tidak berafiliasi dengan atau didukung oleh IntroDB.</string>
     <string name="licenses_attributions_imdb_title">Dataset Non-Komersial IMDb</string>
-    <string name="licenses_attributions_imdb_body">Nuvio menggunakan Dataset Non-Komersial IMDb, termasuk title.ratings.tsv.gz, untuk rating dan jumlah suara IMDb. Informasi atas izin IMDb (https://www.imdb.com). Digunakan dengan izin. Data IMDb untuk penggunaan pribadi dan non-komersial sesuai ketentuan IMDb.</string>
+    <string name="licenses_attributions_imdb_body">Nuvio Arc menggunakan Dataset Non-Komersial IMDb, termasuk title.ratings.tsv.gz, untuk rating dan jumlah suara IMDb. Informasi atas izin IMDb (https://www.imdb.com). Digunakan dengan izin. Data IMDb untuk penggunaan pribadi dan non-komersial sesuai ketentuan IMDb.</string>
     <string name="licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="licenses_attributions_exoplayer_body">Digunakan sebagai mesin pemutaran Android. Dilisensikan di bawah Apache License, Versi 2.0.</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
@@ -397,7 +398,7 @@
     <string name="settings_advanced_subtitle">Performa, navigasi, cache, dan diagnostik</string>
     <string name="experience_mode_essential">Esensial</string>
     <string name="experience_mode_advanced">Lanjutan</string>
-    <string name="experience_mode_choose_title">Pilih pengalaman Nuvio Anda</string>
+    <string name="experience_mode_choose_title">Pilih pengalaman Nuvio Arc Anda</string>
     <string name="experience_mode_choose_subtitle">Mulai sederhana atau buka semua kustomisasi. Anda bisa beralih kapan saja.</string>
     <string name="experience_mode_essential_card_subtitle">Pengaturan terfokus, add-on, dasar pemutaran, Trakt, dan pengaturan akun.</string>
     <string name="experience_mode_advanced_card_subtitle">Pengaturan lengkap, kontrol tata letak, urutan katalog, koleksi, plug-in, dan diagnostik.</string>
@@ -597,8 +598,8 @@
     <string name="playback_player_ask_desc">Pilih pemutar setiap kali</string>
     <string name="playback_player_auto">Otomatis (Terbaik untuk Konten)</string>
     <string name="playback_player_auto_desc">ExoPlayer untuk Film &amp; Serial TV · MPV untuk Anime</string>
-    <string name="playback_engine_exoplayer_desc">Kompatibilitas terbaik dengan fitur Nuvio saat ini.</string>
-    <string name="playback_engine_mvplayer_desc">Menggunakan libmpv dengan kontrol OSD Nuvio. Eksperimental.</string>
+    <string name="playback_engine_exoplayer_desc">Kompatibilitas terbaik dengan fitur Nuvio Arc saat ini.</string>
+    <string name="playback_engine_mvplayer_desc">Menggunakan libmpv dengan kontrol OSD Nuvio Arc. Eksperimental.</string>
 
     <!-- PlaybackAudioSettings -->
     <string name="audio_trailer_section">Trailer</string>
@@ -1112,7 +1113,7 @@
     <string name="trakt_stat_watched_hours">Jam Ditonton</string>
     <string name="trakt_disconnect">Putuskan</string>
     <string name="trakt_disconnect_title">Putuskan Trakt?</string>
-    <string name="trakt_disconnect_subtitle">Ini akan memutuskan akun Trakt Anda dari Nuvio.</string>
+    <string name="trakt_disconnect_subtitle">Ini akan memutuskan akun Trakt Anda dari Nuvio Arc.</string>
     <string name="trakt_login">Masuk</string>
     <string name="trakt_retry">Coba Lagi</string>
     <string name="trakt_back">Kembali</string>
@@ -1297,7 +1298,7 @@
     <string name="stream_type_torrent">Torrent</string>
     <string name="stream_type_youtube">YouTube</string>
     <string name="p2p_consent_title">Streaming P2P</string>
-    <string name="p2p_consent_body">Stream ini menggunakan teknologi peer-to-peer (P2P). Dengan mengaktifkan P2P, Anda mengakui dan menyetujui bahwa:\n\n\u2022 Alamat IP Anda akan terlihat oleh peer lain di jaringan\n\u2022 Anda sepenuhnya bertanggung jawab atas konten yang Anda akses\n\u2022 Anda mengonfirmasi bahwa Anda memiliki hak hukum untuk streaming konten ini di yurisdiksi Anda\n\u2022 Nuvio tidak menyelenggarakan, mendistribusikan, atau mengontrol konten P2P apa pun\n\u2022 Nuvio tidak bertanggung jawab atas konsekuensi hukum apa pun yang timbul dari penggunaan streaming P2P Anda\n\nAnda menggunakan fitur ini sepenuhnya atas risiko Anda sendiri. P2P dapat dinonaktifkan kapan saja di Pengaturan.</string>
+    <string name="p2p_consent_body">Stream ini menggunakan teknologi peer-to-peer (P2P). Dengan mengaktifkan P2P, Anda mengakui dan menyetujui bahwa:\n\n\u2022 Alamat IP Anda akan terlihat oleh peer lain di jaringan\n\u2022 Anda sepenuhnya bertanggung jawab atas konten yang Anda akses\n\u2022 Anda mengonfirmasi bahwa Anda memiliki hak hukum untuk streaming konten ini di yurisdiksi Anda\n\u2022 Nuvio Arc tidak menyelenggarakan, mendistribusikan, atau mengontrol konten P2P apa pun\n\u2022 Nuvio Arc tidak bertanggung jawab atas konsekuensi hukum apa pun yang timbul dari penggunaan streaming P2P Anda\n\nAnda menggunakan fitur ini sepenuhnya atas risiko Anda sendiri. P2P dapat dinonaktifkan kapan saja di Pengaturan.</string>
     <string name="p2p_consent_enable">Aktifkan P2P</string>
     <string name="p2p_consent_cancel">Batal</string>
     <string name="settings_p2p_title">Streaming P2P</string>
@@ -1731,7 +1732,7 @@
     <string name="catalog_see_all_empty_subtitle">Coba katalog lain atau periksa kembali nanti</string>
 
     <!-- LayoutSelectionScreen -->
-    <string name="layout_selection_welcome">Selamat datang di Nuvio</string>
+    <string name="layout_selection_welcome">Selamat datang di Nuvio Arc</string>
     <string name="layout_selection_subtitle">Pilih tata letak layar beranda Anda</string>
     <string name="layout_selection_continue">Lanjutkan</string>
 
@@ -1947,7 +1948,7 @@
     <string name="cd_preview">Pratinjau</string>
     <string name="cd_test">Tes</string>
     <string name="cd_unlink">Putuskan Tautan</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">Nuvio Arc</string>
     <string name="cd_trakt_logo">Logo Trakt</string>
     <string name="cd_trakt_qr">QR aktivasi Trakt</string>
     <string name="cd_imdb">IMDb</string>
@@ -2101,7 +2102,7 @@
     <string name="collections_editor_tmdb_list_helper">Contoh: https://www.themoviedb.org/list/8504994 atau 8504994.</string>
     <string name="collections_editor_tmdb_person_id">ID Orang</string>
     <string name="collections_editor_tmdb_person_helper">Contoh: https://www.themoviedb.org/person/31-tom-hanks atau 31.</string>
-    <string name="collections_editor_tmdb_title_helper">Ditampilkan sebagai nama baris/tab. Jika kosong, Nuvio akan membuatnya dari sumber.</string>
+    <string name="collections_editor_tmdb_title_helper">Ditampilkan sebagai nama baris/tab. Jika kosong, Nuvio Arc akan membuatnya dari sumber.</string>
     <string name="collections_editor_tmdb_quick_genres">Pintasan Genre</string>
     <string name="collections_editor_tmdb_quick_languages">Pintasan Bahasa</string>
     <string name="collections_editor_tmdb_quick_countries">Pintasan Negara</string>
@@ -2274,7 +2275,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">Tanpa REMUX/HDR</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">Gunakan pemutar bawaan NuvioTV</string>
+    <string name="playback_player_internal_desc">Gunakan pemutar bawaan Nuvio Arc</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d seed · %2$d peer</string>
@@ -2473,16 +2474,21 @@
     <string name="appearance_screensaver_dim_gentle">Layar tetap terlihat jelas</string>
     <string name="appearance_screensaver_dim_balanced">Gelap tetapi terbaca</string>
     <string name="appearance_screensaver_dim_strong">Nyaris tidak terlihat</string>
+    <string name="appearance_app_icon_mint">Mint</string>
     <string name="licenses_attributions_avatars_title">Avatar nonton bareng</string>
     <string name="licenses_attributions_avatars_body">Dibuat dengan DiceBear, mengolah ulang desain berikut: \"Fun Emoji\" oleh Davis Uche dan \"Adventurer\" oleh Lisa Wischofsky, berlisensi CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" oleh Lisa Wischofsky, \"Notionists\" oleh Zoish, \"Pixel Art\" dan \"Thumbs\" oleh DiceBear, CC0 1.0. \"Bottts\" oleh Pablo Stanley, gratis untuk penggunaan pribadi dan komersial. Wajah hewan dari Twemoji oleh Twitter, Inc. dan kontributor lain, berlisensi CC BY 4.0.</string>
     <string name="licenses_attributions_media_servers_title">Jellyfin, Emby, dan Silo</string>
-    <string name="licenses_attributions_media_servers_body">Nuvio terhubung ke server Jellyfin, Emby, atau Silo milik Anda sendiri. Nama dan logonya adalah milik pemiliknya masing-masing. Nuvio tidak berafiliasi dengan atau didukung oleh Jellyfin, Emby, atau Silo.</string>
+    <string name="licenses_attributions_media_servers_body">Nuvio Arc terhubung ke server Jellyfin, Emby, atau Silo milik Anda sendiri. Nama dan logonya adalah milik pemiliknya masing-masing. Nuvio Arc tidak berafiliasi dengan atau didukung oleh Jellyfin, Emby, atau Silo.</string>
     <string name="licenses_attributions_trash_title">TRaSH Guides</string>
     <string name="licenses_attributions_trash_body">Daftar grup rilis. Lisensi MIT.</string>
     <string name="licenses_attributions_libdovi_title">libdovi</string>
     <string name="licenses_attributions_libdovi_body">Penguraian metadata Dolby Vision. Oleh quietvoid. Lisensi MIT.</string>
     <string name="licenses_attributions_ffmpeg_title">FFmpeg</string>
     <string name="licenses_attributions_ffmpeg_body">Dekode audio. Dilisensikan di bawah LGPL 2.1 atau yang lebih baru.</string>
+    <string name="licenses_attributions_dav1d_title">dav1d</string>
+    <string name="licenses_attributions_dav1d_body">Dekode video AV1 secara perangkat lunak. Oleh VideoLAN dan para penulis dav1d. Lisensi BSD 2-Clause.</string>
+    <string name="licenses_attributions_cpu_features_title">cpu_features</string>
+    <string name="licenses_attributions_cpu_features_body">Deteksi fitur prosesor untuk dekoder AV1. Oleh Google. Lisensi Apache 2.0.</string>
     <string name="licenses_attributions_kodi_title">Kodi</string>
     <string name="licenses_attributions_kodi_body">Pengemasan TrueHD MAT dan downmix audio diadaptasi dari Kodi. Dilisensikan di bawah GPL 2.0 atau yang lebih baru.</string>
     <string name="settings_experience_subtitle">Esensial atau Lanjutan</string>
@@ -2518,8 +2524,9 @@
     <string name="playback_section_audio_desc">Kontrol audio dan kompatibilitas video.</string>
     <string name="playback_afr_open">Terbuka</string>
     <string name="playback_afr_closed">Tertutup</string>
+    <string name="audio_tunneled_sub_prefer_app">Tidak tersedia saat Prioritas Dekoder disetel ke Utamakan dekoder aplikasi</string>
     <string name="audio_use_system_passthrough">Passthrough Sistem</string>
-    <string name="audio_use_system_passthrough_sub">Mengirim TrueHD dan DTS-HD ke penerima AV Anda melalui Android (jalur Sistem), bukan Nuvio (jalur IEC). Gunakan ini jika format lossless menghasilkan derau, pergeseran, atau tanpa suara.</string>
+    <string name="audio_use_system_passthrough_sub">Mengirim TrueHD dan DTS-HD ke penerima AV Anda melalui Android (jalur Sistem), bukan Nuvio Arc (jalur IEC). Gunakan ini jika format lossless menghasilkan derau, pergeseran, atau tanpa suara.</string>
     <string name="audio_surround_header">Suara Surround</string>
     <string name="audio_surround_reset_iec_probe">Hapus Keputusan Uji IEC</string>
     <string name="audio_surround_reset_iec_probe_sub">Uji lagi output IEC 61937. Gunakan ini jika format lossless turun ke PCM setelah mengganti penerima AV atau input.</string>
@@ -2568,6 +2575,10 @@
     <string name="audio_inject_hdr10_sei_sub">Untuk konten DV8 (Profile 8) yang di-strip ke lapisan dasar HDR10, tambahkan metadata mastering sumber (MaxCLL/MaxFALL dan luminans puncak) agar TV HDR10 non-DV melakukan tone-map dengan benar. Hanya aktif saat Penanganan DV adalah Strip DV atau Lapisan Dasar HDR10; tidak berpengaruh pada Profile 7 atau pemutaran Dolby Vision.</string>
     <string name="diag_value_not_advertised">Tidak diumumkan (pemutaran native mungkin tetap berfungsi)</string>
     <string name="diag_label_dv_el_type">Tipe EL DV7</string>
+    <string name="diag_value_dv7_native_route">Jalur native lapisan ganda digunakan (Android tidak mencantumkannya)</string>
+    <string name="diag_value_el_all_layers_fmt">%1$s · RPU + BL + EL, ketiga lapisan digunakan</string>
+    <string name="diag_value_el_converted_fmt">%1$s · BL + RPU, dikonversi ke 8.1 (EL tidak digunakan)</string>
+    <string name="diag_value_el_base_only_fmt">%1$s · hanya BL (RPU dan EL tidak digunakan)</string>
     <string name="diag_label_dv_hdr_mastering">Mastering HDR DV</string>
     <string name="diag_label_dv_rpu_drops">RPU DV terbuang</string>
     <string name="sub_tertiary_lang">Bahasa Ketiga yang Diutamakan</string>
@@ -2575,6 +2586,10 @@
     <string name="sub_addon_subtitles_desc">Ambil subtitle dari addon terpasang selama pemutaran. Saat nonaktif, hanya subtitle yang tertanam di file yang tersedia.</string>
     <string name="autoplay_quality_rules_title">Aturan kualitas</string>
     <string name="autoplay_quality_rules_subtitle">Filter, pengurutan, dan tingkatan grup rilis di Layanan Debrid.</string>
+    <string name="stream_sort_sources">Urutkan sumber</string>
+    <string name="stream_sort_sources_sub">Urutan daftar stream. Kualitas terbaik dulu memakai Aturan kualitas Anda.</string>
+    <string name="stream_sort_sources_source_order">Urutan sumber</string>
+    <string name="stream_sort_sources_best_first">Kualitas terbaik dulu</string>
     <string name="autoplay_eager_ready_title">Siap lebih cepat pada sumber lambat</string>
     <string name="autoplay_eager_ready_sub">Siapkan pemutaran begitu batas waktu pemilihan tercapai, tanpa menunggu addon paling lambat. Berlaku untuk halaman detail dan Lanjutkan Menonton.</string>
     <string name="autoplay_mode_quality">Kualitas terbaik</string>
@@ -2585,6 +2600,17 @@
     <string name="layout_landscape_posters_home_only_desc">Kartu lanskap di Beranda, portrait di Pustaka, Pencarian, dan daftar</string>
     <string name="layout_landscape_posters_everywhere">Di Semua Tempat</string>
     <string name="layout_landscape_posters_everywhere_desc">Kartu lanskap di Beranda, Pustaka, Pencarian, dan daftar</string>
+    <string name="layout_hide_side_icons">Sembunyikan ikon samping</string>
+    <string name="layout_hide_side_icons_sub">Sembunyikan ikon menu di tepi kiri saat menu tertutup. Tekan Kiri atau Kembali untuk membuka menu.</string>
+    <string name="layout_watched_titles">Judul yang sudah ditonton</string>
+    <string name="layout_watched_titles_sub">Tampilkan, redupkan, atau sembunyikan film dan serial yang sudah selesai Anda tonton.</string>
+    <string name="layout_watched_titles_dialog_title">Judul yang sudah ditonton</string>
+    <string name="layout_watched_titles_show">Tampilkan</string>
+    <string name="layout_watched_titles_show_desc">Judul yang sudah ditonton tetap seperti biasa, dengan tanda centang.</string>
+    <string name="layout_watched_titles_dim">Redupkan</string>
+    <string name="layout_watched_titles_dim_desc">Judul yang sudah ditonton tetap di tempatnya, lebih gelap, dengan tanda centang.</string>
+    <string name="layout_watched_titles_hide">Sembunyikan</string>
+    <string name="layout_watched_titles_hide_desc">Film yang sudah ditonton dan serial yang sudah ditonton sampai habis tidak ditampilkan di baris Beranda dan banner. Lanjutkan Menonton tidak terpengaruh.</string>
     <string name="layout_trailer_logo">Logo di Atas Trailer Kartu</string>
     <string name="layout_trailer_logo_sub">Tampilkan logo judul di atas trailer yang diputar di kartu.</string>
     <string name="mdblist_account_title">Akun</string>
@@ -2607,6 +2633,8 @@
     <string name="player_layout_more_fixed_help">Tekan OK untuk menyembunyikan/menampilkan Lainnya. Posisinya tetap di paling kanan. Pindahkan aksi lain melewati batas menunya untuk mengubah isi popup.</string>
     <string name="player_error_placeholder_stream">Stream ini tampak seperti kartu kesalahan penyedia, bukan videonya. Coba sumber lain.</string>
     <string name="subtitle_panel_languages">Bahasa</string>
+    <string name="library_sort_released_desc">Dirilis ↓</string>
+    <string name="library_sort_released_asc">Dirilis ↑</string>
     <string name="library_empty_mdblist_title">Tidak ada %1$s di daftar tonton Anda</string>
     <string name="library_empty_mdblist_subtitle">Gunakan + di detail untuk menambahkan item ke daftar tonton MDBList Anda</string>
     <string name="library_empty_mdblist_not_auth_title">MDBList belum terhubung</string>
@@ -2627,6 +2655,7 @@
     <string name="library_transfer_copy">Salin</string>
     <string name="library_transfer_move">Pindahkan (salin, lalu hapus dari sumber)</string>
     <string name="library_transfer_none">Tidak ada yang perlu disalin</string>
+    <string name="sub_mode_effects_warning">Berat: dapat melewatkan frame pada 4K dan mematikan Tunneled Playback.</string>
     <string name="cd_playback_stats">Statistik pemutaran</string>
     <string name="player_stats_unavailable_mpv">Statistik tidak tersedia untuk mesin libmpv</string>
     <string name="player_dead_source_failover">Sumber tidak tersedia - mencoba sumber berikutnya (%1$d/%2$d)</string>
@@ -2642,6 +2671,17 @@
     <string name="debrid_filters_show_everything_title">Tampilkan semuanya</string>
     <string name="debrid_filters_show_everything_subtitle">Hapus semua filter dan batas hasil; pengurutan cerdas tetap.</string>
     <string name="debrid_filters_show_everything_action">Tampilkan semua</string>
+    <string name="playback_net_device_memory_auto">Perangkat ini memiliki memori %1$s. Aplikasi mem-buffer hingga %2$d MB ke depan, lebih sedikit saat memori menipis.</string>
+    <string name="playback_net_native_memory_sub">Membiarkan aplikasi menentukan ukuran buffer untuk perangkat ini dan menyimpannya di memori native, dengan seek lebih cepat. Mengaktifkannya juga mengatur nilai buffer dan jaringan di bawah untuk perangkat ini.</string>
+    <string name="playback_buffer_custom_desc">Gunakan nilai di bawah, bukan nilai bawaan aplikasi. Saat nonaktif: dengan ExoPlayer native memory aktif, aplikasi mem-buffer 15 hingga 45 detik dalam ukuran yang dipilihnya untuk perangkat ini; tanpa itu, buffer standar Media3.</string>
+    <string name="playback_buffer_seconds_hint">Pada %1$d MB ini menampung sekitar %2$d detik remux 4K (80 Mbit/s). Pengaturan yang lebih lama tidak berpengaruh.</string>
+    <string name="playback_buffer_back_fitted">Disimpan di dalam Ukuran Buffer Target. Pada %1$d MB aplikasi menyimpan hingga sekitar %2$d detik (%3$d MB pada 80 Mbit/s), agar minimal 5 detik tetap tersedia ke depan.</string>
+    <string name="playback_buffer_back_fitted_none">Disimpan di dalam Ukuran Buffer Target. Pada %1$d MB tidak ada ruang untuknya, jadi aplikasi menyimpan 5 detik ke depan sebagai gantinya.</string>
+    <string name="playback_buffer_managed_desc">Menentukan buffer dari memori kosong perangkat ini saat pemutaran dimulai, dan mengecilkannya saat memori menipis. Nonaktifkan untuk memilih Ukuran Buffer Target sendiri; pada perangkat kecil ukuran lebih besar bisa membuat pemutaran tersendat.</string>
+    <string name="playback_buffer_target_size_sub">Memori untuk buffer video ke depan. Batasnya mengikuti total memori perangkat ini. Saat Managed memory budget aktif, aplikasi menentukan ukurannya dari memori kosong saat pemutaran dimulai. Buffer mengecil selama memori perangkat menipis.</string>
+    <string name="playback_buffer_target_stutter_warning">Perangkat ini memiliki memori %1$s. Di atas %2$d MB, pemutaran bisa tersendat.</string>
+    <string name="playback_buffer_allow_large_desc">Memungkinkan Ukuran Buffer Target hingga 2 GB. Hanya untuk perangkat dengan memori 4 GB atau lebih; pada perangkat lebih kecil ukuran besar tersendat atau crash.</string>
+    <string name="playback_net_connection_count_small_box">Perangkat ini memiliki memori %1$s. Lebih dari 2 koneksi bisa membuat pemutaran tersendat.</string>
     <string name="diag_label_serving_host">Host penyaji</string>
     <string name="diag_label_file">File</string>
     <string name="diag_label_dv_applied">DV diterapkan</string>
@@ -2651,16 +2691,16 @@
     <string name="diag_value_dv_base_layer">DV diabaikan - lapisan dasar HDR10</string>
     <string name="diag_label_audio_path">Jalur audio</string>
     <string name="diag_label_audio_caps">Klaim rantai audio</string>
+    <string name="playback_estimated_memory_parts">Perkiraan penggunaan memori: sekitar %1$d MB (buffer %2$d MB + unduhan %3$d MB)</string>
+    <string name="playback_estimated_memory_buffer">Perkiraan penggunaan memori: sekitar %1$d MB (buffer %2$d MB)</string>
     <string name="stream_test_serving_host_label">Host penyaji: %1$s</string>
     <string name="stream_test_file_label">File: %1$s</string>
     <string name="stream_test_row_warning_suffix">" \u26a0"</string>
-    <string name="stream_test_row_pm_suffix">" \u00b7 PM"</string>
     <string name="stream_test_verdict_leave_off">Rekomendasi: biarkan koneksi paralel nonaktif - satu koneksi sudah memberikan %1$s, lebih dari 2\u00d7 bitrate judul ini.</string>
     <string name="stream_test_verdict_recommend">Rekomendasi: %1$d koneksi / chunk %2$d MB - %3$s. Konfigurasi paling hemat memori yang memenuhi 2\u00d7 bitrate judul ini; konfigurasi lebih cepat mungkin muncul di atas tetapi memakai lebih banyak memori tanpa manfaat bagi pemutaran.</string>
     <string name="stream_test_verdict_marginal">Hasil terbaik: %1$d koneksi / chunk %2$d MB pada %3$s - di atas bitrate rata-rata judul ini (%4$s), tetapi di bawah target cadangan 2\u00d7. Pemutaran seharusnya berjalan, tetapi bisa buffering pada adegan ber-bitrate tinggi atau saat seek.</string>
     <string name="stream_test_verdict_cannot_sustain">Koneksi ini tidak sanggup menopang judul ini - konfigurasi tercepat yang diuji (%1$d koneksi / chunk %2$d MB) mencapai %3$s, di bawah bitrate rata-rata judul (%4$s). Buffering akan terjadi; pertimbangkan versi ber-bitrate lebih rendah.</string>
     <string name="stream_test_verdict_fastest_nobitrate">Tercepat yang stabil: %1$d koneksi / chunk %2$d MB pada %3$s. Bitrate judul tidak diketahui - putar video dahulu untuk rekomendasi yang sesuai.</string>
-    <string name="stream_test_verdict_pm_suffix">" Memerlukan Nuvio Performance Mode."</string>
     <string name="stream_test_caveat">Hanya mengukur throughput unduhan mentah - pemutaran nyata juga bergantung pada buffering, dekode, dan beban server, serta menyimpan buffer target di memori.</string>
     <string name="stream_test_label_parallel_dyn">Koneksi Paralel (%1$d koneksi / chunk %2$d MB)</string>
     <string name="stream_test_btn_measuring_dyn">Mengukur: %1$s\u2026</string>
@@ -2693,7 +2733,6 @@
     <string name="assessment_item_parallel">Koneksi Paralel</string>
     <string name="assessment_item_chunk">Ukuran Chunk</string>
     <string name="assessment_item_network_master">Jaringan Kustom</string>
-    <string name="assessment_item_http2">Aktifkan HTTP/2</string>
     <string name="assessment_item_perf_mode">ExoPlayer Native Memory</string>
     <string name="assessment_item_buffer_master">Buffer Pemutaran Kustom</string>
     <string name="assessment_item_managed_budget">Anggaran memori terkelola</string>
@@ -2714,15 +2753,18 @@
     <string name="assessment_grounds_parallel_cannot">Tercepat terukur %1$s pada %2$d \u00d7 %3$d MB - di bawah bitrate judul itu sendiri; koneksi ini tidak sanggup menopang stream</string>
     <string name="assessment_grounds_parallel_fastest">Tercepat terukur %1$s pada %2$d \u00d7 %3$d MB - bitrate judul tidak diketahui, jadi tidak ada penilaian kecukupan</string>
     <string name="assessment_grounds_chunk">Dipasangkan dengan jumlah koneksi di atas, dari pengukuran yang sama</string>
-    <string name="assessment_grounds_network_master">Sakelar utama untuk pengaturan HTTP/2 dan paralel di bawah</string>
-    <string name="assessment_grounds_http2">Memultipleks permintaan rentang lewat satu koneksi; umumnya bermanfaat, tidak perlu diuji</string>
     <string name="assessment_grounds_perf_mode">Menjaga buffer seukuran remux di luar heap Java agar garbage collection tidak membuat frame tersendat; batas memori mengikuti tingkat %1$s perangkat ini (aman %2$d MB / peringatan %3$d MB) dan jumlah koneksi di atas %4$d memerlukannya</string>
     <string name="assessment_grounds_perf_mode_unsupported">Memerlukan Android 8.0 atau lebih baru</string>
-    <string name="assessment_grounds_buffer_master">Nonaktif berarti load control bawaan media3: target yang dihitung dalam byte sekitar 13 MB, yang menampung \u2248 1 s remux berapa pun nilai durasinya - nilai di bawah ini disesuaikan dengan perangkat ini</string>
-    <string name="assessment_grounds_managed_budget">Mode terkelola mengunci target ke batas aman dan mengabaikan overhead koneksi paralel; target eksplisit di bawah memperhitungkan keduanya</string>
-    <string name="assessment_grounds_target_buffer">Target %1$d + overhead koneksi %2$d MB = %3$d MB \u2264 batas aman %4$d MB (langkah %5$d MB terbesar yang muat)</string>
-    <string name="assessment_grounds_allow_large_on">Diperlukan agar slider target mencapai %1$d MB di perangkat ini</string>
-    <string name="assessment_grounds_allow_large_off">Target yang disarankan muat dalam rentang slider standar</string>
+    <string name="assessment_grounds_native_auto">Aplikasi menentukan ukuran buffer untuk perangkat %1$s ini (hingga %2$d MB, lebih sedikit saat memori menipis) dan menyimpannya di memori native</string>
+    <string name="assessment_grounds_buffer_custom_times">Profil buffer di bawah yang menentukan waktu buffer; ukurannya tetap otomatis</string>
+    <string name="assessment_grounds_managed_on">Menentukan buffer dari memori kosong saat pemutaran dimulai dan mengecilkannya saat memori perangkat menipis; ukuran tetap tidak bisa keduanya</string>
+    <string name="assessment_value_target_auto">Otomatis (hingga %1$d MB)</string>
+    <string name="assessment_grounds_target_auto">Dengan Anggaran memori terkelola aktif, aplikasi memilih ukurannya saat pemutaran dimulai</string>
+    <string name="assessment_grounds_allow_large_small_box">Hanya untuk perangkat dengan memori 4 GB atau lebih; pada perangkat %1$s ini ukuran besar tersendat atau crash</string>
+    <string name="assessment_grounds_allow_large_managed">Tidak berpengaruh selama Anggaran memori terkelola aktif</string>
+    <string name="assessment_grounds_network_for_parallel">Mengaktifkan koneksi paralel yang disarankan di atas</string>
+    <string name="assessment_grounds_network_parallel_only">Hanya perlu untuk koneksi paralel; satu koneksi sudah cukup cepat di sini</string>
+    <string name="assessment_grounds_network_untested">Hanya perlu untuk koneksi paralel, dan belum ada stream yang diuji untuk menentukannya</string>
     <string name="assessment_grounds_max_buffer">Target %1$d MB menampung \u2248%2$d s judul ini (%3$s) - detik di luar itu tidak akan terwujud</string>
     <string name="assessment_grounds_max_buffer_nobitrate">Bitrate judul tidak diketahui - batas byte tidak dapat dihitung; batas dibiarkan %1$d s</string>
     <string name="assessment_grounds_vod_auto">Otomatis menyesuaikan dengan ruang kosong (20%% dari ruang kosong dalam batas, cadangan 1 GB) - \u2248%1$s di perangkat ini saat ini</string>
@@ -2759,7 +2801,7 @@
     <string name="assessment_no_stream">Tidak ada stream yang terakhir diputar - baris perangkat tetap dijalankan. Untuk baris terukur, putar dahulu judul paling berat yang biasa Anda tonton, lalu jalankan ulang.</string>
     <string name="assessment_header_title">Fakta perangkat</string>
     <string name="assessment_header_device">Perangkat</string>
-    <string name="assessment_header_device_value">%1$s - aman %2$d MB / peringatan %3$d MB</string>
+    <string name="assessment_header_device_auto">%1$s - buffer hingga %2$d MB / bahaya di atas %3$d MB</string>
     <string name="assessment_header_display">Layar</string>
     <string name="assessment_header_display_unknown">Tidak dapat diperiksa dari halaman ini</string>
     <string name="assessment_header_stream">Stream terakhir</string>
@@ -2780,8 +2822,7 @@
     <string name="assessment_footer">Baris terukur diuji di perangkat ini; baris terhitung diturunkan dari fakta yang dapat dikueri. Terapkan hanya menulis baris terukur dan terhitung serta profil yang Anda pilih - baris periksa tidak pernah diubah otomatis. Kembalikan membatalkan penerapan terakhir.</string>
     <string name="stream_test_verdict_recommend_trade">Rekomendasi: %1$d koneksi / chunk %2$d MB - %3$s (%4$s\u00d7 bitrate judul ini). Dipilih alih-alih %5$d \u00d7 %6$d MB (2\u00d7+) karena pada anggaran memori perangkat ini tersisa %7$d MB \u2248 %8$d s buffer pemutaran, bukan %9$d MB \u2248 %10$d s - di sini kedalaman buffer lebih penting daripada laju pengisian.</string>
     <string name="assessment_grounds_parallel_trade">Terukur %1$s pada %2$d \u00d7 %3$d MB - memenuhi 1.5\u00d7 bitrate dan menyisakan %6$d MB \u2248 %7$d s buffer; konfigurasi 2\u00d7 (%4$d \u00d7 %5$d MB) hanya menyisakan %8$d MB \u2248 %9$d s</string>
-    <string name="assessment_grounds_target_current_warning">Saat ini %1$d MB + overhead %2$d MB = %3$d MB berada di zona peringatan (%4$d-%5$d MB) - masih bisa, dengan cadangan berkurang</string>
-    <string name="assessment_grounds_target_current_danger">Saat ini %1$d MB + overhead %2$d MB = %3$d MB melebihi batas peringatan %4$d MB - berisiko ditutup sistem karena memori rendah</string>
+    <string name="assessment_parallel_small_box_cap">Perangkat ini memiliki memori %1$s, jadi disarankan maksimal 2 koneksi</string>
     <string name="assessment_grounds_max_buffer_current">Pada target %1$d MB Anda saat ini: efektif \u2248 %2$d s, apa pun nilai slider detik - byte membatasi lebih dahulu</string>
     <string name="assessment_item_engine">Mesin Internal</string>
     <string name="assessment_value_engine_exo">ExoPlayer</string>
@@ -2842,7 +2883,7 @@
     <string name="subtitle_bitmap_mpv_note">MPV tidak mendukung pengubahan ukuran subtitle gambar. Gunakan ExoPlayer untuk mengatur ukuran subtitle gambar terpisah dari teks.</string>
     <string name="subtitle_style_image_size">Ukuran subtitle gambar</string>
     <string name="v2_accent_fixed_hint">Memakai Tema Warna kecuali aksen gambar dipilih.</string>
-    <string name="about_fork_updates_subtitle">Pembaruan dari NuvioTV-Fork. Semua rilis fork adalah beta.</string>
+    <string name="about_fork_updates_subtitle">Pembaruan dari rilis Nuvio Arc di GitHub.</string>
     <string name="playback_speculative_stream_search">Cari sumber sebelum Putar</string>
     <string name="playback_speculative_stream_search_sub">Cari di addon saat menjelajah untuk mempercepat pemilihan sumber. Beberapa addon mungkin menambah atau mengambil konten selama pencarian. Nonaktif menunggu hingga Putar. Tautan media dan penguraian oleh penyedia menunggu pemilihan pemutaran, kecuali menjelang akhir episode saat thumbnail seek menyiapkan episode berikutnya.</string>
     <string name="debrid_cached_playback_links">Gunakan ulang tautan pemutaran di cache</string>
@@ -2930,6 +2971,8 @@
     <string name="seek_thumbnails_prepare_off_desc">Langsung mulai memutar; thumbnail dibuat saat dijeda dan setelah Anda berhenti menonton.</string>
     <string name="seek_thumbnails_prepare_on">Aktif</string>
     <string name="seek_thumbnails_prepare_on_desc">Buat thumbnail seek sebuah judul sebelum dimulai. \"Mulai tonton sekarang\" atau Kembali memulai pemutaran kapan saja.</string>
+    <string name="seek_thumbnails_from_copy_title">Thumbnail dari salinan</string>
+    <string name="seek_thumbnails_from_copy_subtitle">Thumbnail lebih cepat untuk judul 4K dari salinan 1080p atau 720p, dan untuk judul Usenet dari salinan yang bukan dari Usenet. Salinan TorBox yang sudah cached dapat ditambahkan ke daftar Anda selama beberapa menit.</string>
     <string name="seek_thumbnails_clear_title">Hapus thumbnail tersimpan</string>
     <string name="seek_thumbnails_clear_subtitle">Thumbnail dibuat ulang saat Anda memutar judul lagi.</string>
     <string name="seek_thumbnails_cleared">Thumbnail tersimpan dihapus</string>
@@ -2944,7 +2987,7 @@
     <string name="seek_thumbnails_time_left_minutes">Sekitar %1$d mnt %2$d s lagi</string>
     <string name="seek_thumbnails_count">%1$d dari %2$d</string>
     <string name="seek_thumbnails_start_now">Mulai tonton sekarang</string>
-    <string name="seek_thumbnails_settings_hint">Aktifkan atau nonaktifkan di Pengaturan › Pemutaran › Umum</string>
+    <string name="seek_thumbnails_settings_hint">Aktifkan atau nonaktifkan di Pengaturan › Pemutaran › Player Interface</string>
     <string name="seek_thumbnails_progress_chip">Thumbnail %1$d%%</string>
     <string name="party_title">Nonton bareng</string>
     <string name="party_settings_subtitle">Tonton hal yang sama pada saat yang sama dengan orang di rumah lain</string>
@@ -2986,6 +3029,7 @@
     <string name="party_member_buffering">buffering</string>
     <string name="party_member_catching_up">menyusul</string>
     <string name="party_member_away">tidak di tempat</string>
+    <string name="party_member_needs_update">perlu pembaruan</string>
     <string name="party_member_line">%1$s · %2$s</string>
     <string name="party_copy_longer">Salinan Anda %1$s s lebih panjang dari milik host. Sinkronisasi bisa meleset.</string>
     <string name="party_copy_shorter">Salinan Anda %1$s s lebih pendek dari milik host. Sinkronisasi bisa meleset.</string>
@@ -3000,7 +3044,7 @@
     <string name="party_match_same">File yang sama dengan host</string>
     <string name="party_match_likely">Kemungkinan salinan milik host</string>
     <string name="party_match_different">Salinan berbeda dari host</string>
-    <string name="party_invite_text">Gabung nonton bareng saya di Nuvio. Buka Pengaturan, lalu Nonton bareng, dan masukkan kode %1$s</string>
+    <string name="party_invite_text">Gabung nonton bareng saya di Nuvio Arc. Buka Pengaturan, lalu Nonton bareng, dan masukkan kode %1$s</string>
     <string name="party_invite_qr">Pindai dengan kamera ponsel untuk mengirim undangan lewat pesan</string>
     <string name="party_qr_iphone">iPhone</string>
     <string name="party_qr_android">Android</string>

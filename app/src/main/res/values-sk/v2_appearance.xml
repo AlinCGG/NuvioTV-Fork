@@ -7,4 +7,8 @@
     <string name="v2_scale_automatic">Automaticky</string>
     <string name="v2_scale_manual">Ručne</string>
     <string name="v2_scale_fine_tune">Jemné nastavenie mierky</string>
+
+    <!-- Nuvio-test additions -->
+    <string name="v2_intro_sound_title">Úvodný zvuk</string>
+    <string name="v2_intro_sound_subtitle">Prehrať úvod so zvukom, v priestorovom zvuku, ak ho váš systém podporuje</string>
 </resources>
