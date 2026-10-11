@@ -57,6 +57,8 @@ data class AssessmentHeaderFacts(
     val deviceRamLabel: String,
     val safeLimitMb: Int,
     val warningLimitMb: Int,
+    /** The buffer size the app picks on this box at most. */
+    val autoBufferMb: Int = 0,
     /** "3840x2160 · 24/50/60 Hz" style summary, null when uninspectable. */
     val displaySummary: String?,
     /** Filename (preferred) or host of the last-played stream, null when none. */
@@ -101,7 +103,6 @@ data class AssessmentApplyPlan(
     val useParallelConnections: Boolean? = null,
     val parallelConnectionCount: Int? = null,
     val parallelChunkSizeKb: Int? = null,
-    val enableHttp2: Boolean? = null,
     val vodCacheEnabled: Boolean? = null,
     val vodCacheSizeMode: VodCacheSizeMode? = null,
     val frameRateMatchingMode: FrameRateMatchingMode? = null,
@@ -116,7 +117,7 @@ data class AssessmentApplyPlan(
             nuvioPerformanceModeEnabled, bufferEngineEnabled, parallelNetworkEnabled,
             bufferBudgetManaged, allowLargeTargetBuffer, targetBufferSizeMb,
             maxBufferMs, useParallelConnections, parallelConnectionCount,
-            parallelChunkSizeKb, enableHttp2, vodCacheEnabled, vodCacheSizeMode,
+            parallelChunkSizeKb, vodCacheEnabled, vodCacheSizeMode,
             frameRateMatchingMode, resolutionMatchingEnabled, dv7HandlingMode,
             dv5ToDv81Enabled, stripHdr10PlusSei, forceOpticalPassthrough
         ).size

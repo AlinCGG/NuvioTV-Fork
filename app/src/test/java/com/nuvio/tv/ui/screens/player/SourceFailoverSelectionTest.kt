@@ -184,4 +184,35 @@ class SourceFailoverSelectionTest {
         )
         assertNull(SourceFailoverSelection.selectNext(streams, 0, key, key, emptySet(), 1, 2))
     }
+
+    @Test
+    fun anAutomaticSwitchOpensTheNextSourceAtTheCarriedPosition() {
+        assertEquals(1_234_000L, SourceFailoverSelection.startPositionMs(automatic = true, carriedPositionMs = 1_234_000L))
+    }
+
+    @Test
+    fun aPickByTheUserOrNoPositionKeepsTheNormalStart() {
+        assertNull(SourceFailoverSelection.startPositionMs(automatic = false, carriedPositionMs = 1_234_000L))
+        assertNull(SourceFailoverSelection.startPositionMs(automatic = true, carriedPositionMs = null))
+        assertNull(SourceFailoverSelection.startPositionMs(automatic = true, carriedPositionMs = 0L))
+    }
+
+    @Test
+    fun usenetEntriesAreNeverPickedAutomatically() {
+        val marked = stream(url = "http://192.168.1.10:3100/api/v1/debrid/playback/eyJ0IjoiYSJ9",
+            clientResolve = torboxResolve().copy(type = "usenet", service = "nzbdav"))
+        val byLink = stream(url = "https://aio.example/usenet/abc/file.mkv")
+        val byName = stream(url = "http://192.168.1.10:3100/api/v1/debrid/playback/eyJ0IjoiYSJ9", name = "[AIO⚡] NZBgeek 2160p")
+        val torboxUsenet = stream(url = "https://example.com/dl/1.mkv", name = "TorBox Usenet 1080p")
+        val plain = stream(url = "https://example.com/a.mkv", name = "Silo · 2160p")
+        for (s in listOf(marked, byLink, byName, torboxUsenet)) {
+            assertTrue(SourceFailoverSelection.isUsenet(s))
+            assertFalse(SourceFailoverSelection.isAutoFailoverPlayable(s, season = null, episode = null))
+        }
+        assertFalse(SourceFailoverSelection.isUsenet(plain))
+        val streams = listOf(plain, byName, marked, plain.copy(url = "https://example.com/b.mkv"))
+        assertSame(streams[3], SourceFailoverSelection.selectNext(streams, 0, key, key, emptySet(), null, null))
+        // Only Usenet left: nothing is picked, so the error shows and the user chooses.
+        assertNull(SourceFailoverSelection.selectNext(streams.take(3), 0, key, key, emptySet(), null, null))
+    }
 }

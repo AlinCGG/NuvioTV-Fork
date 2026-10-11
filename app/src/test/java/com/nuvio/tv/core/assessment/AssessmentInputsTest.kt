@@ -11,7 +11,7 @@ class AssessmentInputsTest {
         assertTrue(AssessmentInputs.capture(settings, source).matches(settings.copy(), source.copy()))
     }
     @Test fun `settings that ground recommendations expire previous inputs`() {
-        val changes = listOf(settings.copy(enableHttp2 = !settings.enableHttp2),
+        val changes = listOf(settings.copy(stripHdr10PlusSei = !settings.stripHdr10PlusSei),
             settings.copy(internalPlayerEngine = InternalPlayerEngine.MVP_PLAYER),
             settings.copy(parallelConnectionCount = settings.parallelConnectionCount + 1),
             settings.copy(vodCacheSizeMb = settings.vodCacheSizeMb + 1),

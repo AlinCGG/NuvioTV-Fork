@@ -32,6 +32,7 @@ import androidx.tv.material3.Text
 import com.nuvio.tv.R
 import com.nuvio.tv.core.player.DolbyVisionCodecFallback
 import com.nuvio.tv.core.player.LastPlaybackDiagnostics
+import com.nuvio.tv.ui.screens.player.PlaybackStatsDv
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -115,19 +116,35 @@ internal fun LazyListScope.diagnosticsCardItems(
                     }
                 )
             )
+            val nativeFelDecoded = diagnostics.dv7ModeEffective == "NATIVE_FEL" &&
+                PlaybackStatsDv.isNativeFelDecoder(diagnostics.dv81DecoderName)
             DiagnosticRow(
                 stringResource(R.string.diag_label_dv7_decoder),
                 dv(
-                    if (diagnostics.codecDv7Supported) stringResource(R.string.diag_value_available)
-                    // Not "not available": devices like the S905X4 decode P7
-                    // natively without advertising the profile.
-                    else stringResource(R.string.diag_value_not_advertised)
+                    when {
+                        nativeFelDecoded -> stringResource(R.string.diag_value_dv7_native_route)
+                        diagnostics.codecDv7Supported -> stringResource(R.string.diag_value_available)
+                        // Not "not available": devices like the S905X4 decode P7
+                        // natively without advertising the profile.
+                        else -> stringResource(R.string.diag_value_not_advertised)
+                    }
                 )
             )
             // Enhancement-layer type of the last DV7 stream, and the
             // per-playback RPU drop counter (shown only when non-zero).
             diagnostics.dvElType?.let { elType ->
-                DiagnosticRow(stringResource(R.string.diag_label_dv_el_type), dv(elType))
+                val layers = PlaybackStatsDv.dv7LayersUsed(
+                    modeEffective = diagnostics.dv7ModeEffective,
+                    decoderName = diagnostics.dv81DecoderName,
+                    converted = diagnostics.dv7DoviSuccess > 0 || diagnostics.dv7DoviSignalRewrites > 0
+                )
+                val value = when (layers) {
+                    PlaybackStatsDv.Dv7Layers.RPU_BL_EL -> stringResource(R.string.diag_value_el_all_layers_fmt, elType)
+                    PlaybackStatsDv.Dv7Layers.BL_RPU -> stringResource(R.string.diag_value_el_converted_fmt, elType)
+                    PlaybackStatsDv.Dv7Layers.BL_ONLY -> stringResource(R.string.diag_value_el_base_only_fmt, elType)
+                    null -> elType
+                }
+                DiagnosticRow(stringResource(R.string.diag_label_dv_el_type), dv(value))
             }
             diagnostics.dvHdrMastering?.let { mastering ->
                 // Render the raw value, exempt from the dvEngaged dash. This

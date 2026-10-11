@@ -114,7 +114,6 @@ object DeviceAssessmentApplier {
         plan.useParallelConnections?.let { step { dataStore.setUseParallelConnections(it, profileId = profileId) } }
         plan.parallelConnectionCount?.let { step { dataStore.setParallelConnectionCount(it, profileId = profileId) } }
         plan.parallelChunkSizeKb?.let { step { dataStore.setParallelChunkSizeKb(it, profileId = profileId) } }
-        plan.enableHttp2?.let { step { dataStore.setEnableHttp2(it, profileId = profileId) } }
         // 6. VOD, display, DV, audio route.
         plan.vodCacheEnabled?.let { step { dataStore.setVodCacheEnabled(it, profileId = profileId) } }
         plan.vodCacheSizeMode?.let { step { dataStore.setVodCacheSizeMode(it, profileId = profileId) } }
@@ -150,7 +149,8 @@ object DeviceAssessmentApplier {
         val maxSafeTargetMb =
             (((safeLimitMb - afterOverheadMb) / MemoryBudget.BUFFER_STEP_MB) * MemoryBudget.BUFFER_STEP_MB)
                 .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
-        if (after.bufferSettings.targetBufferSizeMb > maxSafeTargetMb) {
+        // With Managed memory budget on the app sizes the buffer, and a size set earlier stays for when it is turned off.
+        if (!after.bufferBudgetManaged && after.bufferSettings.targetBufferSizeMb > maxSafeTargetMb) {
             step { dataStore.setBufferTargetSizeMb(maxSafeTargetMb, profileId = profileId) }
         }
 
@@ -194,7 +194,6 @@ object DeviceAssessmentApplier {
         dataStore.setUseParallelConnections(snap.getBoolean("useParallelConnections"), profileId = profileId)
         dataStore.setParallelConnectionCount(snap.getInt("parallelConnectionCount"), profileId = profileId)
         dataStore.setParallelChunkSizeKb(snap.getInt("parallelChunkSizeKb"), profileId = profileId)
-        dataStore.setEnableHttp2(snap.getBoolean("enableHttp2"), profileId = profileId)
         dataStore.setVodCacheEnabled(snap.getBoolean("vodCacheEnabled"), profileId = profileId)
         dataStore.setVodCacheSizeMode(VodCacheSizeMode.valueOf(snap.getString("vodCacheSizeMode")), profileId = profileId)
         dataStore.setFrameRateMatchingMode(FrameRateMatchingMode.valueOf(snap.getString("frameRateMatchingMode")), profileId = profileId)
@@ -225,7 +224,7 @@ object DeviceAssessmentApplier {
         put("useParallelConnections", s.useParallelConnections)
         put("parallelConnectionCount", s.parallelConnectionCount)
         put("parallelChunkSizeKb", s.parallelChunkSizeKb)
-        put("enableHttp2", s.enableHttp2)
+        put("enableHttp2", false)
         put("vodCacheEnabled", s.vodCacheEnabled)
         put("vodCacheSizeMode", s.vodCacheSizeMode.name)
         put("frameRateMatchingMode", s.frameRateMatchingMode.name)

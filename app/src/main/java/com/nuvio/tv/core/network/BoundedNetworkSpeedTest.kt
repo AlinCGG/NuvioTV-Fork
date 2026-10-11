@@ -38,7 +38,7 @@ internal object GeneralNetworkSpeedTest {
             }).apply { allowCoreThreadTimeOut(true) }
         val dispatcher = Dispatcher(executor).apply { maxRequests = 4; maxRequestsPerHost = 4 }
         val client = OkHttpClient.Builder().dispatcher(dispatcher)
-            .connectionPool(ConnectionPool(0, 1L, TimeUnit.SECONDS)).dns(IPv4FirstDns())
+            .connectionPool(ConnectionPool(0, 1L, TimeUnit.SECONDS)).dns(IPv4FirstDns()).socketFactory(NoDelaySocketFactory)
             .retryOnConnectionFailure(false).callTimeout(20, TimeUnit.SECONDS)
             .connectTimeout(3, TimeUnit.SECONDS).readTimeout(3, TimeUnit.SECONDS)
             .writeTimeout(3, TimeUnit.SECONDS).build()

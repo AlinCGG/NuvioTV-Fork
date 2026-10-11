@@ -27,7 +27,8 @@ class DirectDebridResolver @Inject constructor(
     private val realDebridResolver: RealDebridDirectDebridResolver,
     private val premiumizeResolver: PremiumizeDirectDebridResolver,
     private val localDebridService: LocalDebridService,
-    private val healthStore: AddonHealthStore
+    private val healthStore: AddonHealthStore,
+    private val thumbnailCopies: ThumbnailCopyAdded
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
@@ -39,6 +40,7 @@ class DirectDebridResolver @Inject constructor(
         season: Int?,
         episode: Int?
     ): DirectDebridResolveResult {
+        thumbnailCopies.claimAndWait(stream.getEffectiveInfoHash())
         val t0 = android.os.SystemClock.elapsedRealtime()
         val result = resolveInternal(stream, season, episode)
         recordResolverHealth(stream, result, android.os.SystemClock.elapsedRealtime() - t0)

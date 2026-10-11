@@ -1,6 +1,7 @@
 package com.nuvio.tv.ui.screens.player
 
 import android.util.Log
+import com.nuvio.tv.core.logging.redactLinksForLog
 
 import android.os.SystemClock
 import androidx.media3.common.C
@@ -921,9 +922,9 @@ internal class PlayerPlaybackAnalyticsDiagnostics {
         // above is separate; media3 load events are per Loader load, not per
         // chunk, so this is low volume.
         if (name.isPlaybackWarningEvent()) {
-            Log.w(EXO_EVENT_LOG_TAG, rawLine)
+            Log.w(EXO_EVENT_LOG_TAG, rawLine.redactLinksForLog())
         } else if (name.isLoaderLoadEvent()) {
-            Log.i(EXO_EVENT_LOG_TAG, rawLine)
+            Log.i(EXO_EVENT_LOG_TAG, rawLine.redactLinksForLog())
         }
         events.addLast(
             PlaybackIssuePlaybackEventInput(

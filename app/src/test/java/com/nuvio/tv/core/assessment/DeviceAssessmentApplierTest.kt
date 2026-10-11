@@ -53,21 +53,21 @@ class DeviceAssessmentApplierTest {
     }
 
     @Test
-    fun `reverting a network recommendation preserves custom buffer settings including zero rewind`() = runBlocking {
+    fun `reverting a recommendation preserves custom buffer settings including zero rewind`() = runBlocking {
         withStore { store ->
             for (backBufferMs in listOf(0, 9_000, 120_000)) {
                 store.setBufferBackBufferDurationMs(backBufferMs)
                 store.setBufferRetainBackBufferFromKeyframe(true)
-                store.setEnableHttp2(false)
+                store.setStripHdr10PlusSei(false)
                 val before = store.playerSettings.first()
-                DeviceAssessmentApplier.apply(store, AssessmentApplyPlan(enableHttp2 = true), null, 2_048)
+                DeviceAssessmentApplier.apply(store, AssessmentApplyPlan(stripHdr10PlusSei = true), null, 2_048)
                 assertEquals(backBufferMs, JSONObject(store.assessmentRevertSnapshot.first()!!)
                     .getInt("backBufferDurationMs"))
-                assertTrue(store.playerSettings.first().enableHttp2)
+                assertTrue(store.playerSettings.first().stripHdr10PlusSei)
                 assertTrue(DeviceAssessmentApplier.revert(store))
                 val restored = store.playerSettings.first()
                 assertEquals(before.bufferSettings, restored.bufferSettings)
-                assertEquals(before.enableHttp2, restored.enableHttp2)
+                assertEquals(before.stripHdr10PlusSei, restored.stripHdr10PlusSei)
                 assertEquals(before.nuvioPerformanceModeEnabled, restored.nuvioPerformanceModeEnabled)
                 assertNull(store.assessmentRevertSnapshot.first())
             }
@@ -90,14 +90,14 @@ class DeviceAssessmentApplierTest {
     @Test
     fun `legacy snapshots retain the current rewind when the original value is unavailable`() = runBlocking {
         withStore { store ->
-            DeviceAssessmentApplier.apply(store, AssessmentApplyPlan(enableHttp2 = true), null, 2_048)
+            DeviceAssessmentApplier.apply(store, AssessmentApplyPlan(stripHdr10PlusSei = true), null, 2_048)
             val legacy = JSONObject(store.assessmentRevertSnapshot.first()!!)
             legacy.remove("backBufferDurationMs")
             store.setAssessmentRevertSnapshot(legacy.toString())
             store.setBufferBackBufferDurationMs(17_000)
             assertTrue(DeviceAssessmentApplier.revert(store))
             assertEquals(17_000, store.playerSettings.first().bufferSettings.backBufferDurationMs)
-            assertFalse(store.playerSettings.first().enableHttp2)
+            assertFalse(store.playerSettings.first().stripHdr10PlusSei)
             assertNull(store.assessmentRevertSnapshot.first())
         }
     }
@@ -140,18 +140,18 @@ class DeviceAssessmentApplierTest {
     fun `old snapshot with audio format fields reverts the kept fields and ignores the rest`() = runBlocking {
         withStore { store ->
             store.setBufferBackBufferDurationMs(21_000)
-            store.setEnableHttp2(false)
+            store.setStripHdr10PlusSei(false)
             store.setForceOpticalPassthrough(true)
             val before = store.playerSettings.first()
             store.setAssessmentRevertSnapshot(oldFormatSnapshot(before).toString())
-            store.setEnableHttp2(true)
+            store.setStripHdr10PlusSei(true)
             store.setForceOpticalPassthrough(false)
             val changed = store.playerSettings.first()
 
             assertTrue(DeviceAssessmentApplier.revert(store))
 
             val restored = store.playerSettings.first()
-            assertFalse(restored.enableHttp2)
+            assertFalse(restored.stripHdr10PlusSei)
             assertTrue(restored.forceOpticalPassthrough)
             assertEquals(before.bufferSettings, restored.bufferSettings)
             assertEquals(changed.surroundFormatMode, restored.surroundFormatMode)
@@ -168,7 +168,7 @@ class DeviceAssessmentApplierTest {
     @Test
     fun `new snapshots no longer capture audio format settings`() = runBlocking {
         withStore { store ->
-            DeviceAssessmentApplier.apply(store, AssessmentApplyPlan(enableHttp2 = true), null, 2_048)
+            DeviceAssessmentApplier.apply(store, AssessmentApplyPlan(stripHdr10PlusSei = true), null, 2_048)
             val snapshot = JSONObject(store.assessmentRevertSnapshot.first()!!)
             assertTrue(snapshot.has("forceOpticalPassthrough"))
             listOf("deniedCodecHandling", "allowAc3Passthrough", "allowEac3Passthrough", "allowTrueHdPassthrough",

@@ -132,13 +132,13 @@ class ParallelDiagnosticOwnershipTest {
     @Test fun `diagnostic does not consume or publish shared bootstrap data`() {
         mockkObject(PrefetchWindowStore)
         every { PrefetchWindowStore.consumeHead(any(),any()) } throws AssertionError("shared head consumed")
-        every { PrefetchWindowStore.peekTail(any(),any(),any()) } throws AssertionError("shared tail read")
+        every { PrefetchWindowStore.peekTail(any(),any(),any(),any()) } throws AssertionError("shared tail read")
         val consume=mockk<(DataSpec)->ParallelRangeDataSource.BootstrapCacheEntry?>()
         val publish=mockk<(ParallelRangeDataSource.BootstrapCacheEntry?)->Unit>()
         val diagnostic=ParallelRangeDataSource(failedFactory(),isolateSession=true,consumeBootstrapCache=consume,updateBootstrapCache=publish).also { opened.add(it) }
         try { diagnostic.open(DataSpec(uri)); fail() } catch (_: IOException) {}
         verify { consume wasNot Called; publish wasNot Called }
-        verify(exactly=0) { PrefetchWindowStore.consumeHead(any(),any()); PrefetchWindowStore.peekTail(any(),any(),any()) }
+        verify(exactly=0) { PrefetchWindowStore.consumeHead(any(),any()); PrefetchWindowStore.peekTail(any(),any(),any(),any()) }
     }
     @Test fun `closed diagnostic refuses reopen before creating network work`() {
         val factory=mockk<OkHttpDataSource.Factory>(); val diagnostic=source(true,factory); diagnostic.close()

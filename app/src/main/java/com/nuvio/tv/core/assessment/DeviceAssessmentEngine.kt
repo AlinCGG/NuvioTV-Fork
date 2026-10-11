@@ -59,8 +59,7 @@ object DeviceAssessmentEngine {
     // reward deeper buffers.
     private const val STABILITY_STALL_COV = 0.25
 
-    // Max-buffer recommendation bounds, seconds.
-    private const val MAX_BUFFER_FLOOR_S = 10
+    // Max-buffer recommendation cap, seconds.
     private const val MAX_BUFFER_CAP_S = 120
 
     suspend fun run(
@@ -92,6 +91,9 @@ object DeviceAssessmentEngine {
         val safeLimitMb = facts.safeLimitMb
         val warningLimitMb = facts.warningLimitMb
         val ramLabel = NuvioExoPlayerPerformanceHelper.getFriendlyRamLabel(context)
+        // The size the app buffers on this box (less when memory is short at playback start).
+        val autoBufferMb = NuvioExoPlayerPerformanceHelper.getAutoBufferMb(context)
+        val totalRamBytes = NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context)
         val display = facts.display
         val policy = facts.policy
 
@@ -133,7 +135,6 @@ object DeviceAssessmentEngine {
         val off = s(R.string.assessment_value_off)
 
         val currentChunkLabel = chunkLabel(context, settings.parallelChunkSizeKb)
-        val currentChunkMbForOverhead = (settings.parallelChunkSizeKb + 1023) / 1024
         val currentParallelLabel = if (settings.useParallelConnections) {
             s(R.string.assessment_current_parallel_on, settings.parallelConnectionCount, currentChunkLabel)
         } else {
@@ -184,7 +185,7 @@ object DeviceAssessmentEngine {
                                 rec.connections,
                                 s(R.string.assessment_unit_mb, rec.chunkMb)
                             ),
-                            grounds = rec.bufferTrade?.let { trade ->
+                            grounds = (rec.bufferTrade?.let { trade ->
                                 s(
                                     R.string.assessment_grounds_parallel_trade,
                                     "%.1f Mbps".format(rec.mbps),
@@ -202,7 +203,11 @@ object DeviceAssessmentEngine {
                                 "%.1f Mbps".format(rec.mbps),
                                 rec.connections,
                                 rec.chunkMb
-                            ),
+                            )) + if (rec.cappedForSmallBox) {
+                                "\n" + s(R.string.assessment_parallel_small_box_cap, ramLabel)
+                            } else {
+                                ""
+                            },
                             tier = AssessmentTier.MEASURED,
                             changeNeeded = !settings.useParallelConnections ||
                                 settings.parallelConnectionCount != rec.connections ||
@@ -225,13 +230,6 @@ object DeviceAssessmentEngine {
         }
 
         // --- Tier 2: calculated from device facts ---
-        val overheadForTargetMb = when {
-            rec != null -> MemoryBudget.parallelOverheadMb(rec.connections, rec.chunkMb)
-            sweep != null && sweep.verdictKind == StreamSweepEngine.VerdictKind.LEAVE_PARALLEL_OFF -> 0
-            settings.useParallelConnections ->
-                MemoryBudget.parallelOverheadMb(settings.parallelConnectionCount, currentChunkMbForOverhead)
-            else -> 0
-        }
 
         // The whole assessed feature set (buffers, parallel network, VOD
         // cache, DV pipeline) is the ExoPlayer path; under the MVP player
@@ -257,23 +255,27 @@ object DeviceAssessmentEngine {
             changeNeeded = !engineOk
         )
 
+        // Custom network is only needed for the parallel connections recommended above.
+        val sweepUsable = sweep != null && sweep.errorText == null
+        val networkRecommended = AssessmentBufferRules.networkRecommendation(
+            sweep?.verdictKind?.takeIf { sweepUsable }, sweepUsable && rec != null
+        )
         items += AssessmentItem(
             key = "network_master",
             title = s(R.string.assessment_item_network_master),
             currentValue = if (settings.parallelNetworkEnabled) on else off,
-            recommendedValue = on,
-            grounds = s(R.string.assessment_grounds_network_master),
+            recommendedValue = when (networkRecommended) {
+                true -> on
+                false -> off
+                null -> s(R.string.assessment_value_leave_as_is)
+            },
+            grounds = when (networkRecommended) {
+                true -> s(R.string.assessment_grounds_network_for_parallel)
+                false -> s(R.string.assessment_grounds_network_parallel_only)
+                null -> s(R.string.assessment_grounds_network_untested)
+            },
             tier = AssessmentTier.CALCULATED,
-            changeNeeded = !settings.parallelNetworkEnabled
-        )
-        items += AssessmentItem(
-            key = "http2",
-            title = s(R.string.assessment_item_http2),
-            currentValue = if (settings.enableHttp2) on else off,
-            recommendedValue = on,
-            grounds = s(R.string.assessment_grounds_http2),
-            tier = AssessmentTier.CALCULATED,
-            changeNeeded = !settings.enableHttp2
+            changeNeeded = AssessmentBufferRules.networkChange(networkRecommended, settings.parallelNetworkEnabled) != null
         )
 
         val perfModeSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -283,13 +285,7 @@ object DeviceAssessmentEngine {
             currentValue = if (settings.nuvioPerformanceModeEnabled) on else off,
             recommendedValue = if (perfModeSupported) on else off,
             grounds = if (perfModeSupported) {
-                s(
-                    R.string.assessment_grounds_perf_mode,
-                    ramLabel,
-                    safeLimitMb,
-                    warningLimitMb,
-                    PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT
-                )
+                s(R.string.assessment_grounds_native_auto, ramLabel, autoBufferMb)
             } else {
                 s(R.string.assessment_grounds_perf_mode_unsupported)
             },
@@ -297,107 +293,76 @@ object DeviceAssessmentEngine {
             changeNeeded = settings.nuvioPerformanceModeEnabled != perfModeSupported
         )
 
+        // Custom buffers on so the buffer profile can set the times; Managed on so the app keeps sizing the buffer.
         items += AssessmentItem(
             key = "buffer_master",
             title = s(R.string.assessment_item_buffer_master),
             currentValue = if (settings.bufferEngineEnabled) on else off,
             recommendedValue = on,
-            grounds = s(R.string.assessment_grounds_buffer_master),
+            grounds = s(R.string.assessment_grounds_buffer_custom_times),
             tier = AssessmentTier.CALCULATED,
-            changeNeeded = !settings.bufferEngineEnabled
+            changeNeeded = AssessmentBufferRules.bufferEngineChange(settings.bufferEngineEnabled) != null
         )
         items += AssessmentItem(
             key = "managed_budget",
             title = s(R.string.assessment_item_managed_budget),
             currentValue = if (settings.bufferBudgetManaged) on else off,
-            recommendedValue = off,
-            grounds = s(R.string.assessment_grounds_managed_budget),
+            recommendedValue = on,
+            grounds = s(R.string.assessment_grounds_managed_on),
             tier = AssessmentTier.CALCULATED,
-            changeNeeded = settings.bufferBudgetManaged
+            changeNeeded = AssessmentBufferRules.managedBudgetChange(settings.bufferBudgetManaged) != null
         )
 
-        // Largest 25 MB step where target + overhead stays <= the safe limit.
-        val recTargetMb = (((safeLimitMb - overheadForTargetMb) / MemoryBudget.BUFFER_STEP_MB) *
-            MemoryBudget.BUFFER_STEP_MB)
-            .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
-            .coerceAtMost(PlayerSettings.LARGE_TARGET_BUFFER_MAX_MB)
+        // No size is written: with Managed on the app picks it at playback start.
+        val currentTargetMb = settings.bufferSettings.targetBufferSizeMb
         items += AssessmentItem(
             key = "target_buffer",
             title = s(R.string.assessment_item_target_buffer),
-            currentValue = s(R.string.assessment_unit_mb, settings.bufferSettings.targetBufferSizeMb),
-            recommendedValue = s(R.string.assessment_unit_mb, recTargetMb),
+            currentValue = if (settings.bufferBudgetManaged) {
+                s(R.string.assessment_value_target_auto, autoBufferMb)
+            } else {
+                s(R.string.assessment_unit_mb, currentTargetMb)
+            },
+            recommendedValue = s(R.string.assessment_value_target_auto, autoBufferMb),
             grounds = buildString {
-                append(
-                    s(
-                        R.string.assessment_grounds_target_buffer,
-                        recTargetMb,
-                        overheadForTargetMb,
-                        recTargetMb + overheadForTargetMb,
-                        safeLimitMb,
-                        MemoryBudget.BUFFER_STEP_MB
-                    )
-                )
-                // Acknowledge a working current config honestly instead of
-                // implying it is broken: warning band = reduced headroom,
-                // not failure; past the warning limit = genuine kill risk.
-                val currentOverheadMb = if (settings.useParallelConnections) {
-                    MemoryBudget.parallelOverheadMb(
-                        settings.parallelConnectionCount, currentChunkMbForOverhead
-                    )
-                } else 0
-                val currentSumMb = settings.bufferSettings.targetBufferSizeMb + currentOverheadMb
-                if (currentSumMb > warningLimitMb) {
-                    append('\n')
-                    append(
-                        s(
-                            R.string.assessment_grounds_target_current_danger,
-                            settings.bufferSettings.targetBufferSizeMb,
-                            currentOverheadMb,
-                            currentSumMb,
-                            warningLimitMb
-                        )
-                    )
-                } else if (currentSumMb > safeLimitMb) {
-                    append('\n')
-                    append(
-                        s(
-                            R.string.assessment_grounds_target_current_warning,
-                            settings.bufferSettings.targetBufferSizeMb,
-                            currentOverheadMb,
-                            currentSumMb,
-                            safeLimitMb,
-                            warningLimitMb
-                        )
-                    )
+                append(s(R.string.assessment_grounds_target_auto))
+                when (AssessmentBufferRules.currentTarget(
+                    settings.bufferBudgetManaged, currentTargetMb, autoBufferMb, warningLimitMb
+                )) {
+                    AssessmentBufferRules.CurrentTarget.DANGER -> {
+                        append('\n')
+                        append(s(R.string.playback_buffer_target_danger_warning, warningLimitMb))
+                    }
+                    AssessmentBufferRules.CurrentTarget.STUTTER -> {
+                        append('\n')
+                        append(s(R.string.playback_buffer_target_stutter_warning, ramLabel, autoBufferMb))
+                    }
+                    AssessmentBufferRules.CurrentTarget.FINE -> Unit
                 }
             },
             tier = AssessmentTier.CALCULATED,
-            changeNeeded = settings.bufferSettings.targetBufferSizeMb != recTargetMb,
-            memoryStatus = MemoryBudget.getUsageStatus(
-                recTargetMb + overheadForTargetMb, safeLimitMb, warningLimitMb
-            )
+            changeNeeded = !settings.bufferBudgetManaged
         )
 
-        val standardSliderMaxMb = MemoryBudget.maxBufferMb(overheadForTargetMb)
-        val allowLargeNeeded = recTargetMb > standardSliderMaxMb
+        val allowLargeOff = AssessmentBufferRules.allowLargeRecommendedOff(totalRamBytes)
         items += AssessmentItem(
             key = "allow_large",
             title = s(R.string.assessment_item_allow_large),
             currentValue = if (settings.allowLargeTargetBuffer) on else off,
-            recommendedValue = if (allowLargeNeeded) on else off,
-            grounds = if (allowLargeNeeded) {
-                s(R.string.assessment_grounds_allow_large_on, recTargetMb)
+            recommendedValue = if (allowLargeOff) off else s(R.string.assessment_value_leave_as_is),
+            grounds = if (allowLargeOff) {
+                s(R.string.assessment_grounds_allow_large_small_box, ramLabel)
             } else {
-                s(R.string.assessment_grounds_allow_large_off)
+                s(R.string.assessment_grounds_allow_large_managed)
             },
             tier = AssessmentTier.CALCULATED,
-            changeNeeded = settings.allowLargeTargetBuffer != allowLargeNeeded
+            changeNeeded = AssessmentBufferRules.allowLargeChange(totalRamBytes, settings.allowLargeTargetBuffer) != null
         )
 
-        // Max buffer: byte-derived ceiling - seconds the recommended target can
-        // actually hold at this title's bitrate.
-        val capacityS = bitrateMbps?.takeIf { it > 0 }?.let { (recTargetMb * 8.0 / it).toInt() }
-        val recMaxS = (capacityS ?: MAX_BUFFER_CAP_S).coerceIn(MAX_BUFFER_FLOOR_S, MAX_BUFFER_CAP_S)
+        // Max buffer: the seconds the automatic size can hold at this title's bitrate.
+        val recTargetMb = autoBufferMb
+        val capacityS = AssessmentBufferRules.capacitySeconds(autoBufferMb, bitrateMbps)
+        val recMaxS = AssessmentBufferRules.recommendedMaxBufferSeconds(capacityS)
         items += AssessmentItem(
             key = "max_buffer",
             title = s(R.string.assessment_item_max_buffer),
@@ -413,8 +378,7 @@ object DeviceAssessmentEngine {
                             "%.1f Mbps".format(bitrateMbps)
                         )
                     )
-                    val currentTargetMb = settings.bufferSettings.targetBufferSizeMb
-                    if (currentTargetMb != recTargetMb) {
+                    if (!settings.bufferBudgetManaged && currentTargetMb != recTargetMb) {
                         append('\n')
                         append(
                             s(
@@ -704,6 +668,7 @@ object DeviceAssessmentEngine {
             deviceRamLabel = ramLabel,
             safeLimitMb = safeLimitMb,
             warningLimitMb = warningLimitMb,
+            autoBufferMb = autoBufferMb,
             displaySummary = displaySummary,
             streamLabel = diagnostics.filename ?: diagnostics.host.takeIf { it.isNotBlank() },
             streamBitrateMbps = bitrateMbps,
@@ -730,15 +695,11 @@ object DeviceAssessmentEngine {
             nuvioPerformanceModeEnabled = perfModeSupported.takeIf {
                 settings.nuvioPerformanceModeEnabled != perfModeSupported
             },
-            bufferEngineEnabled = true.takeIf { !settings.bufferEngineEnabled },
-            parallelNetworkEnabled = true.takeIf { !settings.parallelNetworkEnabled },
-            bufferBudgetManaged = false.takeIf { settings.bufferBudgetManaged },
-            allowLargeTargetBuffer = allowLargeNeeded.takeIf {
-                settings.allowLargeTargetBuffer != allowLargeNeeded
-            },
-            targetBufferSizeMb = recTargetMb.takeIf {
-                settings.bufferSettings.targetBufferSizeMb != recTargetMb
-            },
+            bufferEngineEnabled = AssessmentBufferRules.bufferEngineChange(settings.bufferEngineEnabled),
+            parallelNetworkEnabled = AssessmentBufferRules.networkChange(networkRecommended, settings.parallelNetworkEnabled),
+            bufferBudgetManaged = AssessmentBufferRules.managedBudgetChange(settings.bufferBudgetManaged),
+            allowLargeTargetBuffer = AssessmentBufferRules.allowLargeChange(totalRamBytes, settings.allowLargeTargetBuffer),
+            targetBufferSizeMb = null,
             // Never WRITE a max-buffer value the engine couldn't ground: with
             // no title bitrate the ceiling is the generic fallback, so the row
             // stays display-only (its grounds already say why).
@@ -758,7 +719,6 @@ object DeviceAssessmentEngine {
             parallelChunkSizeKb = rec?.let { it.chunkMb * 1024 }?.takeIf {
                 sweep?.errorText == null && settings.parallelChunkSizeKb != it
             },
-            enableHttp2 = true.takeIf { !settings.enableHttp2 },
             vodCacheEnabled = if (autoBytes > 0L) {
                 true.takeIf { !settings.vodCacheEnabled }
             } else {

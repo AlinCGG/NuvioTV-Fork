@@ -3,6 +3,7 @@ package com.nuvio.tv.core.image
 import android.graphics.BitmapFactory
 import android.os.SystemClock
 import android.util.Log
+import com.nuvio.tv.core.logging.redactLinksForLog
 import coil3.BitmapImage
 import coil3.EventListener
 import coil3.decode.DecodeResult
@@ -32,7 +33,7 @@ object ArtworkDiagnostics {
     fun enabled() = Log.isLoggable(TAG, Log.VERBOSE)
     fun key(value: String?) = value?.encodeUtf8()?.sha256()?.hex()?.take(16) ?: "none"
     private fun host(value: String) = value.toHttpUrlOrNull()?.host ?: "local"
-    fun log(message: String) { Log.i(TAG, message) }
+    fun log(message: String) { Log.i(TAG, message.redactLinksForLog()) }
 
     val imageEvents = EventListener.Factory { request ->
         if (!enabled()) EventListener.NONE else object : EventListener() {

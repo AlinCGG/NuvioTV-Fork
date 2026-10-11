@@ -88,7 +88,9 @@ object StreamSweepEngine {
         val mbps: Double,
         val meetsTarget: Boolean,
         val fitsSafeBudget: Boolean,
-        val bufferTrade: BufferTrade? = null
+        val bufferTrade: BufferTrade? = null,
+        /** True when a faster setup with more connections was left out because the box has 2 GB or less. */
+        val cappedForSmallBox: Boolean = false
     )
 
     data class SweepOutcome(
@@ -155,11 +157,16 @@ object StreamSweepEngine {
         val maxChunkMb = com.nuvio.tv.data.local.PlayerSettings.MAX_PARALLEL_CHUNK_SIZE_KB / 1024
         val minChunkMb = (com.nuvio.tv.data.local.PlayerSettings.MIN_PARALLEL_CHUNK_SIZE_KB + 1023) / 1024
         val connLadder = listOf(2, 3, 4)
-        val standardConnLimit = com.nuvio.tv.data.local.PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT
         val safeLimitMb =
             com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)
         val warningLimitMb =
             com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.getWarningNativeMemoryLimitMb(context)
+        // The buffer the app sizes for this box; the "buffer trade" below works from it.
+        val autoBufferMb =
+            com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.getAutoBufferMb(context)
+        val smallBox = com.nuvio.tv.core.player.BufferSizing.isSmallBox(
+            com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context)
+        )
         val targetMbps = estimatedBitrate?.takeIf { it > 0 }?.let { it * 2.0 / 1_000_000.0 }
         val ranConfigs = mutableSetOf<Pair<Int, Int>>() // (connections, chunkMb)
         var parallelPasses = 0
@@ -211,9 +218,6 @@ object StreamSweepEngine {
             val status = MemoryBudget.getUsageStatus(overheadMb(connections, chunkMb), safeLimitMb, warningLimitMb)
             if (status == MemoryUsageStatus.WARNING) {
                 label += context.getString(R.string.stream_test_row_warning_suffix)
-            }
-            if (connections > standardConnLimit) {
-                label += context.getString(R.string.stream_test_row_pm_suffix)
             }
             return label
         }
@@ -410,9 +414,12 @@ object StreamSweepEngine {
             return mbps
         }
 
-        fun withPmSuffix(text: String, connections: Int): String =
-            if (connections > standardConnLimit) {
-                text + context.getString(R.string.stream_test_verdict_pm_suffix)
+        fun withSmallBoxNote(text: String, capped: Boolean): String =
+            if (capped) {
+                text + " " + context.getString(
+                    R.string.assessment_parallel_small_box_cap,
+                    com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.getFriendlyRamLabel(context)
+                ) + "."
             } else text
 
         try {
@@ -630,7 +637,7 @@ object StreamSweepEngine {
             // rows are reported as run.
             val recommendChunkCapMb =
                 if (safeLimitMb <= LOW_TIER_SAFE_LIMIT_MB) RECOMMEND_CHUNK_CAP_LOW_TIER_MB else maxChunkMb
-            val recommendable = measured.filter { it.chunkMb <= recommendChunkCapMb }
+            val recommendable = recommendablePasses(measured, recommendChunkCapMb, smallBox)
 
             // Verdict: cheapest config that BOTH meets the 2x target AND fits the
             // safe native-memory budget, so the tool never recommends a configuration
@@ -653,10 +660,7 @@ object StreamSweepEngine {
                     // seconds of buffer, recommend it instead and say why.
                     val bitrateMbps = targetMbps / 2.0
                     fun bufferMbAt(connections: Int, chunkMb: Int): Int =
-                        (((safeLimitMb - overheadMb(connections, chunkMb)) / MemoryBudget.BUFFER_STEP_MB) *
-                            MemoryBudget.BUFFER_STEP_MB)
-                            .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
-                            .coerceAtMost(com.nuvio.tv.data.local.PlayerSettings.LARGE_TARGET_BUFFER_MAX_MB)
+                        tradeBufferMb(autoBufferMb, overheadMb(connections, chunkMb))
                     fun bufferSecondsAt(mb: Int): Int = (mb * 8.0 / bitrateMbps).toInt()
                     val tradeBar = bitrateMbps * TRADE_BAR_OF_BITRATE
                     val nearSufficient = recommendable.filter { it.mbps >= tradeBar }
@@ -711,14 +715,15 @@ object StreamSweepEngine {
                     }
                     return SweepOutcome(
                         verdictKind = VerdictKind.RECOMMEND_CONFIG,
-                        verdictText = withPmSuffix(verdict, chosen.connections),
+                        verdictText = withSmallBoxNote(verdict, cappedForSmallBox(measured, chosen, smallBox)),
                         recommendation = Recommendation(
                             connections = chosen.connections,
                             chunkMb = chosen.chunkMb,
                             mbps = chosen.mbps,
                             meetsTarget = chosen.mbps >= targetMbps * SUFFICIENCY_TOLERANCE,
                             fitsSafeBudget = overheadMb(chosen.connections, chosen.chunkMb) <= safeLimitMb,
-                            bufferTrade = trade
+                            bufferTrade = trade,
+                            cappedForSmallBox = cappedForSmallBox(measured, chosen, smallBox)
                         ),
                         baselineMbps = baseline,
                         targetMbps = targetMbps,
@@ -743,7 +748,7 @@ object StreamSweepEngine {
                     }
                     return SweepOutcome(
                         verdictKind = if (marginal) VerdictKind.MARGINAL else VerdictKind.CANNOT_SUSTAIN,
-                        verdictText = withPmSuffix(
+                        verdictText = withSmallBoxNote(
                             context.getString(
                                 resId,
                                 fastest.connections,
@@ -751,14 +756,15 @@ object StreamSweepEngine {
                                 "%.1f Mbps".format(fastest.mbps),
                                 "%.1f Mbps".format(bitrateMbps)
                             ),
-                            fastest.connections
+                            cappedForSmallBox(measured, fastest, smallBox)
                         ),
                         recommendation = Recommendation(
                             connections = fastest.connections,
                             chunkMb = fastest.chunkMb,
                             mbps = fastest.mbps,
                             meetsTarget = false,
-                            fitsSafeBudget = overheadMb(fastest.connections, fastest.chunkMb) <= safeLimitMb
+                            fitsSafeBudget = overheadMb(fastest.connections, fastest.chunkMb) <= safeLimitMb,
+                            cappedForSmallBox = cappedForSmallBox(measured, fastest, smallBox)
                         ),
                         baselineMbps = baseline,
                         targetMbps = targetMbps,
@@ -787,21 +793,22 @@ object StreamSweepEngine {
             return if (fastest != null) {
                 SweepOutcome(
                     verdictKind = VerdictKind.FASTEST_NO_BITRATE,
-                    verdictText = withPmSuffix(
+                    verdictText = withSmallBoxNote(
                         context.getString(
                             R.string.stream_test_verdict_fastest_nobitrate,
                             fastest.connections,
                             fastest.chunkMb,
                             "%.1f Mbps".format(fastest.mbps)
                         ),
-                        fastest.connections
+                        cappedForSmallBox(measured, fastest, smallBox)
                     ),
                     recommendation = Recommendation(
                         connections = fastest.connections,
                         chunkMb = fastest.chunkMb,
                         mbps = fastest.mbps,
                         meetsTarget = false,
-                        fitsSafeBudget = overheadMb(fastest.connections, fastest.chunkMb) <= safeLimitMb
+                        fitsSafeBudget = overheadMb(fastest.connections, fastest.chunkMb) <= safeLimitMb,
+                        cappedForSmallBox = cappedForSmallBox(measured, fastest, smallBox)
                     ),
                     baselineMbps = baseline,
                     targetMbps = targetMbps,
@@ -874,6 +881,27 @@ object StreamSweepEngine {
     // Initial values.
     private const val LOW_TIER_SAFE_LIMIT_MB = 250
     private const val RECOMMEND_CHUNK_CAP_LOW_TIER_MB = 32
+
+    /**
+     * Passes the recommendation may pick from: chunk sizes up to [chunkCapMb], and on boxes with 2 GB or less at most
+     * two connections, since more chunks in flight leave such a box short of memory. Measured rows are reported as run.
+     */
+    internal fun recommendablePasses(measured: List<MeasuredPass>, chunkCapMb: Int, smallBox: Boolean): List<MeasuredPass> =
+        measured.filter {
+            it.chunkMb <= chunkCapMb &&
+                (!smallBox || it.connections <= com.nuvio.tv.core.player.BufferSizing.SMALL_BOX_CONNECTIONS)
+        }
+
+    internal fun cappedForSmallBox(measured: List<MeasuredPass>, chosen: MeasuredPass, smallBox: Boolean): Boolean =
+        smallBox && measured.any {
+            it.connections > com.nuvio.tv.core.player.BufferSizing.SMALL_BOX_CONNECTIONS && it.mbps > chosen.mbps
+        }
+
+    /** Buffer a setup leaves: the box's automatic size less its chunks, on the 25 MB grid. */
+    internal fun tradeBufferMb(autoBufferMb: Int, overheadMb: Int): Int =
+        (((autoBufferMb - overheadMb) / MemoryBudget.BUFFER_STEP_MB) * MemoryBudget.BUFFER_STEP_MB)
+            .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
+            .coerceAtMost(com.nuvio.tv.data.local.PlayerSettings.LARGE_TARGET_BUFFER_MAX_MB)
 
     private fun coefficientOfVariation(samples: List<Double>): Double? {
         if (samples.size < STABILITY_MIN_WINDOWS) return null

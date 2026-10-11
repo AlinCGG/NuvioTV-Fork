@@ -15,7 +15,7 @@ internal class AssessmentInputs private constructor(
             listOf(s.internalPlayerEngine, s.nuvioPerformanceModeEnabled,
                 s.bufferEngineEnabled, s.parallelNetworkEnabled, s.bufferBudgetManaged,
                 s.allowLargeTargetBuffer, s.bufferSettings, s.useParallelConnections,
-                s.parallelConnectionCount, s.parallelChunkSizeKb, s.enableHttp2,
+                s.parallelConnectionCount, s.parallelChunkSizeKb,
                 s.vodCacheEnabled, s.vodCacheSizeMode, s.vodCacheSizeMb,
                 s.frameRateMatchingMode, s.resolutionMatchingEnabled, s.dv7HandlingMode,
                 s.dv5ToDv81Enabled, s.stripHdr10PlusSei, s.forceOpticalPassthrough,

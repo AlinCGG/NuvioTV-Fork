@@ -92,4 +92,16 @@ class ServerSourceFailoverTest {
         assertFalse(isMidPlayCorruption(PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED, hasRenderedFirstFrame = true))
         assertFalse(isMidPlayCorruption(PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT, hasRenderedFirstFrame = true))
     }
+
+    @Test
+    fun aMediaServer404IsAskedAgainOncePerPlayStart() {
+        val retried = mutableSetOf<String>()
+        assertTrue(ServerDeadAnswerRetry.shouldRetry("c1/item1/v1", deadHttpAnswer = true, retried = retried))
+        retried += "c1/item1/v1"
+        assertFalse(ServerDeadAnswerRetry.shouldRetry("c1/item1/v1", deadHttpAnswer = true, retried = retried))
+        // Another version of the title gets its own second ask; a non-server link or another error none.
+        assertTrue(ServerDeadAnswerRetry.shouldRetry("c1/item1/v2", deadHttpAnswer = true, retried = retried))
+        assertFalse(ServerDeadAnswerRetry.shouldRetry(null, deadHttpAnswer = true, retried = retried))
+        assertFalse(ServerDeadAnswerRetry.shouldRetry("c1/item1/v3", deadHttpAnswer = false, retried = retried))
+    }
 }

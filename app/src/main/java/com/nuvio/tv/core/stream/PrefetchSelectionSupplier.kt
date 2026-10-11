@@ -137,7 +137,8 @@ class PrefetchSelectionSupplier @Inject constructor(
                 installedAddonOrder = installedAddonOrder,
                 preferences = preferences
             ),
-            winner = winner
+            winner = winner,
+            candidates = allStreams
         )
     }
 
