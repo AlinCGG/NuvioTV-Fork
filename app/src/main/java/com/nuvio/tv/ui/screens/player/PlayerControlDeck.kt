@@ -65,7 +65,7 @@ internal fun PlayerControlDeck(
 
     val v2 = LocalV2Appearance.current != null
     val deckAvailable = playerControlDeckAvailable(layout, available, false)
-    val include = if (preview) PlayerControlAction.entries.toSet() else layout.focusOrder(deckAvailable).toSet()
+    val include = if (preview) PlayerControlAction.offered() else layout.focusOrder(deckAvailable).toSet()
     val actions = PlayerControlAction.entries.filter { it in include }
     val ghostLabel = stringResource(R.string.player_layout_hidden_buttons)
     val menuLabel = stringResource(R.string.player_layout_more_buttons)
