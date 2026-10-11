@@ -31,7 +31,7 @@ class BitrateAwareLoadControl(
     backBufferDurationMs: Int,
     retainBackBufferFromKeyframe: Boolean,
     /** Memory ceiling in bytes. */
-    private val budgetBytes: Long,
+    budgetBytes: Long,
     allocator: DefaultAllocator = DefaultAllocator(/* trimOnReset= */ true, C.DEFAULT_BUFFER_SEGMENT_SIZE, 64)
 ) : DefaultLoadControl(
     allocator,
@@ -43,9 +43,9 @@ class BitrateAwareLoadControl(
     prioritizeTimeOverSizeThresholds,
     backBufferDurationMs,
     retainBackBufferFromKeyframe
-), PlaybackBufferReserve {
+), PlaybackBufferReserve, BufferBudgetControl {
 
-    private val bufferAllocator: DefaultAllocator = allocator
+    override val bufferAllocator: DefaultAllocator = allocator
 
     // Effective byte budget when >= 0, else the constructed budget. Re-read on track
     // (re)selection, so this can change mid-playback.
@@ -54,8 +54,10 @@ class BitrateAwareLoadControl(
 
     /** Set the byte budget at runtime; negative restores the constructed budget. */
     fun setBudgetBytesOverride(bytes: Long) {
-        budgetBytesOverride = if (bytes < 0L) -1L else bytes
+        budgetBytesOverride = if (bytes < 0L) -1L else bytes.coerceAtMost(MAX_BUDGET_BYTES)
     }
+
+    private val budgetBytes: Long = budgetBytes.coerceAtMost(MAX_BUDGET_BYTES)
 
     override fun calculateTargetBufferBytes(
         trackSelectionArray: Array<out ExoTrackSelection?>
@@ -66,7 +68,24 @@ class BitrateAwareLoadControl(
         return effectiveBudgetBytes().coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     }
 
-    private fun effectiveBudgetBytes(): Long = if (budgetBytesOverride >= 0L) budgetBytesOverride else budgetBytes
+    @Volatile
+    private var pressureCapBytes: Long = -1L
+
+    override val uncappedBudgetBytes: Long
+        get() = if (budgetBytesOverride >= 0L) budgetBytesOverride else budgetBytes
+
+    override fun setPressureCapBytes(bytes: Long) {
+        pressureCapBytes = if (bytes < 0L) -1L else bytes
+    }
+
+    override fun allocatorTargetBytes(): Int =
+        (effectiveBudgetBytes() - reserveCore.reservedBytes).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+
+    private fun effectiveBudgetBytes(): Long {
+        val cap = pressureCapBytes
+        val budget = uncappedBudgetBytes
+        return if (cap >= 0L) minOf(budget, cap) else budget
+    }
 
     // Seek thumbnail read-ahead reserve
     private val reserveCore = ReadAheadReserve(bufferAllocator, ::effectiveBudgetBytes,
@@ -81,7 +100,30 @@ class BitrateAwareLoadControl(
     override fun reserve(bytes: Long) = reserveCore.reserve(bytes)
     override fun giveBack(): Long = reserveCore.giveBack()
     override fun release() = reserveCore.release()
+    override fun yieldLoading(on: Boolean) = reserveCore.yieldLoading(on)
+
+    // Time before size lets the buffer pass the budget until minBufferMs is met. Once enough is
+    // buffered to start playback, it stops a quarter over the budget instead.
+    private val minAheadUs: Long = maxOf(bufferForPlaybackMs, bufferForPlaybackAfterRebufferMs) * 1000L
+
+    internal fun ceilingBytes(): Long {
+        val budget = effectiveBudgetBytes()
+        return budget + budget / 4
+    }
+
+    private fun overCeiling(parameters: LoadControl.Parameters): Boolean =
+        parameters.bufferedDurationUs >= minAheadUs && bufferAllocator.totalBytesAllocated >= ceilingBytes()
 
     override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean =
-        if (reserveCore.holdsLoading(parameters)) false else super.shouldContinueLoading(parameters)
+        if (reserveCore.holdsLoading(parameters) || overCeiling(parameters)) false
+        else super.shouldContinueLoading(parameters)
+
+    override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean =
+        super.shouldStartPlayback(parameters) || overCeiling(parameters)
+
+    companion object {
+        // The allocator counts its bytes in an int, which wraps at 2 GiB and then reads as "not full".
+        // 1,600 MB keeps the ceiling (a quarter over) at 2,000 MB.
+        const val MAX_BUDGET_BYTES: Long = 1600L * 1024L * 1024L
+    }
 }

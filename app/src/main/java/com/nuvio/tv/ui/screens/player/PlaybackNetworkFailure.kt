@@ -5,6 +5,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.HttpDataSource
 import java.io.IOException
+import java.net.ConnectException
+import java.net.NoRouteToHostException
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -33,6 +35,25 @@ internal object PlaybackNetworkFailure {
     }
 
     fun hasNetworkCause(error: Throwable?): Boolean = findNetworkCause(error) != null
+
+    /**
+     * The server could not be reached at all: no connection was made. A slow first byte is a
+     * read time-out and does not count.
+     */
+    fun isConnectFailure(error: Throwable?): Boolean = causes(error).any { cause ->
+        cause is ConnectException ||
+            cause is NoRouteToHostException ||
+            cause is UnknownHostException ||
+            (cause is SocketTimeoutException && cause.message?.contains("connect", ignoreCase = true) == true)
+    }
+
+    /** The address answered but no longer serves this file, which a fresh link can fix. */
+    fun isRefusedLink(error: Throwable?): Boolean = causes(error).any { cause ->
+        cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode in REFUSED_LINK_CODES
+    }
+
+    private fun causes(error: Throwable?): Sequence<Throwable> =
+        generateSequence(error) { it.cause }.take(MAX_CAUSE_DEPTH)
 
     fun errorCodeFor(networkCause: Throwable): Int = when (networkCause) {
         is HttpDataSource.HttpDataSourceException ->
@@ -66,6 +87,8 @@ internal object PlaybackNetworkFailure {
             HttpDataSource.HttpDataSourceException.TYPE_READ
         )
     }
+
+    private val REFUSED_LINK_CODES = setOf(401, 403, 404, 410)
 
     private val NETWORK_ERROR_CODES = setOf(
         PlaybackException.ERROR_CODE_IO_UNSPECIFIED,

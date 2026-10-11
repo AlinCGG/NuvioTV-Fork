@@ -6,6 +6,7 @@ import com.nuvio.tv.data.local.StreamAutoPlaySource
 import com.nuvio.tv.data.mediaserver.ServerItemRef
 import com.nuvio.tv.data.mediaserver.ServerPlaybackTarget
 import com.nuvio.tv.domain.model.AddonStreams
+import com.nuvio.tv.domain.model.DebridStreamPreferences
 import com.nuvio.tv.domain.model.Stream
 import com.nuvio.tv.domain.model.StreamBehaviorHints
 import com.nuvio.tv.domain.model.StreamDebridCacheState
@@ -189,7 +190,7 @@ class StreamAutoPlaySelectorTest {
     }
 
     @Test
-    fun `bingeGroup-first respects source and addon plugin filters`() {
+    fun `bingeGroup-first follows the group outside the source filter`() {
         val filteredOutAddonMatch = stream(
             addonName = "AddonFilteredOut",
             url = "https://example.com/addon-match.m3u8",
@@ -213,10 +214,37 @@ class StreamAutoPlaySelectorTest {
             preferBingeGroupInSelection = true
         )
 
+        assertEquals(filteredOutAddonMatch, selected)
+    }
+
+    @Test
+    fun `without a binge group match the source filter still decides`() {
+        val filteredOutAddon = stream(
+            addonName = "AddonFilteredOut",
+            url = "https://example.com/addon.m3u8",
+            bingeGroup = "other-group"
+        )
+        val allowedPlugin = stream(
+            addonName = "PluginAllowed",
+            url = "https://example.com/plugin.m3u8"
+        )
+
+        val selected = StreamAutoPlaySelector.selectAutoPlayStream(
+            streams = listOf(filteredOutAddon, allowedPlugin),
+            mode = StreamAutoPlayMode.FIRST_STREAM,
+            regexPattern = "",
+            source = StreamAutoPlaySource.ENABLED_PLUGINS_ONLY,
+            installedAddonNames = setOf("AddonFilteredOut"),
+            selectedAddons = emptySet(),
+            selectedPlugins = setOf("PluginAllowed"),
+            preferredBingeGroup = "same-group",
+            preferBingeGroupInSelection = true
+        )
+
         if (AppFeaturePolicy.pluginsEnabled) {
-            assertEquals(allowedPluginMatch, selected)
+            assertEquals(allowedPlugin, selected)
         } else {
-            assertEquals(filteredOutAddonMatch, selected)
+            assertEquals(filteredOutAddon, selected)
         }
     }
 
@@ -639,6 +667,149 @@ class StreamAutoPlaySelectorTest {
         )
         assertEquals(addon, selected)
     }
+
+    @Test
+    fun `best quality picks the largest of otherwise equal files whatever the addon order`() {
+        val small = aioStream("small", "1.44 GiB", sizeBytes = gib(1.44))
+        val mid = aioStream("mid", "5.71 GiB", sizeBytes = gib(5.71))
+        val large = aioStream("large", "5.9 GiB", sizeBytes = gib(5.9))
+
+        assertEquals(large, selectBest(listOf(small, mid, large)))
+        assertEquals(large, selectBest(listOf(large, mid, small)))
+        assertEquals(mid, selectBest(listOf(small, mid)))
+    }
+
+    @Test
+    fun `best quality reads GiB sizes from the text when no size field is sent`() {
+        val small = aioStream("small", "1.44 GiB", sizeBytes = null)
+        val large = aioStream("large", "5.71 GiB", sizeBytes = null)
+
+        assertEquals(large, selectBest(listOf(small, large)))
+    }
+
+    @Test
+    fun `best quality with a binge group picks the best file inside that group`() {
+        val groupSmall = aioStream("g-small", "1.44 GiB", gib(1.44), bingeGroup = "aio|FLUX")
+        val outsider = aioStream("outsider", "9.8 GiB", gib(9.8), bingeGroup = "aio|other")
+        val groupLarge = aioStream("g-large", "5.71 GiB", gib(5.71), bingeGroup = "aio|FLUX")
+
+        assertEquals(groupLarge, selectBest(listOf(groupSmall, outsider, groupLarge), bingeGroup = "aio|FLUX"))
+        assertEquals(
+            groupLarge,
+            selectBest(listOf(groupSmall, outsider, groupLarge), bingeGroup = "aio|FLUX", bingeGroupOnly = true)
+        )
+    }
+
+    @Test
+    fun `best quality with a binge group skips files in the group that cannot play`() {
+        val groupSmall = aioStream("g-small", "1.44 GiB", gib(1.44), bingeGroup = "aio|FLUX")
+        val groupLargeUncached = aioStream("g-large", "5.71 GiB", gib(5.71), bingeGroup = "aio|FLUX").copy(
+            debridCacheStatus = StreamDebridCacheStatus(
+                providerId = "torbox",
+                providerName = "Torbox",
+                state = StreamDebridCacheState.NOT_CACHED
+            )
+        )
+
+        assertEquals(groupSmall, selectBest(listOf(groupSmall, groupLargeUncached), bingeGroup = "aio|FLUX"))
+    }
+
+    @Test
+    fun `first stream with a binge group still takes the first match in list order`() {
+        val groupSmall = aioStream("g-small", "1.44 GiB", gib(1.44), bingeGroup = "aio|FLUX")
+        val groupLarge = aioStream("g-large", "5.71 GiB", gib(5.71), bingeGroup = "aio|FLUX")
+
+        assertEquals(
+            groupSmall,
+            selectBest(listOf(groupSmall, groupLarge), bingeGroup = "aio|FLUX", mode = StreamAutoPlayMode.FIRST_STREAM)
+        )
+        assertEquals(
+            groupSmall,
+            selectBest(listOf(groupSmall, groupLarge), bingeGroup = "aio|FLUX", mode = StreamAutoPlayMode.MANUAL)
+        )
+    }
+
+    @Test
+    fun `best quality inside a binge group still drops excluded files`() {
+        val excludedLarge = aioStream("g-large", "5.71 GiB", gib(5.71), bingeGroup = "aio|FLUX")
+        val keptSmall = aioStream("g-small", "1.44 GiB", gib(1.44), bingeGroup = "aio|FLUX").copy(
+            description = "Lanterns S01E06 2160p WEB-DL DV HDR DDP5.1 Atmos HEVC-NTb\n1.44 GiB"
+        )
+
+        assertEquals(
+            keptSmall,
+            selectBest(
+                listOf(excludedLarge, keptSmall),
+                bingeGroup = "aio|FLUX",
+                preferences = DebridStreamPreferences(excludedReleaseGroups = listOf("FLUX"))
+            )
+        )
+    }
+
+    @Test
+    fun `regex mode with a binge group still takes the first match in list order`() {
+        val groupSmall = aioStream("g-small", "1.44 GiB", gib(1.44), bingeGroup = "aio|FLUX")
+        val groupLarge = aioStream("g-large", "5.71 GiB", gib(5.71), bingeGroup = "aio|FLUX")
+
+        assertEquals(
+            groupSmall,
+            AutoPlaySelection.select(
+                streams = listOf(groupSmall, groupLarge),
+                inputs = baseInputs.copy(
+                    mode = StreamAutoPlayMode.REGEX_MATCH,
+                    regexPattern = "2160p",
+                    installedAddonNames = setOf("AIOStreams"),
+                    preferredBingeGroup = "aio|FLUX"
+                ),
+                debridStreamPreferences = null
+            )
+        )
+    }
+
+    private fun selectBest(
+        streams: List<Stream>,
+        bingeGroup: String? = null,
+        mode: StreamAutoPlayMode = StreamAutoPlayMode.QUALITY_RANK,
+        bingeGroupOnly: Boolean = false,
+        preferences: DebridStreamPreferences? = null
+    ): Stream? = AutoPlaySelection.select(
+        streams = streams,
+        inputs = baseInputs.copy(
+            mode = mode,
+            installedAddonNames = setOf("AIOStreams"),
+            preferredBingeGroup = bingeGroup
+        ),
+        debridStreamPreferences = preferences,
+        bingeGroupOnly = bingeGroupOnly
+    )
+
+    private fun gib(value: Double): Long = (value * 1024 * 1024 * 1024).toLong()
+
+    private fun aioStream(
+        id: String,
+        sizeText: String,
+        sizeBytes: Long?,
+        bingeGroup: String? = null,
+        name: String = "AIOStreams 4K DV"
+    ): Stream = Stream(
+        name = name,
+        title = null,
+        description = "Lanterns S01E06 2160p WEB-DL DV HDR DDP5.1 Atmos HEVC-FLUX\n$sizeText",
+        url = "https://example.com/$id.mkv",
+        ytId = null,
+        infoHash = null,
+        fileIdx = null,
+        externalUrl = null,
+        behaviorHints = StreamBehaviorHints(
+            notWebReady = null,
+            bingeGroup = bingeGroup,
+            countryWhitelist = null,
+            proxyHeaders = null,
+            videoSize = sizeBytes
+        ),
+        addonName = "AIOStreams",
+        addonLogo = null
+    )
 
     private fun serverStream(addonName: String, name: String, item: String = "i1", source: String = "ms1"): Stream =
         stream(addonName = addonName, name = name).copy(

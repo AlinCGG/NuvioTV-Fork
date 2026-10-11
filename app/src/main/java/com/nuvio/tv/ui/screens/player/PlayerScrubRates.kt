@@ -1,44 +1,28 @@
 package com.nuvio.tv.ui.screens.player
 
+import kotlin.math.min
+import kotlin.math.pow
+
 /**
- * Scrub step sizes and cadence for remote D-pad and media keys. A held key repeats about every 50 ms, so a held
- * scrub steps at most once per [STEP_INTERVAL_MS] to keep each seek thumbnail readable. The step grows with the
- * hold time.
+ * Remote seeking. A tap moves 10 s. A held key glides from its first repeat: the cursor moves every frame at a
+ * speed that doubles every [DOUBLING_MS] of holding, from [START_SPEED] up to [MAX_SPEED] (film ms per ms). A TV
+ * remote over HDMI-CEC stops at [TV_REMOTE_MAX_SPEED]: some TVs send the release seconds after the key is let go.
  */
 object PlayerScrubRates {
     const val STEP_SHORT_MS = 10_000L
 
-    const val STEP_INTERVAL_MS = 200L
+    private const val GLIDE_FROM_MS = 500L
+    private const val START_SPEED = 100.0
+    private const val MAX_SPEED = 800.0
+    private const val TV_REMOTE_MAX_SPEED = 400.0
+    private const val DOUBLING_MS = 1_750.0
 
-    /** (hold duration from, step size), ascending. */
-    private val RAMP = listOf(
-        0L to STEP_SHORT_MS,
-        2_000L to 30_000L,
-        5_000L to 60_000L,
-        10_000L to 120_000L,
-    )
+    /** Thumbnails, time and timeline follow a glide at this interval; the bar's own cursor follows every frame. */
+    const val GLIDE_PUBLISH_MS = 166L
 
-    /** Step size for a key held for [holdDurationMs] (0 = a tap). */
-    fun stepMsForHold(holdDurationMs: Long): Long =
-        RAMP.lastOrNull { holdDurationMs >= it.first }?.second ?: STEP_SHORT_MS
+    fun tapDeltaMs(forward: Boolean): Long = if (forward) STEP_SHORT_MS else -STEP_SHORT_MS
 
-    fun deltaMsForHold(holdDurationMs: Long, forward: Boolean): Long {
-        val step = stepMsForHold(holdDurationMs)
-        return if (forward) step else -step
-    }
-
-    private var cadenceDownTime = Long.MIN_VALUE
-    private var cadenceLastStepAt = 0L
-
-    /** True for the first press of a hold, then at most once per [STEP_INTERVAL_MS]. Main thread only. */
-    fun acceptStep(downTime: Long, eventTime: Long): Boolean {
-        if (downTime != cadenceDownTime) {
-            cadenceDownTime = downTime
-            cadenceLastStepAt = eventTime
-            return true
-        }
-        if (eventTime - cadenceLastStepAt < STEP_INTERVAL_MS) return false
-        cadenceLastStepAt = eventTime
-        return true
-    }
+    /** Film ms per ms for a key held for [holdDurationMs]. */
+    fun glideSpeed(holdDurationMs: Long, tvRemote: Boolean = false): Double =
+        min(if (tvRemote) TV_REMOTE_MAX_SPEED else MAX_SPEED, START_SPEED * 2.0.pow((holdDurationMs - GLIDE_FROM_MS).coerceAtLeast(0L) / DOUBLING_MS))
 }

@@ -8,6 +8,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import com.nuvio.tv.domain.model.Subtitle
 import com.nuvio.tv.data.local.InternalPlayerEngine
+import com.nuvio.tv.data.local.SubtitleLanguageRanking
+import com.nuvio.tv.data.local.SubtitleStyleSettings
+import com.nuvio.tv.data.local.subtitleLanguagesAfterPlayerChoice
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -331,11 +334,35 @@ private fun PlayerRuntimeController.rememberSubtitleLanguagePreference(language:
     } else {
         playerSettingsDataStore.selectableSubtitleLanguage(language) ?: return
     }
-    if (lastSubtitlePreferredLanguage == chosen) return
-    // Recorded first, so the settings observer does not treat this as a change to re-select for.
-    lastSubtitlePreferredLanguage = chosen
+    if (chosen == "none") {
+        if (lastSubtitlePreferredLanguage == chosen) return
+        // Recorded first, so the settings observer does not treat this as a change to re-select for.
+        lastSubtitlePreferredLanguage = chosen
+    } else {
+        val after = subtitleLanguagesAfterPlayerChoice(_uiState.value.subtitleStyle, chosen) ?: return
+        lastSubtitlePreferredLanguage = after.first
+        lastSubtitleSecondaryLanguage = after.second
+        lastSubtitleTertiaryLanguage = after.third
+    }
     scope.launch {
         runCatching { playerSettingsDataStore.rememberPlayerSubtitleChoice(chosen.takeUnless { it == "none" }) }
+    }
+}
+
+/**
+ * The preferred subtitle languages left after [chosen] is picked in the player, or null when they stay as they
+ * are. Mirrors [com.nuvio.tv.data.local.PlayerSettingsDataStore.rememberPlayerSubtitleChoice].
+ */
+internal fun subtitleLanguagesAfterPlayerChoice(style: SubtitleStyleSettings, chosen: String): SubtitleLanguageRanking? {
+    val restoring = style.preferredLanguage == "none"
+    val base = if (restoring) style.preferredLanguageBeforeOff else style.preferredLanguage
+    return subtitleLanguagesAfterPlayerChoice(
+        first = base,
+        second = style.secondaryPreferredLanguage,
+        third = style.tertiaryPreferredLanguage,
+        chosen = chosen
+    ) ?: base?.takeIf { restoring }?.let {
+        SubtitleLanguageRanking(it, style.secondaryPreferredLanguage, style.tertiaryPreferredLanguage)
     }
 }
 

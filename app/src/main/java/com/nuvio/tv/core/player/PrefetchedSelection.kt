@@ -25,10 +25,14 @@ data class SelectionSnapshot(
     val preferences: DebridStreamPreferences?
 )
 
-/** A winner computed during the prefetch, with the snapshot it was computed under. */
+/**
+ * A winner computed during the prefetch, with the snapshot it was computed under
+ * and the ordered list it was ranked from.
+ */
 data class PrefetchedSelection(
     val snapshot: SelectionSnapshot,
-    val winner: Stream
+    val winner: Stream,
+    val candidates: List<Stream>
 )
 
 /** Outcome of consulting a prefetched selection at press time. */
@@ -45,6 +49,7 @@ object PrefetchedSelectionGate {
     const val REASON_NO_ENTRY = "no-entry"
     const val REASON_INPUTS_CHANGED = "inputs-changed"
     const val REASON_KEY_MISS = "key-miss"
+    const val REASON_CANDIDATES_CHANGED = "candidates-changed"
 
     /**
      * Resolves a prefetched winner against the list actually being presented.
@@ -64,9 +69,28 @@ object PrefetchedSelectionGate {
     ): SelectionOutcome {
         if (prefetched == null) return SelectionOutcome.Live(REASON_NO_ENTRY)
         if (prefetched.snapshot != snapshot) return SelectionOutcome.Live(REASON_INPUTS_CHANGED)
+        if (!sameCandidates(prefetched.candidates, streams)) {
+            return SelectionOutcome.Live(REASON_CANDIDATES_CHANGED)
+        }
         val wantedKey = identityOf(prefetched.winner)
         val match = streams.firstOrNull { identityOf(it) == wantedKey }
             ?: return SelectionOutcome.Live(REASON_KEY_MISS)
         return SelectionOutcome.Hit(match)
+    }
+
+    /**
+     * The winner only holds for the list it was ranked from. A stream that
+     * arrived later, left, moved, or changed its cache state or size needs a
+     * fresh rank. Badges are added after the rank and do not count.
+     */
+    private fun sameCandidates(ranked: List<Stream>, live: List<Stream>): Boolean {
+        if (ranked.size != live.size) return false
+        for (index in ranked.indices) {
+            val before = ranked[index]
+            val now = live[index]
+            if (before === now) continue
+            if (before.copy(badges = now.badges) != now) return false
+        }
+        return true
     }
 }

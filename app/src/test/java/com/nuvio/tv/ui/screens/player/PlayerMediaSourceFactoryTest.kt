@@ -214,6 +214,16 @@ class PlayerMediaSourceFactoryTest {
         assertFalse(PlayerMediaSourceFactory.isLoopbackUrl(""))
     }
 
+    @Test
+    fun `chunk downloads give up on an unreachable server sooner but keep the read wait`() {
+        val base = okhttp3.OkHttpClient.Builder()
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        val client = PlayerMediaSourceFactory.withChunkSessionTimeouts(base).build()
+        assertEquals(6_000, client.connectTimeoutMillis)
+        assertEquals(15_000, client.readTimeoutMillis)
+    }
+
     private fun String.basicAuthHeader(): String =
         "Basic " + Base64.getEncoder().encodeToString(toByteArray(Charsets.UTF_8))
 }

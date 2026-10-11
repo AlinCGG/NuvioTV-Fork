@@ -13,6 +13,7 @@ import org.junit.Test
 import java.io.EOFException
 import java.io.IOException
 import java.net.ConnectException
+import java.net.NoRouteToHostException
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -95,6 +96,53 @@ class PlaybackNetworkFailureTest {
         )
         assertFalse(failure is HttpDataSource.HttpDataSourceException)
         assertEquals("Failed to download chunk 4", failure.message)
+    }
+
+    private fun openError(cause: Throwable): Throwable = HttpDataSource.HttpDataSourceException(
+        IOException(ExecutionException(cause)),
+        spec,
+        PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+        HttpDataSource.HttpDataSourceException.TYPE_OPEN
+    )
+
+    @Test
+    fun `an unreachable server counts as a connect failure`() {
+        listOf(
+            SocketTimeoutException(
+                "failed to connect to nexus-114.example/203.0.113.10 (port 443) from /192.168.1.20 (port 34494) after 6000ms"
+            ),
+            SocketTimeoutException("connect timed out"),
+            ConnectException("Failed to connect to cdn.example/203.0.113.9:443"),
+            NoRouteToHostException("No route to host"),
+            UnknownHostException("cdn.example")
+        ).forEach { cause ->
+            assertTrue(cause.toString(), PlaybackNetworkFailure.isConnectFailure(openError(cause)))
+            assertTrue(cause.toString(), PlaybackNetworkFailure.isConnectFailure(chunkError(openError(cause))))
+        }
+    }
+
+    @Test
+    fun `a slow first byte or a dropped body is not a connect failure`() {
+        listOf(
+            SocketTimeoutException("timeout"),
+            SocketTimeoutException("Read timed out"),
+            SocketException("Connection reset"),
+            IOException("unexpected end of stream"),
+            EOFException()
+        ).forEach { cause ->
+            assertFalse(cause.toString(), PlaybackNetworkFailure.isConnectFailure(openError(cause)))
+        }
+        assertFalse(PlaybackNetworkFailure.isConnectFailure(null))
+    }
+
+    @Test
+    fun `only statuses that a fresh link can fix count as a refused link`() {
+        fun status(code: Int) = chunkError(
+            HttpDataSource.InvalidResponseCodeException(code, "fixture", null, emptyMap(), spec, byteArrayOf())
+        )
+        listOf(401, 403, 404, 410).forEach { assertTrue("$it", PlaybackNetworkFailure.isRefusedLink(status(it))) }
+        listOf(416, 429, 500, 503).forEach { assertFalse("$it", PlaybackNetworkFailure.isRefusedLink(status(it))) }
+        assertFalse(PlaybackNetworkFailure.isRefusedLink(chunkError(SocketException("Connection reset"))))
     }
 
     @Test

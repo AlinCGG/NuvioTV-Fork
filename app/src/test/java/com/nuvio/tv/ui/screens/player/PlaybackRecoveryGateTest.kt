@@ -18,6 +18,11 @@ class PlaybackRecoveryGateTest {
   val g=PlaybackRecoveryGate();g.begin("one",emptyMap());g.nextAudioDelayMs();val generation=g.generation;g.cancel()
   assertFalse(g.isCurrent(generation,"one",emptyMap()));g.begin("one",emptyMap());assertEquals(800L,g.nextAudioDelayMs())
  }
+ @Test fun episodeSwitchWithoutReleaseStopsTheOldStartupAndStartsAFreshStream() {
+  val g=PlaybackRecoveryGate();g.begin("one",emptyMap());g.nextAudioDelayMs();val oldStartup=g.generation;g.cancel()
+  assertFalse(g.isCurrent(oldStartup,"one",emptyMap()));assertTrue(g.begin("two",emptyMap()))
+  assertFalse(g.isCurrent(oldStartup,"one",emptyMap()));assertEquals(400L,g.nextAudioDelayMs())
+ }
  @Test fun mutableHeadersCannotChangeCapturedIdentity() {
   val headers=mutableMapOf("key" to "a");val g=PlaybackRecoveryGate();g.begin("one",headers);val generation=g.generation;headers["key"]="b"
   assertTrue(g.isCurrent(generation,"one",mapOf("key" to "a")));assertFalse(g.isCurrent(generation,"one",headers))

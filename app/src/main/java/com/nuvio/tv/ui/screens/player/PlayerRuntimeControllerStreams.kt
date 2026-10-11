@@ -819,7 +819,10 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     /** Dead-source failover rather than the user's pick; keeps an autoplayed episode marked as autoplayed. */
     automatic: Boolean = false
 ) {
-    if (!automatic) deadSourceFailoverCount = 0
+    if (!automatic) {
+        deadSourceFailoverCount = 0
+        serverDeadAnswerRetried.clear()
+    }
     sourceStreamsScope?.cancel()
     sourceStreamsScope = null
     sourceStreamsJob = null
@@ -959,7 +962,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     resetLoadingOverlayForNewStream()
 
     _uiState.update {
-        it.copy(
+        it.clearFrameRateDetection().copy(
             isBuffering = true,
             error = null,
             currentStreamName = stream.name ?: stream.addonName,
@@ -974,16 +977,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
             showSourcesPanel = false,
             isLoadingSourceStreams = false,
             sourceStreamsError = null,
-            isTorrentStream = false,
-            // Reset detection state on a source switch so the
-            // preflight for the new stream isn't a guaranteed no-op. Without
-            // this, detectedFrameRateSource stays set (the TRACK path populates
-            // it during normal playback) and the skip-guard in the preflight
-            // keeps the previous stream's refresh rate, so mixed-frame-rate
-            // series (25 fps HDTV next to 23.976 WEB-DL) never re-match.
-            detectedFrameRate = 0f,
-            detectedFrameRateRaw = 0f,
-            detectedFrameRateSource = null
+            isTorrentStream = false
         )
     }
     // Refresh the filename for the NEW stream before anything derives state
@@ -995,6 +989,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     showStreamSourceIndicator(stream)
     resetPostPlayOverlayState(clearEpisode = false)
 
+    val carriedStartMs = SourceFailoverSelection.startPositionMs(automatic, _uiState.value.pendingSeekPosition)
     _exoPlayer?.let { player ->
         scope.launch {
             try {
@@ -1034,10 +1029,10 @@ internal fun PlayerRuntimeController.switchToSourceStream(
             }
         }
     } ?: run {
-        initializePlayer(playbackUrl, playbackHeaders)
+        initializePlayer(playbackUrl, playbackHeaders, startPositionMs = carriedStartMs)
     }
 
-    loadSavedProgressFor(currentSeason, currentEpisode)
+    if (carriedStartMs == null) loadSavedProgressFor(currentSeason, currentEpisode)
 }
 
 internal fun PlayerRuntimeController.dismissEpisodesPanel() {
@@ -1095,7 +1090,7 @@ private fun PlayerRuntimeController.switchToTorrentSourceStream(
     pendingRestoredAddonSubtitle = null
     lastSavedPosition = 0L
     _uiState.update {
-        it.copy(
+        it.clearFrameRateDetection().copy(
             isBuffering = true,
             error = null,
             currentStreamName = stream.name ?: stream.addonName,
@@ -1590,6 +1585,7 @@ internal fun PlayerRuntimeController.switchToEpisodeStream(
     hasRetriedCurrentStreamAfter416 = false
     resetErrorRetryState()
     deadSourceFailoverCount = 0
+    serverDeadAnswerRetried.clear()
     serverAudioChosenByUser = false
     clearSourceStreams()
     currentVideoId = targetVideoId
@@ -1606,8 +1602,13 @@ internal fun PlayerRuntimeController.switchToEpisodeStream(
     currentTraktEpisodeMappingKey = null
     lastSavedPosition = 0L
 
+    // This switch keeps the player, so stop a start-up or recovery still running for the old episode here.
+    playbackRecoveryJob?.cancel()
+    playbackRecoveryJob = null
+    playbackRecoveryGate.cancel()
+    cancelAfrPreflight()
     _uiState.update {
-        it.copy(
+        it.clearFrameRateDetection().copy(
             isBuffering = true,
             error = null,
             currentSeason = currentSeason,
@@ -1638,11 +1639,6 @@ internal fun PlayerRuntimeController.switchToEpisodeStream(
             postPlayMode = null,
             postPlayDismissedForCurrentEpisode = true,
             playbackEnded = false,
-            // The previous episode's TRACK detection would make the preflight
-            // guard a guaranteed no-op. Reset so each episode re-matches.
-            detectedFrameRate = 0f,
-            detectedFrameRateRaw = 0f,
-            detectedFrameRateSource = null,
             isNextEpisodeMetadataResolved = false,
         )
     }
@@ -1720,6 +1716,7 @@ private fun PlayerRuntimeController.switchToEpisodeStreamCommon(
     hasRetriedCurrentStreamAfterMediaPeriodHolderCrash = false
     hasRetriedAfterMimeOverrideClear = false
     deadSourceFailoverCount = 0
+    serverDeadAnswerRetried.clear()
     serverAudioChosenByUser = false
     clearSourceStreams()
 
@@ -1734,7 +1731,7 @@ private fun PlayerRuntimeController.switchToEpisodeStreamCommon(
     resetLoadingOverlayForNewStream()
 
     _uiState.update {
-        it.copy(
+        it.clearFrameRateDetection().copy(
             isBuffering = true,
             error = null,
             currentSeason = currentSeason,

@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.util.Log
 import com.nuvio.tv.data.local.AudioOutputChannels
+import com.nuvio.tv.ui.screens.player.iec.LiveDirectAudioPlayback
 import com.nuvio.tv.ui.screens.player.iec.PlatformIecAudioTrackFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -45,6 +46,14 @@ internal fun decideBluetoothRoutePlaybackAction(
         BluetoothRoutePlaybackAction.UPDATE_SINK_IN_PLACE
     }
 }
+
+/**
+ * Android answers every callback registration with an "added" event listing the outputs already
+ * connected. Each new player registers again, so that echo is not a route change and must not
+ * reset what was learned about the output during the same playback.
+ */
+internal fun addsOnlyKnownOutputs(knownOutputIds: Set<Int>, addedOutputIds: Collection<Int>): Boolean =
+    addedOutputIds.isNotEmpty() && addedOutputIds.all { it in knownOutputIds }
 
 internal object MpvBluetoothAudioPolicy {
     const val STEREO_CHANNELS = "stereo"
@@ -91,21 +100,46 @@ internal fun PlayerRuntimeController.registerAudioDelayRouteCallback() {
     val audioManager = context.getSystemService(android.content.Context.AUDIO_SERVICE) as? AudioManager ?: return
     val callback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+            val addedOutputs = addedDevices.filter { it.isSink }.map { it.id }
+            val repeat = addsOnlyKnownOutputs(knownAudioOutputDeviceIds, addedOutputs)
+            knownAudioOutputDeviceIds = knownAudioOutputDeviceIds + addedOutputs
+            if (repeat) {
+                Log.d(
+                    PlayerRuntimeController.TAG,
+                    "Audio device added (count=${addedDevices.size}, outputs already connected); output findings kept"
+                )
+                if (!isReleasingPlayer && _exoPlayer != null && currentAudioOutputRoute?.isBluetooth != true) {
+                    schedulePassthroughReturnCheck("player start")
+                }
+                return
+            }
             onAudioOutputRouteMaybeChanged("added", addedDevices)
         }
 
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+            knownAudioOutputDeviceIds = knownAudioOutputDeviceIds - removedDevices.map { it.id }.toSet()
             onAudioOutputRouteMaybeChanged("removed", removedDevices)
         }
     }
 
     runCatching {
+        knownAudioOutputDeviceIds = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).map { it.id }.toSet()
         audioManager.registerAudioDeviceCallback(callback, null)
         audioOutputRouteCallback = callback
         Log.d(PlayerRuntimeController.TAG, "Registered audio output route callback")
     }.onFailure {
         Log.w(PlayerRuntimeController.TAG, "Failed to register audio route callback", it)
     }
+}
+
+/**
+ * Each player gets its own IEC61937 probe and the tunnel watch's quiet time after an output change. A bitstream
+ * track of the previous player whose release was not reported counts as closed from here.
+ */
+internal fun PlayerRuntimeController.rearmOutputChecksForNewPlayer() {
+    LiveDirectAudioPlayback.noteOwnTrackClosed()
+    PlatformIecAudioTrackFactory.invalidateIec61937ProbeMemo()
+    noteOutputChangeForTunnelWatch()
 }
 
 internal fun PlayerRuntimeController.unregisterAudioDelayRouteCallback() {
@@ -126,6 +160,14 @@ private fun PlayerRuntimeController.onAudioOutputRouteMaybeChanged(
 ) {
     if (isReleasingPlayer) return
     if (_exoPlayer == null && !isUsingMpvEngine()) return
+    if (!SurroundRecheckGuard.eventHasOutput(devices.map { it.isSink })) {
+        Log.d(
+            PlayerRuntimeController.TAG,
+            "Audio device $reason ignored (count=${devices.size}, no output device)"
+        )
+        return
+    }
+    noteOutputChangeForTunnelWatch()
 
     Log.d(
         PlayerRuntimeController.TAG,

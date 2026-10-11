@@ -11,6 +11,7 @@ import com.nuvio.tv.core.tracking.TRACKING_SCROBBLE_DIAGNOSTIC_TAG
 import com.nuvio.tv.core.tracking.TrackingMediaKind
 import com.nuvio.tv.core.tracking.TrackingMediaReference
 import com.nuvio.tv.core.tracking.TrackingScrobbleAction
+import com.nuvio.tv.core.tracking.TrackingProviderId
 import com.nuvio.tv.core.tracking.TrackingScrobbleEvent
 import com.nuvio.tv.core.tracking.buildTrackingMediaReference
 import com.nuvio.tv.core.tracking.scrobbleDiagnosticIdentity
@@ -22,6 +23,7 @@ import com.nuvio.tv.data.repository.PlaybackIssuePlaybackSettingsInput
 import com.nuvio.tv.data.repository.PlaybackIssueReportInput
 import com.nuvio.tv.data.repository.SkipInterval
 import com.nuvio.tv.domain.model.WatchProgress
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -392,7 +394,11 @@ internal fun PlayerRuntimeController.startProgressUpdates() {
                         val runtime = Runtime.getRuntime()
                         val usedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
                         val maxMb = runtime.maxMemory() / (1024 * 1024)
-                        Log.d(PlayerRuntimeController.TAG, "BUFFER: ahead=${bufAhead}s, loading=$loading, heap=$usedMb/${maxMb}MB, pos=${pos / 1000}s")
+                        val bufferLine = "BUFFER: ahead=${bufAhead}s, loading=$loading, heap=$usedMb/${maxMb}MB, pos=${pos / 1000}s"
+                        scope.launch(Dispatchers.IO) {
+                            Log.i(PlayerRuntimeController.TAG, bufferLine + PlaybackRuntimeCounters.logFields())
+                        }
+                        bufferMemoryKeeper?.onTick()
                         
                         if (NuvioExoPlayerPerformanceHelper.shouldLogMemoryFootprint()) {
                             val defaultAllocator = _loadControl?.allocator as? androidx.media3.exoplayer.upstream.DefaultAllocator
@@ -621,7 +627,7 @@ private fun PlayerRuntimeController.buildPlaybackIssuePlaybackSettingsInput(): P
         useParallelConnections = settings.useParallelConnections,
         parallelConnectionCount = settings.parallelConnectionCount,
         parallelChunkSizeKb = settings.parallelChunkSizeKb,
-        enableHttp2 = settings.enableHttp2,
+        enableHttp2 = false,
         nuvioPerformanceModeEnabled = settings.nuvioPerformanceModeEnabled,
         streamAutoPlayMode = settings.streamAutoPlayMode.name,
         streamAutoPlaySource = settings.streamAutoPlaySource.name,
@@ -699,9 +705,16 @@ internal fun PlayerRuntimeController.getEffectiveDuration(position: Long): Long 
 }
 
 private fun PlayerRuntimeController.isShortPlaceholderStream(): Boolean {
+    if (isErrorCardPlayback()) return true
     val position = currentPlaybackPositionMs() ?: return false
     return isShortPlaceholderDuration(getEffectiveDuration(position))
 }
+
+internal fun PlayerRuntimeController.isErrorCardPlayback(): Boolean = isErrorCardPlayback(
+    placeholderRejected = placeholderRejectedForCurrentStream,
+    filmOrEpisode = isFilmOrEpisode(contentType, currentSeason, currentEpisode),
+    playerDurationMs = currentPlaybackDurationMs()
+)
 
 /**
  * Handles a natural end-of-playback event for ExoPlayer / MPV.
@@ -846,6 +859,7 @@ internal fun PlayerRuntimeController.refreshScrobbleItem() {
     hasRequestedScrobbleStartForCurrentItem = false
     scrobbleStartRequestGeneration++
     hasSentCompletionScrobbleForCurrentItem = false
+    serverScrobbledProviders = emptySet()
     logScrobbleDiagnostic("item_refreshed")
 }
 
@@ -909,11 +923,14 @@ internal fun PlayerRuntimeController.emitScrobbleStart() {
             logScrobbleDiagnostic("start_cancelled", "reason=stale_before_dispatch requestGeneration=$requestGeneration")
             return@launch
         }
+        serverScrobbledProviders = serverPlayback.scrobbledServices(currentStreamUrl)
+            .mapNotNull(TrackingProviderId::fromStorage)
+            .toSet()
         val progressPercent = currentPlaybackProgressPercent()
         logScrobbleDiagnostic("start_dispatching", "requestGeneration=$requestGeneration progress=$progressPercent")
         val failures = trackingScrobbleCoordinator.scrobble(
             action = TrackingScrobbleAction.START,
-            event = TrackingScrobbleEvent(item, progressPercent.toDouble())
+            event = TrackingScrobbleEvent(item, progressPercent.toDouble(), serverScrobbledProviders)
         )
         logScrobbleDiagnostic(
             "start_dispatched",
@@ -948,11 +965,16 @@ internal fun PlayerRuntimeController.emitScrobbleStop(progressPercent: Float? = 
 
     val percent = provided ?: currentPlaybackProgressPercent()
     logScrobbleDiagnostic("stop_queued", "progress=$percent")
+    val known = serverScrobbledProviders
+    val streamUrl = currentStreamUrl
     scope.launch(kotlinx.coroutines.NonCancellable) {
         logScrobbleDiagnostic("stop_dispatching", "progress=$percent")
+        val skipped = known.ifEmpty {
+            serverPlayback.scrobbledServices(streamUrl).mapNotNull(TrackingProviderId::fromStorage).toSet()
+        }
         val failures = trackingScrobbleCoordinator.scrobble(
             action = TrackingScrobbleAction.STOP,
-            event = TrackingScrobbleEvent(item, percent.toDouble())
+            event = TrackingScrobbleEvent(item, percent.toDouble(), skipped)
         )
         logScrobbleDiagnostic("stop_dispatched", "progress=$percent failures=${failures.map { it.providerId.storageId }}")
     }
@@ -983,11 +1005,12 @@ internal fun PlayerRuntimeController.emitScrobblePause(progressPercent: Float? =
         return
     }
     logScrobbleDiagnostic("pause_queued", "progress=$percent")
+    val skipped = serverScrobbledProviders
     scope.launch(kotlinx.coroutines.NonCancellable) {
         logScrobbleDiagnostic("pause_dispatching", "progress=$percent")
         val failures = trackingScrobbleCoordinator.scrobble(
             action = TrackingScrobbleAction.PAUSE,
-            event = TrackingScrobbleEvent(item, percent.toDouble())
+            event = TrackingScrobbleEvent(item, percent.toDouble(), skipped)
         )
         logScrobbleDiagnostic("pause_dispatched", "progress=$percent failures=${failures.map { it.providerId.storageId }}")
     }
@@ -1028,15 +1051,16 @@ internal fun PlayerRuntimeController.emitSeekScrobbleRestart(progressPercent: Fl
     if (isShortPlaceholderStream()) return
     val item = currentScrobbleItem ?: return
     if (!hasRequestedScrobbleStartForCurrentItem) return
+    val skipped = serverScrobbledProviders
     scope.launch {
         trackingScrobbleCoordinator.scrobbleSeek(
             action = TrackingScrobbleAction.STOP,
-            event = TrackingScrobbleEvent(item, progressPercent.toDouble())
+            event = TrackingScrobbleEvent(item, progressPercent.toDouble(), skipped)
         )
         if (isPlaybackCurrentlyPlaying()) {
             trackingScrobbleCoordinator.scrobbleSeek(
                 action = TrackingScrobbleAction.START,
-                event = TrackingScrobbleEvent(item, currentPlaybackProgressPercent().toDouble())
+                event = TrackingScrobbleEvent(item, currentPlaybackProgressPercent().toDouble(), skipped)
             )
         }
     }
@@ -1298,6 +1322,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         }
         is PlayerEvent.OnSeekBy -> {
             if (_playbackTimeline.value.isLive) return
+            stopScrubGlide()
             releaseScrubHold()
             pendingPreviewSeekPosition = null
             _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }
@@ -1320,12 +1345,22 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
                 showSeekOverlayTemporarily()
             }
         }
+        is PlayerEvent.OnScrubHold -> {
+            if (_playbackTimeline.value.isLive) return
+            val holdStart = scrubHoldClock.repeat(event.eventTime, event.downTime)
+            if (holdStart == null) {
+                if (scrubHoldClock.takeUndoTap()) undoScrubTap()
+                return
+            }
+            if (scrubGlideJob?.isActive == true && scrubGlideForward == event.forward) return
+            startScrubGlide(event.forward, holdStart)
+        }
         is PlayerEvent.OnPreviewSeekBy -> {
             if (_playbackTimeline.value.isLive) return
+            stopScrubGlide()
+            scrubHoldClock.press(android.os.SystemClock.uptimeMillis())
+            scrubTapFrom = pendingPreviewSeekPosition
             val maxDuration = currentPlaybackDurationMs().takeIf { it >= 0 } ?: Long.MAX_VALUE
-            // A second step before the commit means the key is held; a single press never pauses.
-            val heldKey = pendingPreviewSeekPosition != null
-            if (heldKey) holdPlaybackForScrub()
             val basePosition = pendingPreviewSeekPosition ?: currentPlaybackPositionMs()?.coerceAtLeast(0L) ?: 0L
             // With thumbnails on, every step lands on the 10 s thumbnail grid.
             val target = (SeekThumbnails.gridStep(basePosition, event.deltaMs) ?: (basePosition + event.deltaMs))
@@ -1333,8 +1368,6 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
                 .coerceAtMost(maxDuration)
             pendingPreviewSeekPosition = target
             _uiState.update { it.copy(pendingPreviewSeekPosition = target, previewThumbPositionMs = target) }
-            // Taps show no thumbnails, so only a held key asks the worker for this position first.
-            if (heldKey) SeekThumbnails.notePriority(target)
             schedulePendingPreviewSeekExpiry()
             updatePlaybackTimeline(
                 currentPosition = previewDisplayPosition() ?: target,
@@ -1348,6 +1381,8 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         }
         PlayerEvent.OnCommitPreviewSeek -> {
             if (_playbackTimeline.value.isLive) return
+            stopScrubGlide()
+            scrubHoldClock.release(android.os.SystemClock.uptimeMillis())
             val target = pendingPreviewSeekPosition
             if (target != null) {
                 pendingPreviewSeekExpiryJob?.cancel()
@@ -1370,6 +1405,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         }
         is PlayerEvent.OnSeekTo -> {
             if (_playbackTimeline.value.isLive) return
+            stopScrubGlide()
             releaseScrubHold()
             pendingPreviewSeekPosition = null
             _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }
@@ -1458,16 +1494,17 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             }
             _uiState.update {
                 it.copy(
-                    showSubtitleOverlay = true,
+                    showSubtitleOverlay = event.openPanel || it.showSubtitleOverlay,
                     showSubtitleStylePanel = false,
                     showSubtitleTimingDialog = false,
                     showSubtitleDelayOverlay = false,
-                    showControls = true,
+                    showControls = event.openPanel || it.showControls,
                     selectedAddonSubtitle = null
                 )
             }
         }
-        PlayerEvent.OnDisableSubtitles -> {
+        PlayerEvent.OnDisableSubtitles, PlayerEvent.OnDisableSubtitlesQuietly -> {
+            val openPanel = event == PlayerEvent.OnDisableSubtitles
             logSwitchTrace(
                 stage = "event-disable-subtitles",
                 message = "selectedSubtitleIndex=${_uiState.value.selectedSubtitleTrackIndex}"
@@ -1483,11 +1520,11 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             if (hasBurnedInServerSubtitle) clearServerSubtitle()
             _uiState.update {
                 it.copy(
-                    showSubtitleOverlay = true,
+                    showSubtitleOverlay = openPanel || it.showSubtitleOverlay,
                     showSubtitleStylePanel = false,
                     showSubtitleTimingDialog = false,
                     showSubtitleDelayOverlay = false,
-                    showControls = true,
+                    showControls = openPanel || it.showControls,
                     selectedAddonSubtitle = null,
                     selectedSubtitleTrackIndex = -1
                 )
@@ -1505,11 +1542,11 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             runSelectedAutomaticSubtitleSync(event.subtitle) // AutoSync hook
             _uiState.update {
                 it.copy(
-                    showSubtitleOverlay = true,
+                    showSubtitleOverlay = event.openPanel || it.showSubtitleOverlay,
                     showSubtitleStylePanel = false,
                     showSubtitleTimingDialog = false,
                     showSubtitleDelayOverlay = false,
-                    showControls = true
+                    showControls = event.openPanel || it.showControls
                 )
             }
         }
@@ -1630,6 +1667,8 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         }
         PlayerEvent.OnShowSpeedDialog -> {
             if (!canChangePlaybackSpeed()) {
+                // A speed saved for this title may have been applied at start: the press brings it back to normal.
+                if (_uiState.value.playbackSpeed != 1f) onEvent(PlayerEvent.OnSetPlaybackSpeed(1f))
                 showPlaybackSpeedUnavailable()
                 return
             }
@@ -1730,6 +1769,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             playbackIssueReportRequestVersion.incrementAndGet()
             resetErrorRetryState()
             deadSourceFailoverCount = 0
+            serverDeadAnswerRetried.clear()
             lastPlaybackIssueError = null
             clearPendingEngineSwitchTrackPreference()
             resetPostPlayOverlayState(clearEpisode = false)
@@ -2082,11 +2122,80 @@ internal fun PlayerRuntimeController.releaseScrubHold() {
     android.util.Log.d("ThumbWorker", "scrub: playback resumed")
 }
 
+/**
+ * Moves the seek cursor every frame while the key is held, from its first repeat until the commit. Thumbnails,
+ * the time and the timeline follow every [PlayerScrubRates.GLIDE_PUBLISH_MS]; [ScrubGlide] carries every frame.
+ */
+internal fun PlayerRuntimeController.startScrubGlide(forward: Boolean, holdStart: Long) {
+    stopScrubGlide()
+    val end = (currentPlaybackDurationMs().takeIf { it > 0L } ?: Long.MAX_VALUE / 4).toDouble()
+    holdPlaybackForScrub()
+    var cursor = (pendingPreviewSeekPosition ?: currentPlaybackPositionMs()?.coerceAtLeast(0L) ?: 0L)
+        .toDouble().coerceIn(0.0, end)
+    scrubGlideForward = forward
+    ScrubGlide.positionMs = cursor.toLong()
+    ScrubGlide.active = true
+    publishScrubGlide(cursor.toLong())
+    scrubGlideJob = scope.launch {
+        var last = android.os.SystemClock.uptimeMillis()
+        var lastPublish = last
+        while (isActive) {
+            kotlinx.coroutines.android.awaitFrame()
+            val now = android.os.SystemClock.uptimeMillis()
+            val dt = (now - last).coerceIn(0L, 100L)
+            last = now
+            if (!scrubHoldClock.moving(now)) {
+                ScrubGlide.speed = 0f
+                continue
+            }
+            val speed = PlayerScrubRates.glideSpeed(now - holdStart, scrubHoldClock.fromTv)
+            cursor = (cursor + (if (forward) speed else -speed) * dt).coerceIn(0.0, end)
+            ScrubGlide.speed = speed.toFloat()
+            ScrubGlide.positionMs = cursor.toLong()
+            if (now - lastPublish >= PlayerScrubRates.GLIDE_PUBLISH_MS) {
+                lastPublish = now
+                publishScrubGlide(cursor.toLong())
+            }
+        }
+    }
+}
+
+private fun PlayerRuntimeController.publishScrubGlide(positionMs: Long) {
+    pendingPreviewSeekPosition = positionMs
+    _uiState.update { it.copy(pendingPreviewSeekPosition = positionMs, previewThumbPositionMs = positionMs) }
+    SeekThumbnails.notePriority(positionMs)
+    schedulePendingPreviewSeekExpiry()
+    updatePlaybackTimeline(
+        currentPosition = positionMs,
+        playbackPosition = currentPlaybackPositionMs() ?: _playbackTimeline.value.playbackPosition
+    )
+    if (_uiState.value.showControls) showControlsTemporarily() else showSeekOverlayTemporarily()
+}
+
+/** Ends a glide; the pending position stays for the commit (or the expiry). */
+internal fun PlayerRuntimeController.stopScrubGlide() {
+    val job = scrubGlideJob ?: return
+    scrubGlideJob = null
+    job.cancel()
+    if (ScrubGlide.active) pendingPreviewSeekPosition = ScrubGlide.positionMs
+    ScrubGlide.stop()
+}
+
+private fun PlayerRuntimeController.undoScrubTap() {
+    val before = scrubTapFrom
+    pendingPreviewSeekPosition = before
+    _uiState.update { it.copy(pendingPreviewSeekPosition = before, previewThumbPositionMs = before) }
+    if (before == null) pendingPreviewSeekExpiryJob?.cancel()
+    (before?.let { previewDisplayPosition() ?: it } ?: currentPlaybackPositionMs())
+        ?.let { updatePlaybackTimeline(currentPosition = it, playbackPosition = currentPlaybackPositionMs() ?: it) }
+}
+
 internal fun PlayerRuntimeController.schedulePendingPreviewSeekExpiry() {
     pendingPreviewSeekExpiryJob?.cancel()
     pendingPreviewSeekExpiryJob = scope.launch {
         kotlinx.coroutines.delay(3_000L)
         if (pendingPreviewSeekPosition != null) {
+            stopScrubGlide()
             releaseScrubHold()
             pendingPreviewSeekPosition = null
             _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }

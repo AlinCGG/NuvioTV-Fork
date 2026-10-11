@@ -9,6 +9,7 @@ import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.trackselection.ExoTrackSelection
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.nuvio.tv.core.player.thumbnail.PlaybackBufferReserve
+import com.nuvio.tv.core.player.thumbnail.PlaybackYield
 
 /**
  * Read-ahead reserve for seek thumbnails, shared by [BitrateAwareLoadControl] and [ReservableLoadControl]. While
@@ -30,6 +31,7 @@ internal class ReadAheadReserve(
     @Volatile private var cancels = 0
     @Volatile private var cancelledAtMs = 0L
     @Volatile private var lastStallAtMs = 0L
+    private val yieldGate = PlaybackYield(minAheadUs)
 
     override val readAheadBudgetBytes: Long get() = budget()
     override val bufferedBytes: Long get() = allocator.totalBytesAllocated.toLong()
@@ -61,6 +63,10 @@ internal class ReadAheadReserve(
         return (before - allocator.memoryFootprint.toLong()).coerceAtLeast(0L)
     }
 
+    override fun yieldLoading(on: Boolean) {
+        if (on) yieldGate.renew(SystemClock.elapsedRealtime()) else yieldGate.end()
+    }
+
     override fun release() {
         if (held <= 0L) return
         held = 0L
@@ -72,6 +78,7 @@ internal class ReadAheadReserve(
         // media3 stamps lastRebufferRealtimeMs on READY -> BUFFERING and clears it on a seek and on READY.
         val stallAt = parameters.lastRebufferRealtimeMs.takeIf { it != C.TIME_UNSET && it > 0L }
         if (stallAt != null && stallAt > lastStallAtMs) lastStallAtMs = stallAt
+        if (yieldsToThumbnails(parameters)) return true
         val r = effective()
         if (r <= 0L) return false
         val now = SystemClock.elapsedRealtime()
@@ -94,6 +101,16 @@ internal class ReadAheadReserve(
             return true
         }
         return false
+    }
+
+    private fun yieldsToThumbnails(parameters: LoadControl.Parameters): Boolean {
+        val was = yieldGate.holding
+        val holds = yieldGate.holds(SystemClock.elapsedRealtime(), parameters.bufferedDurationUs, parameters.playWhenReady)
+        if (holds != was) {
+            Log.i(TAG, if (holds) "generating screen: ${parameters.bufferedDurationUs / 1_000_000} s buffered, loading paused for thumbnails"
+                else "generating screen: loading again")
+        }
+        return holds
     }
 
     private companion object {
@@ -139,15 +156,41 @@ class ReservableLoadControl(
     prioritizeTimeOverSizeThresholds,
     backBufferDurationMs,
     retainBackBufferFromKeyframe
-), PlaybackBufferReserve {
+), PlaybackBufferReserve, BufferBudgetControl {
     /** 0 until the first track selection. */
     @Volatile private var computedTargetBytes = 0
+    @Volatile private var pressureCapBytes = -1L
+
+    override val bufferAllocator: DefaultAllocator = allocator
 
     override fun calculateTargetBufferBytes(trackSelectionArray: Array<out ExoTrackSelection?>): Int =
         super.calculateTargetBufferBytes(trackSelectionArray).also { computedTargetBytes = it }
 
-    private fun budgetBytes(): Long =
-        (if (targetBufferBytes != C.LENGTH_UNSET) targetBufferBytes else computedTargetBytes).toLong()
+    override val uncappedBudgetBytes: Long
+        get() = (if (targetBufferBytes != C.LENGTH_UNSET) targetBufferBytes else computedTargetBytes).toLong()
+
+    override fun setPressureCapBytes(bytes: Long) {
+        pressureCapBytes = if (bytes < 0L) -1L else bytes
+    }
+
+    override fun allocatorTargetBytes(): Int =
+        (budgetBytes() - reserveCore.reservedBytes).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+
+    private fun budgetBytes(): Long {
+        val cap = pressureCapBytes
+        return if (cap >= 0L) minOf(uncappedBudgetBytes, cap) else uncappedBudgetBytes
+    }
+
+    // The back buffer counts against the target and moves with playback instead of shrinking, so neither a full
+    // target nor a lowered budget stops loading before this much is buffered ahead.
+    private val minAheadUs: Long = maxOf(BufferSizing.MIN_AHEAD_MS * 1000L,
+        bufferForPlaybackMs * 1000L, bufferForPlaybackAfterRebufferMs * 1000L)
+
+    // media3 gates on its own target, so a lowered budget is checked here as well.
+    private fun overPressureCap(parameters: LoadControl.Parameters): Boolean {
+        val cap = pressureCapBytes
+        return cap >= 0L && parameters.bufferedDurationUs >= minAheadUs && bufferAllocator.totalBytesAllocated >= cap
+    }
 
     private val reserveCore = ReadAheadReserve(allocator, ::budgetBytes,
         bufferForPlaybackMs, bufferForPlaybackAfterRebufferMs)
@@ -161,9 +204,14 @@ class ReservableLoadControl(
     override fun reserve(bytes: Long) = reserveCore.reserve(bytes)
     override fun giveBack(): Long = reserveCore.giveBack()
     override fun release() = reserveCore.release()
+    override fun yieldLoading(on: Boolean) = reserveCore.yieldLoading(on)
 
     override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean =
-        if (reserveCore.holdsLoading(parameters)) false else super.shouldContinueLoading(parameters)
+        if (reserveCore.holdsLoading(parameters) || overPressureCap(parameters)) false
+        else super.shouldContinueLoading(parameters) || parameters.bufferedDurationUs < minAheadUs
+
+    override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean =
+        super.shouldStartPlayback(parameters) || overPressureCap(parameters)
 
     companion object {
         /** Same as DefaultLoadControl.Builder().setBackBuffer(backBufferMs, true).build(). */

@@ -8,6 +8,8 @@ import androidx.media3.decoder.DecoderInputBuffer
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.FormatHolder
 import androidx.media3.exoplayer.mediacodec.MediaCodecAdapter
+import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import com.nuvio.tv.core.player.DecodeOrderTimestamps
 import java.nio.ByteBuffer
@@ -19,19 +21,40 @@ import java.nio.ByteBuffer
  * times that step backwards and roughly one frame in three is dropped as late. See [DecodeOrderTimestamps].
  * Every other format passes through untouched.
  *
+ * Also leaves Android's software decoders out of the fallback list when a hardware decoder supports the
+ * format, see [hardwareFirstVideoDecoders], and Android's software AV1 decoders out for the streams dav1d takes,
+ * see [withoutAndroidSoftwareAv1].
+ *
  * Buffer state advances only when super consumes the buffer: a held (early) buffer is offered again on the
  * next render pass.
  */
 internal class DecodeOrderPtsVideoRenderer(
     builder: MediaCodecVideoRenderer.Builder,
     /** Also ask Amlogic decoders to rebuild the times themselves (vendor keys, ignored elsewhere). */
-    private val vendorUnstablePts: Boolean = false
+    private val vendorUnstablePts: Boolean = false,
+    private val dav1dLoaded: () -> Boolean = { false },
 ) : MediaCodecVideoRenderer(builder) {
 
     private var inputFormat: Format? = null
     private var timestamps: DecodeOrderTimestamps? = null
     private var consumed = 0L
     private var loggedEngage = false
+
+    override fun supportsFormat(mediaCodecSelector: MediaCodecSelector, format: Format): Int =
+        super.supportsFormat(withoutAndroidSoftwareAv1(mediaCodecSelector, format, dav1dLoaded), format)
+
+    override fun getDecoderInfos(
+        mediaCodecSelector: MediaCodecSelector,
+        format: Format,
+        requiresSecureDecoder: Boolean
+    ): List<MediaCodecInfo> = hardwareFirstVideoDecoders(
+        format,
+        super.getDecoderInfos(
+            withoutAndroidSoftwareAv1(mediaCodecSelector, format, dav1dLoaded),
+            format,
+            requiresSecureDecoder
+        )
+    )
 
     override fun onInputFormatChanged(formatHolder: FormatHolder): DecoderReuseEvaluation? {
         val evaluation = super.onInputFormatChanged(formatHolder)

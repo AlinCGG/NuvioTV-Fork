@@ -3,6 +3,7 @@ package com.nuvio.tv.ui.screens.player
 import android.util.Log
 import com.nuvio.tv.R
 import com.nuvio.tv.core.player.PlaceholderStreamPolicy
+import com.nuvio.tv.core.player.thumbnail.SeekThumbnails
 import kotlinx.coroutines.flow.update
 
 /**
@@ -24,6 +25,8 @@ internal fun PlayerRuntimeController.rejectPlaceholderStream(
         "PLACEHOLDER_REJECT reason=${verdict.reason} detail=${verdict.detail} " +
             "host=${currentStreamUrl.safeHost()}"
     )
+    placeholderRejectedForCurrentStream = true
+    SeekThumbnails.stopSession(handBackPlayer = false)
     runCatching { _exoPlayer?.stop() }
     cancelNextEpisodeAutoPlayOnFatalError()
     _uiState.update {

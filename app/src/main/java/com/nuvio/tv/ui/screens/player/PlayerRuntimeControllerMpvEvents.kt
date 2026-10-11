@@ -2,6 +2,7 @@ package com.nuvio.tv.ui.screens.player
 
 import android.os.SystemClock
 import android.util.Log
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.R
 import com.nuvio.tv.data.repository.PlaybackIssueErrorInput
 import `is`.xyz.mpv.MPV
@@ -239,7 +240,7 @@ internal fun PlayerRuntimeController.handleMpvPlaybackError(
         }
         Log.e(
             PlayerRuntimeController.TAG,
-            "MPV_PLAYBACK_ERROR: source=$source code=$mpvErrorCode detail=$detailedError"
+            "MPV_PLAYBACK_ERROR: source=$source code=$mpvErrorCode detail=${detailedError.redactLinksForLog()}"
         )
         playbackAnalyticsDiagnostics.recordRawEventLine(
             "MPV_PLAYBACK_ERROR: source=$source mpvErrorCode=$mpvErrorCode " +
@@ -313,7 +314,7 @@ private fun PlayerRuntimeController.attemptMpvAutoRetry(
 
     Log.w(
         PlayerRuntimeController.TAG,
-        "MPV auto-retry ${attempt + 1}/$MPV_MAX_AUTO_RETRIES after ${MPV_RETRY_DELAY_MS}ms for: $detailedError"
+        "MPV auto-retry ${attempt + 1}/$MPV_MAX_AUTO_RETRIES after ${MPV_RETRY_DELAY_MS}ms for: ${detailedError.redactLinksForLog()}"
     )
 
     errorRetryJob?.cancel()

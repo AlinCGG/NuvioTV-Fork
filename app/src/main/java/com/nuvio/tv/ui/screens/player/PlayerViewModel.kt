@@ -46,6 +46,7 @@ import com.nuvio.tv.data.local.TraktAuthDataStore
 import com.nuvio.tv.data.local.TraktSettingsDataStore
 import com.nuvio.tv.data.local.TrailerSettingsDataStore
 import com.nuvio.tv.data.local.WatchedSeriesStateHolder
+import com.nuvio.tv.data.mediaserver.ServerThumbnailSource
 import com.nuvio.tv.data.repository.TraktRelatedService
 import com.nuvio.tv.data.trailer.TrailerService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -112,6 +113,7 @@ class PlayerViewModel @Inject constructor(
     private val tvRecommendationManager: com.nuvio.tv.core.recommendations.TvRecommendationManager,
     private val serverPlayback: com.nuvio.tv.data.mediaserver.ServerPlayback,
     private val serverStreams: com.nuvio.tv.data.mediaserver.ServerStreams,
+    private val thumbnailCopyDebrid: com.nuvio.tv.core.debrid.ThumbnailCopyDebrid,
     profileManager: com.nuvio.tv.core.profile.ProfileManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -207,6 +209,12 @@ class PlayerViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .collect { active -> screensaverController.setPlaybackActive(active) }
         }
+        viewModelScope.launch {
+            controller.uiState
+                .map { it.currentStreamInfoHash }
+                .distinctUntilChanged()
+                .collect { thumbnailCopyDebrid.notePlaying(it) }
+        }
     }
 
     val playbackTimeline: StateFlow<PlaybackTimelineState>
@@ -239,6 +247,13 @@ class PlayerViewModel @Inject constructor(
     internal fun sampleDroppedFrames(presentation: PlaybackVideoPresentation = sampleVideoPresentation()): PlaybackDroppedFrameSample =
         droppedFrameSampler.sample(controller.exoPlayer?.videoDecoderCounters,
             presentation.supportsDropCounters, android.os.SystemClock.elapsedRealtime())
+
+    internal fun sampleSkippedFrames(presentation: PlaybackVideoPresentation = sampleVideoPresentation()): PlaybackSkippedFrameSample? {
+        if (!presentation.supportsSkipCounters) return null
+        val counters = controller.exoPlayer?.videoDecoderCounters?.also { it.ensureUpdated() } ?: return null
+        return controller.skippedFrameTally.sample(counters, counters.skippedOutputBufferCount,
+            counters.renderedOutputBufferCount, android.os.SystemClock.elapsedRealtime())
+    }
 
     /** Release filename for the current stream, surfaced for the loading overlay. */
     val currentFilename: String?
@@ -566,21 +581,12 @@ class PlayerViewModel @Inject constructor(
 
         val videoPresentation = sampleVideoPresentation()
         val tunnelled = videoPresentation.isTunnelled
-        val dropped = sampleDroppedFrames(videoPresentation)
-        val dropCount = dropped.count
-        val droppedText = when {
-            videoPresentation == PlaybackVideoPresentation.NATIVE -> "Not counted on the native route"
-            dropCount == null -> "Unavailable"
-            tunnelled -> "$dropCount · renderer source only (tunnelled)"
-            else -> "$dropCount"
-        }
-        val droppedDot = when {
-            dropCount == null || (tunnelled && dropCount == 0) -> StatsDot.NONE
-            dropCount == 0 -> StatsDot.GOOD
-            dropped.increasedAtMs?.let { nowMs - it <= t.RECENT_EVENT_WINDOW_MS } == true -> StatsDot.BAD
-            else -> StatsDot.WARN
-        }
-        rows += StatsRow("Dropped", droppedText, droppedDot)
+        rows += droppedFramesRow(
+            videoPresentation,
+            sampleDroppedFrames(videoPresentation),
+            sampleSkippedFrames(videoPresentation),
+            nowMs
+        )
         if (videoPresentation.supportsFrameLead) {
             // Read only the current decoder's samples. Historical analytics averages can
             // belong to a released renderer and must not be used as a live fallback.
@@ -882,33 +888,9 @@ class PlayerViewModel @Inject constructor(
             StatsDot.NONE
         )
 
-        // SoC thermal. Real degrees when sysfs is app-readable on this device;
-        // otherwise the framework's normalised headroom (1.0 = severe throttling).
-        // Hidden entirely when neither source answers.
-        playbackStatsThermalSampler.sample()?.let { thermal ->
-            when {
-                thermal.celsius != null -> {
-                    val dot = when {
-                        thermal.celsius < t.SOC_TEMP_WARN_C -> StatsDot.GOOD
-                        thermal.celsius < t.SOC_TEMP_BAD_C -> StatsDot.WARN
-                        else -> StatsDot.BAD
-                    }
-                    rows += StatsRow("SoC temp", String.format("%.1f °C", thermal.celsius), dot)
-                }
-                thermal.headroom != null -> {
-                    val dot = when {
-                        thermal.headroom < t.THERMAL_HEADROOM_WARN -> StatsDot.GOOD
-                        thermal.headroom < t.THERMAL_HEADROOM_BAD -> StatsDot.WARN
-                        else -> StatsDot.BAD
-                    }
-                    rows += StatsRow(
-                        "SoC temp",
-                        String.format("headroom %.2f (1.0 = throttle)", thermal.headroom),
-                        dot
-                    )
-                }
-            }
-        }
+        // Temperature: the chip's own reading when sysfs is app-readable, otherwise derived from the
+        // framework's headroom (see PlaybackThermalSampler). Hidden when neither source answers.
+        playbackStatsThermalSampler.sample()?.let(::thermalStatsRow)?.let { rows += it }
 
         // CPU clock / throttle. No app-visible SoC temperature exists on some boxes (only a
         // TYPE_CPU sensor, which getThermalHeadroom ignores; sysfs thermal is SELinux-blocked),
@@ -978,13 +960,25 @@ class PlayerViewModel @Inject constructor(
     fun seekThumbnailIdentity(): String? =
         controller.currentVideoId?.takeIf { it.isNotBlank() } ?: controller.contentId?.takeIf { it.isNotBlank() }
 
+    /** True when [seekThumbnailIdentity] is the videoId, not a fallback shared by a show's episodes. */
+    fun seekThumbnailIdentityExact(): Boolean = !controller.currentVideoId.isNullOrBlank()
+
     fun getCurrentFileSizeBytes(): Long? = controller.currentVideoSize
 
     fun currentStreamMimeType(): String? = controller.currentStreamMimeType
 
+    /** The source list as copies for a 4K or Usenet title's thumbnails. */
+    internal fun thumbnailCopySources(): ThumbnailCopySources = ThumbnailCopySources(controller, thumbnailCopyDebrid)
+
+    /** The media server's own seek thumbnails for [url] when it is a server stream. */
+    fun serverThumbnails(url: String?): ServerThumbnailSource? = serverPlayback.thumbnails(url)
+
     fun isAutoPlayedEpisode(): Boolean = controller.currentEpisodeAutoPlayed
 
     fun pauseForSeekThumbnails(): Boolean? = controller.pauseForSeekThumbnails()
+
+    fun seekThumbnailSkipReason(): String? =
+        if (controller.isErrorCardPlayback()) "error card or a film/episode stream under 2 minutes" else null
 
     /** Connections playback keeps open to the stream. */
     fun playbackConnectionCount(): Int = controller.mediaSourceFactory.let {

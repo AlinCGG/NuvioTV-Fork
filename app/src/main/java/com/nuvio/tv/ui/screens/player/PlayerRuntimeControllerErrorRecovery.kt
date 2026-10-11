@@ -3,6 +3,7 @@ import com.nuvio.tv.data.local.InternalPlayerEngine
 
 import android.os.SystemClock
 import android.util.Log
+import com.nuvio.tv.core.logging.redactLinksForLog
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -10,6 +11,7 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.mediacodec.MediaCodecRenderer
 import com.nuvio.tv.R
 import com.nuvio.tv.domain.model.Stream
+import com.nuvio.tv.ui.screens.player.iec.LiveDirectAudioPlayback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -62,7 +64,7 @@ internal fun PlayerRuntimeController.attemptStartupRecovery(
 
     Log.w(
         PlayerRuntimeController.TAG,
-        "Startup recovery ${attempt + 1}/$MAX_STARTUP_AUTO_RETRIES after ${RETRY_DELAY_MS}ms for: $detailedError"
+        "Startup recovery ${attempt + 1}/$MAX_STARTUP_AUTO_RETRIES after ${RETRY_DELAY_MS}ms for: ${detailedError.redactLinksForLog()}"
     )
 
     errorRetryJob?.cancel()
@@ -288,7 +290,7 @@ internal fun PlayerRuntimeController.attemptAutoRetry(
 
     Log.w(
         PlayerRuntimeController.TAG,
-        "Auto-retry ${attempt + 1}/$MAX_AUTO_RETRIES after ${RETRY_DELAY_MS}ms for: $detailedError"
+        "Auto-retry ${attempt + 1}/$MAX_AUTO_RETRIES after ${RETRY_DELAY_MS}ms for: ${detailedError.redactLinksForLog()}"
     )
 
     // Capture the current position so we can resume after re-init.
@@ -411,9 +413,7 @@ internal fun PlayerRuntimeController.tryAudioTrackPcmFallback(
     error: PlaybackException
 ): Boolean {
     if (error.errorCode != PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED) return false
-    if (hasTriedAudioPcmFallback) return false
-    if (cachedDecoderPriority != 1) return false // Only for EXTENSION_RENDERER_MODE_ON
-    if (_uiState.value.tunnelingEnabled) return false
+    if (!audioTrackPcmFallbackAvailable()) return false
 
     markAudioPcmFallbackTried()
 
@@ -436,12 +436,32 @@ internal fun PlayerRuntimeController.tryAudioTrackPcmFallback(
     return true
 }
 
+internal fun PlayerRuntimeController.audioTrackPcmFallbackAvailable(): Boolean =
+    !hasTriedAudioPcmFallback &&
+        cachedDecoderPriority == 1 && // Only for EXTENSION_RENDERER_MODE_ON
+        !_uiState.value.tunnelingEnabled
+
 /** Bounded retry of a verified bitstream sink configuration; delays are policy, not a root-cause claim. */
 internal fun PlayerRuntimeController.tryBitstreamAudioTrackSameConfigRetry(error: PlaybackException): Boolean {
     if (error.errorCode != PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED) return false
     if (hasTriedAudioPcmFallback) return false
     val mime = failedAudioTrackInputFormat(error)?.sampleMimeType
     if (AudioTrackRejectionLog.labelForMime(mime) == null || currentAudioPassthroughPolicy?.deniesPassthrough(mime) != false) return false
+    val pcmFallbackAvailable = audioTrackPcmFallbackAvailable()
+    val reading = if (pcmFallbackAvailable) bitstreamOutputReading(error) else null
+    if (reading != null && CompressedOutputCheck.skipSameConfigRetry(
+            pcmFallbackAvailable = pcmFallbackAvailable,
+            refusedListedLive = reading.refusedListedLive,
+            ownTrackMayHold = CompressedOutputCheck.ownTrackMayHoldOutput(
+                LiveDirectAudioPlayback.ownTrackOpen(),
+                LiveDirectAudioPlayback.msSinceOwnTrackClosed()
+            ),
+            companionOpened = reading.companionOpened
+        )
+    ) {
+        Log.w(PlayerRuntimeController.TAG, "AUDIO_BITSTREAM_RETRY skipped: bitstream output unavailable, decoding to PCM")
+        return false
+    }
     val player = _exoPlayer ?: return false
     if (!playbackRecoveryGate.canRetryAudio()) return false
     if (!consumeAutoRecoveryBudget("bitstream initialization retry")) return false
@@ -857,7 +877,7 @@ internal fun PlayerRuntimeController.attemptDeadSourceFailover(
         val savedPosition = _exoPlayer?.currentPosition?.takeIf { it > 0L } ?: 0L
         Log.w(
             PlayerRuntimeController.TAG,
-            "Dead-source check: mimeType override cleared; one full re-init for: $detailedError"
+            "Dead-source check: mimeType override cleared; one full re-init for: ${detailedError.redactLinksForLog()}"
         )
         errorRetryJob?.cancel()
         errorRetryJob = scope.launch {
@@ -865,6 +885,31 @@ internal fun PlayerRuntimeController.attemptDeadSourceFailover(
                 it.copy(error = null, showLoadingOverlay = it.loadingOverlayEnabled, showPauseOverlay = false)
             }
             delay(RETRY_DELAY_MS)
+            releasePlayer(flushPlaybackState = false)
+            if (savedPosition > 0L) {
+                _uiState.update { it.copy(pendingSeekPosition = savedPosition) }
+            }
+            initializePlayer(currentStreamUrl, currentHeaders, startPaused = paused)
+        }
+        return true
+    }
+
+    val serverKey = serverPlayback.session(currentStreamUrl)?.target?.key()
+    if (ServerDeadAnswerRetry.shouldRetry(serverKey, isDeadSourceHttpError(error), serverDeadAnswerRetried)) {
+        serverKey?.let { serverDeadAnswerRetried += it }
+        val paused = userPausedManually
+        val savedPosition = _exoPlayer?.currentPosition?.takeIf { it > 0L } ?: 0L
+        Log.w(
+            PlayerRuntimeController.TAG,
+            "Dead-source check: media server answered ${error.findInvalidResponseCodeException()?.responseCode}; " +
+                "asking it once more in ${ServerDeadAnswerRetry.WAIT_MS} ms"
+        )
+        errorRetryJob?.cancel()
+        errorRetryJob = scope.launch {
+            _uiState.update {
+                it.copy(error = null, showLoadingOverlay = it.loadingOverlayEnabled, showPauseOverlay = false)
+            }
+            delay(ServerDeadAnswerRetry.WAIT_MS)
             releasePlayer(flushPlaybackState = false)
             if (savedPosition > 0L) {
                 _uiState.update { it.copy(pendingSeekPosition = savedPosition) }
@@ -918,7 +963,7 @@ internal fun PlayerRuntimeController.advanceToNextLiveSource(detailedError: Stri
         }
     }
 
-    Log.w(PlayerRuntimeController.TAG, "Dead source ($detailedError) - loading the source list before failing over")
+    Log.w(PlayerRuntimeController.TAG, "Dead source (${detailedError.redactLinksForLog()}) - loading the source list before failing over")
     val attemptNo = deadSourceFailoverCount + 1
     loadSourceStreams(forceRefresh = false)
     errorRetryJob?.cancel()
@@ -1001,7 +1046,7 @@ private fun PlayerRuntimeController.failOverToSource(next: Stream, detailedError
     val attemptNo = deadSourceFailoverCount
     Log.w(
         PlayerRuntimeController.TAG,
-        "Dead source ($detailedError) - failing over to next source ($attemptNo/$MAX_DEAD_SOURCE_FAILOVERS): " +
+        "Dead source (${detailedError.redactLinksForLog()}) - failing over to next source ($attemptNo/$MAX_DEAD_SOURCE_FAILOVERS): " +
                 "host=${next.getStreamUrl()?.safeHost()}"
     )
     val sourceName = next.name?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim() ?: next.addonName
@@ -1032,7 +1077,7 @@ internal fun PlayerRuntimeController.attemptStartupExhaustedSourceFailover(detai
     if (hasRenderedFirstFrame) return false
     Log.w(
         PlayerRuntimeController.TAG,
-        "Startup recovery exhausted; attempting next-source failover for: $detailedError"
+        "Startup recovery exhausted; attempting next-source failover for: ${detailedError.redactLinksForLog()}"
     )
     return advanceToNextLiveSource(detailedError)
 }
@@ -1056,7 +1101,7 @@ internal fun PlayerRuntimeController.consumeAutoRecoveryBudget(detailedError: St
         Log.w(
             PlayerRuntimeController.TAG,
             "Auto-recovery budget exhausted ($MAX_TOTAL_AUTO_RECOVERIES_PER_STREAM recoveries) " +
-                "for host=${url.safeHost()}; surfacing error instead of retrying: $detailedError"
+                "for host=${url.safeHost()}; surfacing error instead of retrying: ${detailedError.redactLinksForLog()}"
         )
         return false
     }

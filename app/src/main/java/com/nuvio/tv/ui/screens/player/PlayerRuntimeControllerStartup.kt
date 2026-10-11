@@ -4,6 +4,7 @@ import com.nuvio.tv.core.util.TtffTrace
 import android.app.Activity
 import android.os.SystemClock
 import android.util.Log
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.R
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -55,7 +56,7 @@ internal fun PlayerRuntimeController.startInitialPlaybackIfNeeded() {
                     filename = navigationArgs.filename,
                     trackers = navigationArgs.torrentTrackers
                 )
-                Log.d("PlayerStartup", "Torrent stream ready: $localUrl")
+                Log.d("PlayerStartup", "Torrent stream ready: ${localUrl.redactLinksForLog()}")
                 currentStreamUrl = localUrl
                 currentHeaders = emptyMap()
                 preparePlaybackBeforeStart(

@@ -13,25 +13,28 @@ class SeekStripLayoutTest {
         (anchorMs + i * spacingMs - glideMs) / spacingMs
 
     @Test
-    fun multiple_followsTheHoldRamp() {
-        assertEquals(1L, SeekStripLayout.multiple(10_000L, 10_000L, base))
-        assertEquals(3L, SeekStripLayout.multiple(30_000L, 30_000L, base))
-        assertEquals(6L, SeekStripLayout.multiple(60_000L, 60_000L, base))
-        assertEquals(12L, SeekStripLayout.multiple(120_000L, 120_000L, base))
+    fun multipleForSpeed_keepsTilesReadable() {
+        assertEquals(1L, SeekStripLayout.multipleForSpeed(100f, base))      // 100 s/s over 30 s tiles
+        assertEquals(3L, SeekStripLayout.multipleForSpeed(400f, base))
+        assertEquals(6L, SeekStripLayout.multipleForSpeed(800f, base))
+        assertEquals(3L, SeekStripLayout.multipleForSpeed(100f, 10_000L))   // 10 s tiles
+        assertEquals(30L, SeekStripLayout.multipleForSpeed(800f, 10_000L))
     }
 
     @Test
-    fun multiple_oneLongStepDoesNotRespace() {
-        assertEquals(1L, SeekStripLayout.multiple(20_000L, 10_000L, base))
-        assertEquals(1L, SeekStripLayout.multiple(10_000L, 20_000L, base))
-        assertEquals(2L, SeekStripLayout.multiple(20_000L, 20_000L, base))
+    fun multipleForSpeed_neverPassesMoreThanFiveTilesASecond() {
+        var speed = 1f
+        while (speed <= 800f) {
+            val m = SeekStripLayout.multipleForSpeed(speed, 10_000L)
+            assertTrue("speed $speed", speed * 1000.0 / (10_000.0 * m) <= 5.0)
+            speed += 1f
+        }
     }
 
     @Test
-    fun multiple_firstStepAndBadBase() {
-        assertEquals(3L, SeekStripLayout.multiple(30_000L, 0L, base))
-        assertEquals(1L, SeekStripLayout.multiple(0L, 0L, base))
-        assertEquals(1L, SeekStripLayout.multiple(30_000L, 30_000L, 0L))
+    fun multipleForSpeed_standingStillAndBadBase() {
+        assertEquals(1L, SeekStripLayout.multipleForSpeed(0f, base))
+        assertEquals(1L, SeekStripLayout.multipleForSpeed(500f, 0L))
     }
 
     @Test

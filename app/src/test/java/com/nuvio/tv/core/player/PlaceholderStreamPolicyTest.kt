@@ -224,4 +224,82 @@ class PlaceholderStreamPolicyTest {
             )
         )
     }
+
+    // --------------------------------------------- size against decoded length
+
+    @Test
+    fun `rejects an error card read against a film's size with no runtime`() {
+        // 19,717,426,246 bytes declared, 8 s decoded: about 19.7 Gbit/s.
+        val verdict = PlaceholderStreamPolicy.evaluate(
+            contentLengthBytes = 19_717_426_246L,
+            durationMs = 8_000L,
+            expectedRuntimeMs = null
+        )
+        assertEquals(
+            PlaceholderStreamPolicy.Reason.ImplausibleBitrate,
+            (verdict as PlaceholderStreamPolicy.Verdict.Reject).reason
+        )
+    }
+
+    @Test
+    fun `accepts real short clips with normal sizes and no runtime`() {
+        val clips = listOf(
+            400L * 1024L to 30_000L,                      // small status clip, 109 kbit/s
+            375L * 1024L * 1024L to 30_000L,              // 30 s at about 105 Mbit/s
+            2_200L * 1024L * 1024L to 2 * minute + 50_000L // UHD remux trailer, about 108 Mbit/s
+        )
+        for ((bytes, durationMs) in clips) {
+            assertTrue(
+                !rejected(PlaceholderStreamPolicy.evaluate(bytes, durationMs, expectedRuntimeMs = null))
+            )
+        }
+    }
+
+    @Test
+    fun `bitrate check sits at one gigabit per second`() {
+        val tenSeconds = 10_000L
+        val atLimit = PlaceholderStreamPolicy.MAX_PLAUSIBLE_BITS_PER_SECOND / 8L * 10L
+        assertTrue(!rejected(PlaceholderStreamPolicy.evaluate(atLimit, tenSeconds, null)))
+        assertTrue(rejected(PlaceholderStreamPolicy.evaluate(atLimit + 1_000L, tenSeconds, null)))
+    }
+
+    @Test
+    fun `bitrate check never judges a length of three minutes or more`() {
+        assertTrue(
+            !rejected(
+                PlaceholderStreamPolicy.evaluate(
+                    contentLengthBytes = 68L * 1024L * 1024L * 1024L,
+                    durationMs = PlaceholderStreamPolicy.MIN_PLAUSIBLE_DURATION_MS,
+                    expectedRuntimeMs = null
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `bitrate check needs both a size and a length`() {
+        assertTrue(!rejected(PlaceholderStreamPolicy.evaluate(19_717_426_246L, null, null)))
+        assertTrue(!rejected(PlaceholderStreamPolicy.evaluate(null, 8_000L, null)))
+        assertTrue(!rejected(PlaceholderStreamPolicy.evaluate(19_717_426_246L, 0L, null)))
+    }
+
+    @Test
+    fun `a bitrate reject stops a film or episode but only logs for other content`() {
+        val digger = PlaceholderStreamPolicy.evaluate(
+            contentLengthBytes = 19_717_426_246L,
+            durationMs = 8_000L,
+            expectedRuntimeMs = null
+        )
+        assertTrue(PlaceholderStreamPolicy.stopsAtReady(digger, filmOrEpisode = true))
+        assertTrue(!PlaceholderStreamPolicy.stopsAtReady(digger, filmOrEpisode = false))
+    }
+
+    @Test
+    fun `size rejects still stop at ready and duration rejects wait for the tick`() {
+        val size = PlaceholderStreamPolicy.evaluate(406L * 1024L, null, 114 * minute)
+        val duration = PlaceholderStreamPolicy.evaluate(null, 30_000L, 114 * minute)
+        assertTrue(PlaceholderStreamPolicy.stopsAtReady(size, filmOrEpisode = false))
+        assertTrue(!PlaceholderStreamPolicy.stopsAtReady(duration, filmOrEpisode = true))
+        assertTrue(!PlaceholderStreamPolicy.stopsAtReady(PlaceholderStreamPolicy.Verdict.Accept, filmOrEpisode = true))
+    }
 }

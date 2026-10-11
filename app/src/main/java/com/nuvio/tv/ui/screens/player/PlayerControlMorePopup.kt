@@ -44,7 +44,7 @@ internal fun PlayerControlMorePopup(layout: PlayerControlLayout, available: Set<
     val density = if (preview && context != null) Density(activityDensity.density * context.scale.coerceAtLeast(.01f), activityDensity.fontScale) else activityDensity
     val window = LocalWindowInfo.current.containerSize
     val bounds = context?.bounds?.takeIf { preview } ?: IntRect(0, 0, window.width.coerceAtLeast(1), window.height.coerceAtLeast(1))
-    val items = playerControlMoreEntries(layout, available, preview)
+    val items = playerControlMoreEntries(layout, available, preview).filter { it.action in PlayerControlAction.offered() }
     val scope = rememberCoroutineScope()
     val closeFocus = remember { FocusRequester() }
     var focusedAction by remember { mutableStateOf<PlayerControlAction?>(null) }

@@ -1,5 +1,6 @@
 package com.nuvio.tv.ui.screens.player
 
+import com.nuvio.tv.core.tracking.TrackingProviderId
 import android.app.Activity
 import androidx.compose.runtime.mutableStateOf
 import android.content.Context
@@ -8,6 +9,7 @@ import android.media.audiofx.LoudnessEnhancer
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -222,6 +224,11 @@ class PlayerRuntimeController(
     internal val cloudSessionToken: String? = navigationArgs.cloudSessionToken
     internal val mediaSourceFactory = PlayerMediaSourceFactory(context.applicationContext)
 
+    // Resolved per sample so it follows the player across rebuilds.
+    private val bufferedAheadProvider: () -> Long = {
+        _exoPlayer?.let { player -> player.bufferedPosition - player.currentPosition } ?: -1L
+    }
+
     // The file rate is the only one every container reports, so the playhead is placed in the
     // file by how far through it is rather than by any declared bitrate.
     private val vodCachePlayheadBytesProvider: () -> Long = {
@@ -235,6 +242,7 @@ class PlayerRuntimeController(
     }
 
     init {
+        PlayerMemoryReporter.bufferedAheadProvider = bufferedAheadProvider
         PlayerMediaSourceFactory.vodCachePlayheadBytesProvider = vodCachePlayheadBytesProvider
     }
 
@@ -261,6 +269,7 @@ class PlayerRuntimeController(
      * runs once per play session.
      */
     internal var placeholderProbeDone: Boolean = false
+    internal var placeholderRejectedForCurrentStream: Boolean = false
     internal var currentFilename: String? = navigationArgs.filename
         ?: initialStreamUrl.substringBefore('?').substringAfterLast('/', "")
             .takeIf { it.isNotBlank() && it.contains('.') }
@@ -336,6 +345,7 @@ class PlayerRuntimeController(
             }
         }
         mediaSourceFactory.logVodCacheStats()
+        PlayerMemoryReporter.stopSampling(context)
         releaseProcessWideReferences()
         mediaSourceFactory.evictCachedSession()
         releasePlayer()
@@ -344,6 +354,9 @@ class PlayerRuntimeController(
     // These are process wide, so without this the exited player stays reachable until the next one
     // replaces them; the identity checks keep a player that has already started from losing its own.
     private fun releaseProcessWideReferences() {
+        if (PlayerMemoryReporter.bufferedAheadProvider === bufferedAheadProvider) {
+            PlayerMemoryReporter.bufferedAheadProvider = null
+        }
         if (PlayerMediaSourceFactory.vodCachePlayheadBytesProvider === vodCachePlayheadBytesProvider) {
             PlayerMediaSourceFactory.vodCachePlayheadBytesProvider = null
         }
@@ -457,6 +470,7 @@ class PlayerRuntimeController(
     internal fun resetPlaybackTimeline() {
         livePlaybackLatched = false
         liveWatchClock.reset()
+        stopScrubGlide()
         pendingPreviewSeekPosition = null
         if (_uiState.value.isLive) {
             _uiState.update { it.copy(isLive = false) }
@@ -482,6 +496,7 @@ class PlayerRuntimeController(
     internal var firstFrameWatchdogJob: Job? = null
     internal var tunnelAvSyncWatchdogJob: Job? = null
     internal var pausedOutputCheckJob: Job? = null
+    internal var lastOutputChangeForTunnelMs: Long = 0L
     internal var lateVideoWatchJob: Job? = null
     internal var lateVideoBaselineFps: Float? = null
     internal var lateVideoBaselineFormatFps: Float = -1f
@@ -535,6 +550,7 @@ class PlayerRuntimeController(
     internal var lastPlaybackIssueError: PlaybackIssueErrorInput? = null
     internal val playbackIssueReportRequestVersion = AtomicLong(0L)
     internal val playbackAnalyticsDiagnostics = PlayerPlaybackAnalyticsDiagnostics()
+    internal val skippedFrameTally = PlaybackSkippedFrameTally()
     internal val loadingDiagnosticEvents: ArrayDeque<PlayerLoadingDiagnosticEvent> = ArrayDeque()
     internal val loadingDiagnosticRawEventLines: ArrayDeque<String> = ArrayDeque()
     internal val pendingPlaybackRawEventLines: ArrayDeque<String> = ArrayDeque()
@@ -577,6 +593,11 @@ class PlayerRuntimeController(
     internal var effectiveBackBufferDurationMs: Int = 0
     /** Custom LoadControl for this playback (null when using stock); used to resolve the back buffer at first frame. */
     internal var currentBitrateAwareLoadControl: BitrateAwareLoadControl? = null
+    /** Parallel chunk buffer overhead (MB) currently deducted from the managed buffer budget. */
+    internal var currentParallelChunkOverheadMb: Int = 0
+    /** Managed custom-buffer budget (MB) sized at build, before the chunk overhead comes off. */
+    internal var currentManagedBudgetMb: Int = com.nuvio.tv.ui.screens.settings.MemoryBudget.autoBudgetMb
+    internal var bufferMemoryKeeper: com.nuvio.tv.core.player.BufferMemoryKeeper? = null
     /** Back buffer (ms) the user configured, captured at build to restore once DV7 status is known. */
     internal var configuredBackBufferMs: Int = 0
     /** The per-stream listeners registered on the live ExoPlayer, tracked so a
@@ -602,6 +623,10 @@ class PlayerRuntimeController(
     internal var userPausedManually = false
     /** Playback paused by a held scrub, not by the user; resumed when the seek commits. */
     internal var scrubHoldPaused = false
+    internal var scrubGlideJob: Job? = null
+    internal var scrubGlideForward = true
+    internal val scrubHoldClock = ScrubHoldClock()
+    internal var scrubTapFrom: Long? = null
 
     internal var isInBackground: Boolean = false
 
@@ -683,10 +708,15 @@ class PlayerRuntimeController(
     internal var rememberAudioDelayPerDeviceEnabled: Boolean = false
     internal var currentAudioOutputRoute: AudioOutputRoute? = null
     internal var audioOutputRouteCallback: AudioDeviceCallback? = null
+    internal var knownAudioOutputDeviceIds: Set<Int> = emptySet()
+    internal var lastBitstreamOutputReading: Pair<PlaybackException, BitstreamOutputReading?>? = null
     internal var tunnelDeadClockSignature: String? = null
     internal var audioRouteChangeJob: Job? = null
     internal var passthroughReturnCheckJob: Job? = null
     internal val passthroughReturnRebuilds: MutableMap<String, Int> = mutableMapOf()
+    internal var busyOutputCheckJob: Job? = null
+    internal var busyOutputCheckStreamUrl: String? = null
+    internal val busyOutputReturnRebuilds: MutableMap<String, Int> = mutableMapOf()
 
     internal var lastBufferLogTimeMs: Long = 0L
     internal var pendingSeekFlush: Boolean = false
@@ -747,6 +777,7 @@ class PlayerRuntimeController(
     // stream's coroutine reaching its finally block must not collapse the new
     // stream's start-hold; incremented at every per-stream AFR reset.
     @Volatile internal var afrTrackGeneration: Int = 0
+    internal val afrPreflightGate = AfrPreflightGate()
     internal var afrModeAppliedPreStart: Boolean = false
     // The raw fps of a provisional seed applied by the cache preflight from
     // prewarm head bytes, or 0f. The track-format path validates the real
@@ -813,8 +844,10 @@ class PlayerRuntimeController(
     // rebuilt with the FFmpeg audio renderer preferred (audio-local reorder).
     internal val preferFfmpegAudioStreamUrls: MutableSet<String> = mutableSetOf()
     internal val tunnelingDisabledStreamUrls: MutableSet<String> = mutableSetOf()
+    internal var tunnelStallStrike: PlayerTunnelAvSyncPolicy.StallStrike? = null
     internal var surroundResolveInputs: SurroundResolveInputs? = null
     internal var lastAppliedSurroundResolve: SurroundResolveResult? = null
+    internal var lastAppliedSurroundHdmi: AudioChainProbe.HdmiPlugSnapshot? = null
     // Policy the current player was built with; lets error recovery test denial
     // without re-deriving settings.
     internal var currentAudioPassthroughPolicy: com.nuvio.tv.core.player.AudioPassthroughPolicy? = null
@@ -827,6 +860,8 @@ class PlayerRuntimeController(
     // 404/410): auto-failover skips them and the source panel greys them out.
     internal val deadSourceStreamUrls: MutableSet<String> = mutableSetOf()
     internal var deadSourceFailoverCount: Int = 0
+    /** Media server versions already asked again after a 404/410 since this play started. */
+    internal val serverDeadAnswerRetried = mutableSetOf<String>()
     internal var hasRetriedAfterMimeOverrideClear: Boolean = false
     internal var isMapDv7ToHevcActiveForCurrentPlayback: Boolean = false
     internal var isManualDv81Mode2ActiveForCurrentPlayback: Boolean = false
@@ -860,6 +895,10 @@ class PlayerRuntimeController(
     // either engine reads the resume position.
     internal var savedProgressDeferred: kotlinx.coroutines.Deferred<Unit>? = null
     internal var hasSentCompletionScrobbleForCurrentItem: Boolean = false
+
+    /** Tracking services the media server already sends this play to, worked out when the play starts. */
+    @Volatile
+    internal var serverScrobbledProviders: Set<TrackingProviderId> = emptySet()
 
     internal var requestedUseLibassByUser: Boolean = false
     internal var libassPipelineOverrideForCurrentStream: Boolean? = null
@@ -957,6 +996,8 @@ class PlayerRuntimeController(
     }
 
     fun onCleared() {
+        scrubGlideJob?.cancel()
+        ScrubGlide.stop()
         stopServerPlayback()
         releasePlayer()
         stopTorrentStream()

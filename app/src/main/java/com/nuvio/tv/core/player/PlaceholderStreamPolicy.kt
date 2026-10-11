@@ -10,7 +10,8 @@ package com.nuvio.tv.core.player
  * ratio, and some sources declare no size at all.
  *
  * The floor only applies when the title's metadata says it should be long, so
- * clips and extras are never judged. With no runtime known, no verdict.
+ * clips and extras are never judged. With no runtime known, only a file whose
+ * size cannot fit its decoded length is rejected.
  *
  * Upstream: NuvioMedia/NuvioTV. Licensed under GPL-3.0.
  */
@@ -44,6 +45,14 @@ object PlaceholderStreamPolicy {
      */
     const val MAX_IMPLAUSIBLE_DURATION_RATIO = 0.33
 
+    /**
+     * Average bitrate above which a short decoded length cannot be the file that was
+     * sized: a UHD Blu-ray remux peaks near 128 Mbit/s, so 1 Gbit/s is ~8x above any
+     * real stream. Only judged for lengths under [MIN_PLAUSIBLE_DURATION_MS]; needs no
+     * runtime, so an error card read against a film's size (19.7 GB in 8 s) is caught.
+     */
+    const val MAX_PLAUSIBLE_BITS_PER_SECOND = 1_000_000_000L
+
     sealed interface Verdict {
         /** Nothing suspicious, or not enough information to judge. Play it. */
         data object Accept : Verdict
@@ -57,7 +66,22 @@ object PlaceholderStreamPolicy {
         ImplausibleSize,
 
         /** Decoded duration is a small fraction of the expected runtime. */
-        ImplausibleDuration
+        ImplausibleDuration,
+
+        /** Content-Length is far too large for the short decoded duration. */
+        ImplausibleBitrate
+    }
+
+    /**
+     * Whether a verdict at the first READY stops playback. The duration reject waits for the progress
+     * tick; a bitrate reject only stops a film or episode (a TS recording with a reset clock or a broken
+     * header length elsewhere is only logged).
+     */
+    fun stopsAtReady(verdict: Verdict, filmOrEpisode: Boolean): Boolean = when {
+        verdict !is Verdict.Reject -> false
+        verdict.reason == Reason.ImplausibleDuration -> false
+        verdict.reason == Reason.ImplausibleBitrate -> filmOrEpisode
+        else -> true
     }
 
     /**
@@ -71,7 +95,17 @@ object PlaceholderStreamPolicy {
         durationMs: Long?,
         expectedRuntimeMs: Long?
     ): Verdict {
-        // No runtime, no verdict: without it we cannot tell a clip from an error card.
+        if (contentLengthBytes != null && contentLengthBytes > 0L &&
+            durationMs != null && durationMs in 1L until MIN_PLAUSIBLE_DURATION_MS &&
+            contentLengthBytes * 8_000L / durationMs > MAX_PLAUSIBLE_BITS_PER_SECOND
+        ) {
+            return Verdict.Reject(
+                reason = Reason.ImplausibleBitrate,
+                detail = "${contentLengthBytes / (1024L * 1024L)} MB in ${durationMs / 1000L}s"
+            )
+        }
+
+        // Otherwise no runtime, no verdict: without it we cannot tell a clip from an error card.
         if (expectedRuntimeMs == null || expectedRuntimeMs < MIN_GUARDED_RUNTIME_MS) {
             return Verdict.Accept
         }

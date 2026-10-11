@@ -4,6 +4,10 @@ import com.nuvio.tv.data.local.StreamAutoPlayMode
 import com.nuvio.tv.data.local.StreamAutoPlaySource
 import com.nuvio.tv.domain.model.DebridStreamPreferences
 import com.nuvio.tv.domain.model.Stream
+import com.nuvio.tv.domain.model.StreamBadge
+import com.nuvio.tv.domain.model.StreamBehaviorHints
+import com.nuvio.tv.domain.model.StreamDebridCacheState
+import com.nuvio.tv.domain.model.StreamDebridCacheStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,7 +41,7 @@ class PrefetchedSelectionGateTest {
         preferences = prefs
     )
 
-    private fun stream(name: String) = Stream(
+    private fun stream(name: String, sizeBytes: Long? = null) = Stream(
         name = name,
         title = null,
         description = null,
@@ -46,7 +50,15 @@ class PrefetchedSelectionGateTest {
         infoHash = null,
         fileIdx = null,
         externalUrl = null,
-        behaviorHints = null,
+        behaviorHints = sizeBytes?.let {
+            StreamBehaviorHints(
+                notWebReady = null,
+                bingeGroup = null,
+                countryWhitelist = null,
+                proxyHeaders = null,
+                videoSize = it
+            )
+        },
         addonName = "Torrentio",
         addonLogo = null
     )
@@ -59,7 +71,7 @@ class PrefetchedSelectionGateTest {
         val winner = stream("4K TB Instant")
         val live = listOf(stream("1080p WEB"), stream("4K TB Instant"))
         val outcome = PrefetchedSelectionGate.resolve(
-            prefetched = PrefetchedSelection(snapshot(), winner),
+            prefetched = PrefetchedSelection(snapshot(), winner, live),
             snapshot = snapshot(),
             streams = live,
             identityOf = identity
@@ -74,9 +86,9 @@ class PrefetchedSelectionGateTest {
         // cached winner can be a badge-less twin. The gate must hand back the
         // instance that is actually in the presented list.
         val cachedTwin = stream("4K TB Instant")
-        val liveInstance = stream("4K TB Instant").copy(title = "badged")
+        val liveInstance = stream("4K TB Instant").copy(badges = listOf(StreamBadge(name = "DV")))
         val outcome = PrefetchedSelectionGate.resolve(
-            prefetched = PrefetchedSelection(snapshot(), cachedTwin),
+            prefetched = PrefetchedSelection(snapshot(), cachedTwin, listOf(cachedTwin)),
             snapshot = snapshot(),
             streams = listOf(liveInstance),
             identityOf = identity
@@ -103,7 +115,7 @@ class PrefetchedSelectionGateTest {
     fun `a changed setting falls back to a live rank`() {
         val winner = stream("4K TB Instant")
         val outcome = PrefetchedSelectionGate.resolve(
-            prefetched = PrefetchedSelection(snapshot(), winner),
+            prefetched = PrefetchedSelection(snapshot(), winner, listOf(winner)),
             snapshot = snapshot(mode = StreamAutoPlayMode.FIRST_STREAM),
             streams = listOf(winner),
             identityOf = identity
@@ -122,7 +134,8 @@ class PrefetchedSelectionGateTest {
         val winner = stream("4K TB Instant")
         val prefetched = PrefetchedSelection(
             snapshot(order = listOf("Torrentio", "Comet")),
-            winner
+            winner,
+            listOf(winner)
         )
         val outcome = PrefetchedSelectionGate.resolve(
             prefetched = prefetched,
@@ -139,7 +152,7 @@ class PrefetchedSelectionGateTest {
     @Test
     fun `a winner absent from the live list falls back to a live rank`() {
         val outcome = PrefetchedSelectionGate.resolve(
-            prefetched = PrefetchedSelection(snapshot(), stream("4K TB Instant")),
+            prefetched = PrefetchedSelection(snapshot(), stream("4K TB Instant"), listOf(stream("1080p WEB"))),
             snapshot = snapshot(),
             streams = listOf(stream("1080p WEB")),
             identityOf = identity
@@ -148,5 +161,94 @@ class PrefetchedSelectionGateTest {
             PrefetchedSelectionGate.REASON_KEY_MISS,
             (outcome as SelectionOutcome.Live).reason
         )
+    }
+
+    @Test
+    fun `a larger file that arrived after the rank falls back to a live rank`() {
+        val small = stream("small", sizeBytes = 1_546_188_226L)
+        val ranked = listOf(small)
+        val live = listOf(small, stream("large", sizeBytes = 6_131_000_000L))
+        val outcome = PrefetchedSelectionGate.resolve(
+            prefetched = PrefetchedSelection(snapshot(), small, ranked),
+            snapshot = snapshot(),
+            streams = live,
+            identityOf = identity
+        )
+        assertEquals(
+            PrefetchedSelectionGate.REASON_CANDIDATES_CHANGED,
+            (outcome as SelectionOutcome.Live).reason
+        )
+    }
+
+    @Test
+    fun `a winner that stopped being cached falls back to a live rank`() {
+        val winner = stream("4K TB Instant")
+        val other = stream("1080p WEB")
+        val nowUncached = winner.copy(
+            debridCacheStatus = StreamDebridCacheStatus(
+                providerId = "torbox",
+                providerName = "Torbox",
+                state = StreamDebridCacheState.NOT_CACHED
+            )
+        )
+        val outcome = PrefetchedSelectionGate.resolve(
+            prefetched = PrefetchedSelection(snapshot(), winner, listOf(winner, other)),
+            snapshot = snapshot(),
+            streams = listOf(nowUncached, other),
+            identityOf = identity
+        )
+        assertEquals(
+            PrefetchedSelectionGate.REASON_CANDIDATES_CHANGED,
+            (outcome as SelectionOutcome.Live).reason
+        )
+    }
+
+    @Test
+    fun `a changed size on another stream falls back to a live rank`() {
+        val winner = stream("a", sizeBytes = 5_000L)
+        val other = stream("b", sizeBytes = 4_000L)
+        val outcome = PrefetchedSelectionGate.resolve(
+            prefetched = PrefetchedSelection(snapshot(), winner, listOf(winner, other)),
+            snapshot = snapshot(),
+            streams = listOf(winner, stream("b", sizeBytes = 9_000L)),
+            identityOf = identity
+        )
+        assertEquals(
+            PrefetchedSelectionGate.REASON_CANDIDATES_CHANGED,
+            (outcome as SelectionOutcome.Live).reason
+        )
+    }
+
+    @Test
+    fun `the same streams in a new order fall back to a live rank`() {
+        val first = stream("a")
+        val second = stream("b")
+        val outcome = PrefetchedSelectionGate.resolve(
+            prefetched = PrefetchedSelection(snapshot(), first, listOf(first, second)),
+            snapshot = snapshot(),
+            streams = listOf(second, first),
+            identityOf = identity
+        )
+        assertEquals(
+            PrefetchedSelectionGate.REASON_CANDIDATES_CHANGED,
+            (outcome as SelectionOutcome.Live).reason
+        )
+    }
+
+    @Test
+    fun `badges added after the rank keep the prefetched winner`() {
+        val winner = stream("a")
+        val other = stream("b")
+        val live = listOf(
+            winner.copy(badges = listOf(StreamBadge(name = "DV"))),
+            other.copy(badges = listOf(StreamBadge(name = "HDR")))
+        )
+        val outcome = PrefetchedSelectionGate.resolve(
+            prefetched = PrefetchedSelection(snapshot(), winner, listOf(winner, other)),
+            snapshot = snapshot(),
+            streams = live,
+            identityOf = identity
+        )
+        assertTrue((outcome as SelectionOutcome.Hit).stream === live[0])
     }
 }

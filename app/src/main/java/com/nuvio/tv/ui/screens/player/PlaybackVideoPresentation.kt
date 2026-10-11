@@ -8,6 +8,7 @@ internal enum class PlaybackVideoPresentation {
     val supportsFrameLead: Boolean get() = this == MEDIA_CODEC
     val supportsCadenceJudgement: Boolean get() = this == MEDIA_CODEC
     val supportsDropCounters: Boolean get() = this == MEDIA_CODEC || this == TUNNELLED
+    val supportsSkipCounters: Boolean get() = this == MEDIA_CODEC
 
     companion object {
         fun resolve(hasSelectedVideo: Boolean, configured: Boolean, appliedTunneling: Boolean,

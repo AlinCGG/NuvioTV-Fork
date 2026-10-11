@@ -209,4 +209,71 @@ class NuvioExoPlayerPerformanceHelperTest {
             enabledField.setBoolean(NuvioExoPlayerPerformanceHelper, oldEnabled)
         }
     }
+
+    @Test
+    fun `automatic size per box, with the settings limits unchanged`() {
+        val helperSpy = spyk(NuvioExoPlayerPerformanceHelper)
+        val context = mockk<Context>()
+        every { helperSpy.getDevicePhysicalRamBytes(any()) } returns (1.9 * gb).toLong()
+        assertEquals(150, helperSpy.getAutoBufferMb(context))
+        assertEquals(250, helperSpy.getSafeNativeMemoryLimitMb(context))
+        assertEquals(325, helperSpy.getWarningNativeMemoryLimitMb(context))
+        every { helperSpy.getDevicePhysicalRamBytes(any()) } returns (3.8 * gb).toLong()
+        assertEquals(1000, helperSpy.getAutoBufferMb(context))
+    }
+
+    @Test
+    fun `free memory lowers only an automatic target`() {
+        val mb = 1024L * 1024L
+        val tight = com.nuvio.tv.core.player.BufferSizing.FreeMemory(425 * mb, 130 * mb, false)
+        NuvioExoPlayerPerformanceHelper.targetIsAutomatic = true
+        NuvioExoPlayerPerformanceHelper.targetBufferSizeMb = 150
+        NuvioExoPlayerPerformanceHelper.sizeTargetFromFreeMemory(tight, 96, 0)
+        assertEquals(50, NuvioExoPlayerPerformanceHelper.targetBufferSizeMb)
+
+        NuvioExoPlayerPerformanceHelper.targetIsAutomatic = false
+        NuvioExoPlayerPerformanceHelper.targetBufferSizeMb = 300
+        NuvioExoPlayerPerformanceHelper.sizeTargetFromFreeMemory(tight, 96, 0)
+        assertEquals(300, NuvioExoPlayerPerformanceHelper.targetBufferSizeMb)
+        NuvioExoPlayerPerformanceHelper.targetIsAutomatic = true
+    }
+
+    @Test
+    fun `custom playback buffers on a small sized target get a back buffer that leaves 5 s ahead`() {
+        val helper = NuvioExoPlayerPerformanceHelper
+        val mb = 1024L * 1024L
+        val playerId = androidx.media3.exoplayer.analytics.PlayerId("test")
+        val enabledField = helper::class.java.getDeclaredField("enabled").apply { isAccessible = true }
+        val oldEnabled = enabledField.getBoolean(helper)
+        val old = listOf(helper.targetBufferSizeMb, helper.minBufferMs, helper.maxBufferMs, helper.backBufferMs)
+        val oldAutomatic = helper.targetIsAutomatic
+        try {
+            enabledField.setBoolean(helper, true)
+            // Custom playback buffers on, Managed memory budget on, 2 GB box: 200 s minimum, 12 s back buffer.
+            helper.minBufferMs = 200_000
+            helper.maxBufferMs = 280_000
+            helper.backBufferMs = 12_000
+            helper.targetIsAutomatic = true
+            helper.targetBufferSizeMb = 150
+            helper.sizeTargetFromFreeMemory(com.nuvio.tv.core.player.BufferSizing.FreeMemory(600 * mb, 130 * mb, false), 96, 0)
+            assertEquals(62, helper.targetBufferSizeMb)
+            assertEquals(1_200_000L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
+            assertEquals(1_200, helper.builtBackBufferMs)
+
+            helper.targetBufferSizeMb = 150
+            helper.sizeTargetFromFreeMemory(com.nuvio.tv.core.player.BufferSizing.FreeMemory(425 * mb, 130 * mb, false), 96, 0)
+            assertEquals(50, helper.targetBufferSizeMb)
+            assertEquals(0L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
+
+            helper.targetBufferSizeMb = 1000
+            assertEquals(12_000_000L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
+        } finally {
+            helper.targetBufferSizeMb = old[0]
+            helper.minBufferMs = old[1]
+            helper.maxBufferMs = old[2]
+            helper.backBufferMs = old[3]
+            helper.targetIsAutomatic = oldAutomatic
+            enabledField.setBoolean(helper, oldEnabled)
+        }
+    }
 }

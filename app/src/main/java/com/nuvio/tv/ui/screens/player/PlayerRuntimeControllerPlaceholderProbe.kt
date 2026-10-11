@@ -17,10 +17,10 @@ private const val TAG = "PlayerViewModel"
 /**
  * Evaluates the placeholder gate once per play and logs its inputs and verdict.
  *
- * PlaceholderStreamPolicy needs an expected runtime, and runtime is only present
+ * PlaceholderStreamPolicy mostly needs an expected runtime, and runtime is only present
  * when the stream screen resolved one before the press. On the direct-autoplay
  * path the overlay may hand off before loadMetadataIfNeeded completes, which
- * leaves the policy inert, silently, since a null runtime means "do not judge".
+ * leaves only the size-against-length check, since a null runtime means "do not judge".
  * The log line shows, for every entry path (direct autoplay, cached link reuse,
  * manual pick, binge prefetch), whether the runtime arrived.
  *
@@ -45,7 +45,7 @@ internal fun PlayerRuntimeController.probePlaceholderStream(player: ExoPlayer): 
 
     val outcome = when (verdict) {
         is PlaceholderStreamPolicy.Verdict.Accept ->
-            if (expectedRuntimeMs == null) "ACCEPT(no-runtime: gate inert)" else "ACCEPT"
+            if (expectedRuntimeMs == null) "ACCEPT(no-runtime: bitrate only)" else "ACCEPT"
         is PlaceholderStreamPolicy.Verdict.Reject ->
             "WOULD_REJECT(${verdict.reason}: ${verdict.detail})"
     }

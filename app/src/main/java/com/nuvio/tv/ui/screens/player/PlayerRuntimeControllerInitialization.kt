@@ -1,5 +1,6 @@
 package com.nuvio.tv.ui.screens.player
 
+import com.nuvio.tv.core.build.IssueReports
 import com.nuvio.tv.core.util.TtffTrace
 import com.nuvio.tv.core.logging.diagnosticStreamUrl
 import com.nuvio.tv.core.logging.redactedUrlForLog
@@ -69,6 +70,8 @@ import com.nuvio.tv.R
 import com.nuvio.tv.core.player.DolbyVisionCodecFallback
 import com.nuvio.tv.core.player.DolbyVisionBaseLayerPolicy
 import com.nuvio.tv.core.player.BitrateAwareLoadControl
+import com.nuvio.tv.core.player.BufferBudgetControl
+import com.nuvio.tv.core.player.BufferSizing
 import com.nuvio.tv.core.player.DolbyVisionConversionConfig
 import com.nuvio.tv.core.player.DolbyVisionConversionStats
 import com.nuvio.tv.core.player.AviTrackFormatExtractorsFactory
@@ -341,7 +344,8 @@ internal fun PlayerRuntimeController.initializePlayer(
     headers: Map<String, String>,
     overrideInternalPlayerEngine: InternalPlayerEngine? = null,
     allowEngineFailover: Boolean = true,
-    startPaused: Boolean = false
+    startPaused: Boolean = false,
+    startPositionMs: Long? = null
 ) {
     if (url.isEmpty()) {
         _uiState.update { it.copy(error = context.getString(R.string.player_error_no_stream_url), showLoadingOverlay = false) }
@@ -350,7 +354,11 @@ internal fun PlayerRuntimeController.initializePlayer(
     playbackRecoveryJob?.cancel()
     playbackRecoveryJob = null
     if (playbackRecoveryGate.begin(url, headers)) nativeFelDisabledStreamUrls.clear()
+    // Keyed by URL on purpose: begin() above treats every stall rebuild as a new stream, and a strike reset there
+    // would make each freeze a first one and reload with tunnelling forever.
+    tunnelStallStrike = PlayerTunnelAvSyncPolicy.strikeForStream(url, tunnelStallStrike)
     val initializationGeneration = playbackRecoveryGate.generation
+    val afrPreflightToken = afrPreflightGate.token()
     mpvMediaLoadPrepared = false
 
     scope.launch {
@@ -413,6 +421,7 @@ internal fun PlayerRuntimeController.initializePlayer(
             // stream - a leaked value would commit the *new* episode to the old
             // preview position on the next gesture.
             pendingPreviewSeekExpiryJob?.cancel()
+            stopScrubGlide()
             pendingPreviewSeekPosition = null
             _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }
             // Fresh stream, fresh output-mode state; the audio-path
@@ -425,12 +434,18 @@ internal fun PlayerRuntimeController.initializePlayer(
             configuredBackBufferMs = 0
 
             AudioRejectionReverifier.ledger.restoreEvidence(playerSettingsDataStore.audioRefusalEvidence())
+            val expiredTunnelStalls = playerSettingsDataStore.expireTunnelDeadAudioClasses()
+            if (expiredTunnelStalls.isNotEmpty()) {
+                PlayerTunnelAvSyncPolicy.deadAudioClasses.removeAll(expiredTunnelStalls)
+                Log.i(PlayerRuntimeController.TAG, "TUNNEL_AV_SYNC: saved dead-clock memo expired for $expiredTunnelStalls")
+            }
             val playerSettings = playerSettingsDataStore.playerSettings.first()
             if (initializationGeneration != playbackRecoveryGate.generation) return@launch
             currentPlayerSettingsForReport = playerSettings
             rememberAudioDelayPerDeviceEnabled = playerSettings.rememberAudioDelayPerDevice
             // Always watch output-device changes so Bluetooth connect/disconnect can switch
             // PCM/passthrough policy in place (Media3 1.8.0 BT semantics; do not rebuild).
+            rearmOutputChecksForNewPlayer()
             registerAudioDelayRouteCallback()
             currentAudioOutputRoute = AudioOutputRouteDetector.detect(context)
             if (rememberAudioDelayPerDeviceEnabled) {
@@ -477,6 +492,8 @@ internal fun PlayerRuntimeController.initializePlayer(
             flushPendingPlaybackRawEventLines()
             val deviceAspectMode = deviceLocalPlayerPreferences.aspectMode.first()
             val tunneledSurfaceFill = deviceLocalPlayerPreferences.tunneledSurfaceFill.first()
+            runCatching { deviceLocalPlayerPreferences.tunnelFrameReportDecoders.first() }
+                .getOrNull()?.let { PlayerTunnelAvSyncPolicy.frameReportDecoders.addAll(it) }
             if (initializationGeneration != playbackRecoveryGate.generation) return@launch
             _uiState.update {
                 it.copy(
@@ -485,7 +502,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     resizeMode = playerSettings.resizeMode,
                     aspectMode = deviceAspectMode,
                     tunneledSurfaceFill = tunneledSurfaceFill,
-                    playbackIssueReportsEnabled = playerSettings.playbackIssueReportsEnabled,
+                    playbackIssueReportsEnabled = IssueReports.available && playerSettings.playbackIssueReportsEnabled,
                     tunnelingEnabled = playerSettings.effectiveTunnelingEnabled &&
                             effectiveInternalPlayerEngine != InternalPlayerEngine.MVP_PLAYER
                 )
@@ -512,7 +529,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                         headers = headers,
                         frameRateMatchingMode = playerSettings.frameRateMatchingMode,
                         resolutionMatchingEnabled = playerSettings.resolutionMatchingEnabled,
-                        mimeType = currentStreamMimeType
+                        mimeType = currentStreamMimeType,
+                        preflightToken = afrPreflightToken
                     )
                 } else {
                     // ExoPlayer: cache-only, instant. On a
@@ -523,7 +541,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                         url = url,
                         headers = headers,
                         frameRateMatchingMode = playerSettings.frameRateMatchingMode,
-                        resolutionMatchingEnabled = playerSettings.resolutionMatchingEnabled
+                        resolutionMatchingEnabled = playerSettings.resolutionMatchingEnabled,
+                        preflightToken = afrPreflightToken
                     )
                 }
             }
@@ -541,6 +560,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                             Log.w(PlayerRuntimeController.TAG, "AFR preflight exceeded absolute deadline; starting playback without it")
                             afrJob.cancel()
                         }
+                    if (initializationGeneration != playbackRecoveryGate.generation) return@launch
                     if (mpvDelayStartAfterAfrSwitch) {
                         Log.d(PlayerRuntimeController.TAG, "AFR display mode switched; delaying MPV start by ${MPV_AFR_SETTLE_DELAY_MS}ms")
                         delay(MPV_AFR_SETTLE_DELAY_MS)
@@ -553,6 +573,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     // inside initializeMpvPlayer (a plain fun), so the join
                     // happens here, in this coroutine, before entry.
                     awaitSavedProgressLoad()
+                    if (initializationGeneration != playbackRecoveryGate.generation) return@launch
                     initializeMpvPlayer(url = url, headers = headers, allowEngineFailover = allowEngineFailover)
                     fetchAddonSubtitles()
                 } finally {
@@ -630,6 +651,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 "displayHdr10=${result.displayHdr10} " +
                                 "displayHdr10Plus=${result.displayHdr10Plus} " +
                                 "codecDvheDtb=${result.codecSupportsDvheDtb} " +
+                                "codecDvheSt=${result.codecSupportsDvheSt} " +
+                                "manualConversion=${result.usesManualConversion} " +
                                 "bridgeReady=${result.bridgeReady} " +
                                 "api=${result.apiLevel} " +
                                 "host=${url.safeHost()}"
@@ -719,20 +742,21 @@ internal fun PlayerRuntimeController.initializePlayer(
             // ── Diagnostics builder ──
             // Built incrementally during init; written to DataStore on terminal events
             // (first frame rendered = "Played", or final error display = "Error: ...").
+            // Native FEL and the manual modes skip the AUTO probe, so read the display and decoder
+            // capabilities here for the Diagnostics card.
+            val capsForDiagnostics = dv7AutoResult ?: nativeFelDisplayPolicy
+                ?: DolbyVisionBaseLayerPolicy.resolve(context = context, bridgeReady = DoviBridge.isLibraryLoaded)
             var currentDiagnostics = LastPlaybackDiagnostics(
                 timestampMs = System.currentTimeMillis(),
                 host = url.safeHost(),
                 streamUrl = url.diagnosticStreamUrl(serverPlayback.isServerSource(url)),
                 filename = currentFilename ?: streamName ?: title,
                 headersJson = org.json.JSONObject(headers).toString(),
-                hdrCapsKnown = dv7AutoResult?.hdrCapsKnown ?: false,
-                displayDv = dv7AutoResult?.displayDv ?: false,
-                displayHdr10 = dv7AutoResult?.displayHdr10 ?: false,
-                displayHdr10Plus = dv7AutoResult?.displayHdr10Plus ?: false,
-                // In manual modes the AUTO probe never runs; query the
-                // decoder capability directly so the Diagnostics row is honest.
-                codecDv7Supported = dv7AutoResult?.codecSupportsDvheDtb
-                    ?: DolbyVisionBaseLayerPolicy.queryCodecDv7Support(),
+                hdrCapsKnown = capsForDiagnostics.hdrCapsKnown,
+                displayDv = capsForDiagnostics.displayDv,
+                displayHdr10 = capsForDiagnostics.displayHdr10,
+                displayHdr10Plus = capsForDiagnostics.displayHdr10Plus,
+                codecDv7Supported = capsForDiagnostics.codecSupportsDvheDtb,
                 dv81DecoderName = null,
                 bridgeReady = DoviBridge.isLibraryLoaded,
                 bridgeVersion = dv7ToDv81Probe.bridgeVersion,
@@ -776,47 +800,93 @@ internal fun PlayerRuntimeController.initializePlayer(
             // Player reuse: the custom-buffer budget must be visible at the build fork so a
             // reused BitrateAwareLoadControl can be reset to build-equivalent state.
             var customBufferBudgetBytes = 0L
+            // Buffer memory the previous player still holds is taken over or freed, so it counts as free.
+            val heldBufferMb = ((_loadControl?.allocator as? androidx.media3.exoplayer.upstream.DefaultAllocator)
+                ?.memoryFootprint ?: 0) / (1024 * 1024)
+            val parallelForSizing = playerSettings.parallelNetworkEnabled &&
+                playerSettings.useParallelConnections && !isTorrentStream
+            val chunkMbForSizing = Math.ceil(playerSettings.parallelChunkSizeKb / 1024.0).toInt()
+                .coerceAtMost(MemoryBudget.tierMaxChunkMb)
+            var builtBudgetControl: BufferBudgetControl? = null
             val loadControl = if (playerSettings.nuvioPerformanceModeEnabled) {
                 effectiveBackBufferDurationMs = NuvioExoPlayerPerformanceHelper.backBufferMs
                 currentBitrateAwareLoadControl = null
+                val chunkWindowMb = if (parallelForSizing) {
+                    MemoryBudget.displayParallelOverheadMb(
+                        playerSettings.parallelConnectionCount,
+                        chunkMbForSizing,
+                        safeNativeLimitMb = NuvioExoPlayerPerformanceHelper.targetBufferSizeMb,
+                        reserveBufferMb = NuvioExoPlayerPerformanceHelper.targetBufferSizeMb,
+                        deepPathActive = true
+                    )
+                } else {
+                    0
+                }
+                val sizing = NuvioExoPlayerPerformanceHelper.sizeTargetFromFreeMemory(
+                    BufferSizing.read(context), chunkWindowMb, heldBufferMb
+                )
                 Log.i(
                     PlayerRuntimeController.TAG,
-                    "BUFFER_GATE: engine=exo-native-perf master=on; NuvioExoPlayerPerformanceHelper.buildLoadControl host=${url.safeHost()}"
+                    "BUFFER_GATE: engine=exo-native-perf master=on; NuvioExoPlayerPerformanceHelper.buildLoadControl " +
+                        "$sizing host=${url.safeHost()}"
                 )
                 NuvioExoPlayerPerformanceHelper.buildLoadControl(context)
+                    .also {
+                        builtBudgetControl = it as? BufferBudgetControl
+                        effectiveBackBufferDurationMs = NuvioExoPlayerPerformanceHelper.builtBackBufferMs
+                    }
             } else if (playerSettings.bufferEngineEnabled) {
                 val bufferSettings = playerSettings.bufferSettings
                 // Managed (default) caps the buffer at the device budget; off uses Target Buffer Size.
                 // Stay full here even on a DV display; first frame tightens only for confirmed DV7.
                 val budgetManaged = playerSettings.bufferBudgetManaged
+                // The managed budget is for all playback buffers, and the parallel chunks share it.
+                currentParallelChunkOverheadMb =
+                    if (playerSettings.parallelNetworkEnabled && playerSettings.useParallelConnections) {
+                        val chunkMb = Math.ceil(playerSettings.parallelChunkSizeKb / 1024.0).toInt()
+                            .coerceAtMost(MemoryBudget.tierMaxChunkMb)
+                        MemoryBudget.parallelOverheadMb(playerSettings.parallelConnectionCount, chunkMb)
+                    } else {
+                        0
+                    }
+                var sizing = ""
                 val budgetMbEffective = if (budgetManaged) {
-                    MemoryBudget.budgetMb
+                    val boxMb = MemoryBudget.autoBudgetMb
+                    val free = if (MemoryBudget.offHeapBuffers) BufferSizing.read(context) else null
+                    currentManagedBudgetMb = BufferSizing.sizedBudgetMb(boxMb, free, 0, heldBufferMb)
+                    sizing = BufferSizing.describe(boxMb, currentManagedBudgetMb, free, 0, heldBufferMb) + " "
+                    (currentManagedBudgetMb - currentParallelChunkOverheadMb).coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
                 } else {
                     MemoryBudget.effectiveBufferMb(bufferSettings.targetBufferSizeMb)
                         .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
                 }
                 customBufferBudgetBytes = budgetMbEffective.toLong() * 1024L * 1024L
-                // Build with the user's back buffer so seek-back works immediately (it can't
+                // Build with the user's back buffer, cut to fit a small budget, so seek-back works immediately (it can't
                 // depend on the player re-polling the LoadControl). First frame only lowers it
                 // to 0 for confirmed DV7 on low-RAM; everything else keeps it.
                 configuredBackBufferMs = bufferSettings.backBufferDurationMs
-                val backBufferMsAtBuild = configuredBackBufferMs
+                val backBufferMsAtBuild = BufferSizing.backBufferMsForTarget(configuredBackBufferMs, customBufferBudgetBytes)
                 Log.i(
                     PlayerRuntimeController.TAG,
                     "BUFFER_GATE: engine=exo-custom master=on " +
                             "lowRam=${MemoryBudget.isLowRamTier} " +
+                            "offHeap=${MemoryBudget.offHeapBuffers} " +
+                            "parallelOverheadMb=$currentParallelChunkOverheadMb " +
                             "allowLarge=${playerSettings.allowLargeTargetBuffer} " +
                             "dv7conv=$libdoviConversionActive " +
                             "managed=$budgetManaged " +
-                            "backBufferMsAtBuild=$backBufferMsAtBuild (set=$configuredBackBufferMs, lowered to 0 only for real DV7) " +
+                            "backBufferMsAtBuild=$backBufferMsAtBuild (set=$configuredBackBufferMs, fitted to the budget) " +
+                            sizing +
                             "budgetMb=$budgetMbEffective host=${url.safeHost()}"
                 )
                 effectiveBackBufferDurationMs = backBufferMsAtBuild
+                // Native memory without the rest of performance mode, and no initial allocations:
+                // the allocator never frees them, so they would stay out of the shared arena.
                 val allocator = androidx.media3.exoplayer.upstream.DefaultAllocator(
                     true,
                     C.DEFAULT_BUFFER_SEGMENT_SIZE,
-                    64,
-                    playerSettings.nuvioPerformanceModeEnabled
+                    0,
+                    MemoryBudget.offHeapBuffers
                 )
                 // Both engines report through the same sampler, so whichever built last owns it.
                 NuvioExoPlayerPerformanceHelper.liveAllocator = allocator
@@ -829,12 +899,16 @@ internal fun PlayerRuntimeController.initializePlayer(
                     // met. Without this, high-bitrate remux files (e.g. 100+ Mbps UHD MKV with
                     // multiple audio tracks) exhaust the 500MB byte cap in <5s of content before
                     // minBufferMs is satisfied, leaving ExoPlayer stuck in STATE_BUFFERING.
+                    // BitrateAwareLoadControl bounds the overrun.
                     prioritizeTimeOverSizeThresholds = true,
                     backBufferDurationMs = backBufferMsAtBuild,
                     retainBackBufferFromKeyframe = true,
                     budgetBytes = customBufferBudgetBytes,
                     allocator = allocator
-                ).also { currentBitrateAwareLoadControl = it }
+                ).also {
+                    currentBitrateAwareLoadControl = it
+                    builtBudgetControl = it
+                }
             } else {
                 // Stock LoadControl: DefaultLoadControl configured with 1.5s back buffer so 1s rewind doesn't clear buffer.
                 effectiveBackBufferDurationMs = 1_500
@@ -892,6 +966,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     Log.w(PlayerRuntimeController.TAG, "AFR preflight exceeded absolute deadline; starting playback without it")
                     afrJob.cancel()
                 }
+            if (initializationGeneration != playbackRecoveryGate.generation) return@launch
 
             // ── Libass Setup (From 0.5.7-beta/Left) ──
             requestedUseLibassByUser = playerSettings.useLibass
@@ -1092,12 +1167,14 @@ internal fun PlayerRuntimeController.initializePlayer(
                     .setTsExtractorTimestampSearchBytes(1500 * TsExtractor.TS_PACKET_SIZE)
             )
 
-            // Manual Convert-to-DV8.1 uses mode 2; if a prior attempt at this stream
-            // failed to play, force mode 1 this time (before the HDR10 fallback).
+            // Manual Convert-to-DV8.1, and Auto on a device it converts the same way, use mode 2;
+            // if a prior attempt at this stream failed to play, force mode 1 this time (before the
+            // HDR10 fallback).
             val dv7Mode1Forced = dv7Mode1ForcedStreamUrls.contains(url)
             val manualDv81Selected = playerSettings.dv7HandlingMode == Dv7HandlingMode.DV81_LIBDOVI
+            val autoDv81Mode2 = autoLikeDv7Mode && dv7AutoResult?.usesManualConversion == true
             isManualDv81Mode2ActiveForCurrentPlayback =
-                manualDv81Selected &&
+                (manualDv81Selected || autoDv81Mode2) &&
                 effectiveDv7Mode == Dv7HandlingMode.DV81_LIBDOVI &&
                 !libdoviModeOverrideActive &&
                 !dv7Mode1Forced
@@ -1135,6 +1212,7 @@ internal fun PlayerRuntimeController.initializePlayer(
             val codecSelector = createDolbyVisionFallbackCodecSelector(
                 convertToDv81Active = convertToDv81Active
             )
+            scope.launch(kotlinx.coroutines.Dispatchers.Default) { softwareOnlyDecoderNames }
             val preferFfmpegAudioActive = preferFfmpegAudioStreamUrls.contains(url)
             // Bluetooth media sink (A2DP / LE Audio): Media3 only advertises PCM. Do not attempt
             // optical/HDMI passthrough — decode to PCM and let the BT stack encode SBC/AAC/aptX/LDAC.
@@ -1147,9 +1225,8 @@ internal fun PlayerRuntimeController.initializePlayer(
             // Force-AC3 does not escalate the *global* extension mode to
             // PREFER (that would put software AV1 video decode ahead of
             // MediaCodec). The FFmpeg audio renderer is instead reordered
-            // audio-locally in buildAudioRenderers. Bluetooth keeps the
-            // global PREFER, paired with preferSoftwareAudioOnly
-            // below, which demotes the video renderers back to MediaCodec-first.
+            // audio-locally in buildAudioRenderers. PREFER only ever reaches the
+            // audio renderers: buildVideoRenderers keeps video MediaCodec-first.
             val effectiveDecoderPriority = if (hasTriedAudioPcmFallback || isBluetoothAudioOutput) {
                 DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
             } else if (isForcePassthroughActive) {
@@ -1248,6 +1325,7 @@ internal fun PlayerRuntimeController.initializePlayer(
 
             currentAudioPassthroughPolicy = surroundResolution.policy
             lastAppliedSurroundResolve = surround
+            lastAppliedSurroundHdmi = AudioChainProbe.hdmiPlugSnapshot(context)
 
             val deniedTranscodeMimes = surround.deniedTranscodeMimes
             if (deniedTranscodeMimes.isNotEmpty()) {
@@ -1295,12 +1373,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                 nativeMelEnabled = am9SystemProperty("debug.nuvio.native_dv7_mel") != "0",
                 playbackSpeedProvider = { _uiState.value.playbackSpeed },
                 initialForcePcm = hasTriedAudioPcmFallback || isBluetoothAudioOutput,
-                // An audio fallback must not move video to the software decoders (AV1 would leave the
-                // hardware decoder) unless the user chose app decoders first.
-                preferSoftwareAudioOnly = isBluetoothAudioOutput ||
-                    (hasTriedAudioPcmFallback &&
-                        playerSettings.decoderPriority != DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER),
                 vendorUnstablePts = am9SystemProperty("debug.nuvio.aml_unstable_pts") == "1",
+                forceSoftwareAv1 = am9SystemProperty("debug.nuvio.sw_av1") == "1",
                 mapDv7ToHevc = mapDv7ToHevcEnabled,
                 onPlaybackSpeedAwareAudioSinkCreated = { playbackSpeedAwareAudioSink = it },
                 onAudioDiagnosticEvent = { line -> queuePlaybackRawEventLine(line) },
@@ -1349,7 +1423,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 else -> -1
                             },
                             dv5Enabled = playerSettings.dv5ToDv81Enabled,
-                            manualDv81 = manualDv81Selected && !dv7Mode1Forced
+                            manualDv81 = manualDv81Selected && !dv7Mode1Forced,
+                            autoMode2 = autoDv81Mode2 && !dv7Mode1Forced
                         ),
                         stripDvRpu = stripDvRpuEnabled,
                         stripHdr10PlusSei = stripHdr10PlusSei,
@@ -1498,13 +1573,25 @@ internal fun PlayerRuntimeController.initializePlayer(
                         dataSourceFactory = playerDataSourceFactory,
                         extractorsFactory = dolbyVisionExtractorsFactory,
                         renderersFactory = renderersFactory,
-                        autoSyncSourceKey = url
+                        autoSyncSourceKey = url.takeIf {
+                            com.nuvio.tv.ui.screens.player.autosync.AutoSyncPreferences.isEnabled(context)
+                        },
+                        assRendererWrapper = { assRenderer ->
+                            SubtitleOffsetRenderer(
+                                baseRenderer = assRenderer,
+                                subtitleDelayUsProvider = subtitleDelayUs::get,
+                                audioDelayUsProvider = audioDelayUs::get
+                            )
+                        }
                     )
             } else {
                 buildDefaultPlayer()
             }
             } // end rebuild branch of the reuse fork
             lastExoConstructionFingerprint = constructionFingerprint
+            attachBufferMemoryKeeper(
+                if (reuseLivePlayer) bufferMemoryKeeper?.control?.takeIf { it === _loadControl } else builtBudgetControl
+            )
             activePlayerUsesLibass = useLibass
             libassPipelineSwitchInFlight = false
 
@@ -1555,7 +1642,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                 // resume position is resolved. Runway to here is the whole
                 // player build; SAVED_PROGRESS_AWAIT prices the residual.
                 awaitSavedProgressLoad()
-                val initialResumePosition = resolvePendingInitialResumePosition()
+                val initialResumePosition = startPositionMs ?: resolvePendingInitialResumePosition()
                 playbackAnalyticsDiagnostics.setStartupStartPosition(initialResumePosition)
                 val playerInitLine =
                     "PLAYER_INIT: engine=EXOPLAYER host=${url.safeHost()} " +
@@ -1752,7 +1839,10 @@ internal fun PlayerRuntimeController.initializePlayer(
                             // rejected placeholder; the policy's runtime guard is the fail-safe.
                             val placeholderVerdict = probePlaceholderStream(this@apply)
                             if (placeholderVerdict is PlaceholderStreamPolicy.Verdict.Reject &&
-                                placeholderVerdict.reason == PlaceholderStreamPolicy.Reason.ImplausibleSize
+                                PlaceholderStreamPolicy.stopsAtReady(
+                                    placeholderVerdict,
+                                    isFilmOrEpisode(contentType, currentSeason, currentEpisode)
+                                )
                             ) {
                                 rejectPlaceholderStream(placeholderVerdict)
                                 return
@@ -1806,6 +1896,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                         seekTo((initialPos + 100L).coerceAtLeast(100L))
                                     }
                                     applyPendingSeeksAtReady(this@apply)
+                                    if (afrSettleHoldPending) noteOutputChangeForTunnelWatch()
                                     // The policy already folds startPaused and
                                     // userPausedManually into the action; the fork's
                                     // track-AFR gate and display-AFR settle hold wrap it.
@@ -2236,7 +2327,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         }
 
                         if (error.isStuckPlayingNoProgress()) {
-                            if (isTunnelingActiveForCurrentPlayback &&
+                            if (isTunnelingActiveForCurrentPlayback && this@apply.isTunnelingEnabled &&
                                 !tunnelingDisabledStreamUrls.contains(currentStreamUrl)
                             ) {
                                 tunnelingDisabledStreamUrls.add(currentStreamUrl)
@@ -2457,6 +2548,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                             val openedGroup = passthroughGroupOfEncoding(audioTrackConfig.encoding)
                             playbackRecoveryGate.noteAudioOutputOpened(openedGroup)
                             if (openedGroup != null) {
+                                com.nuvio.tv.ui.screens.player.iec.LiveDirectAudioPlayback.noteOwnTrackOpened()
                                 currentAudioOutputRoute?.key?.let {
                                     if (AudioRejectionReverifier.ledger.noteBitstreamOpened(it)) saveAudioRefusalEvidence()
                                 }
@@ -2478,6 +2570,15 @@ internal fun PlayerRuntimeController.initializePlayer(
                         if (bypassing != isAudioOutputBypassing) {
                             isAudioOutputBypassing = bypassing
                             updateAudioControlAvailability()
+                        }
+                    }
+
+                    override fun onAudioTrackReleased(
+                        eventTime: AnalyticsListener.EventTime,
+                        audioTrackConfig: androidx.media3.exoplayer.audio.AudioSink.AudioTrackConfig
+                    ) {
+                        if (passthroughGroupOfEncoding(audioTrackConfig.encoding) != null) {
+                            com.nuvio.tv.ui.screens.player.iec.LiveDirectAudioPlayback.noteOwnTrackClosed()
                         }
                     }
 
@@ -2557,6 +2658,10 @@ internal fun PlayerRuntimeController.initializePlayer(
                         renderTimeMs: Long
                     ) {
                         playbackAnalyticsDiagnostics.onRenderedFirstFrame(eventTime)
+                        if (_exoPlayer === this@apply) {
+                            val counters = this@apply.videoDecoderCounters?.also { it.ensureUpdated() }
+                            skippedFrameTally.onFirstFrame(counters, counters?.skippedOutputBufferCount)
+                        }
                     }
 
                     override fun onPlayerError(eventTime: AnalyticsListener.EventTime, error: PlaybackException) {
@@ -2578,7 +2683,9 @@ internal fun PlayerRuntimeController.initializePlayer(
                         )
                         Log.i(
                             PlayerRuntimeController.TAG,
-                            "VIDEO_DECODER: name=$decoderName initMs=$initializationDurationMs host=${currentStreamUrl.safeHost()}"
+                            "VIDEO_DECODER: name=$decoderName " +
+                                "software=${isSoftwareVideoDecoderName(decoderName, softwareOnlyDecoderNames)} " +
+                                "initMs=$initializationDurationMs host=${currentStreamUrl.safeHost()}"
                         )
                     }
 
@@ -2626,6 +2733,12 @@ internal fun PlayerRuntimeController.initializePlayer(
                             totalProcessingOffsetUs = totalProcessingOffsetUs,
                             frameCount = frameCount
                         )
+                    }
+
+                    override fun onVideoEnabled(eventTime: AnalyticsListener.EventTime, decoderCounters: DecoderCounters) {
+                        if (_exoPlayer === this@apply) {
+                            skippedFrameTally.onReset(decoderCounters, rendered = 0, skipped = null, nowMs = SystemClock.elapsedRealtime())
+                        }
                     }
 
                     override fun onVideoDisabled(eventTime: AnalyticsListener.EventTime, decoderCounters: DecoderCounters) {
@@ -2747,8 +2860,16 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 "oldMs=${oldPosition.positionMs} newMs=${newPosition.positionMs} " +
                                 "eventRealtimeMs=${eventTime.realtimeMs}"
                         )
+                        if (_exoPlayer === this@apply) {
+                            val counters = this@apply.videoDecoderCounters?.also { it.ensureUpdated() }
+                            // Only a seek is reported before the player acts on it; other reasons may already include passed-over frames.
+                            val skippedSoFar = counters?.skippedOutputBufferCount?.takeIf { reason == Player.DISCONTINUITY_REASON_SEEK }
+                            skippedFrameTally.onReset(counters, counters?.renderedOutputBufferCount, skippedSoFar,
+                                SystemClock.elapsedRealtime())
+                        }
                         if (reason == Player.DISCONTINUITY_REASON_SEEK) {
                             lastSeekWallMs = SystemClock.elapsedRealtime()
+                            bufferMemoryKeeper?.onSeek()
                             onSeekForLateVideoWatch()
                             cancelPausedOutputCheck()
                             seekReadyLogPending = true
@@ -2969,6 +3090,7 @@ internal fun PlayerRuntimeController.resetLoadingOverlayForNewStream() {
     // same controller, so without this reset it would evaluate only the first
     // stream of a binge and stay inert on every transition after it.
     placeholderProbeDone = false
+    placeholderRejectedForCurrentStream = false
     shouldEnforceAutoplayOnFirstReady = true
     userPausedManually = false
     scrubHoldPaused = false
@@ -3032,6 +3154,15 @@ internal fun surroundTargetToOutputChannels(
 
 private const val SEEK_SOURCE_SETTLE_MS = 800L
 
+// "Prefer app decoders" is an audio setting. With PREFER, Media3 puts the software AV1
+// decoder ahead of MediaCodec, so video only ever gets ON.
+internal fun videoExtensionRendererMode(extensionRendererMode: Int): Int =
+    if (extensionRendererMode == DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER) {
+        DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+    } else {
+        extensionRendererMode
+    }
+
 private class SubtitleOffsetRenderersFactory(
     context: Context,
     private val subtitleDelayUsProvider: () -> Long,
@@ -3057,14 +3188,10 @@ private class SubtitleOffsetRenderersFactory(
     private val onNativeSelectionChanged: (Boolean) -> Unit = {},
     private val nativeMelEnabled: Boolean = true,
     private val vendorUnstablePts: Boolean = false,
+    private val forceSoftwareAv1: Boolean = false,
     private val mapDv7ToHevc: Boolean = false,
     private val playbackSpeedProvider: () -> Float,
     private val initialForcePcm: Boolean = false,
-    /**
-     * When true, [EXTENSION_RENDERER_MODE_PREFER] applies to audio only — video stays on the
-     * platform MediaCodec path so Bluetooth PCM policy does not force software video decode.
-     */
-    private val preferSoftwareAudioOnly: Boolean = false,
     private val onPlaybackSpeedAwareAudioSinkCreated: (PlaybackSpeedAwareAudioSink) -> Unit,
     private val onFfmpegAudioRendererChanged: (FfmpegAudioRenderer?) -> Unit,
     private val onAudioDiagnosticEvent: ((String) -> Unit)? = null
@@ -3080,11 +3207,7 @@ private class SubtitleOffsetRenderersFactory(
         allowedVideoJoiningTimeMs: Long,
         out: ArrayList<Renderer>
     ) {
-        val videoExtensionMode = when {
-            !preferSoftwareAudioOnly -> extensionRendererMode
-            extensionRendererMode == EXTENSION_RENDERER_MODE_PREFER -> EXTENSION_RENDERER_MODE_ON
-            else -> extensionRendererMode
-        }
+        val videoExtensionMode = videoExtensionRendererMode(extensionRendererMode)
         if (nativeFelActive) {
             // Ahead of MediaCodec so it wins the DV profile 7 track (equal support -> first renderer).
             out.add(com.nuvio.tv.core.player.amlfel.AmlDvFelVideoRenderer(eventHandler, eventListener, playbackSpeedProvider, nativeMelEnabled, onNativeSelectionChanged))
@@ -3100,9 +3223,23 @@ private class SubtitleOffsetRenderersFactory(
             allowedVideoJoiningTimeMs,
             vc1RestampTmp
         )
+        val softwareAv1Index = softwareAv1Slot(vc1RestampTmp, videoExtensionMode, forceSoftwareAv1) {
+            it::class.java == MediaCodecVideoRenderer::class.java
+        }
+        softwareAv1Index?.let { slot ->
+            val hardware: (Format) -> HardwareAv1Support = if (forceSoftwareAv1) {
+                { HardwareAv1Support.NONE }
+            } else {
+                { format -> hardwareAv1Support(mediaCodecSelector, format) }
+            }
+            vc1RestampTmp.add(
+                slot,
+                createSoftwareAv1Renderer(allowedVideoJoiningTimeMs, eventHandler, eventListener, hardware)
+            )
+        }
         // Decode-order time repair (AVI, VC-1, XviD/DivX): replace ONLY the platform MediaCodec
         // video renderer with the repairing subclass; extension renderers (VP9/AV1) and their
-        // PREFER/ON ordering pass through untouched.
+        // ordering pass through untouched.
         for (vc1RestampRenderer in vc1RestampTmp) {
             if (vc1RestampRenderer::class.java == MediaCodecVideoRenderer::class.java) {
                 val vc1RestampBuilder = MediaCodecVideoRenderer.Builder(context)
@@ -3117,7 +3254,13 @@ private class SubtitleOffsetRenderersFactory(
                     )
                     // The factory's own setting only reaches the stock renderer replaced here.
                     .setMapDV7ToHevc(mapDv7ToHevc)
-                out.add(DecodeOrderPtsVideoRenderer(vc1RestampBuilder, vendorUnstablePts))
+                out.add(
+                    DecodeOrderPtsVideoRenderer(
+                        vc1RestampBuilder,
+                        vendorUnstablePts,
+                        { softwareAv1Index != null && dav1dLoaded() }
+                    )
+                )
             } else {
                 out.add(vc1RestampRenderer)
             }
@@ -3261,7 +3404,7 @@ private class SubtitleOffsetRenderersFactory(
         // When Force AC-3 Transcoding is on, the FFmpeg audio
         // renderer must outrank MediaCodec audio for the transcode to engage -
         // but forcing EXTENSION_RENDERER_MODE_PREFER globally would also reorder
-        // *video* extension renderers, putting software AV1 (Libgav1) ahead of
+        // *video* extension renderers, putting software AV1 ahead of
         // the hardware decoder. Reorder audio-locally:
         // move FFmpeg audio renderers ahead of other audio renderers in the
         // block we just built, leaving video renderer order untouched.
@@ -3533,13 +3676,45 @@ internal fun PlayerRuntimeController.noteAudioTrackRejection(error: PlaybackExce
         AudioRejectionReverifier.ledger.noteOpenRefused(routeKey, group)
         saveAudioRefusalEvidence()
     }
+    if (!retryScheduled && error.errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED &&
+        BusyOutputReturn.startsFor(bitstreamOutputReading(error), retryScheduled)
+    ) {
+        startBusyOutputChecks()
+    }
     if (group != null && !playbackRecoveryGate.shouldLearnAudioRejection(group)) {
         Log.w(PlayerRuntimeController.TAG, "AUDIO_TRACK_REJECTION_NOT_LEARNED group=${group.name} opened earlier in this playback")
         return
     }
     audioRejectionToStash(error.errorCode, retryScheduled, mime, routeKey)?.let { entry ->
+        if (bitstreamOutputReading(error)?.outputUnavailable == true) {
+            Log.w(
+                PlayerRuntimeController.TAG,
+                "AUDIO_TRACK_REJECTION_NOT_LEARNED group=${group?.name} route=$routeKey: " +
+                    "bitstream output unavailable (a second listed format refused too)"
+            )
+            return
+        }
         AudioRejectionReverifier.ledger.stashPending(currentStreamUrl, entry)
     }
+}
+
+internal fun PlayerRuntimeController.bitstreamOutputReading(error: PlaybackException): BitstreamOutputReading? {
+    lastBitstreamOutputReading?.let { (readFor, reading) -> if (readFor === error) return reading }
+    val reading = readBitstreamOutput(failedAudioTrackInputFormat(error))
+    lastBitstreamOutputReading = error to reading
+    return reading
+}
+
+private fun PlayerRuntimeController.readBitstreamOutput(format: Format?): BitstreamOutputReading? {
+    val refused = PassthroughOutputReturn.encodingOf(format) ?: return null
+    val live = PassthroughOutputReturn.liveEncodings(context)
+    val listed = PassthroughOutputReturn.canPass(live, refused)
+    val companionOpened = if (listed) {
+        CompressedOutputCheck.companionEncoding(refused, live)?.let { AudioRejectionReverifier.opensNow(it) }
+    } else {
+        null
+    }
+    return BitstreamOutputReading(listed, companionOpened)
 }
 
 internal fun PlayerRuntimeController.saveAudioRefusalEvidence() {
@@ -3841,11 +4016,17 @@ private fun isPassthroughAudioMime(mime: String): Boolean {
     return PassthroughWaterLevelPacer.isPassthroughMime(mime)
 }
 
-private val defaultPassthroughBuffers = DefaultAudioTrackBufferSizeProvider.Builder().build()
+internal const val PCM_AUDIO_TRACK_BUFFER_US = 500_000
 
-private val cappedPassthroughBufferSizeProvider =
+// Decoded PCM always gets a 500 ms track buffer, passthrough keeps the default sizes.
+private val defaultAudioTrackBuffers = DefaultAudioTrackBufferSizeProvider.Builder()
+    .setMinPcmBufferDurationUs(PCM_AUDIO_TRACK_BUFFER_US)
+    .setMaxPcmBufferDurationUs(PCM_AUDIO_TRACK_BUFFER_US)
+    .build()
+
+internal val cappedPassthroughBufferSizeProvider =
     DefaultAudioSink.AudioTrackBufferSizeProvider { minBuffer, encoding, outputMode, pcmFrameSize, sampleRate, bitrate, maxSpeed ->
-        val size = defaultPassthroughBuffers.getBufferSizeInBytes(
+        val size = defaultAudioTrackBuffers.getBufferSizeInBytes(
             minBuffer,
             encoding,
             outputMode,
@@ -4059,10 +4240,11 @@ private fun PlayerRuntimeController.recordFirstFrameDiagnostics(
         // Only the BUDGET can be tightened at runtime. The back buffer was fixed when
         // this player was constructed and media3 will not re-read it, so it is reported
         // as built rather than as intended.
+        val conversionMb = (MemoryBudget.conversionBudgetMb(currentManagedBudgetMb) - currentParallelChunkOverheadMb)
+            .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
         if (keepZeroForDv7) {
-            lc.setBudgetBytesOverride(
-                MemoryBudget.conversionBudgetMb.toLong() * 1024L * 1024L
-            )
+            lc.setBudgetBytesOverride(conversionMb.toLong() * 1024L * 1024L)
+            bufferMemoryKeeper?.onBudgetLowered()
         }
         Log.i(
             PlayerRuntimeController.TAG,
@@ -4071,8 +4253,9 @@ private fun PlayerRuntimeController.recordFirstFrameDiagnostics(
                     "effectiveBackBufferMs=$effectiveBackBufferDurationMs " +
                     "managed=$budgetManaged " +
                     "budgetMb=${when {
-                        keepZeroForDv7 -> MemoryBudget.conversionBudgetMb
-                        budgetManaged -> MemoryBudget.budgetMb
+                        keepZeroForDv7 -> conversionMb
+                        budgetManaged -> (currentManagedBudgetMb - currentParallelChunkOverheadMb)
+                            .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
                         else -> MemoryBudget.effectiveBufferMb(playerSettings.bufferSettings.targetBufferSizeMb)
                     }} " +
                     "host=${currentStreamUrl.safeHost()}"

@@ -29,6 +29,7 @@ class ScreensaverController @Inject constructor(
     val overlayVisible: StateFlow<Boolean> = _overlayVisible.asStateFlow()
 
     private val _playbackActive = MutableStateFlow(false)
+    val playbackActive: StateFlow<Boolean> = _playbackActive.asStateFlow()
 
     @Volatile
     private var lastInteractionMs: Long = SystemClock.elapsedRealtime()

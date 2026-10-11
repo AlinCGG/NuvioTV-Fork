@@ -10,14 +10,18 @@ import kotlin.math.roundToLong
  */
 internal object SeekStripLayout {
 
+    private const val MAX_TILES_PER_SECOND = 5.0
+    private val MULTIPLES = longArrayOf(1L, 3L, 6L, 12L, 30L, 60L, 120L)
+
     /**
-     * Grid multiple of the tile spacing: tiles at least three steps apart, so one step moves the strip by a third
-     * of a tile at most. Taken from the smaller of the last two steps, so one long step does not re-space the strip.
+     * Grid multiple of the tile spacing for a glide at [speed] (film ms per ms): the smallest of a few round multiples
+     * that passes at most [MAX_TILES_PER_SECOND] tiles a second, so the strip stays readable.
      */
-    fun multiple(stepMs: Long, previousStepMs: Long, baseSpacingMs: Long): Long {
-        if (baseSpacingMs <= 0L) return 1L
-        val step = if (previousStepMs > 0L) minOf(stepMs, previousStepMs) else stepMs
-        return ((3L * step + baseSpacingMs - 1) / baseSpacingMs).coerceAtLeast(1L)
+    fun multipleForSpeed(speed: Float, baseSpacingMs: Long): Long {
+        if (baseSpacingMs <= 0L || speed <= 0f) return 1L
+        val filmMsPerSecond = speed * 1000.0
+        return MULTIPLES.firstOrNull { filmMsPerSecond / (baseSpacingMs * it) <= MAX_TILES_PER_SECOND }
+            ?: MULTIPLES.last()
     }
 
     /** Anchor for [newSpacingMs] that leaves every tile where it was on screen at [glideMs]. */

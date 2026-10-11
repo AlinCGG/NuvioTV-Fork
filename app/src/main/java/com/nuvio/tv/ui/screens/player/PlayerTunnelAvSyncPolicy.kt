@@ -72,10 +72,31 @@ internal object PlayerTunnelAvSyncPolicy {
         return (known + other + pcm).distinct()
     }
 
-    const val MEMO_CONFIRM_SAMPLES = 20
+    const val MEMO_CONFIRM_SAMPLES = 45
+    const val MEMO_CONFIRM_PLAYED_MS = 10_000L
+    const val OUTPUT_CHANGE_QUIET_MS = 13_000L
+
+    /** Decoders seen reporting tunnelled frames; for any other "no frames" proves nothing. */
+    val frameReportDecoders: MutableSet<String> = java.util.concurrent.CopyOnWriteArraySet()
+
+    fun frameReportKey(fingerprint: String, decoderName: String?): String? =
+        decoderName?.takeIf { it.isNotBlank() }?.let { "$fingerprint|$it" }
+
+    /** One sample's share of untunnelled playback: seeks and stalls add nothing. */
+    fun memoAdvanceMs(previousPositionMs: Long, positionMs: Long, intervalMs: Long): Long {
+        val step = positionMs - previousPositionMs
+        return if (step in 1..(2 * intervalMs)) step else 0L
+    }
+
+    fun memoConfirmed(playedMs: Long): Boolean = playedMs >= MEMO_CONFIRM_PLAYED_MS
+
+    /** A receiver re-locking after a display or audio output change can hold the clock for seconds. */
+    fun remembersStall(nowMs: Long, lastOutputChangeMs: Long): Boolean =
+        lastOutputChangeMs <= 0L || nowMs - lastOutputChangeMs >= OUTPUT_CHANGE_QUIET_MS
 
     data class Input(
         val isTunnelingActive: Boolean,
+        val isTunnelingApplied: Boolean,
         val hasVideoTrack: Boolean,
         val isReady: Boolean,
         val playWhenReady: Boolean,
@@ -87,6 +108,7 @@ internal object PlayerTunnelAvSyncPolicy {
         val intervalMs: Long,
         val stallThresholdMs: Long,
         val renderedOutputBufferCount: Int?,
+        val frameReportsTrusted: Boolean,
         val readyMs: Long,
         val noFrameThresholdMs: Long,
         val tunnelingAlreadyDisarmed: Boolean,
@@ -100,6 +122,22 @@ internal object PlayerTunnelAvSyncPolicy {
 
     enum class Reason { PositionFrozen, NoFramesRendered }
 
+    data class StallStrike(val streamUrl: String, val firstReadyPositionMs: Long?)
+
+    enum class StallResponse { ReloadKeepingTunnel, DisableTunneling }
+
+    /** The first frozen picture in a play gets one reload with the tunnel kept; the next one turns it off. */
+    fun stallResponse(reason: Reason?, streamUrl: String, strike: StallStrike?): StallResponse =
+        if (reason == Reason.PositionFrozen && strike?.streamUrl != streamUrl) {
+            StallResponse.ReloadKeepingTunnel
+        } else {
+            StallResponse.DisableTunneling
+        }
+
+    /** A strike belongs to one stream; opening another one starts fresh. */
+    fun strikeForStream(streamUrl: String, strike: StallStrike?): StallStrike? =
+        strike?.takeIf { it.streamUrl == streamUrl }
+
     data class Result(
         val decision: Decision,
         val stalledMs: Long,
@@ -108,7 +146,9 @@ internal object PlayerTunnelAvSyncPolicy {
     )
 
     fun evaluate(input: Input): Result {
-        if (!input.isTunnelingActive || !input.hasVideoTrack || input.tunnelingAlreadyDisarmed) {
+        if (!input.isTunnelingActive || !input.isTunnelingApplied || !input.hasVideoTrack ||
+            input.tunnelingAlreadyDisarmed
+        ) {
             return Result(Decision.Stop, 0L, 0L)
         }
         if (!input.isReady || !input.playWhenReady || input.userPausedManually) {
@@ -125,7 +165,9 @@ internal object PlayerTunnelAvSyncPolicy {
         if (stalledMs >= input.stallThresholdMs) {
             return Result(Decision.DisableTunnelingAndRebuild, stalledMs, readyMs, Reason.PositionFrozen)
         }
-        if (input.renderedOutputBufferCount == 0 && readyMs >= input.noFrameThresholdMs) {
+        if (input.frameReportsTrusted && input.renderedOutputBufferCount == 0 &&
+            readyMs >= input.noFrameThresholdMs
+        ) {
             return Result(Decision.DisableTunnelingAndRebuild, stalledMs, readyMs, Reason.NoFramesRendered)
         }
         return Result(Decision.None, stalledMs, readyMs)

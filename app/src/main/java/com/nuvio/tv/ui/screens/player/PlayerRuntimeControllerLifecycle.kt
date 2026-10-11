@@ -44,6 +44,7 @@ internal fun PlayerRuntimeController.releasePlayer(flushPlaybackState: Boolean, 
     seekSourceLogJob?.cancel()
     seekSourceLogJob = null
     frameRateProbeJob?.cancel()
+    cancelAfrPreflight()
     hideStreamSourceIndicatorJob?.cancel()
     hideStreamSourceIndicatorJob = null
     _uiState.update { it.copy(showStreamSourceIndicator = false) }
@@ -97,6 +98,7 @@ internal fun PlayerRuntimeController.releasePlayer(flushPlaybackState: Boolean, 
     }
     _exoPlayer = null
     nativeVideoSelection.clear()
+    attachBufferMemoryKeeper(null)
     _loadControl = null
     currentBitrateAwareLoadControl = null
     ffmpegAudioRenderer = null

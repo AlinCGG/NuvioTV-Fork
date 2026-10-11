@@ -128,6 +128,27 @@ object AudioChainProbe {
         return report.getIntArrayExtra(AudioManager.EXTRA_ENCODINGS)
     }
 
+    data class HdmiPlugSnapshot(val unplugged: Boolean, val encodings: Set<Int>?)
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    fun hdmiPlugSnapshot(context: Context): HdmiPlugSnapshot {
+        val report = runCatching {
+            context.registerReceiver(null, IntentFilter(AudioManager.ACTION_HDMI_AUDIO_PLUG))
+        }.getOrNull()
+        val state = report?.getIntExtra(AudioManager.EXTRA_AUDIO_PLUG_STATE, -1) ?: -1
+        val encodings = if (state == 1) {
+            report?.getIntArrayExtra(AudioManager.EXTRA_ENCODINGS)?.toSet()?.takeIf { it.isNotEmpty() }
+        } else {
+            null
+        }
+        val listed = state == 0 || state == 1 || run {
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audioManager == null ||
+                runCatching { hdmiOutputDevices(audioManager).isNotEmpty() }.getOrDefault(true)
+        }
+        return HdmiPlugSnapshot(SurroundRecheckGuard.hdmiUnplugged(state, listed), encodings)
+    }
+
     @SuppressLint("NewApi", "InlinedApi")
     fun readMaxPcmChannelCount(context: Context): Int? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null

@@ -40,17 +40,7 @@ object StreamQualityRank {
             DirectDebridStreamFilter.passesExclusionFilters(factsByStream.getValue(it), effective)
         }.ifEmpty { streams }
         val rankFilterMs = SystemClock.elapsedRealtime() - rankT0 - rankFactsMs
-        val ranked = pool.sortedWith(
-            compareBy<Stream> { factsByStream.getValue(it).resolutionRank }
-                .thenBy { factsByStream.getValue(it).qualityRank }
-                .thenBy { factsByStream.getValue(it).groupRank }
-                .thenBy { factsByStream.getValue(it).visualRank }
-                .thenBy { factsByStream.getValue(it).audioRank }
-                .thenBy { factsByStream.getValue(it).channelRank }
-                .thenBy { factsByStream.getValue(it).encodeRank }
-                .thenByDescending { factsByStream.getValue(it).size ?: -1L }
-                .thenByDescending { containerScore(it) }
-        )
+        val ranked = pool.sortedWith(bestFirst({ factsByStream.getValue(it) }, ::containerScore))
         val rankSortMs = SystemClock.elapsedRealtime() - rankT0 - rankFactsMs - rankFilterMs
         android.util.Log.i(
             "StreamQualityRank",
@@ -60,6 +50,39 @@ object StreamQualityRank {
         )
         return ranked
     }
+
+    /**
+     * The same order for a whole list, as indices into [streams], with the streams the preferences exclude
+     * reported apart instead of dropped.
+     */
+    fun order(
+        streams: List<Stream>,
+        preferences: DebridStreamPreferences? = null
+    ): StreamOrder {
+        val effective = preferences ?: DEFAULT_PREFERENCES
+        val facts = streams.map { DirectDebridStreamFilter.factsFor(it, effective) }
+        val containers = streams.map(::containerScore)
+        val excluded = streams.indices.filterTo(HashSet()) {
+            !DirectDebridStreamFilter.passesExclusionFilters(facts[it], effective)
+        }
+        return StreamOrder(streams.indices.sortedWith(bestFirst({ facts[it] }, { containers[it] })), excluded)
+    }
+
+    data class StreamOrder(val bestFirst: List<Int>, val excluded: Set<Int>)
+
+    private fun <T> bestFirst(
+        facts: (T) -> DirectDebridStreamFilter.StreamFacts,
+        container: (T) -> Int
+    ): Comparator<T> =
+        compareBy<T> { facts(it).resolutionRank }
+            .thenBy { facts(it).qualityRank }
+            .thenBy { facts(it).groupRank }
+            .thenBy { facts(it).visualRank }
+            .thenBy { facts(it).audioRank }
+            .thenBy { facts(it).channelRank }
+            .thenBy { facts(it).encodeRank }
+            .thenByDescending { facts(it).size ?: -1L }
+            .thenByDescending { container(it) }
 
     internal fun containerScore(stream: Stream): Int {
         val text = listOfNotNull(
