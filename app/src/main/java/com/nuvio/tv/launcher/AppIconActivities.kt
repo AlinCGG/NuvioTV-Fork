@@ -13,3 +13,23 @@ class AppIconRoseGold : MainActivity()
 class AppIconCopper : MainActivity()
 
 class AppIconGraphite : MainActivity()
+
+class AppIconGold : MainActivity()
+
+class AppIconJade : MainActivity()
+
+class AppIconGlass : MainActivity()
+
+class AppIconCrimson : MainActivity()
+
+class AppIconOcean : MainActivity()
+
+class AppIconViolet : MainActivity()
+
+class AppIconEmeraldGreen : MainActivity()
+
+class AppIconAmber : MainActivity()
+
+class AppIconRose : MainActivity()
+
+class AppIconWhite : MainActivity()

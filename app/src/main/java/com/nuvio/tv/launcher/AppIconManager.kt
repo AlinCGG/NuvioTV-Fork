@@ -28,7 +28,17 @@ class AppIconManager @Inject constructor(
         AppIconOption.EMERALD to "com.nuvio.tv.launcher.AppIconEmerald",
         AppIconOption.ROSE_GOLD to "com.nuvio.tv.launcher.AppIconRoseGold",
         AppIconOption.COPPER to "com.nuvio.tv.launcher.AppIconCopper",
-        AppIconOption.GRAPHITE to "com.nuvio.tv.launcher.AppIconGraphite"
+        AppIconOption.GRAPHITE to "com.nuvio.tv.launcher.AppIconGraphite",
+        AppIconOption.GOLD to "com.nuvio.tv.launcher.AppIconGold",
+        AppIconOption.JADE to "com.nuvio.tv.launcher.AppIconJade",
+        AppIconOption.GLASS to "com.nuvio.tv.launcher.AppIconGlass",
+        AppIconOption.CRIMSON to "com.nuvio.tv.launcher.AppIconCrimson",
+        AppIconOption.OCEAN to "com.nuvio.tv.launcher.AppIconOcean",
+        AppIconOption.VIOLET to "com.nuvio.tv.launcher.AppIconViolet",
+        AppIconOption.EMERALD_GREEN to "com.nuvio.tv.launcher.AppIconEmeraldGreen",
+        AppIconOption.AMBER to "com.nuvio.tv.launcher.AppIconAmber",
+        AppIconOption.ROSE to "com.nuvio.tv.launcher.AppIconRose",
+        AppIconOption.WHITE to "com.nuvio.tv.launcher.AppIconWhite"
     )
 
     private val _state = MutableStateFlow(AppIconSettingsState())
