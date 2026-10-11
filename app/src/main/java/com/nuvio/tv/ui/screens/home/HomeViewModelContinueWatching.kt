@@ -1213,11 +1213,9 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
 }
 
 private fun deduplicateInProgress(items: List<WatchProgress>): List<WatchProgress> {
-    val (series, nonSeries) = items.partition { isSeriesTypeCW(it.contentType) }
-    val latestPerShow = series
+    return items
         .sortedByDescending { it.lastWatched }
         .distinctBy { it.contentId }
-    return (nonSeries + latestPerShow).sortedByDescending { it.lastWatched }
 }
 
 private fun shouldTreatAsInProgressForContinueWatching(progress: WatchProgress): Boolean {
@@ -1791,10 +1789,11 @@ internal fun splitUpcomingItems(
     items: List<ContinueWatchingItem>,
     mode: ContinueWatchingSortMode
 ): Pair<List<ContinueWatchingItem>, List<ContinueWatchingItem>> {
+    val unique = distinctContinueWatchingItems(items)
     if (mode != ContinueWatchingSortMode.SPLIT_UPCOMING) {
-        return items to emptyList()
+        return unique to emptyList()
     }
-    val (upcoming, main) = items.partition { item ->
+    val (upcoming, main) = unique.partition { item ->
         item is ContinueWatchingItem.NextUp && !item.info.hasAired
     }
     // Sort upcoming by release date ascending (soonest first)

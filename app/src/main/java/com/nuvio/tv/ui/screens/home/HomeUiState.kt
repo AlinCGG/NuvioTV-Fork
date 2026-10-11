@@ -13,12 +13,15 @@ import com.nuvio.tv.domain.model.LibraryListTab
 import com.nuvio.tv.domain.model.LibrarySourceMode
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.WatchProgress
+import com.nuvio.tv.domain.model.WatchedTitlesMode
 
 @Immutable
 data class HomeUiState(
     val catalogRows: List<CatalogRow> = emptyList(),
     val continueWatchingItems: List<ContinueWatchingItem> = emptyList(),
     val upcomingItems: List<ContinueWatchingItem> = emptyList(),
+    /** The Calendar's "Coming up" row, empty while the row is switched off. */
+    val comingUpItems: List<ContinueWatchingItem> = emptyList(),
     val isLoading: Boolean = true,
     val layoutPreferencesReady: Boolean = false,
     val error: String? = null,
@@ -61,6 +64,7 @@ data class HomeUiState(
     val posterListPickerRemovalConfirmations: List<TrackingMembershipRemovalConfirmation> = emptyList(),
     val gridItems: List<GridItem> = emptyList(),
     val hideUnreleasedContent: Boolean = false,
+    val watchedTitlesMode: WatchedTitlesMode = WatchedTitlesMode.SHOW,
     val showFullReleaseDate: Boolean = true,
     val blurUnwatchedEpisodes: Boolean = false,
     val useEpisodeThumbnailsInCw: Boolean = true,
@@ -137,7 +141,9 @@ data class NextUpInfo(
     val seedSeason: Int? = null,
     val seedEpisode: Int? = null,
     val contentLanguage: String? = null,
-    val mdbListRatings: com.nuvio.tv.domain.model.MDBListRatings? = null
+    val mdbListRatings: com.nuvio.tv.domain.model.MDBListRatings? = null,
+    /** Shown on the card in place of the usual Next up or air date text. */
+    val badgeLabel: String? = null
 )
 
 @Immutable

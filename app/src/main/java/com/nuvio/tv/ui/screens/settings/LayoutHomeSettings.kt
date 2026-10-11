@@ -43,6 +43,7 @@ import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.model.HomeImdbRatingsVisibility
 import com.nuvio.tv.domain.model.HomeLayout
 import com.nuvio.tv.domain.model.NavigationStyle
+import com.nuvio.tv.domain.model.WatchedTitlesMode
 import com.nuvio.tv.ui.v2.appearance.LocalV2Appearance
 
 @Composable
@@ -147,6 +148,11 @@ internal fun LayoutHomeContentSection(
         checked = uiState.hideUnreleasedContent,
         onToggle = { onEvent(LayoutSettingsEvent.SetHideUnreleasedContent(!uiState.hideUnreleasedContent)) }
     )
+    WatchedTitlesRow(
+        selectedMode = uiState.watchedTitlesMode,
+        onModeSelected = { mode -> onEvent(LayoutSettingsEvent.SetWatchedTitlesMode(mode)) }
+    )
+    CalendarComingUpRowSetting()
     SettingsToggleRow(
         title = stringResource(R.string.layout_overall_ratings),
         subtitle = stringResource(
@@ -192,8 +198,8 @@ internal fun LayoutSidebarSection(
     }
     if ((v2 == null && uiState.modernSidebarEnabled) || v2?.navigationStyle == NavigationStyle.FLOATING_SIDEBAR) {
         SettingsToggleRow(
-            title = stringResource(R.string.layout_hide_floating_pill),
-            subtitle = stringResource(R.string.layout_hide_floating_pill_sub),
+            title = stringResource(if (v2 != null) R.string.layout_hide_side_icons else R.string.layout_hide_floating_pill),
+            subtitle = stringResource(if (v2 != null) R.string.layout_hide_side_icons_sub else R.string.layout_hide_floating_pill_sub),
             checked = uiState.sidebarCollapsedByDefault,
             onToggle = { onEvent(LayoutSettingsEvent.SetSidebarCollapsed(!uiState.sidebarCollapsedByDefault)) }
         )
@@ -210,6 +216,53 @@ internal fun LayoutSidebarSection(
         rememberedLocation = uiState.lastNonOffDiscoverLocation,
         onLocationSelected = { location -> onEvent(LayoutSettingsEvent.SetDiscoverLocation(location)) }
     )
+}
+
+@Composable
+private fun WatchedTitlesRow(
+    selectedMode: WatchedTitlesMode,
+    onModeSelected: (WatchedTitlesMode) -> Unit
+) {
+    var dialogOpen by remember { mutableStateOf(false) }
+    val options = listOf(
+        SettingsPickerOption(
+            WatchedTitlesMode.SHOW,
+            stringResource(R.string.layout_watched_titles_show),
+            stringResource(R.string.layout_watched_titles_show_desc)
+        ),
+        SettingsPickerOption(
+            WatchedTitlesMode.DIM,
+            stringResource(R.string.layout_watched_titles_dim),
+            stringResource(R.string.layout_watched_titles_dim_desc)
+        ),
+        SettingsPickerOption(
+            WatchedTitlesMode.HIDE,
+            stringResource(R.string.layout_watched_titles_hide),
+            stringResource(R.string.layout_watched_titles_hide_desc)
+        )
+    )
+
+    SettingsActionRow(
+        title = stringResource(R.string.layout_watched_titles),
+        subtitle = stringResource(R.string.layout_watched_titles_sub),
+        value = options.first { it.value == selectedMode }.title,
+        onClick = { dialogOpen = true }
+    )
+
+    if (dialogOpen) {
+        SettingsSingleChoiceDialog(
+            title = stringResource(R.string.layout_watched_titles_dialog_title),
+            options = options,
+            selectedValue = selectedMode,
+            onOptionSelected = { mode ->
+                onModeSelected(mode)
+                dialogOpen = false
+            },
+            onDismiss = { dialogOpen = false },
+            width = 460.dp,
+            maxHeight = 400.dp
+        )
+    }
 }
 
 @Composable

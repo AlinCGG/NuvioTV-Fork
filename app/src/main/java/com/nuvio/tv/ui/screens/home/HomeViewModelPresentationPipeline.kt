@@ -295,6 +295,7 @@ internal fun HomeViewModel.observeModernHomePresentationPipeline() {
                             com.nuvio.tv.core.poster.patternForScreen(state.customPosterUrlPattern, com.nuvio.tv.core.poster.CustomPosterScreen.CONTINUE_WATCHING, state.customPosterEnabledScreens)
                         )
                     else emptyList(),
+                    comingUpItems = state.comingUpItems,
                     useLandscapePosters = state.modernLandscapePostersEnabled,
                     showCatalogTypeSuffix = state.catalogTypeSuffixEnabled,
                     showFullReleaseDate = state.showFullReleaseDate,
@@ -310,6 +311,7 @@ internal fun HomeViewModel.observeModernHomePresentationPipeline() {
                 old.homeRows === new.homeRows
                     && old.continueWatchingItems == new.continueWatchingItems
                     && old.upcomingItems == new.upcomingItems
+                    && old.comingUpItems == new.comingUpItems
                     && old.useLandscapePosters == new.useLandscapePosters
                     && old.showCatalogTypeSuffix == new.showCatalogTypeSuffix
                     && old.showFullReleaseDate == new.showFullReleaseDate
@@ -390,6 +392,7 @@ internal fun HomeViewModel.observeTrailerSourceChangesPipeline() {
                 trailerPreviewNegativeCache.clear()
                 trailerPreviewUrlsState.clear()
                 trailerPreviewAudioUrlsState.clear()
+                trailerPreviewValidUntil.clear()
                 val refocusId = activeTrailerPreviewItemId
                 activeTrailerPreviewItemId = null
                 refocusId?.let { id -> findCatalogItemById(id)?.let { requestTrailerPreviewPipeline(it) } }
@@ -440,7 +443,7 @@ internal fun HomeViewModel.requestTrailerPreviewPipeline(
     if (!AppFeaturePolicy.inAppTrailerPlaybackEnabled) return
     activeTrailerPreviewItemId = itemId
     if (!trailerPreviewActive) return
-    if (startupGracePeriodActive) {
+    if (startupGracePeriodActive || trailerIntroHold) {
         deferredTrailerPreviewRequest = {
             requestTrailerPreviewPipeline(itemId, title, releaseInfo, apiType, fallbackYtId, fallbackImdbId)
         }
@@ -464,7 +467,8 @@ internal fun HomeViewModel.requestTrailerPreviewPipeline(
         trailerPreviewNegativeCache.remove(itemId)
     }
     trailerPreviewUrlsState[itemId]?.let { url ->
-        if (!isTrailerPreviewLinkExpired(url, trailerPreviewAudioUrlsState[itemId], Instant.now())) return
+        if (System.currentTimeMillis() < (trailerPreviewValidUntil[itemId] ?: Long.MAX_VALUE) &&
+            !isTrailerPreviewLinkExpired(url, trailerPreviewAudioUrlsState[itemId], Instant.now())) return
         trailerPreviewUrlsState.remove(itemId)
         trailerPreviewAudioUrlsState.remove(itemId)
     }
@@ -503,6 +507,10 @@ internal fun HomeViewModel.requestTrailerPreviewPipeline(
                     trailerPreviewUrlsState.remove(itemId)
                     trailerPreviewAudioUrlsState.remove(itemId)
                 } else {
+                    trailerPreviewValidUntil[itemId] = minOf(
+                        System.currentTimeMillis() + 30 * 60_000L,
+                        com.nuvio.tv.data.trailer.TrailerSourceExpiry.expiresAtMs(trailerSource)
+                    )
                     val videoUrl = trailerSource.videoUrl
                     if (trailerPreviewUrlsState[itemId] != videoUrl) {
                         trailerPreviewUrlsState[itemId] = videoUrl
@@ -515,6 +523,7 @@ internal fun HomeViewModel.requestTrailerPreviewPipeline(
                     }
                 }
             }
+            trailerSource?.let { trailerService.preload(it) }
         } finally {
             if (trailerPreviewRequestVersion == requestVersion) trailerPreviewLoadingIds.remove(itemId)
         }
@@ -948,41 +957,49 @@ private fun HomeViewModel.updateCatalogItemWithTmdb(itemId: String, enrichment: 
     }
 }
 
-internal fun HomeViewModel.updateCatalogItemMdbListRatings(
-    itemId: String,
-    ratings: com.nuvio.tv.domain.model.MDBListRatings
+internal fun HomeViewModel.updateCatalogItemsMdbListRatings(
+    ratingsById: Map<String, com.nuvio.tv.domain.model.MDBListRatings>
 ) {
+    if (ratingsById.isEmpty()) return
     val order = currentMdbListSettings.ratingOrder
-    fun mergeItem(currentItem: MetaPreview): MetaPreview =
-        currentItem.copy(
+    fun mergeItem(currentItem: MetaPreview): MetaPreview {
+        val ratings = ratingsById[currentItem.id] ?: return currentItem
+        return currentItem.copy(
             mdbListRatings = ratings,
             mdbListRatingOrder = order,
             imdbRating = ratings.imdb?.toFloat() ?: currentItem.imdbRating
         )
+    }
 
-    updateIndexedCatalogItem(itemId, ::mergeItem)
+    ratingsById.keys.forEach { itemId -> updateIndexedCatalogItem(itemId, ::mergeItem) }
     // Apply to _uiState.catalogRows for ALL layouts including MODERN.
     // applyEnrichmentToDisplayedRows skips MODERN, but MDB ratings must
     // reach catalogRows so the carousel presentation rebuild picks them up.
     _uiState.update { state ->
         var changed = false
         val updatedRows = state.catalogRows.map { row ->
-            val idx = row.items.indexOfFirst { it.id == itemId }
-            if (idx < 0) row
-            else {
-                val merged = mergeItem(row.items[idx])
-                if (merged == row.items[idx]) row
-                else {
-                    changed = true
-                    row.copy(items = row.items.toMutableList().apply { set(idx, merged) })
+            var items: MutableList<MetaPreview>? = null
+            row.items.forEachIndexed { idx, item ->
+                if (item.id in ratingsById) {
+                    val merged = mergeItem(item)
+                    if (merged != item) {
+                        if (items == null) items = row.items.toMutableList()
+                        items!![idx] = merged
+                    }
                 }
+            }
+            val updatedItems = items
+            if (updatedItems == null) row
+            else {
+                changed = true
+                row.copy(items = updatedItems)
             }
         }
         if (changed) state.copy(catalogRows = updatedRows) else state
     }
 
-    val existing = _enrichedPreviews.value[itemId]
-    if (existing != null) {
+    ratingsById.keys.forEach { itemId ->
+        val existing = _enrichedPreviews.value[itemId] ?: return@forEach
         val enriched = findCatalogItemById(itemId)
         if (enriched != null && enriched != existing) {
             _lastEnrichedPreview.value = enriched

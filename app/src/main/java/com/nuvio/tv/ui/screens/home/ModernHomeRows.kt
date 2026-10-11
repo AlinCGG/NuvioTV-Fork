@@ -2,6 +2,28 @@
 
 package com.nuvio.tv.ui.screens.home
 
+import androidx.compose.ui.unit.Constraints
+import com.nuvio.tv.ui.v2.components.v2FocusDrawsOwnEdge
+import kotlin.math.roundToInt
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.runtime.SideEffect
+import androidx.compose.animation.core.LinearEasing
+import android.os.SystemClock
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.Stable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Animatable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import com.nuvio.tv.ui.v2.appearance.LocalV2Appearance
 import com.nuvio.tv.ui.v2.components.nuvioV2Focus
 import com.nuvio.tv.ui.theme.NuvioTheme
@@ -32,13 +54,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import androidx.compose.foundation.lazy.LazyListPrefetchScope
 import androidx.compose.foundation.lazy.LazyListPrefetchStrategy
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
+import androidx.compose.foundation.lazy.layout.NestedPrefetchScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -87,7 +115,6 @@ import androidx.compose.ui.zIndex
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.tv.material3.Border
-import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Glow
@@ -123,11 +150,17 @@ import com.nuvio.tv.ui.components.FittedPortraitArtwork
 import com.nuvio.tv.ui.components.LocalLogoOverCardTrailer
 import com.nuvio.tv.ui.components.cardTitleOverlayVisible
 import com.nuvio.tv.ui.components.MonochromePosterPlaceholder
+import com.nuvio.tv.ui.components.NuvioCard
 import com.nuvio.tv.ui.components.portraitArtworkBackdrop
 import com.nuvio.tv.ui.components.portraitArtworkBackdropFilter
 import com.nuvio.tv.ui.components.rememberPortraitArtworkState
 import com.nuvio.tv.ui.components.TrailerPlayer
+import com.nuvio.tv.ui.components.LocalDimWatchedPosters
 import com.nuvio.tv.ui.components.WatchedMarker
+import com.nuvio.tv.ui.components.WatchedPosterVeil
+import com.nuvio.tv.ui.components.watchedPosterDim
+import com.nuvio.tv.ui.components.watchedPosterFade
+import com.nuvio.tv.ui.components.watchedPosterFilter
 import com.nuvio.tv.ui.components.placeholderCardShimmer
 import com.nuvio.tv.ui.components.nuvioCardDepth
 import com.nuvio.tv.ui.components.rememberArtworkBackedCardGlow
@@ -156,6 +189,95 @@ import kotlinx.coroutines.flow.debounce
 private const val MODERN_HORIZONTAL_FOCUS_DEBOUNCE_MS = 250L
 private const val POSTER_PREFETCH_DISTANCE = 5
 private const val NESTED_PREFETCH_COUNT = 2
+private const val POSTER_TRAVEL_PREFETCH = 3
+
+/** A focused poster only grows when its trailer plays inside it, or when no trailer plays at all. */
+internal fun focusedPosterGrows(
+    expandEnabled: Boolean,
+    autoplayEnabled: Boolean,
+    trailerPlaybackTarget: FocusedPosterTrailerPlaybackTarget
+): Boolean = expandEnabled &&
+    (!autoplayEnabled || trailerPlaybackTarget == FocusedPosterTrailerPlaybackTarget.EXPANDED_CARD)
+
+/**
+ * Keeps a few posters ready past the edge a row last moved towards, so a step along the row finds
+ * the next poster already built instead of building it on the press. Rows nobody has moved along
+ * prepare nothing beyond the nested prefetch.
+ */
+private class RowTravelPrefetchStrategy : LazyListPrefetchStrategy {
+    private val handles = HashMap<Int, LazyLayoutPrefetchState.PrefetchHandle>()
+    private var forward = true
+    private var moved = false
+    private var itemCount = -1
+
+    override fun LazyListPrefetchScope.onScroll(delta: Float, layoutInfo: LazyListLayoutInfo) {
+        if (delta == 0f) return
+        val nowForward = delta < 0f
+        if (moved && nowForward != forward) cancelAll()
+        forward = nowForward
+        moved = true
+        schedule(this, layoutInfo)
+        val visible = layoutInfo.visibleItemsInfo
+        if (visible.isEmpty()) return
+        val distance = if (forward) {
+            visible.last().let { it.offset + it.size } + layoutInfo.mainAxisItemSpacing - layoutInfo.viewportEndOffset
+        } else {
+            layoutInfo.viewportStartOffset - visible.first().offset + layoutInfo.mainAxisItemSpacing
+        }
+        if (distance < kotlin.math.abs(delta)) {
+            val next = if (forward) visible.last().index + 1 else visible.first().index - 1
+            handles[next]?.markAsUrgent()
+        }
+    }
+
+    override fun LazyListPrefetchScope.onVisibleItemsUpdated(layoutInfo: LazyListLayoutInfo) {
+        if (moved) schedule(this, layoutInfo)
+    }
+
+    override fun NestedPrefetchScope.onNestedPrefetch(firstVisibleItemIndex: Int) {
+        val count = nestedPrefetchItemCount.takeIf { it != -1 } ?: NESTED_PREFETCH_COUNT
+        repeat(count) { schedulePrecomposition(firstVisibleItemIndex + it) }
+    }
+
+    private fun schedule(scope: LazyListPrefetchScope, layoutInfo: LazyListLayoutInfo) {
+        val visible = layoutInfo.visibleItemsInfo
+        if (visible.isEmpty()) return
+        // Fewer items: the prepared posters may belong to what was there before. More items
+        // (the next page) leave the prepared ones where they are.
+        if (layoutInfo.totalItemsCount < itemCount) cancelAll()
+        itemCount = layoutInfo.totalItemsCount
+        val first: Int
+        val last: Int
+        if (forward) {
+            first = visible.last().index + 1
+            last = minOf(visible.last().index + POSTER_TRAVEL_PREFETCH, layoutInfo.totalItemsCount - 1)
+        } else {
+            first = maxOf(visible.first().index - POSTER_TRAVEL_PREFETCH, 0)
+            last = visible.first().index - 1
+        }
+        // Handles of posters now on screen or behind are spent; cancelling a used one does nothing.
+        val stale = handles.keys.filter { it < first || it > last }
+        stale.forEach { handles.remove(it)?.cancel() }
+        for (index in first..last) {
+            if (index !in handles) handles[index] = scope.schedulePrefetch(index)
+        }
+    }
+
+    private fun cancelAll() {
+        handles.values.forEach { it.cancel() }
+        handles.clear()
+    }
+
+    /** The row left the screen and its posters went with it: start over when it comes back. */
+    fun reset() {
+        cancelAll()
+        moved = false
+        itemCount = -1
+    }
+}
+
+// Main thread only. The list states outlive their rows, so the strategies are found through them.
+private val rowTravelPrefetch = java.util.WeakHashMap<LazyListState, RowTravelPrefetchStrategy>()
 
 internal val LocalVerticalRowsScrolling = compositionLocalOf<State<Boolean>> { mutableStateOf(false) }
 
@@ -170,6 +292,158 @@ internal val LocalVerticalRowsScrolling = compositionLocalOf<State<Boolean>> { m
  */
 internal val LocalFastScrollActive = compositionLocalOf<State<Boolean>> { mutableStateOf(false) }
 
+/**
+ * One focus ring per row, drawn by the row over all of its cards. When focus moves, the ring glides from
+ * where it is to where the newly focused card will rest once the row has scrolled, and waits there until
+ * the card arrives, so a card that is still sliding in, or not on screen yet, never takes the ring with it.
+ */
+@Stable
+internal class RowFocusGlide {
+    // Ring position in the row's item coordinates (the same as LazyListItemInfo.offset).
+    private val ringX = Animatable(0f)
+    private var gliding by mutableStateOf(false)
+    var showing by mutableStateOf(false)
+        private set
+    var ringSize by mutableStateOf(IntSize.Zero)
+    var ringShape by mutableStateOf<Shape>(RectangleShape)
+    private var listState: LazyListState? = null
+    private var focusedIndex = -1
+    // The focused card by key too: its index changes when items are added or moved in front of it.
+    private var focusedKey: Any? = null
+    private var lastMoveAt = 0L
+    private var moves = 0
+
+    /** Call from the card's focus callback, before the row starts scrolling to it. */
+    fun moveTo(index: Int, listState: LazyListState, scope: CoroutineScope) {
+        this.listState = listState
+        val previous = focusedIndex
+        val from = if (previous >= 0 && showing) ringPosition() else null
+        focusedIndex = index
+        val info = listState.layoutInfo
+        focusedKey = info.visibleItemsInfo.firstOrNull { it.index == index }?.key
+        val card = cardOffset(index, info) ?: return
+        showing = true
+        val move = ++moves
+        // A held key moves focus faster than the glide: take exactly the time between steps, at an even
+        // speed, so the ring lands on each spot before the next step instead of trailing behind.
+        val now = SystemClock.uptimeMillis()
+        val gap = now - lastMoveAt
+        lastMoveAt = now
+        if (from == null || previous == index) {
+            gliding = false
+            scope.launch(start = CoroutineStart.UNDISPATCHED) { ringX.snapTo(card.first.toFloat()) }
+            return
+        }
+        val to = restingOffset(card.first, card.second, info)
+        val glide = if (gap < ROW_GLIDE_MS) {
+            tween<Float>(gap.toInt().coerceAtLeast(MIN_HELD_GLIDE_MS), easing = LinearEasing)
+        } else {
+            tween(ROW_GLIDE_MS, easing = LinearOutSlowInEasing)
+        }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            ringX.snapTo(from)
+            gliding = true
+            ringX.animateTo(to, glide)
+            // Stay where the card will rest until the row has finished sliding it there.
+            snapshotFlow { listState.isScrollInProgress }.first { !it }
+            if (move != moves) return@launch
+            // Rows with cards of different widths can rest a little elsewhere: glide the rest of the way.
+            val rest = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }?.offset?.toFloat()
+            if (rest != null && abs(rest - ringX.value) > 1f) {
+                ringX.animateTo(rest, tween(SETTLE_GLIDE_MS, easing = LinearOutSlowInEasing))
+            }
+            if (move == moves) gliding = false
+        }
+    }
+
+    fun clear() {
+        focusedIndex = -1
+        focusedKey = null
+        moves++
+        gliding = false
+        showing = false
+    }
+
+    /** Where the ring is drawn, in item coordinates; read while placing the ring only. */
+    fun ringPosition(): Float {
+        val info = listState?.layoutInfo
+        if (gliding || info == null) return ringX.value
+        val key = focusedKey
+        val card = info.visibleItemsInfo.firstOrNull { if (key != null) it.key == key else it.index == focusedIndex }
+        if (card != null) {
+            focusedIndex = card.index
+            focusedKey = card.key
+            return card.offset.toFloat()
+        }
+        // Scrolled off screen without a focus move: keep to where it would be, not over another card.
+        return cardOffset(focusedIndex, info)?.first?.toFloat() ?: ringX.value
+    }
+
+    // Offset and size of the card at [index], worked out from its neighbours when it is not on screen yet.
+    private fun cardOffset(index: Int, info: LazyListLayoutInfo): Pair<Int, Int>? {
+        val items = info.visibleItemsInfo
+        items.firstOrNull { it.index == index }?.let { return it.offset to it.size }
+        val ref = items.minByOrNull { abs(it.index - index) } ?: return null
+        return ref.offset + (index - ref.index) * (ref.size + info.mainAxisItemSpacing) to ref.size
+    }
+
+    // The row scrolls only to keep the focused card on screen, as far as it can still scroll.
+    private fun restingOffset(offset: Int, size: Int, info: LazyListLayoutInfo): Float {
+        val items = info.visibleItemsInfo
+        val span = size + info.mainAxisItemSpacing
+        val end = info.viewportEndOffset - info.afterContentPadding
+        val wanted = when {
+            offset < 0 -> offset
+            offset + size > end -> offset + size - end
+            else -> 0
+        }
+        val scroll = if (wanted >= 0) {
+            val last = items.last()
+            val contentEnd = last.offset + last.size + (info.totalItemsCount - 1 - last.index) * span
+            minOf(wanted, maxOf(0, contentEnd - end))
+        } else {
+            val first = items.first()
+            maxOf(wanted, minOf(0, first.offset - first.index * span))
+        }
+        return (offset - scroll).toFloat()
+    }
+}
+
+internal const val ROW_GLIDE_MS = 180
+private const val SETTLE_GLIDE_MS = 120
+private val ROW_END_PADDING = 52.dp
+private const val MIN_HELD_GLIDE_MS = 32
+
+internal val LocalRowFocusGlide = staticCompositionLocalOf<RowFocusGlide?> { null }
+
+/** A card's V2 focus ring: drawn by its row when it sits in one, otherwise by the card itself. */
+@Composable
+internal fun Modifier.rowFocusRing(focused: Boolean, shape: Shape): Modifier {
+    val glide = LocalRowFocusGlide.current
+    if (glide == null || v2FocusDrawsOwnEdge()) return nuvioV2Focus(focused, shape, stationary = true)
+    if (!focused) return this
+    SideEffect { glide.ringShape = shape }
+    val reportSize = remember(glide) { { size: IntSize -> glide.ringSize = size } }
+    return onSizeChanged(reportSize)
+}
+
+/** The row's focus ring, over all of its cards. */
+@Composable
+private fun RowFocusRing(glide: RowFocusGlide, startPaddingPx: Int) {
+    if (!glide.showing || v2FocusDrawsOwnEdge()) return
+    Box(
+        Modifier
+            .offset { IntOffset(startPaddingPx + glide.ringPosition().roundToInt(), 0) }
+            // Sized while laying out, in the same pass that measures the focused card.
+            .layout { measurable, _ ->
+                val size = glide.ringSize
+                val placeable = measurable.measure(Constraints.fixed(size.width, size.height))
+                layout(size.width, size.height) { if (size != IntSize.Zero) placeable.place(0, 0) }
+            }
+            .nuvioV2Focus(focused = true, shape = glide.ringShape, stationary = true)
+    )
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ModernContinueWatchingRowItem(
@@ -183,6 +457,7 @@ private fun ModernContinueWatchingRowItem(
     continueWatchingCardStyle: ContinueWatchingCardStyle,
     continueWatchingCornerRadius: Dp,
     onFocused: () -> Unit,
+    onFocusGained: () -> Unit,
     onContinueWatchingClick: (ContinueWatchingItem) -> Unit,
     onShowOptions: (ContinueWatchingItem) -> Unit,
     modifier: Modifier = Modifier
@@ -194,21 +469,18 @@ private fun ModernContinueWatchingRowItem(
     var isCardFocused by remember { mutableStateOf(false) }
     val latestOnFocused by rememberUpdatedState(onFocused)
 
-    LaunchedEffect(focusEventId, isCardFocused) {
-        if (focusEventId == 0 || !isCardFocused) return@LaunchedEffect
-        
-        // Update global focus state immediately so "self-claiming" logic in other items
-        // knows this item is now the one in charge.
-        latestOnFocused()
-
-        val targetEventId = focusEventId
-        delay(MODERN_HORIZONTAL_FOCUS_DEBOUNCE_MS)
-        if (!isCardFocused || focusEventId != targetEventId) return@LaunchedEffect
+    // Only the focused card runs this, so cards scrolled past start no job of their own.
+    if (isCardFocused && focusEventId != 0) {
+        LaunchedEffect(focusEventId) {
+            // Update global focus state immediately so "self-claiming" logic in other items
+            // knows this item is now the one in charge.
+            latestOnFocused()
+        }
     }
 
-    LaunchedEffect(isTargetItem) {
-        if (isTargetItem && !isCardFocused) {
-            runCatching { requester.requestFocus() }
+    if (isTargetItem) {
+        LaunchedEffect(Unit) {
+            if (!isCardFocused) runCatching { requester.requestFocus() }
         }
     }
 
@@ -224,11 +496,14 @@ private fun ModernContinueWatchingRowItem(
         cornerRadius = continueWatchingCornerRadius,
         isFocused = isCardFocused,
         modifier = modifier
+            // The focused card draws last, so its gliding ring passes over its neighbours.
+            .zIndex(if (isCardFocused) 1f else 0f)
             .focusRequester(requester)
             .onFocusChanged {
                 isCardFocused = it.isFocused
                 if (it.isFocused) {
                     focusEventId += 1
+                    onFocusGained()
                 }
             }
     )
@@ -260,6 +535,7 @@ private fun ModernCatalogRowItem(
     isCatalogItemWatched: (MetaPreview) -> Boolean,
     isFocusTarget: Boolean = false,
     onFocused: () -> Unit,
+    onFocusGained: () -> Unit,
     onItemFocus: (MetaPreview) -> Unit,
     onPreloadAdjacentItem: () -> Unit,
     onCatalogSelectionFocused: (FocusedCatalogSelection) -> Unit,
@@ -299,20 +575,13 @@ private fun ModernCatalogRowItem(
     //    }
     //}
 
-    LaunchedEffect(focusEventId, isCardFocused, focusKey) {
-        if (focusEventId == 0 || !isCardFocused) {
-            return@LaunchedEffect
-        }
-
+    // Only the focused poster runs this, so posters scrolled past start no job of their own.
+    if (isCardFocused && focusEventId != 0) LaunchedEffect(focusEventId, focusKey) {
         // Update global focus state immediately so "self-claiming" logic in other items
         // knows this item is now the one in charge.
         latestOnFocused()
 
-        val targetEventId = focusEventId
         delay(MODERN_HORIZONTAL_FOCUS_DEBOUNCE_MS)
-        if (!isCardFocused || focusEventId != targetEventId) {
-            return@LaunchedEffect
-        }
 
         // Heavy "settled" work (trailers, enrichment) remains debounced.
         item.metaPreview?.let { latestOnItemFocus(it) }
@@ -340,21 +609,19 @@ private fun ModernCatalogRowItem(
         }
     }
 
-    LaunchedEffect(isTargetItem) {
-        if (isTargetItem && !isCardFocused) {
-            runCatching { requester.requestFocus() }
+    if (isTargetItem) {
+        LaunchedEffect(Unit) {
+            if (!isCardFocused) runCatching { requester.requestFocus() }
         }
     }
 
-    val suppressCardExpansionForHeroTrailer =
-        effectiveAutoplayEnabled &&
-                trailerPlaybackTarget != FocusedPosterTrailerPlaybackTarget.EXPANDED_CARD
+    val posterGrows = focusedPosterGrows(effectiveExpandEnabled, effectiveAutoplayEnabled, trailerPlaybackTarget)
     // Expansion is armed from a parent-level focusKey timer that can outlive real
     // card focus (e.g. user moves left into the sidebar). Never show the expanded
     // backdrop on a card that is not actually focused (#2815).
-    val effectiveBackdropExpanded by remember(isBackdropExpanded, suppressCardExpansionForHeroTrailer) {
+    val effectiveBackdropExpanded by remember(isBackdropExpanded, posterGrows) {
         derivedStateOf {
-            isCardFocused && isBackdropExpanded() && !suppressCardExpansionForHeroTrailer
+            isCardFocused && isBackdropExpanded() && posterGrows
         }
     }
 
@@ -365,8 +632,8 @@ private fun ModernCatalogRowItem(
             isCardFocused &&
             trailerPlaybackTarget == FocusedPosterTrailerPlaybackTarget.EXPANDED_CARD &&
             effectiveBackdropExpanded
-    val trailerUrl = expandedTrailerPreviewUrl()
-    val trailerPreviewUrl = if (playTrailerInExpandedCard) trailerUrl else null
+    // Only the card playing the trailer reads its address, so a new trailer does not rebuild every poster.
+    val trailerPreviewUrl = if (playTrailerInExpandedCard) expandedTrailerPreviewUrl() else null
     val trailerPreviewAudioUrl = if (playTrailerInExpandedCard) {
         expandedTrailerPreviewAudioUrl()
     } else {
@@ -411,6 +678,7 @@ private fun ModernCatalogRowItem(
         focusRequester = requester,
         onFocused = {
             focusEventId += 1
+            onFocusGained()
         },
         onFocusStateChanged = { focused ->
             isCardFocused = focused
@@ -460,6 +728,7 @@ internal fun ModernRowSection(
     defaultBringIntoViewSpec: BringIntoViewSpec,
     focusStateCatalogRowScrollIndex: Int,
     focusStateCatalogRowScrollAnchor: String?,
+    focusStateCatalogRowScrollOffset: Int = 0,
     focusedItemByRow: StableRef<MutableMap<String, Int>>,
     rowListStates: StableRef<MutableMap<String, LazyListState>>,
     loadMoreRequestedTotals: StableRef<MutableMap<String, Int>>,
@@ -574,10 +843,15 @@ internal fun ModernRowSection(
                 ?.let { anchor -> row.items.list.indexOfFirst { it.key == anchor } }
                 ?.takeIf { it >= 0 }
                 ?: focusStateCatalogRowScrollIndex
+            val prefetch = RowTravelPrefetchStrategy()
             LazyListState(
                 firstVisibleItemIndex = restoredIndex,
-                prefetchStrategy = LazyListPrefetchStrategy(nestedPrefetchItemCount = NESTED_PREFETCH_COUNT)
-            )
+                firstVisibleItemScrollOffset = focusStateCatalogRowScrollOffset,
+                prefetchStrategy = prefetch
+            ).also { rowTravelPrefetch[it] = prefetch }
+        }
+        DisposableEffect(rowListState) {
+            onDispose { rowTravelPrefetch[rowListState]?.reset() }
         }
 
         val firstItemKey = row.items.list.firstOrNull()?.key
@@ -618,13 +892,22 @@ internal fun ModernRowSection(
             !loadMoreAddonId.isNullOrBlank() &&
             !loadMoreApiType.isNullOrBlank()
 
+        val keepFocusedCardInView = LocalV2Appearance.current != null
         LaunchedEffect(row.key, pendingRowFocusNonce.value) {
             if (pendingRowFocusKey.value != row.key) return@LaunchedEffect
             val targetIndex = (pendingRowFocusIndex.value ?: 0)
                 .coerceIn(0, (row.items.list.size - 1).coerceAtLeast(0))
-            if (!rowListState.isScrollInProgress) {
-                runCatching { rowListState.scrollToItem(targetIndex) }
+            if (rowListState.isScrollInProgress) return@LaunchedEffect
+            if (keepFocusedCardInView) {
+                // These rows only scroll to keep focus on screen: a restored row already showing the card stays as it was.
+                val visible = snapshotFlow { rowListState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
+                val info = rowListState.layoutInfo
+                val end = info.viewportEndOffset - info.afterContentPadding
+                if (visible.any { it.index == targetIndex && it.offset >= 0 && it.offset + it.size <= end }) {
+                    return@LaunchedEffect
+                }
             }
+            runCatching { rowListState.scrollToItem(targetIndex) }
         }
 
         if (canObserveLoadMore) {
@@ -676,8 +959,6 @@ internal fun ModernRowSection(
             rowListState,
             homeImagePriority,
             useLandscapePosters,
-            isActiveRow(),
-            isActiveRow() && isVerticalRowsScrollingState.value,
             rowItemCount,
             effectiveExpandEnabled,
             portraitCatalogCardWidth,
@@ -689,104 +970,112 @@ internal fun ModernRowSection(
             useEpisodeThumbnails,
             blurUnwatchedEpisodes
         ) {
-            if (!isActiveRow() || isVerticalRowsScrollingState.value) return@LaunchedEffect
-            delay(150) // Wait before spamming image requests to survive rapid vertical D-pad scrolls!
-            val cwWidthPx = with(density) {
-                continueWatchingArtworkWidth(
-                    continueWatchingCardStyle, continueWatchingCardWidth, continueWatchingCardHeight
-                ).roundToPx()
-            }
-            val cwHeightPx = with(density) { continueWatchingCardHeight.roundToPx() }
-            fun requestSizePx(item: ModernCarouselItem): Pair<Int, Int> {
-                val metrics = item.catalogCardRequestMetrics(
-                    useLandscapePosters = useLandscapePosters,
-                    portraitCardWidth = portraitCatalogCardWidth,
-                    portraitCardHeight = portraitCatalogCardHeight,
-                    landscapeCardWidth = landscapeCatalogCardWidth,
-                    landscapeCardHeight = landscapeCatalogCardHeight,
-                    expandEnabled = false
-                )
-                return with(density) { metrics.width.roundToPx() } to with(density) { metrics.height.roundToPx() }
-            }
-            suspend fun enqueueIfNeeded(item: ModernCarouselItem) {
-                val payload = item.payload
-                val model: String
-                val cacheKey: String
-                val widthPx: Int
-                val heightPx: Int
-                var blur = false
-                var extras = emptyMap<String, String>()
-                if (payload is ModernPayload.ContinueWatching) {
-                    // Compute the same model and cache key ContinueWatchingCard reads
-                    // (style-aware artwork source, artwork dimensions and the blur suffix)
-                    // so this prefetch warms the entry the card will actually request.
-                    val usesThumbs = continueWatchingUsesEpisodeThumbnails(continueWatchingCardStyle, useEpisodeThumbnails)
-                    val nonCardStyle = continueWatchingCardStyle != ContinueWatchingCardStyle.CARD
-                    model = continueWatchingImageModel(payload.item, usesThumbs, nonCardStyle) ?: return
-                    blur = continueWatchingShouldBlur(payload.item, blurUnwatchedEpisodes, usesThumbs, nonCardStyle)
-                    widthPx = cwWidthPx
-                    heightPx = cwHeightPx
-                    if (widthPx <= 0 || heightPx <= 0) return
-                    cacheKey = continueWatchingImageCacheKey(model, widthPx, heightPx, blur)
-                } else {
-                    val url = item.collapsedArtworkUrl(
-                        useLandscapePosters,
-                        alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
-                    ) ?: return
-                    val (w, h) = requestSizePx(item)
-                    widthPx = w
-                    heightPx = h
-                    if (widthPx <= 0 || heightPx <= 0) return
-                    // Warm the collapsed poster. Expanded backdrops have their own
-                    // URL and target when focus settles; they must not size every poster.
-                    model = url
-                    cacheKey = homePosterCacheKey(url, widthPx, heightPx)
-                    extras = item.customPosterCacheExtras(url, useLandscapePosters)
-                }
-                if (imageLoader.memoryCache?.get(MemoryCache.Key(cacheKey, extras)) != null) return
-                imageLoader.execute(
-                    ImageRequest.Builder(context)
-                        .data(model)
-                        .homePosterPriority(homeImagePriority?.copy(prefetch = true))
-                        .memoryCacheKey(cacheKey)
-                        .memoryCacheKeyExtras(extras)
-                        .scale(coil3.size.Scale.FILL)
-                        .size(width = widthPx, height = heightPx)
-                        .apply {
-                            if (blur) transformations(com.nuvio.tv.ui.util.BlurTransformation())
-                        }
-                        .build()
-                )
-            }
-            var previousFirst = -1
-            snapshotFlow {
-                val info = rowListState.layoutInfo
-                val first = info.visibleItemsInfo.firstOrNull()?.index ?: 0
-                val last = info.visibleItemsInfo.lastOrNull()?.index ?: 0
-                first to last
-            }
+            // Read here, not as effect keys: the row does not rebuild when it becomes active or scrolling starts and stops.
+            snapshotFlow { isActiveRow() && !isVerticalRowsScrollingState.value }
                 .distinctUntilChanged()
-                .conflate()
-                .collect { (firstVisibleIndex, lastVisibleIndex) ->
-                    val currentItems = currentRowState.value.items.list
-                    val isCw = currentItems.firstOrNull()?.payload is ModernPayload.ContinueWatching
-                    val indices = if (isCw) {
-                        ((lastVisibleIndex + 1)..minOf(currentItems.lastIndex, lastVisibleIndex + POSTER_PREFETCH_DISTANCE)).toList() +
-                            (maxOf(0, firstVisibleIndex - POSTER_PREFETCH_DISTANCE) until firstVisibleIndex).toList()
-                    } else com.nuvio.tv.core.image.homePosterWarmWindow(
-                        currentItems.size, firstVisibleIndex, lastVisibleIndex, previousFirst
-                    )
-                    previousFirst = firstVisibleIndex
-                    for (batch in indices.chunked(2)) {
-                        val visible = rowListState.layoutInfo.visibleItemsInfo
-                        if (visible.firstOrNull()?.index != firstVisibleIndex ||
-                            visible.lastOrNull()?.index != lastVisibleIndex) break
-                        // Finish this small batch before following the latest viewport.
-                        // collectLatest would cancel every download on every horizontal step.
-                        coroutineScope {
-                            batch.forEach { i -> currentItems.getOrNull(i)?.let { launch { enqueueIfNeeded(it) } } }
+                .collectLatest { ready ->
+                    if (!ready) return@collectLatest
+                    delay(150) // Wait before spamming image requests to survive rapid vertical D-pad scrolls!
+                    val cwWidthPx = with(density) {
+                        continueWatchingArtworkWidth(
+                            continueWatchingCardStyle, continueWatchingCardWidth, continueWatchingCardHeight
+                        ).roundToPx()
+                    }
+                    val cwHeightPx = with(density) { continueWatchingCardHeight.roundToPx() }
+                    fun requestSizePx(item: ModernCarouselItem): Pair<Int, Int> {
+                        val metrics = item.catalogCardRequestMetrics(
+                            useLandscapePosters = useLandscapePosters,
+                            portraitCardWidth = portraitCatalogCardWidth,
+                            portraitCardHeight = portraitCatalogCardHeight,
+                            landscapeCardWidth = landscapeCatalogCardWidth,
+                            landscapeCardHeight = landscapeCatalogCardHeight,
+                            expandEnabled = false
+                        )
+                        return with(density) { metrics.width.roundToPx() } to with(density) { metrics.height.roundToPx() }
+                    }
+                    suspend fun enqueueIfNeeded(item: ModernCarouselItem) {
+                        val payload = item.payload
+                        val model: String
+                        val cacheKey: String
+                        val widthPx: Int
+                        val heightPx: Int
+                        var blur = false
+                        var extras = emptyMap<String, String>()
+                        if (payload is ModernPayload.ContinueWatching) {
+                            // Compute the same model and cache key ContinueWatchingCard reads
+                            // (style-aware artwork source, artwork dimensions and the blur suffix)
+                            // so this prefetch warms the entry the card will actually request.
+                            val usesThumbs = continueWatchingUsesEpisodeThumbnails(continueWatchingCardStyle, useEpisodeThumbnails)
+                            val nonCardStyle = continueWatchingCardStyle != ContinueWatchingCardStyle.CARD
+                            model = continueWatchingImageModel(payload.item, usesThumbs, nonCardStyle) ?: return
+                            blur = continueWatchingShouldBlur(payload.item, blurUnwatchedEpisodes, usesThumbs, nonCardStyle)
+                            widthPx = cwWidthPx
+                            heightPx = cwHeightPx
+                            if (widthPx <= 0 || heightPx <= 0) return
+                            cacheKey = continueWatchingImageCacheKey(model, widthPx, heightPx, blur)
+                        } else {
+                            val url = item.collapsedArtworkUrl(
+                                useLandscapePosters,
+                                alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
+                            ) ?: return
+                            val (w, h) = requestSizePx(item)
+                            widthPx = w
+                            heightPx = h
+                            if (widthPx <= 0 || heightPx <= 0) return
+                            // Warm the collapsed poster. Expanded backdrops have their own
+                            // URL and target when focus settles; they must not size every poster.
+                            model = url
+                            cacheKey = homePosterCacheKey(url, widthPx, heightPx)
+                            extras = item.customPosterCacheExtras(url, useLandscapePosters)
+                        }
+                        if (imageLoader.memoryCache?.get(MemoryCache.Key(cacheKey, extras)) != null) return
+                        // The loader runs its request steps on the caller's thread: keep them off the main thread.
+                        withContext(Dispatchers.IO) {
+                            imageLoader.execute(
+                                ImageRequest.Builder(context)
+                                    .data(model)
+                                    .homePosterPriority(homeImagePriority?.copy(prefetch = true))
+                                    .memoryCacheKey(cacheKey)
+                                    .memoryCacheKeyExtras(extras)
+                                    .scale(coil3.size.Scale.FILL)
+                                    .size(width = widthPx, height = heightPx)
+                                    .apply {
+                                        if (blur) transformations(com.nuvio.tv.ui.util.BlurTransformation())
+                                    }
+                                    .build()
+                            )
                         }
                     }
+                    var previousFirst = -1
+                    snapshotFlow {
+                        val info = rowListState.layoutInfo
+                        val first = info.visibleItemsInfo.firstOrNull()?.index ?: 0
+                        val last = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        first to last
+                    }
+                        .distinctUntilChanged()
+                        .conflate()
+                        .collect { (firstVisibleIndex, lastVisibleIndex) ->
+                            val currentItems = currentRowState.value.items.list
+                            val isCw = currentItems.firstOrNull()?.payload is ModernPayload.ContinueWatching
+                            val indices = if (isCw) {
+                                ((lastVisibleIndex + 1)..minOf(currentItems.lastIndex, lastVisibleIndex + POSTER_PREFETCH_DISTANCE)).toList() +
+                                    (maxOf(0, firstVisibleIndex - POSTER_PREFETCH_DISTANCE) until firstVisibleIndex).toList()
+                            } else com.nuvio.tv.core.image.homePosterWarmWindow(
+                                currentItems.size, firstVisibleIndex, lastVisibleIndex, previousFirst
+                            )
+                            previousFirst = firstVisibleIndex
+                            for (batch in indices.chunked(2)) {
+                                val visible = rowListState.layoutInfo.visibleItemsInfo
+                                if (visible.firstOrNull()?.index != firstVisibleIndex ||
+                                    visible.lastOrNull()?.index != lastVisibleIndex) break
+                                // Finish this small batch before following the latest viewport.
+                                // collectLatest would cancel every download on every horizontal step.
+                                coroutineScope {
+                                    batch.forEach { i -> currentItems.getOrNull(i)?.let { launch { enqueueIfNeeded(it) } } }
+                                }
+                            }
+                        }
                 }
         }
 
@@ -795,10 +1084,11 @@ internal fun ModernRowSection(
         val stationaryPosterFocus = LocalV2Appearance.current != null
         val horizontalBringIntoViewSpec = remember(density, defaultBringIntoViewSpec, rowStartPadding, isRtl, stationaryPosterFocus) {
             val parentStartOffsetPx = with(density) { rowStartPadding.roundToPx() }
+            val parentEndOffsetPx = with(density) { ROW_END_PADDING.roundToPx() }
             @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
             object : BringIntoViewSpec {
                 override val scrollAnimationSpec: AnimationSpec<Float> =
-                    if (stationaryPosterFocus) tween(durationMillis = 180, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                    if (stationaryPosterFocus) tween(durationMillis = ROW_GLIDE_MS, easing = LinearOutSlowInEasing)
                     else defaultBringIntoViewSpec.scrollAnimationSpec
 
                 override fun calculateScrollDistance(
@@ -807,6 +1097,18 @@ internal fun ModernRowSection(
                     containerSize: Float
                 ): Float {
                     val childSize = abs(size)
+                    if (stationaryPosterFocus) {
+                        // Move only as far as needed to keep the focused card on screen: the ring travels
+                        // to the edge you are heading for, then stays there while the row slides.
+                        val low = (if (isRtl) parentEndOffsetPx else parentStartOffsetPx).toFloat()
+                        val high = containerSize - (if (isRtl) parentStartOffsetPx else parentEndOffsetPx)
+                        return when {
+                            childSize > high - low -> if (isRtl) offset + size - high else offset - low
+                            offset < low -> offset - low
+                            offset + size > high -> offset + size - high
+                            else -> 0f
+                        }
+                    }
                     if (isRtl) {
                         val childSmallerThanParent = childSize <= containerSize
                         val initialTarget = containerSize - parentStartOffsetPx.toFloat()
@@ -844,8 +1146,10 @@ internal fun ModernRowSection(
                 (portraitCatalogCardHeight * (16f / 9f)).roundToPx()
             }
         }
-        LaunchedEffect(row.key, effectiveExpandEnabled, rowItemCount) {
-            if (!effectiveExpandEnabled) return@LaunchedEffect
+        // A poster held small for a trailer in the hero must not push the row along either.
+        val posterGrows = focusedPosterGrows(effectiveExpandEnabled, effectiveAutoplayEnabled, trailerPlaybackTarget)
+        LaunchedEffect(row.key, posterGrows, rowItemCount) {
+            if (!posterGrows) return@LaunchedEffect
             snapshotFlow { expandedCatalogFocusKey.value }
                 .collect { expandedKey ->
                     if (expandedKey == null) return@collect
@@ -872,13 +1176,21 @@ internal fun ModernRowSection(
                         // Flag prevents isBackdropExpandedLambda from collapsing during this scroll.
                         val overshoot = itemEndExpanded - viewportEnd + with(density) { 15.dp.roundToPx() }
                         isExpansionScrollActive = true
-                        rowListState.animateScrollBy(overshoot.toFloat())
-                        isExpansionScrollActive = false
+                        try {
+                            rowListState.animateScrollBy(overshoot.toFloat())
+                        } finally {
+                            isExpansionScrollActive = false
+                        }
                     }
                 }
         }
 
-        CompositionLocalProvider(LocalBringIntoViewSpec provides horizontalBringIntoViewSpec) {
+        val focusGlide = remember { RowFocusGlide() }
+        val focusGlideScope = rememberCoroutineScope()
+        CompositionLocalProvider(
+            LocalBringIntoViewSpec provides horizontalBringIntoViewSpec,
+            LocalRowFocusGlide provides focusGlide
+        ) {
             val usesPlaceholderShimmer = row.showsPlaceholderShimmer()
             val placeholderShimmerOffsetState = if (usesPlaceholderShimmer) {
                 sharedPlaceholderShimmerOffsetState
@@ -886,19 +1198,31 @@ internal fun ModernRowSection(
                 null
             }
 
+            Box {
             LazyRow(
                 state = rowListState,
                 modifier = Modifier
                     .recompositionHighlighter()
                     .focusRequester(rowFocusRequester)
+                    // Entering the row goes to the card it is pointed at, also when that card asked for
+                    // focus itself; the restorer alone would hand it to the card the row last had.
+                    .focusProperties {
+                        val restore = onEnter
+                        onEnter = {
+                            val card = rowEntryCardIndex(focusedItemByRow[rowKey], currentRowState.value.items.list.size)
+                                ?.let { itemFocusRequesters[it] }
+                            if (card == null || !card.requestFocus()) restore()
+                        }
+                    }
                     .focusRestorer {
                         val savedIdx = rowFocusedIndex.value
                         itemFocusRequesters[savedIdx]
                             ?: itemFocusRequesters[0]
                             ?: FocusRequester.Default
                     }
+                    .onFocusChanged { if (!it.hasFocus) focusGlide.clear() }
                     .focusGroup(),
-                contentPadding = PaddingValues(start = rowStartPadding, end = 52.dp),
+                contentPadding = PaddingValues(start = rowStartPadding, end = ROW_END_PADDING),
                 horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
             ) {
                 itemsIndexed(
@@ -921,7 +1245,12 @@ internal fun ModernRowSection(
                     }
                 ) { index, item ->
                     val requester = itemFocusRequesters.getOrPut(index) { FocusRequester() }
-                    val isContinueWatchingRow = row.key == MODERN_CONTINUE_WATCHING_ROW_KEY || row.key == MODERN_UPCOMING_ROW_KEY
+                    val isContinueWatchingRow = row.key == MODERN_CONTINUE_WATCHING_ROW_KEY || row.key == MODERN_UPCOMING_ROW_KEY ||
+                        row.key == MODERN_COMING_UP_ROW_KEY
+                    // Straight from the card's focus callback: the ring must start gliding before the row scrolls.
+                    val onFocusGained = remember(row.key, index) {
+                        { focusGlide.moveTo(index, rowListState, focusGlideScope) }
+                    }
                     val onFocused = remember(row.key, index, isContinueWatchingRow) {
                         {
                             onRowItemFocused(row.key, index, isContinueWatchingRow)
@@ -945,6 +1274,13 @@ internal fun ModernRowSection(
 
                     when (val payload = item.payload) {
                         is ModernPayload.ContinueWatching -> {
+                            val comingUp = row.key == MODERN_COMING_UP_ROW_KEY
+                            val openComingUp = remember(onNavigateToDetail) {
+                                { cw: ContinueWatchingItem ->
+                                    (cw as? ContinueWatchingItem.NextUp)?.info?.let { onNavigateToDetail(it.contentId, it.contentType, "") }
+                                    Unit
+                                }
+                            }
                             ModernContinueWatchingRowItem(
                                 payload = payload,
                                 requester = requester,
@@ -956,8 +1292,9 @@ internal fun ModernRowSection(
                                 continueWatchingCardStyle = continueWatchingCardStyle,
                                 continueWatchingCornerRadius = continueWatchingCornerRadius,
                                 onFocused = onFocused,
-                                onContinueWatchingClick = onContinueWatchingClick,
-                                onShowOptions = onContinueWatchingOptions
+                                onFocusGained = onFocusGained,
+                                onContinueWatchingClick = if (comingUp) openComingUp else onContinueWatchingClick,
+                                onShowOptions = if (comingUp) openComingUp else onContinueWatchingOptions
                             )
                         }
 
@@ -997,9 +1334,6 @@ internal fun ModernRowSection(
                                 { isBackdropExpandedState.value }
                             }
                             val placeholderFocusBlock = isPlaceholder && index > 0
-                            Box(modifier = if (placeholderFocusBlock) {
-                                Modifier.focusProperties { canFocus = false }
-                            } else Modifier) {
                             ModernCatalogRowItem(
                                 item = item,
                                 payload = payload,
@@ -1023,6 +1357,7 @@ internal fun ModernRowSection(
                                 landscapeCatalogCardHeight = landscapeCatalogCardHeight,
                                 isCatalogItemWatched = isCatalogItemWatched,
                                 onFocused = onFocused,
+                                onFocusGained = onFocusGained,
                                 onItemFocus = onItemFocus,
                                 onPreloadAdjacentItem = remember(nextCatalogItem, prevCatalogItem, onPreloadAdjacentItem) {
                                      {
@@ -1036,12 +1371,17 @@ internal fun ModernRowSection(
                                 onLongPress = onLongPress,
                                 onBackdropInteraction = onBackdropInteraction,
                                 onExpandedCatalogFocusKeyChange = onExpandedCatalogFocusKeyChange,
-                                enrichedPreviews = enrichedPreviews
+                                enrichedPreviews = enrichedPreviews,
+                                // The card is the row item itself, so its zIndex puts the focused one over its neighbours.
+                                modifier = if (placeholderFocusBlock) {
+                                    Modifier.focusProperties { canFocus = false }
+                                } else Modifier
                             )
-                            } // Box
                         }
                     }
                 }
+            }
+            RowFocusRing(focusGlide, with(density) { rowStartPadding.roundToPx() })
             }
         }
     }
@@ -1232,6 +1572,12 @@ private fun ModernCarouselCard(
             builder.build()
         }
     }
+    if (posterFailed && imageModel != null) {
+        LaunchedEffect(imageModel) {
+            com.nuvio.tv.core.image.recoverHomePoster(context, imageModel, homeImagePriority)
+            posterFailed = false
+        }
+    }
     val logoHeight = cardHeight * 0.34f
     val logoHeightPx = remember(logoHeight, density) {
         with(density) { logoHeight.roundToPx() }.coerceAtLeast(1)
@@ -1290,7 +1636,8 @@ private fun ModernCarouselCard(
     // moment the user releases the key, when requestFocus lands focus on whichever
     // card is visible at the leading edge.
     val isFastScrollingState = LocalFastScrollActive.current
-    val isFastScrolling = isFastScrollingState.value
+    // Only the focused card shows the chrome, so only it follows the fast-scroll flag.
+    val isFastScrolling = isFocused && isFastScrollingState.value
     val transparentFocusBorder = remember(cardShape) {
         Border(
             border = BorderStroke(NuvioTheme.spacing.none, Color.Transparent),
@@ -1299,8 +1646,9 @@ private fun ModernCarouselCard(
     }
     val effectiveFocusedBorder = if (isFastScrolling) transparentFocusBorder else focusedBorder
     val noFocusGlow = remember { CardDefaults.glow(focusedGlow = Glow.None) }
-    val cardGlow = when (payload) {
-        is ModernPayload.CollectionFolder -> rememberArtworkBackedCardGlow(
+    val cardGlow = when {
+        isV2 -> noFocusGlow
+        payload != null -> rememberArtworkBackedCardGlow(
             imageUrl = imageUrl,
             fallbackSeed = "${item.title}:${payload.collectionTitle}",
             enabled = payload.focusGlowEnabled
@@ -1311,9 +1659,14 @@ private fun ModernCarouselCard(
     val titleStyle = remember(titleMedium) {
         titleMedium.copy(fontWeight = FontWeight.Medium)
     }
+    val cardDescription = remember(item.title, item.cornerLabel) {
+        listOfNotNull(item.title.takeIf { it.isNotBlank() }, item.cornerLabel?.takeIf { it.isNotBlank() }).joinToString(", ")
+    }
 
     Column(
         modifier = modifier
+            // The focused card draws last, so its gliding ring passes over its neighbours.
+            .zIndex(if (isFocused) 1f else 0f)
             .layout { measurable, constraints ->
                 // Width still remeasures the row, but does not rebuild the card, artwork
                 // requests, focus effects and trailer subtree on every animation frame.
@@ -1325,7 +1678,7 @@ private fun ModernCarouselCard(
             .recompositionHighlighter(),
         verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
     ) {
-        Card(
+        NuvioCard(
             onClick = {
                 if (longPressTriggered) {
                     longPressTriggered = false
@@ -1333,10 +1686,14 @@ private fun ModernCarouselCard(
                     onClick()
                 }
             },
+            shape = cardShape,
+            light = isV2,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(cardHeight)
-                .nuvioV2Focus(isFocused, cardShape, stationary = true)
+                // One description per card: the artwork, badges and overlays inside are not read one by one.
+                .semantics { contentDescription = cardDescription }
+                .rowFocusRing(isFocused, cardShape)
                 .focusRequester(focusRequester)
                 .onFocusChanged {
                     isFocused = it.isFocused
@@ -1376,27 +1733,23 @@ private fun ModernCarouselCard(
                     }
                     false
                 },
-            shape = CardDefaults.shape(cardShape),
-            colors = CardDefaults.colors(
-                // For content posters the AsyncImage is an opaque, full-bleed
-                // JPEG (Crop) that already paints backgroundCardColor as its own
-                // placeholder/fallback, so a solid container is a redundant
-                // full-card overdraw pass beneath every poster: make it
-                // transparent. BUT collection-folder covers are often logos /
-                // graphics with transparency (or don't fill the card), so they
-                // need the solid backing (grey), matching the official app;
-                // emoji / no-image cards likewise keep the solid colour.
-                containerColor = if (hasImage && !isCollectionFolder) Color.Transparent else backgroundCardColor,
-                focusedContainerColor = if (hasImage && !isCollectionFolder) Color.Transparent else backgroundCardColor
-            ),
+            // For content posters the AsyncImage is an opaque, full-bleed
+            // JPEG (Crop) that already paints backgroundCardColor as its own
+            // placeholder/fallback, so a solid container is a redundant
+            // full-card overdraw pass beneath every poster: make it
+            // transparent. BUT collection-folder covers are often logos /
+            // graphics with transparency (or don't fill the card), so they
+            // need the solid backing (grey), matching the official app;
+            // emoji / no-image cards likewise keep the solid colour.
+            containerColor = if (hasImage && !isCollectionFolder) Color.Transparent else backgroundCardColor,
             border = CardDefaults.border(focusedBorder = if (isV2) Border.None else effectiveFocusedBorder),
-            scale = CardDefaults.scale(focusedScale = 1f),
             glow = if (isV2) noFocusGlow else effectiveCardGlow
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(cardShape)
+                    .clearAndSetSemantics {}
                     .nuvioCardDepth(
                         shape = cardShape,
                         surface = CardDepthSurface.POSTERS,
@@ -1432,14 +1785,15 @@ private fun ModernCarouselCard(
                                 .placeholderCardShimmer(effectivePlaceholderShimmerOffsetState)
                         )
                     } else if (hasImage && !posterFailed) {
+                        val watchedDim = watchedPosterDim(isWatched, isFocused)
                         AsyncImage(
                             model = imageModel,
                             contentDescription = item.title,
-                            modifier = Modifier.fillMaxSize().portraitArtworkBackdrop(fitPortraitArtwork),
+                            modifier = Modifier.fillMaxSize().portraitArtworkBackdrop(fitPortraitArtwork).watchedPosterFade(watchedDim),
                             placeholder = backgroundPainter,
                             error = backgroundPainter,
                             fallback = backgroundPainter,
-                            colorFilter = portraitArtworkBackdropFilter(fitPortraitArtwork),
+                            colorFilter = portraitArtworkBackdropFilter(fitPortraitArtwork) ?: watchedPosterFilter(watchedDim.value),
                             onSuccess = {
                                 customPosterLoadFailed = it.result.request.data != imageUrl
                                 if (canFitPortraitArtwork) {
@@ -1467,7 +1821,12 @@ private fun ModernCarouselCard(
                             },
                             contentScale = imageContentScale
                         )
-                        if (fitPortraitArtwork) FittedPortraitArtwork(imageModel, contentDescription = null)
+                        if (fitPortraitArtwork) FittedPortraitArtwork(
+                            imageModel,
+                            contentDescription = null,
+                            modifier = Modifier.watchedPosterFade(watchedDim),
+                            colorFilter = watchedPosterFilter(watchedDim.value)
+                        )
                     } else if (isCollectionFolder && !payload?.coverEmoji.isNullOrBlank()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -1580,6 +1939,14 @@ private fun ModernCarouselCard(
                     )
                 }
 
+                if (isWatched && LocalDimWatchedPosters.current) {
+                    WatchedPosterVeil(
+                        focused = isFocused,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .zIndex(1.9f)
+                    )
+                }
                 if (isWatched) {
                     WatchedMarker(
                         modifier = Modifier

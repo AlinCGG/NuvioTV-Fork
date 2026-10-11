@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.text.font.FontWeight
@@ -165,11 +166,39 @@ internal fun ModernHeroMediaLayer(
     var artworkState by remember { mutableStateOf(HeroArtworkLoadState<Painter>(artwork)) }
     if (artworkState.selection != artwork) artworkState = artworkState.select(artwork)
     val ticket = artworkState.ticket
+    // Only until this hero has shown anything, so it covers a return to Home and leaves focus
+    // changes on Home with their usual fade.
+    var shownOnce by remember { mutableStateOf(false) }
+    var recalledTicket by remember { mutableStateOf<HeroArtworkTicket?>(null) }
+    if (!shownOnce && artworkState.ready == null && ticket != null) {
+        shownHeroImage.recall(ticket.url, requestWidthPx, requestHeightPx)?.let { image ->
+            artworkState = artworkState.loaded(ticket, image.asPainter(localContext))
+            recalledTicket = ticket
+            shownOnce = true
+        }
+    }
+    val menuBackdrop = com.nuvio.tv.ui.v2.components.LocalMainMenuBackdrop.current
+    // Another page's hero can publish while this one fades out: clear only what this one wrote.
+    val publishedMenuUrl = remember { arrayOfNulls<String>(1) }
+    fun publishMenuUrl(url: String?) {
+        val backdrop = menuBackdrop ?: return
+        if (url != null) backdrop.artworkUrl = url
+        else if (backdrop.artworkUrl == publishedMenuUrl[0]) backdrop.artworkUrl = null
+        publishedMenuUrl[0] = url
+    }
+    androidx.compose.runtime.DisposableEffect(menuBackdrop) {
+        onDispose { publishMenuUrl(null) }
+    }
     // Start from the focused title's available artwork, without the metadata gate.
     // Render the decoded result directly: no second image request/cache lookup.
-    LaunchedEffect(ticket, artwork.ownerKey, requestWidthPx, requestHeightPx) {
+    LaunchedEffect(ticket, artwork.ownerKey, requestWidthPx, requestHeightPx, fullScreenBackdrop) {
         val pageSelection = HeroBackdropState.selectPageArtwork(artwork.ownerKey, ticket?.url)
-        if (ticket != null) {
+        if (ticket == null || !fullScreenBackdrop) publishMenuUrl(null)
+        if (ticket != null && ticket == recalledTicket) {
+            if (fullScreenBackdrop) publishMenuUrl(ticket.url)
+            HeroBackdropState.recordDisplayedArtwork(pageSelection, ticket.url)
+            artworkAccent?.imageLoaded(ticket.url)
+        } else if (ticket != null) {
             val cached = localContext.imageLoader.memoryCache?.get(coil3.memory.MemoryCache.Key(ticket.url))?.image
             // Back and warmed A-B-A should display ready artwork without a focus
             // debounce. Coil still validates the actual request/cache compatibility.
@@ -183,6 +212,9 @@ internal fun ModernHeroMediaLayer(
             coroutineContext.ensureActive()
             if (result is SuccessResult) {
                 artworkState = artworkState.loaded(ticket, result.image.asPainter(localContext))
+                shownOnce = true
+                shownHeroImage.keep(ticket.url, requestWidthPx, requestHeightPx, result.image)
+                if (fullScreenBackdrop) publishMenuUrl(ticket.url)
                 HeroBackdropState.recordDisplayedArtwork(pageSelection, ticket.url)
                 artworkAccent?.imageLoaded(ticket.url)
             } else {
@@ -310,6 +342,8 @@ internal fun ModernHeroMediaLayer(
     }
 }
 
+private val FULL_SCREEN_HERO_SCRIM = listOf(0.0f to 1f, 0.22f to 0.90f, 0.46f to 0.80f, 0.76f to 0.42f, 1.0f to 0f)
+
 @Composable
 internal fun ModernHeroGradientLayer(
     bgColor: Color,
@@ -322,6 +356,7 @@ internal fun ModernHeroGradientLayer(
         com.nuvio.tv.domain.model.VisualStyle.CINEMATIC_GLASS
     val pureDark = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current?.visualStyle ==
         com.nuvio.tv.domain.model.VisualStyle.PURE_LIQUID_DARK
+    val menuLayout = com.nuvio.tv.ui.v2.components.LocalSidebarPageLayout.current.takeIf { !pureDark }
     Box(
         modifier = modifier
             .graphicsLayer {
@@ -331,14 +366,13 @@ internal fun ModernHeroGradientLayer(
             .drawWithCache {
                 val fullScreen = isFullScreen()
                 val horizontalFadeEndX = size.width * if (fullScreen) 0.65f else 0.45f
-                val colorStops = if (fullScreen) {
-                    arrayOf(
-                        0.0f to bgColor,
-                        0.22f to bgColor.copy(alpha = 0.90f),
-                        0.46f to bgColor.copy(alpha = 0.80f),
-                        0.76f to bgColor.copy(alpha = 0.42f),
-                        1.0f to Color.Transparent
-                    )
+                val menuProgress = if (fullScreen) menuLayout?.let { it.expansion() } ?: 0f else 0f
+                val colorStops = if (fullScreen && menuProgress > 0f) {
+                    com.nuvio.tv.ui.v2.components.openMenuScrimStops(
+                        FULL_SCREEN_HERO_SCRIM, horizontalFadeEndX, menuLayout!!.expandedWidth.toPx(), menuProgress
+                    ).map { (f, a) -> f to bgColor.copy(alpha = a) }.toTypedArray()
+                } else if (fullScreen) {
+                    FULL_SCREEN_HERO_SCRIM.map { (f, a) -> f to bgColor.copy(alpha = a) }.toTypedArray()
                 } else {
                     arrayOf(
                         0.0f to bgColor,
@@ -508,8 +542,24 @@ private fun HeroTitleContent(
         )
     }
 
+    // One description for the whole block: its many small texts change with every focused title.
+    val heroDescription = remember(preview, context) {
+        listOfNotNull(
+            preview.title,
+            preview.contentTypeText,
+            preview.genres.firstOrNull()?.let { com.nuvio.tv.ui.util.localizedGenreLabel(context, it) },
+            preview.runtimeText,
+            preview.yearText,
+            preview.secondaryHighlightText,
+            preview.ageRatingText,
+            preview.statusText,
+            preview.imdbText,
+            preview.description
+        ).filter { it.isNotBlank() }.joinToString(", ")
+    }
     Column(
-        modifier = if (highlighterEnabled) Modifier.recompositionHighlighter() else Modifier,
+        modifier = (if (highlighterEnabled) Modifier.recompositionHighlighter() else Modifier)
+            .clearAndSetSemantics { contentDescription = heroDescription },
         verticalArrangement = Arrangement.spacedBy(titleSpacing)
     ) {
         var logoLoadFailed by remember(preview.logo) { mutableStateOf(false) }

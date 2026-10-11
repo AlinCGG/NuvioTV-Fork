@@ -44,7 +44,9 @@ private data class CatalogUpdateResult(
     val displayRows: List<CatalogRow>,
     val heroItems: List<com.nuvio.tv.domain.model.MetaPreview>,
     val gridItems: List<GridItem>,
-    val fullRows: List<CatalogRow>
+    val fullRows: List<CatalogRow>,
+    val statusRows: List<CatalogRow>,
+    val heldWatchedRowKey: String?
 )
 
 @OptIn(FlowPreview::class)
@@ -159,6 +161,7 @@ internal suspend fun HomeViewModel.loadAllCatalogsPipeline(
     }
 
     activeCatalogLoadSignature = signature
+    watchedTitles.refillPages.clear()
     StartupLatencyTrace.mark("catalogs_load_start")
     catalogsLoadInProgress = true
     // A full load leaves every catalog fresh, so the next return to Home has nothing to do.
@@ -188,6 +191,7 @@ internal suspend fun HomeViewModel.loadAllCatalogsPipeline(
     trailerPreviewNegativeCache.clear()
     trailerPreviewUrlsState.clear()
     trailerPreviewAudioUrlsState.clear()
+    trailerPreviewValidUntil.clear()
     activeTrailerPreviewItemId = null
     trailerPreviewRequestVersion++
     prefetchedExternalMetaIds.clear()
@@ -478,6 +482,7 @@ internal fun HomeViewModel.loadCatalogPipeline(
                         )
                         if (!isRefresh || !mergeRefreshedCatalogRow(key, result.data, requestedByUser, forceReplace)) {
                             replaceCatalogRow(key, result.data)
+                            watchedTitles.refillPages.remove(key)
                         }
                         // Trigger MDBList batch for newly loaded catalog data.
                         onCatalogRowItemsChanged(key)
@@ -595,6 +600,10 @@ internal fun HomeViewModel.loadMoreCatalogItemsPipeline(catalogId: String, addon
 }
 
 internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
+    val watchedFilter = awaitWatchedFilterPipeline()
+    val watchedIds = watchedFilter?.ids?.takeIf { watchedFilter.hides }
+    val watchedFocusRowKey = if (watchedTitles.homeShown) liveFocusedRowKey else null
+    val shownRowsSnapshot = _uiState.value.catalogRows
     val posterProfileId = profileManager.activeProfileId.value
     val (orderedKeys, catalogSnapshot) = snapshotCatalogState()
     val collectionsSnapshot = collectionsCache.associateBy { "collection_${it.id}" }
@@ -605,7 +614,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
     val hideUnreleased = _uiState.value.hideUnreleasedContent
     val titlesSnapshot = customCatalogTitles
 
-    val (displayRows, baseHeroItems, baseGridItems, fullRowsFiltered) = withContext(Dispatchers.Default) {
+    val catalogUpdate = withContext(Dispatchers.Default) {
         val rawRows = orderedKeys.mapNotNull { key ->
             val row = catalogSnapshot[key] ?: return@mapNotNull null
             val custom = titlesSnapshot[key]
@@ -617,11 +626,21 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         } else {
             rawRows
         }
+        val visibleRows = if (watchedIds != null) {
+            orderedRows.withoutWatched(watchedIds, watchedFocusRowKey, shownRowsSnapshot)
+        } else {
+            orderedRows
+        }
+        val heldWatchedRowKey = watchedFocusRowKey?.takeIf { key ->
+            watchedIds != null && visibleRows.any { row ->
+                row.stableKey() == key && row.items.any(watchedIds::isWatched)
+            }
+        }
         val selectedHeroCatalogSet = heroCatalogKeys.toSet()
         val orderedKeySet = orderedKeys.toSet()
         val selectedHeroRows = if (selectedHeroCatalogSet.isNotEmpty()) {
             // Include hero catalogs from ordered rows
-            val fromOrdered = orderedRows.filter { row ->
+            val fromOrdered = visibleRows.filter { row ->
                 val key = row.legacyKey()
                 key in selectedHeroCatalogSet
             }
@@ -630,11 +649,16 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
             val heroOnlyRows = selectedHeroCatalogSet
                 .filter { it !in orderedKeySet }
                 .mapNotNull { catalogSnapshot[it] }
-            val heroOnlyFiltered = if (hideUnreleased) {
+            val heroOnlyReleased = if (hideUnreleased) {
                 val today = LocalDate.now()
                 heroOnlyRows.map { it.filterReleasedItems(today) }
             } else {
                 heroOnlyRows
+            }
+            val heroOnlyFiltered = if (watchedIds != null) {
+                heroOnlyReleased.map { it.withoutWatched(watchedIds) }
+            } else {
+                heroOnlyReleased
             }
             fromOrdered + heroOnlyFiltered
         } else {
@@ -679,17 +703,18 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         // When orderedRows is empty (all catalogs disabled), include any
         // hero-only loaded catalogs as fallback hero sources.
         val allHeroFallbackRows = if (orderedRows.isNotEmpty()) {
-            orderedRows
+            visibleRows
         } else {
             val nonOrderedRows = catalogSnapshot.keys
                 .filter { it !in orderedKeySet }
                 .mapNotNull { catalogSnapshot[it] }
-            if (hideUnreleased) {
+            val releasedRows = if (hideUnreleased) {
                 val today = LocalDate.now()
                 nonOrderedRows.map { it.filterReleasedItems(today) }
             } else {
                 nonOrderedRows
             }
+            if (watchedIds != null) releasedRows.map { it.withoutWatched(watchedIds) } else releasedRows
         }
         val fallbackHeroItemsWithArtwork = slotShuffled(
             allHeroFallbackRows, { it.hasHeroArtwork() }, currentHeroOrder
@@ -703,7 +728,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
             else -> emptyList()
         }
 
-        val computedDisplayRows = orderedRows.map { row ->
+        val computedDisplayRows = visibleRows.map { row ->
             val shouldKeepFullRowInModern = currentLayout == HomeLayout.MODERN
             val gridTruncateLimit = 24
             if (row.items.size > gridTruncateLimit && !shouldKeepFullRowInModern) {
@@ -732,8 +757,19 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
             }
         }
 
-        CatalogUpdateResult(computedDisplayRows, computedHeroItems, emptyList(), orderedRows)
+        CatalogUpdateResult(
+            displayRows = computedDisplayRows,
+            heroItems = computedHeroItems,
+            gridItems = emptyList(),
+            fullRows = orderedRows,
+            statusRows = if (watchedIds != null) orderedRows else computedDisplayRows,
+            heldWatchedRowKey = heldWatchedRowKey
+        )
     }
+    val displayRows = catalogUpdate.displayRows
+    val baseHeroItems = catalogUpdate.heroItems
+    val fullRowsFiltered = catalogUpdate.fullRows
+    watchedTitles.heldRowKey = catalogUpdate.heldWatchedRowKey
 
     _fullCatalogRows.update { rows ->
         if (rows == fullRowsFiltered) rows else fullRowsFiltered
@@ -966,7 +1002,10 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         heroItemOrder = emptyList()
     }
 
-    schedulePosterStatusReconcilePipeline(displayRows)
+    schedulePosterStatusReconcilePipeline(catalogUpdate.statusRows)
+    if (watchedIds != null) {
+        requestWatchedRefillPages(fullRowsFiltered, displayRows)
+    }
 }
 
 private fun stableHeroSortKey(

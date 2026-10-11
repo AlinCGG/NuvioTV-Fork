@@ -1,5 +1,7 @@
 package com.nuvio.tv.ui.screens.home
 
+import java.lang.ref.SoftReference
+
 /** Every fallback belongs to this focused carousel item; never borrow row/global artwork. */
 internal data class HeroArtworkSelection(val ownerKey: String?, val urls: List<String>)
 
@@ -32,6 +34,25 @@ internal data class HeroArtworkLoadState<T>(
     fun failed(request: HeroArtworkTicket): HeroArtworkLoadState<T> =
         if (request == ticket) copy(candidateIndex = candidateIndex + 1) else this
 }
+
+/**
+ * The hero image last on screen, held softly. Coming back to Home draws it straight away
+ * instead of fading in from an empty backdrop while the cache is asked again.
+ */
+internal class ShownHeroMemory<T : Any> {
+    private class Entry<T : Any>(val url: String, val width: Int, val height: Int, val image: SoftReference<T>)
+
+    @Volatile private var entry: Entry<T>? = null
+
+    fun keep(url: String, width: Int, height: Int, image: T) {
+        entry = Entry(url, width, height, SoftReference(image))
+    }
+
+    fun recall(url: String, width: Int, height: Int): T? =
+        entry?.takeIf { it.url == url && it.width == width && it.height == height }?.image?.get()
+}
+
+internal val shownHeroImage = ShownHeroMemory<coil3.Image>()
 
 internal data class ResolvedModernHeroState(
     val artwork: HeroArtworkSelection,

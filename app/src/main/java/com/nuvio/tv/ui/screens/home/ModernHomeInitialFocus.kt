@@ -13,7 +13,14 @@ internal fun resolveModernHomeInitialFocus(
         else it.globalRowIndex == saved.focusedRowIndex
     } ?: rows.first()
     val itemKey = saved.focusedItemKeyByRow[row.key]
-    val index = if (itemKey != null) row.items.list.indexOfFirst { it.key == itemKey }.coerceAtLeast(0)
-        else saved.focusedItemIndex.coerceIn(0, (row.items.size - 1).coerceAtLeast(0))
+    val keyedIndex = itemKey?.let { key -> row.items.list.indexOfFirst { it.key == key } }
+    val savedIndex = saved.focusedItemIndex.coerceIn(0, (row.items.size - 1).coerceAtLeast(0))
+    val index = when {
+        keyedIndex == null -> savedIndex
+        keyedIndex >= 0 -> keyedIndex
+        // The focused title left its row while Home was away: the one that moved into its place takes focus.
+        row.key == saved.focusedRowKey -> savedIndex
+        else -> 0
+    }
     return row to index
 }

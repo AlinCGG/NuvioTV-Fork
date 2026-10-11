@@ -233,6 +233,10 @@ fun ClassicHomeContent(
     val upcomingListState = rememberLazyListState()
     val lastFocusedCwIndex = rememberSaveable { mutableIntStateOf(-1) }
     val lastFocusedUpcomingIndex = rememberSaveable { mutableIntStateOf(-1) }
+    val comingUpItemFocusRequesters = remember { mutableMapOf<Int, FocusRequester>() }
+    val comingUpRowFocusRequester = remember { FocusRequester() }
+    val comingUpListState = rememberLazyListState()
+    val lastFocusedComingUpIndex = rememberSaveable { mutableIntStateOf(-1) }
 
     // Improved Back navigation: when focused item is not the first in a row,
     // scroll the row to the start and focus the first item instead of opening the sidebar.
@@ -244,19 +248,25 @@ fun ClassicHomeContent(
     val activeRowKeyState = remember { mutableStateOf<String?>(null) }
     val cwPendingScrollToStart = remember { mutableIntStateOf(0) }
     val upcomingPendingScrollToStart = remember { mutableIntStateOf(0) }
+    val comingUpPendingScrollToStart = remember { mutableIntStateOf(0) }
     BackHandler(enabled = contentHasFocus.value && run {
         val rowKey = activeRowKeyState.value ?: return@run false
-        val isCwRow = rowKey == "continue_watching" || rowKey == "upcoming_section"
+        val isCwRow = rowKey == "continue_watching" || rowKey == "upcoming_section" || rowKey == MODERN_COMING_UP_ROW_KEY
         val itemIndex = if (isCwRow) cwFocusedIndex.intValue else (rowFocusedItemIndex[rowKey] ?: 0)
         itemIndex > 0
     }) {
         val rowKey = activeRowKeyState.value ?: return@BackHandler
         val isCw = rowKey == "continue_watching"
         val isUpcoming = rowKey == "upcoming_section"
-        if (isCw || isUpcoming) {
+        val isComingUp = rowKey == MODERN_COMING_UP_ROW_KEY
+        if (isCw || isUpcoming || isComingUp) {
             cwFocusedIndex.intValue = 0
             currentFocusSnapshot.itemIndex = 0
-            if (isCw) cwPendingScrollToStart.intValue++ else upcomingPendingScrollToStart.intValue++
+            when {
+                isCw -> cwPendingScrollToStart.intValue++
+                isUpcoming -> upcomingPendingScrollToStart.intValue++
+                else -> comingUpPendingScrollToStart.intValue++
+            }
         } else {
             val listState = rowStates[rowKey]
             rowFocusedItemIndex[rowKey] = 0
@@ -675,7 +685,8 @@ fun ClassicHomeContent(
                         onRemoveContinueWatching(contentId, season, episode, isNextUp)
                     },
                     focusedItemIndex = when {
-                        focusState.hasSavedFocus && focusState.focusedRowIndex == -1 -> focusState.focusedItemIndex
+                        classicSavedCardRowIndex(focusState, "continue_watching") >= 0 ->
+                            classicSavedCardRowIndex(focusState, "continue_watching")
                         shouldRequestInitialFocus && !heroVisible -> 0
                         else -> -1
                     },
@@ -783,6 +794,52 @@ fun ClassicHomeContent(
             }
         }
 
+        if (uiState.comingUpItems.isNotEmpty()) {
+            item(key = MODERN_COMING_UP_ROW_KEY, contentType = "upcoming_section") {
+                LaunchedEffect(comingUpPendingScrollToStart.intValue) {
+                    if (comingUpPendingScrollToStart.intValue > 0) {
+                        comingUpListState.scrollToItem(0, 0)
+                        runCatching { comingUpRowFocusRequester.requestFocus() }
+                        comingUpPendingScrollToStart.intValue = 0
+                    }
+                }
+                val openComingUp: (ContinueWatchingItem) -> Unit = { item ->
+                    (item as? ContinueWatchingItem.NextUp)?.info?.let { onNavigateToDetail(it.contentId, it.contentType, "") }
+                }
+                ContinueWatchingSection(
+                    items = uiState.comingUpItems,
+                    title = stringResource(R.string.calendar_coming_up_title),
+                    onItemClick = openComingUp,
+                    onLongPress = openComingUp,
+                    onRemoveItem = {},
+                    focusedItemIndex = classicSavedCardRowIndex(focusState, MODERN_COMING_UP_ROW_KEY),
+                    blurUnwatchedEpisodes = false,
+                    useEpisodeThumbnails = false,
+                    focusRequesters = comingUpItemFocusRequesters,
+                    rowFocusRequester = comingUpRowFocusRequester,
+                    lastFocusedIndexState = lastFocusedComingUpIndex,
+                    onItemFocused = { itemIndex ->
+                        currentFocusSnapshot.rowIndex = -1
+                        currentFocusSnapshot.itemIndex = itemIndex
+                        currentFocusSnapshot.rowKey = MODERN_COMING_UP_ROW_KEY
+                        activeRowKeyState.value = MODERN_COMING_UP_ROW_KEY
+                        cwFocusedIndex.intValue = itemIndex
+                        onFocusedRowKeyChanged(null)
+                        if (uiState.classicFocusGradientEnabled) {
+                            focusedArtwork = uiState.comingUpItems.getOrNull(itemIndex)
+                                ?.toClassicFocusArtwork(uiState.focusedPosterBackdropExpandEnabled)
+                        }
+                    },
+                    cardWidth = classicContinueWatchingCardWidth,
+                    imageHeight = classicContinueWatchingImageHeight,
+                    cardStyle = uiState.continueWatchingCardStyle,
+                    cornerRadius = posterCardStyle.cornerRadius,
+                    posterTitleOverride = classicPosterTitleStyle,
+                    listState = comingUpListState
+                )
+            }
+        }
+
         itemsIndexed(
             items = visibleHomeRows,
             key = { index, item ->
@@ -825,7 +882,7 @@ fun ClassicHomeContent(
                             (!uiState.continueWatchingEnabled || uiState.continueWatchingItems.isEmpty()) &&
                             index == 0
                     val focusedItemIndex = when {
-                        shouldRestoreFocus -> focusState.focusedItemIndex
+                        shouldRestoreFocus -> classicRestoredItemIndex(focusState.focusedItemIndex, catalogRow.items.size)
                         shouldInitialFocusFirstCatalogRow -> 0
                         else -> -1
                     }
@@ -974,4 +1031,16 @@ private fun CollectionFolder.toClassicFocusArtwork(useBackdrop: Boolean): Classi
         },
         seed = "$id|$title"
     )
+}
+
+/** A saved position past the end of a row that got shorter while Home was away lands on its last title. */
+internal fun classicRestoredItemIndex(savedIndex: Int, itemCount: Int): Int =
+    savedIndex.coerceAtMost(itemCount - 1)
+
+/** The card to focus again in a Continue Watching style row, or -1 when the saved focus was in another row. */
+internal fun classicSavedCardRowIndex(state: HomeScreenFocusState, rowKey: String): Int {
+    if (!state.hasSavedFocus || state.focusedRowIndex != -1) return -1
+    val savedKey = state.focusedRowKey
+    val matches = savedKey == rowKey || (savedKey == null && rowKey == "continue_watching")
+    return if (matches) state.focusedItemIndex else -1
 }

@@ -1,6 +1,7 @@
 package com.nuvio.tv.core.image
 
 import android.util.Log
+import com.nuvio.tv.core.logging.redactLinksForLog
 import coil3.ImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.memory.MemoryCache
@@ -90,14 +91,14 @@ class StaleWhileRevalidateCacheStrategy(
                             evictFromDiskCache(url)
                             ImageInvalidationBus.notifyInvalidated(url)
                         }
-                        else -> Log.w(TAG, "Revalidation ${response.code}: ${url.take(80)}")
+                        else -> Log.w(TAG, "Revalidation ${response.code}: ${url.redactLinksForLog().take(80)}")
                     }
                 } finally {
                     response.close()
                 }
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
-                    Log.w(TAG, "Revalidation error: ${url.take(80)} - ${e.message}")
+                    Log.w(TAG, "Revalidation error: ${url.redactLinksForLog().take(80)} - ${e.message}")
                 }
             } finally {
                 revalidatingUrls.remove(url)

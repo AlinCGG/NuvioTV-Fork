@@ -199,16 +199,33 @@ class HomePosterLoadingInterceptor(diskDecodeSlots: Int = 2) : Interceptor {
                     sizedHomeArtworkUrl(it, (chain.size.width as? coil3.size.Dimension.Pixels)?.px)
                 }
                 val onDisk = request.diskCachePolicy.readEnabled && diskKey != null && withContext(Dispatchers.IO) {
-                    loader.diskCache?.openSnapshot(diskKey)?.use { true } ?: false
+                    loader.diskCache?.let { cache ->
+                        cache.openSnapshot(diskKey)?.use {
+                            savedImageIsFresh(it, cache.fileSystem, diskKey, coil3.request.Options(request.context))
+                        }
+                    } ?: false
                 }
-                // Local files get independent slots; absent images cannot hold up their decode.
+                // Local files get independent slots; absent images and online checks cannot hold up their decode.
                 (if (onDisk) cached else downloads).run(priority::rank) { chain.proceed() }
             }
             if (com.nuvio.tv.BuildConfig.DEBUG || android.util.Log.isLoggable("HomePosterCache", android.util.Log.VERBOSE)) {
                 val source = (result as? coil3.request.SuccessResult)?.dataSource?.name ?: "ERROR"
                 android.util.Log.d("HomePosterCache", "source=$source elapsedMs=${android.os.SystemClock.elapsedRealtime() - start} prefetch=${priority.prefetch} progressive=${priority.progressive}")
             }
+            if (!priority.prefetch && !priority.progressive) recordHomeTile(key, request, result)
             result
+        }
+    }
+}
+
+private fun recordHomeTile(key: String, request: ImageRequest, result: ImageResult) {
+    val retry = request.isHomePosterRecovery || (request.extras[HomePosterAttemptKey] ?: 0) > 0
+    when (result) {
+        is coil3.request.SuccessResult -> HomePosterVisitStats.counters.success(key, result.dataSource, retry)
+        // A custom poster that fails is retried with its plain poster right after; count only the final answer.
+        is coil3.request.ErrorResult -> if (request.memoryCacheKeyExtras[CustomPosterFallbackInterceptor.FALLBACK_URL_KEY].isNullOrBlank()) {
+            HomePosterVisitStats.counters.failure(key, retry)
+            HomePosterRecovery.missing.record(key, result.throwable)
         }
     }
 }

@@ -97,7 +97,8 @@ class HomeViewModel @Inject constructor(
     internal val streamRepository: StreamRepository,
     internal val prefetchSelectionSupplier: com.nuvio.tv.core.stream.PrefetchSelectionSupplier,
     internal val homeRefreshSignal: com.nuvio.tv.core.util.HomeRefreshSignal,
-    internal val serverCatalog: ServerCatalog
+    internal val serverCatalog: ServerCatalog,
+    internal val calendarComingUp: CalendarComingUpSource? = null
 ) : ViewModel() {
     companion object {
         internal const val TAG = "HomeViewModel"
@@ -145,6 +146,9 @@ class HomeViewModel @Inject constructor(
     /** True once the CW pipeline has completed its first emission (items or empty). */
     internal val _initialCwResolved = MutableStateFlow(false)
     val initialCwResolved: StateFlow<Boolean> = _initialCwResolved.asStateFlow()
+
+    /** True while Home is on screen, so the Coming up row only keeps its clock running then. */
+    internal val comingUpActive = MutableStateFlow(false)
 
     // Continue Watching navigates straight to Screen.Stream
     // (createContinueWatchingRoute), bypassing the details page entirely, so
@@ -307,6 +311,7 @@ class HomeViewModel @Inject constructor(
     }
 
     internal val _loadingCatalogs = MutableStateFlow<Set<String>>(emptySet())
+    internal val watchedTitles = HomeWatchedTitlesState()
     val loadingCatalogs: StateFlow<Set<String>> = _loadingCatalogs.asStateFlow()
 
     internal val _enrichingItemId = MutableStateFlow<String?>(null)
@@ -385,6 +390,7 @@ class HomeViewModel @Inject constructor(
     )
     internal val truncatedRowCache = mutableMapOf<String, TruncatedRowCacheEntry>()
     internal val trailerPreviewLoadingIds = mutableSetOf<String>()
+    internal val trailerPreviewValidUntil = mutableMapOf<String, Long>()
     internal val trailerPreviewNegativeCache = mutableMapOf<String, Long>()
     internal val trailerPreviewUrlsState = mutableStateMapOf<String, String>()
     internal val trailerPreviewAudioUrlsState = mutableStateMapOf<String, String>()
@@ -478,6 +484,19 @@ class HomeViewModel @Inject constructor(
     internal val startupStartedAtMs: Long = SystemClock.elapsedRealtime()
     @Volatile
     internal var startupGracePeriodActive: Boolean = true
+    /** Trailers wait while the entrance intro still covers Home. */
+    internal var trailerIntroHold: Boolean = false
+
+    fun setTrailerIntroHold(hold: Boolean) {
+        if (trailerIntroHold == hold) return
+        trailerIntroHold = hold
+        if (!hold && !startupGracePeriodActive) {
+            deferredTrailerPreviewRequest?.let { request ->
+                deferredTrailerPreviewRequest = null
+                request()
+            }
+        }
+    }
     internal var startupAuthNoticeJob: Job? = null
 
     // Lazy catalog loading
@@ -533,6 +552,7 @@ class HomeViewModel @Inject constructor(
             profileManager.activeProfileReady.first { it }
             StartupLatencyTrace.mark("home_profile_ready")
             observeLayoutPreferences()
+            observeWatchedTitlesPipeline()
             observeModernHomePresentation()
             loadContinueWatching()
             watchedSeriesStateHolder.loadFromDisk()
@@ -552,6 +572,7 @@ class HomeViewModel @Inject constructor(
             observeCollections()
             observeInstalledAddons()
             observeManualAddonRefresh()
+            observeComingUpRow()
 
             // Settings' clear-cache action: reload every catalogue through the
             // same forceReload path the error-screen Retry uses, so cleared
@@ -612,9 +633,11 @@ class HomeViewModel @Inject constructor(
                 deferredEnrichItem = null
                 onItemFocusPipeline(item)
             }
-            deferredTrailerPreviewRequest?.let { request ->
-                deferredTrailerPreviewRequest = null
-                request()
+            if (!trailerIntroHold) {
+                deferredTrailerPreviewRequest?.let { request ->
+                    deferredTrailerPreviewRequest = null
+                    request()
+                }
             }
         }
 
@@ -1019,6 +1042,17 @@ class HomeViewModel @Inject constructor(
     fun setLiveFocusedRowKey(rowKey: String?) {
         liveFocusedRowKey = rowKey
         onFocusedRowChangedForMdbBatch(rowKey)
+        onWatchedFocusRowChanged(rowKey)
+    }
+
+    fun onHomeShown() {
+        watchedTitles.homeShown = true
+        comingUpActive.value = true
+    }
+
+    fun onHomeLeft() {
+        onHomeLeftForWatchedTitles()
+        comingUpActive.value = false
     }
 
     /**
@@ -1189,6 +1223,12 @@ class HomeViewModel @Inject constructor(
         _focusState.value = nextState
     }
 
+    /** Saved just before [saveFocusState], so a row returns exactly where it was, not only on the right card. */
+    fun saveCatalogRowScrollOffsets(offsets: Map<String, Int>) {
+        if (suppressFocusSave) return
+        _focusState.update { state -> if (state.catalogRowScrollOffsets == offsets) state else state.copy(catalogRowScrollOffsets = offsets) }
+    }
+
     /**
      * Updates the stable focus target for a specific row.
      */
@@ -1225,11 +1265,13 @@ class HomeViewModel @Inject constructor(
         verticalScrollOffset: Int,
         focusedRowIndex: Int = 0,
         focusedItemIndex: Int = 0,
-        focusedItemKey: String? = null
+        focusedItemKey: String? = null,
+        focusedRowKey: String? = null
     ) {
         _gridFocusState.value = HomeScreenFocusState(
             verticalScrollIndex = verticalScrollIndex,
             verticalScrollOffset = verticalScrollOffset,
+            focusedRowKey = focusedRowKey,
             focusedRowIndex = focusedRowIndex,
             focusedItemIndex = focusedItemIndex,
             focusedItemKey = focusedItemKey,

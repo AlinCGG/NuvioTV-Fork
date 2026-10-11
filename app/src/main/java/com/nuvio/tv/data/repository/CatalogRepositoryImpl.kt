@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.network.safeApiCall
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.core.health.AddonHealthStore
 import com.nuvio.tv.core.health.HealthOutcome
 import com.nuvio.tv.core.util.canonicalizeAddonUrl
@@ -142,7 +143,7 @@ class CatalogRepositoryImpl @Inject constructor(
         val cached = catalogCache[url]
         if (cached != null) {
             if (System.currentTimeMillis() - cached.storedAtMs <= CATALOG_CACHE_TTL_MS) {
-                Log.d(TAG, "Catalog cache hit type=$type catalogId=$catalogId skip=$skip url=$url")
+                Log.d(TAG, "Catalog cache hit type=$type catalogId=$catalogId skip=$skip url=${url.redactLinksForLog()}")
                 emit(NetworkResult.Success(cached.row.withPosterPattern()))
                 return@flow
             } else {
@@ -170,7 +171,7 @@ class CatalogRepositoryImpl @Inject constructor(
                 )
             }.getOrNull()?.withPosterPattern()
             if (diskRow != null) {
-                Log.d(TAG, "Catalog disk hit (serving stale, revalidating) type=$type catalogId=$catalogId url=$url")
+                Log.d(TAG, "Catalog disk hit (serving stale, revalidating) type=$type catalogId=$catalogId url=${url.redactLinksForLog()}")
                 servedDiskRow = diskRow
                 emit(NetworkResult.Success(diskRow))
             }
@@ -178,7 +179,7 @@ class CatalogRepositoryImpl @Inject constructor(
 
         Log.d(
             TAG,
-            "Fetching catalog addonId=$addonId addonName=$addonName type=$type catalogId=$catalogId skip=$skip skipStep=$skipStep supportsSkip=$supportsSkip url=$url"
+            "Fetching catalog addonId=$addonId addonName=$addonName type=$type catalogId=$catalogId skip=$skip skipStep=$skipStep supportsSkip=$supportsSkip url=${url.redactLinksForLog()}"
         )
 
         val healthT0 = android.os.SystemClock.elapsedRealtime()
@@ -228,6 +229,7 @@ class CatalogRepositoryImpl @Inject constructor(
                 Log.w(
                     TAG,
                     "Catalog fetch failed addonId=$addonId type=$type catalogId=$catalogId code=${result.code} message=${result.message} url=$url"
+                        .redactLinksForLog()
                 )
                 // If a disk row was already served, keep it on screen rather than
                 // surfacing the error and blanking the row.

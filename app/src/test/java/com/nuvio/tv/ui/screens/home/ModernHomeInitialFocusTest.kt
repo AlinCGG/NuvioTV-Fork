@@ -41,4 +41,14 @@ class ModernHomeInitialFocusTest {
         assertNull(resolveModernHomeInitialFocus(emptyList(), saved))
         assertEquals(rows[0] to 0, resolveModernHomeInitialFocus(rows, saved.copy(hasSavedFocus = false)))
     }
+
+    @Test fun aFocusedTitleThatLeftItsRowHandsFocusToTheTitleNowInItsPlace() {
+        val rows = listOf(row("first", 0, "a"), row("saved", 1, "b", "d", "e"))
+        val saved = HomeScreenFocusState(
+            focusedRowKey = "saved", focusedItemKeyByRow = mapOf("saved" to "c"),
+            focusedItemIndex = 1, hasSavedFocus = true
+        )
+        assertEquals(rows[1] to 1, resolveModernHomeInitialFocus(rows, saved))
+        assertEquals(rows[1] to 2, resolveModernHomeInitialFocus(rows, saved.copy(focusedItemIndex = 7)))
+    }
 }

@@ -78,6 +78,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -529,6 +530,8 @@ fun MetaDetailsScreen(
     )
 
     val childOverlayVisible = LocalDetailChildOverlayVisible.current
+    val focusManager = LocalFocusManager.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     BackHandler(enabled = !childOverlayVisible) {
         if (selectedComment != null) {
             commentOverlayDirection = 0
@@ -686,6 +689,17 @@ fun MetaDetailsScreen(
                     }
                 }
                 false
+            }
+            .onKeyEvent { keyEvent ->
+                val native = keyEvent.nativeKeyEvent
+                val overlayOpen = childOverlayVisible || selectedComment != null ||
+                    uiState.isSharedTrailerOverlayVisible || uiState.isTrailerPlaying
+                if (!isDetailEdgeBackPress(native.action, native.keyCode, native.repeatCount, isRtl, overlayOpen)) {
+                    return@onKeyEvent false
+                }
+                val moved = focusManager.moveFocus(if (isRtl) FocusDirection.Right else FocusDirection.Left)
+                if (!moved) onBackPress()
+                true
             }
     ) {
         PersistentDetailBackdrop(
@@ -3226,6 +3240,18 @@ private fun MetaDetailsContent(
             PlaybackHandoffBackdrop(backdropUrl = meta.backdropUrl ?: meta.poster)
         }
     }
+}
+
+/** A fresh press towards the start edge, which leaves Details when nothing further that way takes focus. */
+internal fun isDetailEdgeBackPress(
+    action: Int,
+    keyCode: Int,
+    repeatCount: Int,
+    isRtl: Boolean,
+    overlayOpen: Boolean
+): Boolean {
+    val backKey = if (isRtl) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
+    return action == KeyEvent.ACTION_DOWN && keyCode == backKey && repeatCount == 0 && !overlayOpen
 }
 
 @Composable

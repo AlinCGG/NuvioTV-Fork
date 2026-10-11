@@ -175,12 +175,65 @@ internal fun ModernHomeRowsList(
     val navigationScope = rememberCoroutineScope()
     var verticalFocusJob by remember { mutableStateOf<Job?>(null) }
     val stableItemFocusRequestersByRow = remember { mutableMapOf<String, StableRef<MutableMap<Int, FocusRequester>>>() }
+    val verticalHeading = remember { VerticalHeading() }
+    // Up and Down keep the column, in the item coordinates every Home row shares.
+    fun focusedCardCenter(): Int? {
+        val rowKey = activeRowKey.value ?: return null
+        val index = focusedItemByRowMap[rowKey] ?: activeItemIndex.value
+        val info = rowListStatesMap[rowKey]?.layoutInfo ?: return null
+        val items = info.visibleItemsInfo
+        val first = items.firstOrNull() ?: return null
+        val last = items.last()
+        val end = info.viewportEndOffset - info.afterContentPadding
+        val span = last.size + info.mainAxisItemSpacing
+        return focusedColumnCenter(
+            index,
+            items.map { RowCardSpan(it.index, it.offset, it.size) },
+            end,
+            keepInView = isV2,
+            roomAheadPx = maxOf(0, last.offset + last.size + (info.totalItemsCount - 1 - last.index) * span - end),
+            roomBackPx = maxOf(0, first.index * span - first.offset)
+        )
+    }
+    val rowDensity = LocalDensity.current
+    // A row's normal card width, from its first card's kind and the poster settings, for rows not laid out yet.
+    fun rowCardWidthPx(row: HeroCarouselRow): Int? {
+        val item = row.items.list.firstOrNull() ?: return null
+        val width = if (item.payload is ModernPayload.ContinueWatching) continueWatchingCardWidth
+        else item.catalogCardRequestMetrics(
+            useLandscapePosters, portraitCatalogCardWidth, portraitCatalogCardHeight,
+            landscapeCatalogCardWidth, landscapeCatalogCardHeight
+        ).width
+        return with(rowDensity) { width.roundToPx() }
+    }
+    // The card a vertical move lands on, and why. The remembered card is only used when there is no column to keep.
+    fun columnTarget(row: HeroCarouselRow, centerPx: Int?): Pair<Int, String> {
+        val last = (row.items.list.size - 1).coerceAtLeast(0)
+        val state = rowListStatesMap[row.key]
+        val cards = state?.layoutInfo?.visibleItemsInfo.orEmpty().map { RowCardSpan(it.index, it.offset, it.size) }
+        if (centerPx != null) {
+            sameColumnCardIndex(centerPx, cards)?.let { return it.coerceIn(0, last) to "same-spot" }
+            val spacing = rowListStatesMap.values.firstNotNullOfOrNull { other ->
+                other.layoutInfo.takeIf { it.visibleItemsInfo.isNotEmpty() }?.mainAxisItemSpacing
+            } ?: 0
+            val span = rowCardWidthPx(row)?.plus(spacing)
+            if (span != null && span > 0) {
+                val index = estimatedColumnIndex(centerPx, state?.firstVisibleItemIndex ?: 0, state?.firstVisibleItemScrollOffset ?: 0, span)
+                return index.coerceIn(0, last) to "estimated"
+            }
+        }
+        return (focusedItemByRowMap[row.key] ?: 0).coerceIn(0, last) to "remembered"
+    }
+    fun logColumnMove(from: String?, centerPx: Int?, to: String, index: Int, reason: String) {
+        android.util.Log.d("HomeColumn", "move from=$from col=${centerPx ?: "none"}px to=$to index=$index reason=$reason")
+    }
 
     val density = LocalDensity.current
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
     val verticalPrefetchImageLoader = context.imageLoader
     val imageViewport = remember { com.nuvio.tv.core.image.HomePosterViewport() }
+    com.nuvio.tv.core.image.HomePosterVisit(imageViewport)
     LaunchedEffect(verticalRowListState) {
         snapshotFlow { verticalRowListState.layoutInfo.visibleItemsInfo.map { it.index } to verticalRowListState.isScrollInProgress }.collect { (visible, scrolling) ->
             imageViewport.scrolling = scrolling
@@ -382,31 +435,55 @@ internal fun ModernHomeRowsList(
                 .onPreviewKeyEvent { event ->
                     // A lifted/scaled card sits above its row neighbours. Spatial Down can
                     // therefore choose a neighbour in the same row. Cross rows by identity.
-                    if (isV2 && event.type == KeyEventType.KeyDown &&
+                    if (event.type == KeyEventType.KeyDown &&
                         event.nativeKeyEvent.repeatCount == 0 &&
                         (event.key == Key.DirectionDown || event.key == Key.DirectionUp)) {
-                        val currentIndex = carouselRows.list.indexOfFirst { it.key == activeRowKey.value }
+                        // A press while the last move is still on its way continues from the row it is heading to.
+                        val fromRow = verticalMoveSource(
+                            activeRowKey.value, verticalHeading.rowKey,
+                            android.os.SystemClock.uptimeMillis() - verticalHeading.atMs
+                        )
+                        val heading = fromRow != activeRowKey.value
+                        val currentIndex = carouselRows.list.indexOfFirst { it.key == fromRow }
                         val targetIndex = adjacentHomeRowIndex(currentIndex, carouselRows.list.size,
                             event.key == Key.DirectionDown)
                         if (targetIndex != null) {
                             val target = carouselRows.list[targetIndex]
+                            val column = if (heading) verticalHeading.column else focusedCardCenter()
+                            verticalHeading.rowKey = target.key
+                            verticalHeading.column = column
+                            verticalHeading.atMs = android.os.SystemClock.uptimeMillis()
                             verticalFocusJob?.cancel()
                             verticalFocusJob = navigationScope.launch {
-                                val saved = (focusedItemByRowMap[target.key] ?: 0)
-                                    .coerceIn(0, (target.items.list.size - 1).coerceAtLeast(0))
                                 val attached = verticalRowListState.layoutInfo.visibleItemsInfo.any { it.index == targetIndex }
                                 if (!attached) {
                                     verticalRowListState.scrollToItem(targetIndex)
-                                    repeat(2) { withFrameNanos { } }
+                                    withFrameNanos { }
                                 }
-                                val itemTarget = stableItemFocusRequestersByRow[target.key]?.value?.get(saved)
+                                // Wait for the row to be laid out, so its own scroll decides which card is in the spot.
+                                for (frame in 0 until 6) {
+                                    if (rowListStatesMap[target.key]?.layoutInfo?.visibleItemsInfo?.isNotEmpty() == true) break
+                                    withFrameNanos { }
+                                }
+                                val (saved, reason) = columnTarget(target, column)
+                                // The row remembers this card too, so nothing that restores a row's card takes focus elsewhere.
+                                focusedItemByRowMap[target.key] = saved
+                                var itemTarget = stableItemFocusRequestersByRow[target.key]?.value?.get(saved)
+                                if (itemTarget == null || rowListStatesMap[target.key]?.layoutInfo?.visibleItemsInfo?.none { it.index == saved } == true) {
+                                    // Off screen: bring it in under the column rather than to the row's start.
+                                    val start = column?.let { it - (rowCardWidthPx(target) ?: 0) / 2 }?.coerceAtLeast(0) ?: 0
+                                    rowListStatesMap[target.key]?.scrollToItem(saved, -start)
+                                    repeat(2) { withFrameNanos { } }
+                                    itemTarget = stableItemFocusRequestersByRow[target.key]?.value?.get(saved)
+                                }
                                 val moved = runCatching { itemTarget?.requestFocus() == true }.getOrDefault(false)
+                                logColumnMove(fromRow, column, target.key, saved, if (moved) reason else "$reason+row")
                                 if (!moved) runCatching { rowFocusRequesters[target.key]?.requestFocus() }
                             }
                             return@onPreviewKeyEvent true
                         }
                         // Let Up at the first row reach top navigation; Down at the end stays put.
-                        if (event.key == Key.DirectionDown) return@onPreviewKeyEvent true
+                        if (isV2 && event.key == Key.DirectionDown) return@onPreviewKeyEvent true
                     }
                     val firstRowKey = carouselRows.list.firstOrNull()?.key
                     val lastRowKey = carouselRows.list.lastOrNull()?.key
@@ -469,8 +546,12 @@ internal fun ModernHomeRowsList(
                         val targetRow = carouselRows.list.getOrNull(targetRowIndex)
                         if (targetRow == null) null
                         else {
-                            val savedIdx = (focusedItemByRowMap[targetRow.key] ?: 0)
-                                .coerceIn(0, (targetRow.items.list.size - 1).coerceAtLeast(0))
+                            val column = focusedCardCenter()
+                            val (savedIdx, reason) = columnTarget(targetRow, column)
+                            logColumnMove(activeRowKey.value, column, targetRow.key, savedIdx, "hold-$reason")
+                            verticalHeading.rowKey = null
+                            // The landing card claims focus from the row's remembered card: point that at the column.
+                            focusedItemByRowMap[targetRow.key] = savedIdx
                             latestOnActiveRowKeyChange.value(targetRow.key)
                             latestOnActiveItemIndexChange.value(savedIdx)
 
@@ -555,6 +636,7 @@ internal fun ModernHomeRowsList(
                     defaultBringIntoViewSpec = defaultBringIntoViewSpec,
                     focusStateCatalogRowScrollIndex = focusState.catalogRowScrollStates[row.key] ?: 0,
                     focusStateCatalogRowScrollAnchor = focusState.catalogRowScrollAnchors[row.key],
+                    focusStateCatalogRowScrollOffset = focusState.catalogRowScrollOffsets[row.key] ?: 0,
                     focusedItemByRow = focusedItemByRow,
                     rowListStates = rowListStates,
                     loadMoreRequestedTotals = loadMoreRequestedTotals,
@@ -607,4 +689,11 @@ internal fun ModernHomeRowsList(
             }
         }
     }
+}
+
+/** Where the last Up or Down is heading while focus has not arrived there yet. */
+private class VerticalHeading {
+    var rowKey: String? = null
+    var column: Int? = null
+    var atMs = 0L
 }
