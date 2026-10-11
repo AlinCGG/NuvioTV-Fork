@@ -2,7 +2,6 @@ package com.nuvio.tv.ui.screens.settings
 
 import com.nuvio.tv.ui.theme.NuvioTheme
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -33,7 +33,10 @@ import com.nuvio.tv.core.player.thumbnail.ThumbPrepareMode
 import com.nuvio.tv.core.player.thumbnail.ThumbnailCache
 import com.nuvio.tv.data.local.PlayerPreference
 import com.nuvio.tv.data.local.PlayerSettings
+import com.nuvio.tv.data.local.RemoteButtonMap
+import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.components.P2pConsentDialog
+import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,12 +54,20 @@ internal fun PlaybackSettingsSections(
     onOpenDialog: (PlaybackDialog) -> Unit,
     onMemorySettingChanged: () -> Unit,
     onClearTorrentCache: () -> Unit,
+    remoteButtons: RemoteButtonMap = RemoteButtonMap.DEFAULT,
     initialFocusRequester: FocusRequester? = null,
     onOpenConnectedServices: (() -> Unit)? = null,
-    onShowControlLayoutEditor: (() -> Unit)? = null
+    onShowControlLayoutEditor: (() -> Unit)? = null,
+    returnToQualityRules: Boolean = false
 ) {
     val sections = visiblePlaybackSections(playerSettings)
-    var expandedSections by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var expandedSections by rememberSaveable {
+        mutableStateOf(
+            if (returnToQualityRules) listOf(PlaybackSection.STREAM_SELECTION.name) else emptyList()
+        )
+    }
+    val qualityRulesFocusRequester = initialFocusRequester.takeIf { returnToQualityRules }
+    val headerFocusRequester = initialFocusRequester.takeIf { !returnToQualityRules }
     val listState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -80,7 +91,7 @@ internal fun PlaybackSettingsSections(
                             expandedSections + section.name
                         }
                     },
-                    focusRequester = if (section == sections.first()) initialFocusRequester else null,
+                    focusRequester = if (section == sections.first()) headerFocusRequester else null,
                     modifier = Modifier.testTag(PlaybackSettingsTestTags.section(section))
                 ) {
                     PlaybackSectionContent(
@@ -88,12 +99,14 @@ internal fun PlaybackSettingsSections(
                         playerSettings = playerSettings,
                         p2p = p2p,
                         transparentLetterbox = transparentLetterbox,
+                        remoteButtons = remoteButtons,
                         onUpdate = onUpdate,
                         onOpenDialog = onOpenDialog,
                         onMemorySettingChanged = onMemorySettingChanged,
                         onClearTorrentCache = onClearTorrentCache,
                         onOpenConnectedServices = onOpenConnectedServices,
-                        onShowControlLayoutEditor = onShowControlLayoutEditor
+                        onShowControlLayoutEditor = onShowControlLayoutEditor,
+                        qualityRulesFocusRequester = qualityRulesFocusRequester
                     )
                 }
             }
@@ -108,12 +121,14 @@ private fun PlaybackSectionContent(
     playerSettings: PlayerSettings,
     p2p: P2pSettingsUi,
     transparentLetterbox: Boolean,
+    remoteButtons: RemoteButtonMap,
     onUpdate: PlaybackSettingsUpdate,
     onOpenDialog: (PlaybackDialog) -> Unit,
     onMemorySettingChanged: () -> Unit,
     onClearTorrentCache: () -> Unit,
     onOpenConnectedServices: (() -> Unit)?,
-    onShowControlLayoutEditor: (() -> Unit)?
+    onShowControlLayoutEditor: (() -> Unit)?,
+    qualityRulesFocusRequester: FocusRequester?
 ) {
     when (section) {
         PlaybackSection.PLAYER -> PlaybackPlayerSection(playerSettings, onUpdate, onOpenDialog)
@@ -121,7 +136,8 @@ private fun PlaybackSectionContent(
             playerSettings,
             onUpdate,
             onOpenDialog,
-            onOpenConnectedServices
+            onOpenConnectedServices,
+            qualityRulesFocusRequester
         )
         PlaybackSection.UP_NEXT -> PlaybackUpNextSection(playerSettings, onUpdate, onOpenDialog)
         PlaybackSection.SKIP_SEGMENTS -> PlaybackSkipSegmentsSection(playerSettings, onUpdate)
@@ -134,6 +150,9 @@ private fun PlaybackSectionContent(
                 onClick = { onShowControlLayoutEditor?.invoke() },
                 enabled = onShowControlLayoutEditor != null
             )
+        }
+        PlaybackSection.REMOTE_BUTTONS -> PlaybackRemoteButtonsSection(remoteButtons) { map ->
+            onUpdate { setRemoteButtons(map) }
         }
         PlaybackSection.AUDIO -> PlaybackAudioSection(playerSettings, onUpdate, onOpenDialog)
         PlaybackSection.SUBTITLES -> PlaybackSubtitlesSection(playerSettings, onUpdate, onOpenDialog)
@@ -153,9 +172,10 @@ private fun PlaybackThumbnailRows(
     val seekThumbMode by SeekThumbnailPreferences.modeFlow(context).collectAsState(initial = SeekThumbMode.OFF)
     val seekThumbPrepare by SeekThumbnailPreferences.prepareModeFlow(context)
         .collectAsState(initial = ThumbPrepareMode.OFF)
+    val seekThumbFromCopy by SeekThumbnailPreferences.copyFlow(context).collectAsState(initial = false)
     var seekThumbStoredBytes by remember { mutableStateOf(-1L) }
     val seekThumbScope = rememberCoroutineScope()
-    val seekThumbsCleared = stringResource(R.string.seek_thumbnails_cleared)
+    var showClearSeekThumbs by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         seekThumbStoredBytes = withContext(Dispatchers.IO) { SeekThumbnails.storedBytes(context) }
     }
@@ -174,27 +194,73 @@ private fun PlaybackThumbnailRows(
         enabled = internalPlayer,
         onClick = { onOpenDialog(PlaybackDialog.SEEK_THUMBNAIL_PREPARE) }
     )
+    SettingsToggleRow(
+        title = stringResource(R.string.seek_thumbnails_from_copy_title),
+        subtitle = stringResource(R.string.seek_thumbnails_from_copy_subtitle),
+        checked = seekThumbFromCopy,
+        onToggle = { seekThumbScope.launch { SeekThumbnailPreferences.setCopy(context, !seekThumbFromCopy) } },
+        enabled = internalPlayer && seekThumbMode != SeekThumbMode.OFF
+    )
+    val seekThumbStoredLabel = when {
+        seekThumbStoredBytes < 0L -> null
+        seekThumbStoredBytes == 0L -> stringResource(R.string.seek_thumbnails_stored_empty)
+        seekThumbStoredBytes < 1024L * 1024L -> stringResource(R.string.seek_thumbnails_stored_under_1mb)
+        else -> stringResource(
+            R.string.seek_thumbnails_stored_mb,
+            ((seekThumbStoredBytes + 512L * 1024L) / (1024L * 1024L)).toInt()
+        )
+    }
     SettingsActionRow(
         title = stringResource(R.string.seek_thumbnails_clear_title),
         subtitle = stringResource(R.string.seek_thumbnails_clear_subtitle),
-        value = when {
-            seekThumbStoredBytes < 0L -> null
-            seekThumbStoredBytes == 0L -> stringResource(R.string.seek_thumbnails_stored_empty)
-            seekThumbStoredBytes < 1024L * 1024L -> stringResource(R.string.seek_thumbnails_stored_under_1mb)
-            else -> stringResource(
-                R.string.seek_thumbnails_stored_mb,
-                ((seekThumbStoredBytes + 512L * 1024L) / (1024L * 1024L)).toInt()
-            )
-        },
+        value = seekThumbStoredLabel,
         trailingIcon = null,
-        onClick = {
-            seekThumbScope.launch {
-                withContext(Dispatchers.IO) { ThumbnailCache.clearAll(context) }
-                seekThumbStoredBytes = 0L
-                Toast.makeText(context, seekThumbsCleared, Toast.LENGTH_SHORT).show()
-            }
-        }
+        onClick = { showClearSeekThumbs = true }
     )
+    if (showClearSeekThumbs) {
+        ClearSeekThumbnailsDialog(
+            storedLabel = seekThumbStoredLabel,
+            onConfirm = {
+                showClearSeekThumbs = false
+                seekThumbScope.launch {
+                    withContext(Dispatchers.IO) { ThumbnailCache.clearAll(context) }
+                    seekThumbStoredBytes = 0L
+                }
+            },
+            onDismiss = { showClearSeekThumbs = false }
+        )
+    }
+}
+
+@Composable
+private fun ClearSeekThumbnailsDialog(
+    storedLabel: String?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val cancelFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        cancelFocusRequester.requestFocusAfterFrames()
+    }
+    NuvioDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.seek_thumbnails_clear_title),
+        subtitle = storedLabel,
+        suppressFirstKeyUp = false
+    ) {
+        SettingsDialogActionRow {
+            SettingsDialogActionButton(
+                text = stringResource(R.string.action_cancel),
+                onClick = onDismiss,
+                modifier = Modifier.focusRequester(cancelFocusRequester)
+            )
+            SettingsDialogActionButton(
+                text = stringResource(R.string.action_clear),
+                onClick = onConfirm,
+                primary = true
+            )
+        }
+    }
 }
 
 @Composable

@@ -406,9 +406,9 @@ internal fun LazyListScope.deviceAssessmentItems(
                 AssessmentFactRow(
                     label = stringResource(R.string.assessment_header_device),
                     value = stringResource(
-                        R.string.assessment_header_device_value,
+                        R.string.assessment_header_device_auto,
                         res.header.deviceRamLabel,
-                        res.header.safeLimitMb,
+                        res.header.autoBufferMb,
                         res.header.warningLimitMb
                     )
                 )

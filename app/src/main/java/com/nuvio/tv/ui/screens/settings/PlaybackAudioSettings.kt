@@ -123,7 +123,11 @@ internal fun PlaybackAudioSection(
     }
     SettingsToggleRow(
         title = stringResource(R.string.audio_tunneled),
-        subtitle = stringResource(R.string.audio_tunneled_sub),
+        subtitle = if (settings.isTunnelingCompatible) {
+            stringResource(R.string.audio_tunneled_sub)
+        } else {
+            stringResource(R.string.audio_tunneled_sub_prefer_app)
+        },
         checked = settings.effectiveTunnelingEnabled,
         onToggle = { onUpdate { setTunnelingEnabled(!settings.effectiveTunnelingEnabled) } },
         enabled = enabled && settings.isTunnelingCompatible

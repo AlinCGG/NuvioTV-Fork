@@ -61,6 +61,7 @@ import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.NextEpisodeThresholdMode
 import com.nuvio.tv.data.local.StreamAutoPlayMode
 import com.nuvio.tv.data.local.StreamAutoPlaySource
+import com.nuvio.tv.data.local.StreamListSort
 import com.nuvio.tv.ui.components.NuvioDialog
 import kotlin.math.roundToInt
 import java.util.Locale
@@ -70,7 +71,8 @@ internal fun PlaybackStreamSelectionSection(
     settings: PlayerSettings,
     onUpdate: PlaybackSettingsUpdate,
     onOpenDialog: (PlaybackDialog) -> Unit,
-    onOpenConnectedServices: (() -> Unit)? = null
+    onOpenConnectedServices: (() -> Unit)? = null,
+    qualityRulesFocusRequester: FocusRequester? = null
 ) {
     val effectiveAutoPlaySource = if (
         !AppFeaturePolicy.pluginsEnabled &&
@@ -97,9 +99,21 @@ internal fun PlaybackStreamSelectionSection(
         SettingsActionRow(
             title = stringResource(R.string.autoplay_quality_rules_title),
             subtitle = stringResource(R.string.autoplay_quality_rules_subtitle),
-            onClick = onOpenConnectedServices
+            onClick = onOpenConnectedServices,
+            modifier = if (qualityRulesFocusRequester != null) {
+                Modifier.focusRequester(qualityRulesFocusRequester)
+            } else {
+                Modifier
+            }
         )
     }
+
+    SettingsActionRow(
+        title = stringResource(R.string.stream_sort_sources),
+        subtitle = stringResource(R.string.stream_sort_sources_sub),
+        value = stringResource(settings.streamListSort.label()),
+        onClick = { onOpenDialog(PlaybackDialog.STREAM_LIST_SORT) }
+    )
 
     if (settings.streamAutoPlayMode == StreamAutoPlayMode.REGEX_MATCH) {
         SettingsActionRow(
@@ -343,6 +357,17 @@ internal fun AutoPlaySettingsDialogs(
             },
             onDismiss = onDismiss
         )
+        PlaybackDialog.STREAM_LIST_SORT -> SettingsSingleChoiceDialog(
+            title = stringResource(R.string.stream_sort_sources),
+            options = StreamListSort.entries.map { SettingsPickerOption(it, stringResource(it.label())) },
+            selectedValue = settings.streamListSort,
+            onOptionSelected = { sort ->
+                onUpdate { setStreamListSort(sort) }
+                onDismiss()
+            },
+            onDismiss = onDismiss,
+            width = 520.dp
+        )
         PlaybackDialog.STREAM_AUTO_PLAY_SOURCE -> StreamAutoPlaySourceDialog(
             selectedSource = settings.streamAutoPlaySource,
             onSourceSelected = { source ->
@@ -500,6 +525,11 @@ private fun StreamReuseLastLinkCacheDurationDialog(
         width = 420.dp,
         maxHeight = 320.dp
     )
+}
+
+private fun StreamListSort.label(): Int = when (this) {
+    StreamListSort.SOURCE_ORDER -> R.string.stream_sort_sources_source_order
+    StreamListSort.BEST_QUALITY_FIRST -> R.string.stream_sort_sources_best_first
 }
 
 @Composable

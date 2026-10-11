@@ -30,6 +30,7 @@ import com.nuvio.tv.core.torrent.TorrentSettingsData
 import com.nuvio.tv.core.torrent.TorrentState
 import com.nuvio.tv.data.local.PlayerControlLayoutSnapshot
 import com.nuvio.tv.data.local.PlayerSettings
+import com.nuvio.tv.data.local.RemoteButtonMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -53,10 +54,12 @@ fun PlaybackSettingsScreen(
 fun PlaybackSettingsContent(
     viewModel: PlaybackSettingsViewModel = hiltViewModel(),
     initialFocusRequester: FocusRequester? = null,
-    onOpenConnectedServices: (() -> Unit)? = null
+    onOpenConnectedServices: (() -> Unit)? = null,
+    returnToQualityRules: Boolean = false
 ) {
     val playerSettings by viewModel.playerSettings.collectAsStateWithLifecycle(initialValue = PlayerSettings())
     val transparentLetterbox by viewModel.transparentLetterbox.collectAsStateWithLifecycle(initialValue = false)
+    val remoteButtons by viewModel.remoteButtons.collectAsStateWithLifecycle(initialValue = RemoteButtonMap.DEFAULT)
     val torrentSettings by viewModel.torrentSettingsFlow.collectAsStateWithLifecycle(initialValue = TorrentSettingsData())
     val torrentCacheState by viewModel.torrentCacheState.collectAsStateWithLifecycle()
     val torrentState by viewModel.torrentState.collectAsStateWithLifecycle()
@@ -140,6 +143,7 @@ fun PlaybackSettingsContent(
                 playerSettings = playerSettings,
                 p2p = p2p,
                 transparentLetterbox = transparentLetterbox,
+                remoteButtons = remoteButtons,
                 onUpdate = onUpdate,
                 onOpenDialog = { openDialog = it },
                 onMemorySettingChanged = { memoryUsageTrigger++ },
@@ -154,6 +158,7 @@ fun PlaybackSettingsContent(
                 },
                 initialFocusRequester = initialFocusRequester,
                 onOpenConnectedServices = onOpenConnectedServices,
+                returnToQualityRules = returnToQualityRules,
                 onShowControlLayoutEditor = if (layoutSnapshot == null || openingLayoutEditor) null else ({
                     openDialog = null
                     openingLayoutEditor = true

@@ -68,6 +68,7 @@ import com.nuvio.tv.core.cloud.cloudLibraryDisplayArtworkUrl
 private const val NuvioRepositoryUrl = "https://github.com/ysosrs123/NuvioTV-Fork"
 private const val TmdbUrl = "https://www.themoviedb.org"
 private const val TraktUrl = "https://trakt.tv"
+private const val TvMazeUrl = "https://www.tvmaze.com"
 private const val SimklUrl = "https://simkl.com"
 private const val PremiumizeUrl = "https://www.premiumize.me"
 private const val TorboxUrl = "https://torbox.app"
@@ -81,6 +82,7 @@ private const val HazeLicenseUrl = "https://github.com/chrisbanes/haze/blob/1.7.
 private const val LibMpvAndroidUrl = "https://github.com/jarnedemeulemeester/libmpv-android"
 private const val LibDoviUrl = "https://github.com/quietvoid/dovi_tool"
 private const val FfmpegUrl = "https://ffmpeg.org/legal.html"
+private const val Dav1dUrl = "https://code.videolan.org/videolan/dav1d"
 private const val KodiUrl = "https://github.com/xbmc/xbmc"
 
 private sealed interface LicenseLogo {
@@ -397,6 +399,11 @@ private fun dataAttributionItems() = listOf(
         logo = LicenseLogo.Raw(R.raw.trakt_tv_favicon)
     ),
     LicenseAttributionItem(
+        title = stringResource(R.string.licenses_attributions_tvmaze_title),
+        body = stringResource(R.string.calendar_credit),
+        url = TvMazeUrl
+    ),
+    LicenseAttributionItem(
         title = stringResource(R.string.licenses_attributions_simkl_title),
         body = stringResource(R.string.licenses_attributions_simkl_body),
         url = SimklUrl,
@@ -464,6 +471,18 @@ private fun playbackLicenseItems() = listOf(
         title = stringResource(R.string.licenses_attributions_ffmpeg_title),
         body = stringResource(R.string.licenses_attributions_ffmpeg_body),
         url = FfmpegUrl
+    ),
+    LicenseAttributionItem(
+        title = stringResource(R.string.licenses_attributions_dav1d_title),
+        body = stringResource(R.string.licenses_attributions_dav1d_body) + "\n\n" +
+            stringResource(R.string.licenses_attributions_dav1d_notice),
+        url = Dav1dUrl
+    ),
+    LicenseAttributionItem(
+        title = stringResource(R.string.licenses_attributions_cpu_features_title),
+        body = stringResource(R.string.licenses_attributions_cpu_features_body) + "\n\n" +
+            stringResource(R.string.licenses_attributions_cpu_features_notice),
+        url = ApacheLicenseUrl
     ),
     LicenseAttributionItem(
         title = stringResource(R.string.licenses_attributions_kodi_title),

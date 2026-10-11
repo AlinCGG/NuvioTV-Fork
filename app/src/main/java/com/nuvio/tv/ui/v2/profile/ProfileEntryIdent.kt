@@ -5,34 +5,47 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.nuvio.tv.R
-import com.nuvio.tv.ui.components.MemberBrandWordmark
+import com.nuvio.tv.ui.brand.ArcIgnitionView
+import com.nuvio.tv.ui.brand.ArcIntroSound
+import com.nuvio.tv.ui.brand.ArcPalette
+import com.nuvio.tv.ui.components.BrandWordmark
 import com.nuvio.tv.ui.theme.NuvioTheme
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
 
 object EntryIdentPolicy {
-    const val MinimumCycleMs = 5_200L
+    /** The spark has reached the bottom of the cut by now, so the exit can begin. */
+    const val MinimumCycleMs = 4_600L
     const val RecoveryTimeoutMs = 10_000L
+    /** The mark fades out first, then the dark stage dissolves into Home; the sound ends as Home is fully there. */
+    const val ExitMs = 1_400L
+    const val FirstFrameTimeoutMs = 1_500L
     fun shouldFinish(elapsedMs: Long, homeReady: Boolean): Boolean =
         elapsedMs >= RecoveryTimeoutMs || (homeReady && elapsedMs >= MinimumCycleMs)
 }
@@ -47,9 +60,16 @@ class ProfileEntryState {
         private set
     var revealing by mutableStateOf(false)
         private set
+    /** Set once the intro has been on screen (or is switched off), not when it was only asked for. */
     var hasRunThisSession = false
         private set
-    fun start(enabled: Boolean = true) { hasRunThisSession = true; homeReady = false; revealRequested = false; revealing = false; pending = enabled }
+    fun start(enabled: Boolean = true) {
+        if (!enabled) hasRunThisSession = true
+        homeReady = false; revealRequested = false; revealing = false; pending = enabled
+    }
+    fun markShown() { if (pending) hasRunThisSession = true }
+    /** An intro that was asked for but ended before its first frame (Home rebuilt under it) is started again. */
+    fun shouldStartOnEntry(): Boolean = !hasRunThisSession && !pending
     fun requestReveal() { if (homeReady) revealRequested = true }
     fun beginReveal() { revealing = true }
     fun finish() { pending = false }
@@ -57,19 +77,41 @@ class ProfileEntryState {
 
 val LocalProfileEntryState = staticCompositionLocalOf<ProfileEntryState?> { null }
 
-/** Compose ident: no video decoder, remote assets, display-mode request or per-frame recomposition. */
+/** The Arc entrance plays on its own surface and thread; Compose only owns timing, Back and the exit. */
 @Composable
-fun ProfileEntryIdent(state: ProfileEntryState, onReturnToProfiles: () -> Unit) {
+fun ProfileEntryIdent(state: ProfileEntryState, soundEnabled: Boolean = false, onReturnToProfiles: () -> Unit) {
+    val context = LocalContext.current
     val opacity = remember { Animatable(1f) }
+    var sound by remember { mutableStateOf<ArcIntroSound?>(null) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(Unit) {
+        val stillIntro = runCatching {
+            Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+        }.getOrDefault(false)
+        if (!soundEnabled || stillIntro) return@LaunchedEffect
+        withFrameNanos { }
+        // Owned by this coroutine, so leaving at any moment, even the frame it is made in, always lets it go.
+        val created = ArcIntroSound(context, lifecycle)
+        sound = created
+        try {
+            awaitCancellation()
+        } finally {
+            created.fadeOutAndRelease(ArcIntroSound.FadeMs)
+        }
+    }
     var leaving by remember { mutableStateOf(false) }
     var minimumComplete by remember { mutableStateOf(false) }
-    var ribbonStarted by remember { mutableStateOf(false) }
-    // The ident follows the chosen palette, independently of the focused poster/avatar.
-    val palette = NuvioTheme.palette
-    val accent = palette.secondary
-    val ribbonColors = palette.accentGradient.ifEmpty { listOf(accent) }
-    LaunchedEffect(ribbonStarted) {
-        if (!ribbonStarted) return@LaunchedEffect
+    var started by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    var backdrop by remember { mutableStateOf(true) }
+    var surface by remember { mutableStateOf<ArcIgnitionView?>(null) }
+    // The theme can still settle (for example membership themes) before the first frame; never after.
+    var startedPalette by remember { mutableStateOf<ArcPalette?>(null) }
+    val palette = startedPalette ?: NuvioTheme.arcPalette
+    val begun = started || failed
+    LaunchedEffect(begun) {
+        if (!begun) return@LaunchedEffect
+        state.markShown()
         delay(EntryIdentPolicy.MinimumCycleMs)
         minimumComplete = true
     }
@@ -79,82 +121,67 @@ fun ProfileEntryIdent(state: ProfileEntryState, onReturnToProfiles: () -> Unit) 
         }
     }
     LaunchedEffect(Unit) {
+        delay(EntryIdentPolicy.FirstFrameTimeoutMs)
+        if (!started && !leaving) failed = true
+    }
+    LaunchedEffect(Unit) {
         delay(EntryIdentPolicy.RecoveryTimeoutMs)
         leaving = true // Expose Home's existing loading/error/retry and navigation surfaces.
     }
     LaunchedEffect(leaving) {
-        if (leaving) {
-            state.beginReveal()
-            androidx.compose.runtime.withFrameNanos { }
-            opacity.animateTo(0f, tween(800))
-            state.finish()
+        if (!leaving) return@LaunchedEffect
+        state.beginReveal()
+        val view = surface
+        sound?.fadeOutAndRelease(EntryIdentPolicy.ExitMs)
+        if (view != null && !failed && started) {
+            // The surface is opaque until it fades, so Home can sit behind it from here on.
+            backdrop = false
+            repeat(2) { withFrameNanos { } }
+            withTimeoutOrNull(EntryIdentPolicy.ExitMs + 1_500L) {
+                suspendCancellableCoroutine<Unit> { cont -> view.exit(EntryIdentPolicy.ExitMs) { if (cont.isActive) cont.resume(Unit) } }
+            }
+        } else {
+            view?.exit(0L) {}
+            withFrameNanos { }
+            opacity.animateTo(0f, tween(EntryIdentPolicy.ExitMs.toInt()))
         }
+        state.finish()
     }
     BackHandler { state.finish(); onReturnToProfiles() }
-    Box(Modifier.fillMaxSize().graphicsLayer {
-        alpha = opacity.value
-        compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Auto
-    }.background(Color(0xFF050609)), contentAlignment = Alignment.Center) {
-        // Static ambience stays cached while the native vector advances on RenderThread.
-        Box(Modifier.fillMaxSize().drawWithCache {
-            val halo = Brush.radialGradient(listOf(accent.copy(alpha = .14f), Color.Transparent),
-                Offset(size.width * .5f, size.height * .48f), size.width * .36f)
-            onDrawBehind { drawRect(halo) }
-        })
-        NativeEntryRibbon(ribbonColors) { ribbonStarted = true }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box {
-                MemberBrandWordmark(height = 72.dp, contentDescription = stringResource(R.string.cd_nuvio_logo))
+    val description = stringResource(R.string.cd_nuvio_logo)
+    Box(
+        Modifier.fillMaxSize()
+            .graphicsLayer { alpha = opacity.value }
+            .then(if (backdrop) Modifier.background(IdentBackdrop) else Modifier),
+        contentAlignment = Alignment.Center
+    ) {
+        if (failed) {
+            BrandWordmark(Modifier.height(72.dp), contentDescription = description)
+        } else {
+            key(palette) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { context ->
+                        lateinit var view: ArcIgnitionView
+                        view = ArcIgnitionView(
+                            context = context,
+                            palette = palette,
+                            onStarted = {
+                                if (surface === view) {
+                                    if (!started && !leaving) sound?.play()
+                                    startedPalette = palette
+                                    started = true
+                                }
+                            },
+                            onFailed = { if (surface === view) failed = true }
+                        )
+                        view.also { it.contentDescription = description; surface = it }
+                    },
+                    onRelease = { if (surface === it) surface = null }
+                )
             }
         }
     }
 }
 
-/** A real Android drawable keeps its path animation off the busy Compose/UI thread (API 25+). */
-@Composable
-private fun NativeEntryRibbon(colors: List<Color>, onStarted: () -> Unit) {
-    androidx.compose.ui.viewinterop.AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { context ->
-            EntryRibbonView(context).apply {
-                setImageDrawable(androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.v2_intro_animated))
-                setPalette(colors)
-                scaleType = android.widget.ImageView.ScaleType.FIT_XY
-                importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                isFocusable = false
-                post { (drawable as? android.graphics.drawable.AnimatedVectorDrawable)?.start(); onStarted() }
-            }
-        },
-        update = { it.setPalette(colors) },
-        onRelease = { (it.drawable as? android.graphics.drawable.AnimatedVectorDrawable)?.stop() }
-    )
-}
-
-private class EntryRibbonView(context: android.content.Context) : androidx.appcompat.widget.AppCompatImageView(context) {
-    private var palette: List<Int> = emptyList()
-    private val paint = android.graphics.Paint().apply {
-        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
-    }
-    fun setPalette(colors: List<Color>) {
-        val next = colors.map { it.toArgb() }.ifEmpty { listOf(android.graphics.Color.WHITE) }
-        if (next == palette) return
-        palette = next
-        updateGradient()
-        invalidate()
-    }
-    private fun updateGradient() {
-        val colors = if (palette.size < 2) intArrayOf(palette.firstOrNull() ?: -1, palette.firstOrNull() ?: -1) else palette.toIntArray()
-        paint.shader = android.graphics.LinearGradient(0f, 0f, width.coerceAtLeast(1).toFloat(), height.coerceAtLeast(1).toFloat(),
-            colors, null, android.graphics.Shader.TileMode.CLAMP)
-    }
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        updateGradient()
-    }
-    override fun onDraw(canvas: android.graphics.Canvas) {
-        val checkpoint = canvas.saveLayer(0f, 0f, width.toFloat(), height.toFloat(), null)
-        super.onDraw(canvas)
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-        canvas.restoreToCount(checkpoint)
-    }
-}
+private val IdentBackdrop = Color(0xFF03050A)

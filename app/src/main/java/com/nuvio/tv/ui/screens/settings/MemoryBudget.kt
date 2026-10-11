@@ -1,8 +1,11 @@
 package com.nuvio.tv.ui.screens.settings
 
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.upstream.DefaultAllocatorNative
+import com.nuvio.tv.core.player.BufferSizing
 import com.nuvio.tv.data.local.BufferSettings
 import com.nuvio.tv.data.local.PlayerSettings
+import com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper
 
 /**
  * Shared memory budget constants and helpers for buffer + parallel connection settings.
@@ -20,6 +23,8 @@ object MemoryBudget {
     // The buffer allocator is on the Java heap; on low-RAM reserve a slice for the UI/decoder/caches
     // and give the rest to the buffer (a flat % of max heap overcommits and starves them).
     private const val LOW_HEAP_RESERVE_MB = 210L
+    // Not the native arena's chunk size, so the probe leaves the shared arena alone.
+    private const val NATIVE_PROBE_BYTES = 4096
 
     // Conversion overhead tracks the video rather than the device, so these only hold back a margin;
     // high-RAM keeps a larger one because it still retains a back buffer during conversion.
@@ -76,21 +81,35 @@ object MemoryBudget {
     /** True when the app heap is below the high-RAM threshold (Fire TV / TV-stick class). */
     val isLowRamTier: Boolean = maxHeapMb < HIGH_HEAP_THRESHOLD_MB
 
-    // Pre-cap ratio budget, before the low-RAM reserve trims it below.
-    private val rawBudgetMb: Int =
-        (maxHeapMb * (if (isLowRamTier) LOW_HEAP_RATIO else HIGH_HEAP_RATIO)).toInt()
+    // The custom buffers and the parallel chunks use native memory whenever the engine's allocator
+    // library loads, so the budget then follows device RAM like the native engine does.
+    val offHeapBuffers: Boolean = runCatching {
+        DefaultAllocatorNative.createAllocation(NATIVE_PROBE_BYTES)
+            ?.also(DefaultAllocatorNative::freeAllocation) != null
+    }.getOrDefault(false)
 
-    // The flat reserve above collapses the budget on small heaps, so hold a floor that still leaves
-    // the smallest devices half their heap.
-    private val minPlaybackBudgetMb: Int =
-        MIN_PLAYBACK_BUDGET_MB.coerceAtMost((maxHeapMb / 2).toInt()).coerceAtLeast(MIN_BUFFER_MB)
+    val budgetMb: Int = budgetMbFor(offHeapBuffers, NuvioExoPlayerPerformanceHelper.getRamFromMemInfo(), maxHeapMb)
 
-    val budgetMb: Int =
-        if (isLowRamTier)
-            rawBudgetMb.coerceAtMost((maxHeapMb - LOW_HEAP_RESERVE_MB).toInt()).coerceAtLeast(minPlaybackBudgetMb)
-        else rawBudgetMb
+    internal fun budgetMbFor(offHeap: Boolean, deviceRamBytes: Long, maxHeapMb: Long): Int {
+        if (offHeap) return NuvioExoPlayerPerformanceHelper.safeNativeMemoryLimitMbForRam(deviceRamBytes)
+        val lowRam = maxHeapMb < HIGH_HEAP_THRESHOLD_MB
+        // Pre-cap ratio budget, before the low-RAM reserve trims it below.
+        val rawBudgetMb = (maxHeapMb * (if (lowRam) LOW_HEAP_RATIO else HIGH_HEAP_RATIO)).toInt()
+        if (!lowRam) return rawBudgetMb
+        // The flat reserve collapses the budget on small heaps, so hold a floor that still leaves
+        // the smallest devices half their heap.
+        val minPlaybackBudgetMb =
+            MIN_PLAYBACK_BUDGET_MB.coerceAtMost((maxHeapMb / 2).toInt()).coerceAtLeast(MIN_BUFFER_MB)
+        return rawBudgetMb.coerceAtMost((maxHeapMb - LOW_HEAP_RESERVE_MB).toInt()).coerceAtLeast(minPlaybackBudgetMb)
+    }
 
-    val conversionBudgetMb: Int =
+    // budgetMb is the most the settings allow; the managed budget uses the box's automatic size instead.
+    val autoBudgetMb: Int = autoBudgetMbFor(offHeapBuffers, NuvioExoPlayerPerformanceHelper.getRamFromMemInfo(), budgetMb)
+
+    internal fun autoBudgetMbFor(offHeap: Boolean, deviceRamBytes: Long, budgetMb: Int): Int =
+        if (offHeap) BufferSizing.autoBufferMbForRam(deviceRamBytes).coerceAtMost(budgetMb) else budgetMb
+
+    fun conversionBudgetMb(budgetMb: Int): Int =
         (budgetMb * (if (isLowRamTier) LOW_RAM_CONVERSION_RATIO else HIGH_RAM_CONVERSION_RATIO)).toInt()
             .coerceAtMost(budgetMb).coerceAtLeast(MIN_BUFFER_MB)
 

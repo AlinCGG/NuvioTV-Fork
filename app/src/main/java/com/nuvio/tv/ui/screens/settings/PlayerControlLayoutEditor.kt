@@ -62,7 +62,7 @@ internal fun PlayerControlLayoutEditor(
     var moreExpanded by remember { mutableStateOf(false) }
     LaunchedEffect(editor.canPreviewMore) { if (!editor.canPreviewMore) moreExpanded = false }
     var popupBounds by remember { mutableStateOf<IntRect?>(null) }
-    val previewAvailable = PlayerControlAction.entries.toSet().let { if (previewEpisode) it else it - setOf(PlayerControlAction.EPISODES, PlayerControlAction.NEXT_EPISODE) }
+    val previewAvailable = PlayerControlAction.offered().let { if (previewEpisode) it else it - setOf(PlayerControlAction.EPISODES, PlayerControlAction.NEXT_EPISODE) }
     var deckPlan by remember { mutableStateOf(PlayerControlDeckPlan(emptyList(), 0, 0, 0, null)) }
     var saving by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }

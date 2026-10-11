@@ -5,6 +5,7 @@ package com.nuvio.tv.ui.screens.settings
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MemoryBudgetTest {
@@ -76,5 +77,34 @@ class MemoryBudgetTest {
         val (adjBuf, adjChunk) = MemoryBudget.enforce(withinBuffer, withinChunk, connections)
         assertEquals(withinBuffer, adjBuf)
         assertEquals(withinChunk, adjChunk)
+    }
+
+    @Test
+    fun testBudgetFollowsDeviceRamWhenBuffersAreOffHeap() {
+        val gb = 1024L * 1024L * 1024L
+        // A 4 GB box reports about 3.8 GB; its 384 MB heap no longer decides the budget.
+        assertEquals(1000, MemoryBudget.budgetMbFor(true, (3.8 * gb).toLong(), 384))
+        assertEquals(250, MemoryBudget.budgetMbFor(true, (1.9 * gb).toLong(), 256))
+    }
+
+    @Test
+    fun testManagedBudgetUsesTheBoxSize() {
+        val gb = 1024L * 1024L * 1024L
+        assertEquals(150, MemoryBudget.autoBudgetMbFor(true, (1.9 * gb).toLong(), 250))
+        assertEquals(1000, MemoryBudget.autoBudgetMbFor(true, (3.8 * gb).toLong(), 1000))
+        // Without native memory the heap budget stays.
+        assertEquals(174, MemoryBudget.autoBudgetMbFor(false, (1.9 * gb).toLong(), 174))
+    }
+
+    @Test
+    fun testConversionBudgetFollowsTheSizedBudget() {
+        assertTrue(MemoryBudget.conversionBudgetMb(150) <= 150)
+        assertEquals(MemoryBudget.MIN_BUFFER_MB, MemoryBudget.conversionBudgetMb(10))
+    }
+
+    @Test
+    fun testHeapBudgetWhenNativeMemoryIsMissing() {
+        assertEquals(174, MemoryBudget.budgetMbFor(false, 0L, 384))
+        assertEquals(435, MemoryBudget.budgetMbFor(false, 0L, 512))
     }
 }

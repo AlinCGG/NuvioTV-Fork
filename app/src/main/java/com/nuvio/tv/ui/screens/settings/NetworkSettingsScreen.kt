@@ -3,6 +3,7 @@
 
 package com.nuvio.tv.ui.screens.settings
 
+import com.nuvio.tv.core.build.IssueReports
 import com.nuvio.tv.core.network.StreamSweepEngine
 import com.nuvio.tv.ui.theme.NuvioTheme
 
@@ -427,7 +428,7 @@ fun AdvancedSettingsContent(
             }
         }
 
-        item(key = "playback_issue_reports") {
+        if (IssueReports.available) item(key = "playback_issue_reports") {
             SettingsGroupCard(
                 modifier = Modifier.fillMaxWidth(),
                 title = stringResource(R.string.advanced_section_diagnostics)

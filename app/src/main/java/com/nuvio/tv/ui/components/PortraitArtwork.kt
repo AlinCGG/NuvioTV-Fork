@@ -57,12 +57,14 @@ fun portraitArtworkBackdropFilter(enabled: Boolean): ColorFilter? =
 fun FittedPortraitArtwork(
     model: Any?,
     contentDescription: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    colorFilter: ColorFilter? = null
 ) {
     AsyncImage(
         model = model,
         contentDescription = contentDescription,
         modifier = modifier.fillMaxSize(),
-        contentScale = ContentScale.Fit
+        contentScale = ContentScale.Fit,
+        colorFilter = colorFilter
     )
 }

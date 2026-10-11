@@ -24,7 +24,7 @@ class AssessmentFreshnessUiTest {
     }
     @After fun cleanup() { unmockkObject(DeviceAssessmentEngine, DeviceAssessmentApplier) }
     private fun result(): AssessmentResult = mockk {
-        every { profiles } returns emptyList(); every { applyPlan } returns AssessmentApplyPlan(enableHttp2 = true)
+        every { profiles } returns emptyList(); every { applyPlan } returns AssessmentApplyPlan(stripHdr10PlusSei = true)
         every { header } returns mockk { every { safeLimitMb } returns 250 }
     }
     private fun state() = DeviceAssessmentState().apply {
@@ -39,7 +39,7 @@ class AssessmentFreshnessUiTest {
         coVerify(exactly = 0) { DeviceAssessmentEngine.run(any(),any(),any(),any(),any(),any(),any()) }
     }
     @Test fun `settings changes clear completed result and confirmation`() = runTest {
-        val s = state(); latest = AssessmentInputs.capture(settings.copy(enableHttp2 = !settings.enableHttp2), source)
+        val s = state(); latest = AssessmentInputs.capture(settings.copy(stripHdr10PlusSei = !settings.stripHdr10PlusSei), source)
         s.invalidateInputs(context); assertNull(s.result); assertFalse(s.applyArmed); assertNotNull(s.runError)
     }
     @Test fun `runtime fact change during run withholds completed recommendation`() = runTest {
@@ -62,7 +62,7 @@ class AssessmentFreshnessUiTest {
     }
     @Test fun `successful validated Apply retires recommendation and preserves success count`() = runTest {
         coEvery { DeviceAssessmentApplier.applyValidated(any(),any(),any(),any(),any(),any(),any()) } coAnswers {
-            assertTrue(arg<() -> Boolean>(6)()); latest = AssessmentInputs.capture(settings.copy(enableHttp2 = !settings.enableHttp2), source)
+            assertTrue(arg<() -> Boolean>(6)()); latest = AssessmentInputs.capture(settings.copy(stripHdr10PlusSei = !settings.stripHdr10PlusSei), source)
             DeviceAssessmentApplier.ApplyOutcome(1)
         }
         val s = state(); runApplyAssessment(this, context, s, store); runCurrent()

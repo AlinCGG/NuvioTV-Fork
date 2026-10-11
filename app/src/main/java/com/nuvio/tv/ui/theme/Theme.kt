@@ -27,6 +27,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.darkColorScheme
 import com.nuvio.tv.domain.model.AppFont
 import com.nuvio.tv.domain.model.AppTheme
+import com.nuvio.tv.ui.brand.ArcPalette
 import com.nuvio.tv.domain.model.CustomThemeColors
 import com.nuvio.tv.domain.model.SettingsUiStyle
 import com.nuvio.tv.domain.model.SettingsPresentation
@@ -62,6 +63,8 @@ val LocalNuvioTextStyles = staticCompositionLocalOf { NuvioTextStyles }
 val LocalAppTheme = staticCompositionLocalOf { AppTheme.GLASS }
 
 val LocalThemePalette = staticCompositionLocalOf { ThemeColors.White }
+
+val LocalArcPalette = staticCompositionLocalOf { ArcPalette.Glass }
 
 val LocalSettingsUiStyle = staticCompositionLocalOf { SettingsUiStyle.CLASSIC }
 
@@ -99,6 +102,7 @@ fun NuvioTheme(
         } else base
     }
     val focusRingStyle = remember(palette) { createFocusRingStyle(palette) }
+    val arcPalette = remember(appTheme, customThemeColors) { ArcPalette.forTheme(appTheme, customThemeColors) }
     // This identity-valued static local otherwise invalidates the whole destination
     // when unrelated Activity state (for example playback ownership) changes.
     val colorScheme = remember(palette, amoledMode, amoledSurfacesMode, appearance != null) { NuvioColorScheme(
@@ -148,6 +152,7 @@ fun NuvioTheme(
         LocalNuvioTextStyles provides textStyles,
         LocalAppTheme provides appTheme,
         LocalThemePalette provides palette,
+        LocalArcPalette provides arcPalette,
         LocalSettingsUiStyle provides when (appearance?.settingsPresentation) {
             SettingsPresentation.MINIMAL -> SettingsUiStyle.ZEN
             SettingsPresentation.GLASS -> SettingsUiStyle.ZEN
@@ -238,6 +243,11 @@ object NuvioTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalAppTheme.current
+
+    val arcPalette: ArcPalette
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalArcPalette.current
 
     val settingsUiStyle: SettingsUiStyle
         @Composable

@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import com.nuvio.tv.domain.model.VisualStyle
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.v2.appearance.LocalV2Appearance
+import com.nuvio.tv.ui.v2.appearance.v2StaticBackdrop
 import com.nuvio.tv.ui.v2.components.V2Motion
 import com.nuvio.tv.ui.v2.components.v2GlassSource
 import kotlinx.coroutines.delay
@@ -50,7 +51,7 @@ fun V2ProfileBackdrop(focusedColor: Color, profileId: Int?, snapshotVersion: Int
     }
     val color = animateColorAsState(settledColor, tween(V2Motion.BackdropCrossfadeMs), label = "profileAmbience")
     val pureDark = LocalV2Appearance.current?.visualStyle == VisualStyle.PURE_LIQUID_DARK
-    Box(Modifier.fillMaxSize().v2GlassSource()) { ProfilePosterWallBackground(profilePosters = posters) }
+    Box(Modifier.fillMaxSize().v2GlassSource().v2StaticBackdrop()) { ProfilePosterWallBackground(profilePosters = posters) }
     Box(Modifier.fillMaxSize().drawWithCache {
         onDrawBehind {
             if (!pureDark) drawRect(Brush.radialGradient(

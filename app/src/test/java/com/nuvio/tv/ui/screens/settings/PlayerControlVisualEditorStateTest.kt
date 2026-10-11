@@ -8,7 +8,8 @@ class PlayerControlVisualEditorStateTest {
     private val play = PlayerControlAction.PLAY_PAUSE
     private val next = PlayerControlAction.NEXT_EPISODE
     private val info = PlayerControlAction.INFO
-    private fun original() = PlayerControlVisualEditorState(PlayerControlLayoutDraft(PlayerControlLayoutSnapshot(1, null, null)))
+    private fun original() = PlayerControlVisualEditorState(PlayerControlLayoutDraft(PlayerControlLayoutSnapshot(1, null, null)),
+        offered = PlayerControlAction.offered(reportsAvailable = true))
     private fun group(s: PlayerControlVisualEditorState, a: PlayerControlAction) = s.draft.preview.entries.single { it.action == a }.group
     @Test fun `short selection toggles hidden ghost back on without changing location`() {
         val s = original().select(info)
@@ -21,6 +22,21 @@ class PlayerControlVisualEditorStateTest {
         val s = PlayerControlVisualEditorState(PlayerControlLayoutDraft(snapshot))
         assertSame(s.draft, s.beginMove().cancelMove().draft)
         assertNull(s.beginMove().place().draft.layout); assertEquals("v9|future", s.beginMove().place().draft.snapshot.serialized)
+    }
+    @Test fun `moving past a report button the build does not draw takes one press and keeps its saved slot`() {
+        val engine = PlayerControlAction.ENGINE; val report = PlayerControlAction.REPORT
+        fun right(s: PlayerControlVisualEditorState) = s.draft.preview.entries.filter { it.group == PlayerControlGroup.RIGHT }.map { it.action }
+        val draft = PlayerControlLayoutDraft(PlayerControlLayoutSnapshot(1, null, null))
+        val hidden = PlayerControlVisualEditorState(draft, offered = PlayerControlAction.offered(reportsAvailable = false)).select(engine).beginMove()
+        val before = right(hidden)
+        assertEquals(listOf(engine, report, info), before.takeLast(3))
+        val moved = hidden.step(1)
+        assertEquals(listOf(info, report, engine), right(moved).takeLast(3))
+        assertEquals(before.indexOf(report), right(moved).indexOf(report))
+        assertEquals(before, right(moved.step(-1)))
+        assertTrue(moved.draft.layout!!.encode().contains("report,right,1"))
+        val shown = PlayerControlVisualEditorState(draft, offered = PlayerControlAction.offered(reportsAvailable = true)).select(engine).beginMove()
+        assertEquals(listOf(report, engine, info), right(shown.step(1)).takeLast(3))
     }
     @Test fun `leftmost boundary is a no op preserving original defaults`() {
         val s = original().beginMove(); assertSame(s, s.step(-1)); assertNull(s.step(-1).draft.layout)

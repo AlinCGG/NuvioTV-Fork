@@ -111,7 +111,7 @@ fun V2TopNavigation(
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp)
                     .onFocusChanged { navFocused = it.hasFocus }.focusGroup(),
                     verticalAlignment = Alignment.CenterVertically) {
-                    com.nuvio.tv.ui.v2.components.V2Wordmark(modifier = Modifier.width(96.dp).height(30.dp))
+                    com.nuvio.tv.ui.v2.components.V2Wordmark(modifier = Modifier.width(116.dp).height(30.dp))
                     LazyRow(Modifier.weight(1f), contentPadding = PaddingValues(4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
                         items(items, key = { it.route }) { item ->

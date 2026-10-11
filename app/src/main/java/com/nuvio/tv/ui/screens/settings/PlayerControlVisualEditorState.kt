@@ -6,7 +6,8 @@ import com.nuvio.tv.data.local.*
 internal data class PlayerControlVisualEditorState(
     val draft: PlayerControlLayoutDraft,
     val selected: PlayerControlAction = PlayerControlAction.PLAY_PAUSE,
-    private val moveOrigin: PlayerControlLayoutDraft? = null
+    private val moveOrigin: PlayerControlLayoutDraft? = null,
+    private val offered: Set<PlayerControlAction> = PlayerControlAction.offered()
 ) {
     val moving: Boolean get() = moveOrigin != null
     fun select(action: PlayerControlAction) = if (moving) this else copy(selected = action)
@@ -35,9 +36,17 @@ internal data class PlayerControlVisualEditorState(
     fun step(delta: Int): PlayerControlVisualEditorState {
         if (!moving || draft.rejected || delta !in listOf(-1, 1)) return this
         val entry = draft.preview.entries.single { it.action == selected }
-        val siblings = draft.preview.entries.filter { it.group == entry.group }
-        val index = siblings.indexOfFirst { it.action == selected }
-        if (index + delta in siblings.indices) return copy(draft = draft.move(selected, delta))
+        val siblings = draft.preview.entries.filter { it.group == entry.group }.map { it.action }
+        val index = siblings.indexOf(selected)
+        val steps = generateSequence(1) { it + 1 }.takeWhile { index + delta * it in siblings.indices }
+            .firstOrNull { siblings[index + delta * it] in offered }
+        if (steps != null) {
+            // Actions this build does not draw keep their saved slot: swap with the next drawn neighbour.
+            var changed = draft
+            repeat(steps) { changed = changed.move(selected, delta) }
+            for (skipped in (steps - 1 downTo 1).map { siblings[index + delta * it] }) changed = changed.move(skipped, delta)
+            return copy(draft = changed)
+        }
         val next = PlayerControlGroup.entries.getOrNull(entry.group.ordinal + delta) ?: return this
         var changed = draft.group(selected, next)
         // Crossing right enters at the start; crossing left enters at the end.

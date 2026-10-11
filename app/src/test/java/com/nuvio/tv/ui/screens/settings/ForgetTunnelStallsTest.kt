@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.nuvio.tv.core.profile.ProfileManager
@@ -36,6 +38,8 @@ class ForgetTunnelStallsTest {
 
     private val classesKey = stringSetPreferencesKey("tunnel_dead_audio_classes")
     private val signatureKey = stringPreferencesKey("tunnel_dead_audio_signature")
+    private val savedAtKey = longPreferencesKey("tunnel_dead_audio_saved_at_ms")
+    private val versionKey = intPreferencesKey("tunnel_dead_audio_app_version")
     private val tunnelingKey = booleanPreferencesKey("tunneling_enabled")
 
     @Before
@@ -82,6 +86,8 @@ class ForgetTunnelStallsTest {
             val profile0 = stores[0].data.value
             assertNull(profile0[classesKey])
             assertNull(profile0[signatureKey])
+            assertNull(profile0[savedAtKey])
+            assertNull(profile0[versionKey])
             assertEquals(true, profile0[tunnelingKey])
             assertTrue(PlayerTunnelAvSyncPolicy.deadAudioClasses.isEmpty())
             assertEquals(setOf("audio/ac3"), stores[1].data.value[classesKey])

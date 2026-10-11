@@ -1,5 +1,9 @@
 package com.nuvio.tv.ui.components
 
+import com.nuvio.tv.ui.screens.home.rowFocusRing
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import com.nuvio.tv.ui.screens.home.shuffleFocusKey
 
 import android.view.KeyEvent as AndroidKeyEvent
@@ -63,12 +67,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.tv.material3.Border
-import androidx.tv.material3.Card
+import androidx.compose.ui.zIndex
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.ui.screens.home.ContinueWatchingItem
+import com.nuvio.tv.ui.screens.home.showsEpisodeCode
 import com.nuvio.tv.ui.v2.appearance.LocalV2Appearance
 import com.nuvio.tv.ui.v2.components.nuvioV2Focus
 import com.nuvio.tv.ui.theme.NuvioTheme
@@ -148,7 +153,9 @@ fun ContinueWatchingSection(
     imageHeight: Dp = 162.dp,
     cardStyle: ContinueWatchingCardStyle = ContinueWatchingCardStyle.CARD,
     cornerRadius: Dp = NuvioTheme.radii.md,
-    posterTitleOverride: TextStyle? = null
+    posterTitleOverride: TextStyle? = null,
+    /** Replaces the options dialog on a long press when set. */
+    onLongPress: ((ContinueWatchingItem) -> Unit)? = null
 ) {
     if (items.isEmpty()) return
 
@@ -258,7 +265,9 @@ fun ContinueWatchingSection(
                 val requester = focusRequesters.getOrPut(index) { FocusRequester() }
                 val focusModifier = Modifier.focusRequester(requester)
                 val stableOnClick = remember(progress) { { onItemClick(progress) } }
-                val stableOnLongPress = remember(progress) { { optionsItem = progress } }
+                val stableOnLongPress = remember(progress, onLongPress) {
+                    { if (onLongPress != null) onLongPress(progress) else { optionsItem = progress } }
+                }
                 var isCardFocused by remember { mutableStateOf(false) }
 
                     ContinueWatchingCard(
@@ -474,7 +483,7 @@ fun ContinueWatchingCard(
     val nextUp = remember(item) { (item as? ContinueWatchingItem.NextUp)?.info }
     val cardContext = LocalContext.current
     val episodeStr = remember(progress, nextUp, cardContext) {
-        val season = progress?.season ?: nextUp?.season
+        val season = progress?.season ?: nextUp?.season?.takeIf { nextUp.showsEpisodeCode }
         val episode = progress?.episode ?: nextUp?.episode
         if (season != null && episode != null) {
             cardContext.getString(R.string.season_episode_format, season, episode)
@@ -497,7 +506,9 @@ fun ContinueWatchingCard(
     val effectiveNextUpLabel = if (useShortLabels) strNextUpShort else strNextUp
     val effectiveNewEpisodeLabel = if (useShortLabels) strNewEpisodeShort else strNewEpisode
     val nextUpBadgeText = nextUp?.let { info ->
-        if (info.isReleaseAlert) {
+        if (info.badgeLabel != null) {
+            info.badgeLabel
+        } else if (info.isReleaseAlert) {
             if (info.isNewSeasonRelease) strNewSeason else effectiveNewEpisodeLabel
         } else if (!info.hasAired) {
             val airDateText = if (useShortLabels) {
@@ -615,10 +626,13 @@ fun ContinueWatchingCard(
     val bgColor = NuvioTheme.colors.Background
     val badgeBackground = remember { Color.Black.copy(alpha = 0.7f) }
     
+    val cardDescription = remember(titleText, episodeStr, episodeTitle, badgeText) {
+        listOfNotNull(titleText, episodeStr, episodeTitle, badgeText).filter { it.isNotBlank() }.joinToString(", ")
+    }
     val bgCardColor = NuvioTheme.colors.BackgroundCard
     val backgroundPainter = remember(bgCardColor) { androidx.compose.ui.graphics.painter.ColorPainter(bgCardColor) }
 
-    Card(
+    NuvioCard(
         onClick = {
             if (longPressTriggered) {
                 longPressTriggered = false
@@ -626,9 +640,14 @@ fun ContinueWatchingCard(
                 onClick()
             }
         },
+        shape = cwCardShape,
+        light = isV2,
         modifier = modifier
+            .then(if (isV2) Modifier.zIndex(if (isFocused) 0.5f else 0f) else Modifier)
             .width(cardWidth)
-            .nuvioV2Focus(isFocused, cwCardShape, stationary = true)
+            // One description per card: the artwork, texts and badge inside are not read one by one.
+            .semantics { contentDescription = cardDescription }
+            .rowFocusRing(isFocused, cwCardShape)
             .recompositionHighlighter()
             .onPreviewKeyEvent { event ->
                 val native = event.nativeKeyEvent
@@ -658,11 +677,6 @@ fun ContinueWatchingCard(
                 }
                 false
             },
-        shape = CardDefaults.shape(shape = cwCardShape),
-        colors = CardDefaults.colors(
-            containerColor = Color.Transparent,
-            focusedContainerColor = Color.Transparent
-        ),
         // With text under the artwork the card border would ring the text too, so the artwork draws its own.
         border = if (isV2 || textBelowArtwork) {
             CardDefaults.border(focusedBorder = Border.None)
@@ -673,8 +687,7 @@ fun ContinueWatchingCard(
                     shape = cwCardShape
                 )
             )
-        },
-        scale = CardDefaults.scale(focusedScale = 1f)
+        }
     ) {
         if (isWideStyle) {
             WideCardContent(
@@ -706,18 +719,20 @@ fun ContinueWatchingCard(
                     }
                 }
             )
-            return@Card
+            return@NuvioCard
         }
         Column(
-            modifier = if (textBelowArtwork) {
-                Modifier
-            } else {
-                Modifier.nuvioCardDepth(
-                    shape = cwCardShape,
-                    surface = CardDepthSurface.CONTINUE_WATCHING,
-                    style = cardDepthStyle
-                )
-            }
+            modifier = Modifier.clearAndSetSemantics {}.then(
+                if (textBelowArtwork) {
+                    Modifier
+                } else {
+                    Modifier.nuvioCardDepth(
+                        shape = cwCardShape,
+                        surface = CardDepthSurface.CONTINUE_WATCHING,
+                        style = cardDepthStyle
+                    )
+                }
+            )
         ) {
             // Thumbnail with progress overlay
             Box(
@@ -950,6 +965,7 @@ private fun WideCardContent(
         modifier = Modifier
             .fillMaxWidth()
             .height(stripHeight)
+            .clearAndSetSemantics {}
             .nuvioCardDepth(
                 shape = cardShape,
                 surface = CardDepthSurface.CONTINUE_WATCHING,

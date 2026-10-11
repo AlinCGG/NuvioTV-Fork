@@ -44,6 +44,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.R
+import com.nuvio.tv.ui.support.SupportNuvioViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.tv.core.build.AppFeaturePolicy
 import com.nuvio.tv.ui.components.MemberBrandWordmark
 
@@ -171,6 +174,14 @@ fun AboutSettingsContent(
                                     subtitle = stringResource(R.string.about_supporters_contributors_subtitle),
                                     trailingIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                     onClick = onNavigateToSupportersContributors
+                                )
+                                val supportViewModel: SupportNuvioViewModel = hiltViewModel()
+                                val supportState by supportViewModel.uiState.collectAsStateWithLifecycle()
+                                SettingsToggleRow(
+                                    title = stringResource(R.string.support_nuvio_suggestions_setting),
+                                    subtitle = stringResource(R.string.support_nuvio_suggestions_setting_subtitle),
+                                    checked = !supportState.suggestionsHidden,
+                                    onToggle = supportViewModel::toggleSuggestionsHidden
                                 )
                             }
 

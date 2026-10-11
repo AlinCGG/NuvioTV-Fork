@@ -47,11 +47,47 @@ class EntryIdentPolicyTest {
     @Test fun selectingAnotherProfileInvalidatesPreviousHomeReadiness() {
         val state = ProfileEntryState()
         state.start()
+        assertFalse(state.hasRunThisSession)
+        state.markShown()
         assertTrue(state.hasRunThisSession)
         state.homeReady = true
         state.finish()
         state.start()
         assertTrue(state.pending)
         assertFalse(state.homeReady)
+    }
+
+    @Test fun introCutBeforeItsFirstFrameStartsAgainOnEntry() {
+        val state = ProfileEntryState()
+        state.start(enabled = true)
+        assertFalse(state.shouldStartOnEntry())
+        // Home leaves composition and comes back before the intro drew anything.
+        state.finish()
+        assertFalse(state.hasRunThisSession)
+        assertTrue(state.shouldStartOnEntry())
+        state.start(enabled = true)
+        assertTrue(state.pending)
+    }
+
+    @Test fun introThatWasShownIsNotReplayedOnEntry() {
+        val state = ProfileEntryState()
+        state.start(enabled = true)
+        state.markShown()
+        state.finish()
+        assertTrue(state.hasRunThisSession)
+        assertFalse(state.shouldStartOnEntry())
+    }
+
+    @Test fun markShownWithoutAPendingIntroChangesNothing() {
+        val state = ProfileEntryState()
+        state.markShown()
+        assertFalse(state.hasRunThisSession)
+        assertTrue(state.shouldStartOnEntry())
+    }
+
+    @Test fun switchedOffIntroCountsAsRunAtOnce() {
+        val state = ProfileEntryState()
+        state.start(enabled = false)
+        assertFalse(state.shouldStartOnEntry())
     }
 }

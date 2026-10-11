@@ -110,3 +110,12 @@ fun Modifier.nuvioV2Focus(focused: Boolean, shape: Shape, accentOverride: Color?
         }
     }
 }
+
+/** True when the V2 focus is the clear glass edge, which each card draws on itself. */
+@Composable
+fun v2FocusDrawsOwnEdge(): Boolean {
+    val appearance = LocalV2Appearance.current ?: return true
+    val cinematic = appearance.focusStyle == com.nuvio.tv.domain.model.FocusStyle.CINEMATIC_FOCUS
+    val clearGlass = usesClearGlassTheme() || (NuvioTheme.currentTheme == com.nuvio.tv.domain.model.AppTheme.GLASS && cinematic)
+    return clearGlass && cinematic
+}

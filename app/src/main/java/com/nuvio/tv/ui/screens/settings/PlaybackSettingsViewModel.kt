@@ -14,6 +14,7 @@ import com.nuvio.tv.data.local.SurroundChannelTarget
 import com.nuvio.tv.data.local.DeniedCodecHandling
 import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.PlayerSettingsDataStore
+import com.nuvio.tv.data.local.RemoteButtonMap
 import com.nuvio.tv.data.local.PlayerPreference
 import com.nuvio.tv.core.player.LastPlaybackDiagnostics
 import com.nuvio.tv.ui.screens.player.AudioRejectionReverifier
@@ -268,6 +269,12 @@ class PlaybackSettingsViewModel @Inject constructor(
         deviceLocalPlayerPreferences.setTransparentLetterbox(enabled)
     }
 
+    val remoteButtons: Flow<RemoteButtonMap> = deviceLocalPlayerPreferences.remoteButtons
+
+    suspend fun setRemoteButtons(map: RemoteButtonMap) {
+        deviceLocalPlayerPreferences.setRemoteButtons(map)
+    }
+
     suspend fun setSkipIntroEnabled(enabled: Boolean) {
         playerSettingsDataStore.setSkipIntroEnabled(enabled)
     }
@@ -489,10 +496,6 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setParallelNetworkEnabled(enabled)
     }
 
-    suspend fun setEnableHttp2(enabled: Boolean) {
-        playerSettingsDataStore.setEnableHttp2(enabled)
-    }
-
     suspend fun setAllowLargeTargetBuffer(enabled: Boolean) {
         playerSettingsDataStore.setAllowLargeTargetBuffer(enabled)
     }
@@ -603,6 +606,10 @@ class PlaybackSettingsViewModel @Inject constructor(
 
     suspend fun setStreamAutoPlayPreferBingeGroupForNextEpisode(enabled: Boolean) {
         playerSettingsDataStore.setStreamAutoPlayPreferBingeGroupForNextEpisode(enabled)
+    }
+
+    suspend fun setStreamListSort(sort: com.nuvio.tv.data.local.StreamListSort) {
+        playerSettingsDataStore.setStreamListSort(sort)
     }
 
     suspend fun setStreamAutoPlayReuseBingeGroup(enabled: Boolean) {

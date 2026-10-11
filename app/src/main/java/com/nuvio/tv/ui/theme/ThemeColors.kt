@@ -74,6 +74,16 @@ object ThemeColors {
         backgroundCard = Color(0xFF24201A)
     )
 
+    val Copper = ThemeColorPalette(
+        secondary = Color(0xFFCD7D4B),
+        secondaryVariant = Color(0xFF9E5735),
+        focusRing = Color(0xFFE8A97F),
+        focusBackground = Color(0xFF3D2A1F),
+        background = Color(0xFF0F0D0C),
+        backgroundElevated = Color(0xFF1E1A18),
+        backgroundCard = Color(0xFF241E1A)
+    )
+
     val Rose = ThemeColorPalette(
         secondary = NuvioPrimitives.rose500,
         secondaryVariant = NuvioPrimitives.rose700,
@@ -114,6 +124,7 @@ object ThemeColors {
             AppTheme.VIOLET -> Violet
             AppTheme.EMERALD -> Emerald
             AppTheme.AMBER -> Amber
+            AppTheme.COPPER -> Copper
             AppTheme.ROSE -> Rose
             AppTheme.WHITE -> White
             AppTheme.GLASS -> Glass

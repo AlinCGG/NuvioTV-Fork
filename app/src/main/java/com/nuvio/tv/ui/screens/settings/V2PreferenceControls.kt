@@ -68,6 +68,16 @@ internal fun V2PreferenceControls(initialFocusRequester: FocusRequester? = null)
                     V2AppearancePreferenceStore.update(context) { it.copy(introAnimationEnabled = !it.introAnimationEnabled) }
                 } }
             )
+            if (appearance.introAnimationEnabled) {
+                SettingsToggleRow(
+                    title = stringResource(R.string.v2_intro_sound_title),
+                    subtitle = stringResource(R.string.v2_intro_sound_subtitle),
+                    checked = appearance.introSoundEnabled,
+                    onToggle = { scope.launch {
+                        V2AppearancePreferenceStore.update(context) { it.copy(introSoundEnabled = !it.introSoundEnabled) }
+                    } }
+                )
+            }
             V2ChoiceRow(
                 title = stringResource(R.string.v2_visual_style_title),
                 selected = appearance.visualStyle,

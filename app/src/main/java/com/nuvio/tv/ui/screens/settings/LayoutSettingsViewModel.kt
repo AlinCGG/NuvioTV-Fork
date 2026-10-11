@@ -12,6 +12,7 @@ import com.nuvio.tv.core.server.StreamBadgeConfigServer
 import com.nuvio.tv.core.streams.StreamBadgePlacement
 import com.nuvio.tv.core.streams.StreamBadgeRules
 import com.nuvio.tv.core.streams.StreamBadgeSettings
+import com.nuvio.tv.core.sync.HomeCatalogSettingsSyncService
 import com.nuvio.tv.data.local.LayoutPreferenceDataStore
 import com.nuvio.tv.data.local.StreamBadgeSettingsDataStore
 import com.nuvio.tv.data.local.TraktSettingsDataStore
@@ -22,6 +23,7 @@ import com.nuvio.tv.domain.model.CardDepthSurface
 import com.nuvio.tv.domain.model.ContinueWatchingCardStyle
 import com.nuvio.tv.domain.model.ContinueWatchingSortMode
 import com.nuvio.tv.domain.model.DiscoverLocation
+import com.nuvio.tv.domain.model.WatchedTitlesMode
 import com.nuvio.tv.domain.model.DetailImdbRatingsVisibility
 import com.nuvio.tv.domain.model.EpisodeOptionsOverlayStyle
 import com.nuvio.tv.domain.model.FocusedPosterTrailerPlaybackTarget
@@ -84,6 +86,7 @@ data class LayoutSettingsUiState(
     val detailPageTrailerPauseOnScroll: Boolean = true,
     val preferExternalMetaAddonDetail: Boolean = false,
     val hideUnreleasedContent: Boolean = false,
+    val watchedTitlesMode: WatchedTitlesMode = WatchedTitlesMode.SHOW,
     val showFullReleaseDate: Boolean = true,
     val nextUpFromFurthestEpisode: Boolean = true,
     val showUnairedNextUp: Boolean = true,
@@ -151,6 +154,7 @@ sealed class LayoutSettingsEvent {
     data class SetDetailPageTrailerPauseOnScroll(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetPreferExternalMetaAddonDetail(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetHideUnreleasedContent(val enabled: Boolean) : LayoutSettingsEvent()
+    data class SetWatchedTitlesMode(val mode: WatchedTitlesMode) : LayoutSettingsEvent()
     data class SetShowFullReleaseDate(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetNextUpFromFurthestEpisode(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetShowUnairedNextUp(val enabled: Boolean) : LayoutSettingsEvent()
@@ -176,7 +180,8 @@ class LayoutSettingsViewModel @Inject constructor(
     private val traktSettingsDataStore: TraktSettingsDataStore,
     private val trailerSettingsDataStore: TrailerSettingsDataStore,
     private val addonRepository: AddonRepository,
-    private val metaRepository: com.nuvio.tv.domain.repository.MetaRepository
+    private val metaRepository: com.nuvio.tv.domain.repository.MetaRepository,
+    private val homeCatalogSettingsSyncService: HomeCatalogSettingsSyncService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LayoutSettingsUiState())
@@ -392,6 +397,11 @@ class LayoutSettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            layoutPreferenceDataStore.watchedTitlesMode.distinctUntilChanged().collectLatest { mode ->
+                updateUiStateIfChanged { it.copy(watchedTitlesMode = mode) }
+            }
+        }
+        viewModelScope.launch {
             layoutPreferenceDataStore.showFullReleaseDate.distinctUntilChanged().collectLatest { enabled ->
                 updateUiStateIfChanged { it.copy(showFullReleaseDate = enabled) }
             }
@@ -497,6 +507,7 @@ class LayoutSettingsViewModel @Inject constructor(
             is LayoutSettingsEvent.SetDetailPageTrailerPauseOnScroll -> setDetailPageTrailerPauseOnScroll(event.enabled)
             is LayoutSettingsEvent.SetPreferExternalMetaAddonDetail -> setPreferExternalMetaAddonDetail(event.enabled)
             is LayoutSettingsEvent.SetHideUnreleasedContent -> setHideUnreleasedContent(event.enabled)
+            is LayoutSettingsEvent.SetWatchedTitlesMode -> setWatchedTitlesMode(event.mode)
             is LayoutSettingsEvent.SetShowFullReleaseDate -> setShowFullReleaseDate(event.enabled)
             is LayoutSettingsEvent.SetNextUpFromFurthestEpisode -> setNextUpFromFurthestEpisode(event.enabled)
             is LayoutSettingsEvent.SetShowUnairedNextUp -> setShowUnairedNextUp(event.enabled)
@@ -871,6 +882,15 @@ class LayoutSettingsViewModel @Inject constructor(
         if (_uiState.value.hideUnreleasedContent == enabled) return
         viewModelScope.launch {
             layoutPreferenceDataStore.setHideUnreleasedContent(enabled)
+            homeCatalogSettingsSyncService.triggerPush()
+        }
+    }
+
+    private fun setWatchedTitlesMode(mode: WatchedTitlesMode) {
+        if (_uiState.value.watchedTitlesMode == mode) return
+        viewModelScope.launch {
+            layoutPreferenceDataStore.setWatchedTitlesMode(mode)
+            homeCatalogSettingsSyncService.triggerPush()
         }
     }
 

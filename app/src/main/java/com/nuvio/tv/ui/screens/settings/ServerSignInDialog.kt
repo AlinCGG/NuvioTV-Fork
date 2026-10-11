@@ -32,6 +32,7 @@ import com.nuvio.tv.core.network.displayFingerprint
 import com.nuvio.tv.data.mediaserver.ServerConnection
 import com.nuvio.tv.data.mediaserver.ServerFailure
 import com.nuvio.tv.data.mediaserver.ServerProvider
+import com.nuvio.tv.data.mediaserver.ServerSignInIssue
 import com.nuvio.tv.data.mediaserver.silo.SiloProvider
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.screens.account.InputField
@@ -105,6 +106,13 @@ internal fun ServerSignInDialog(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        if (provider.id == SiloProvider.ID) {
+            Text(
+                text = stringResource(R.string.servers_silo_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = NuvioTheme.colors.TextSecondary
+            )
+        }
         state.certificate?.let { certificate ->
             CertificatePanel(
                 certificate = certificate,
@@ -147,7 +155,7 @@ internal fun ServerSignInDialog(
         }
         state.error?.let { failure ->
             Text(
-                text = failure.signInMessage(provider),
+                text = state.issue?.message() ?: failure.signInMessage(provider),
                 style = MaterialTheme.typography.bodySmall,
                 color = NuvioTheme.colors.Error
             )
@@ -323,6 +331,25 @@ private fun SignInField(label: String, field: @Composable () -> Unit) {
         field()
     }
 }
+
+@Composable
+private fun ServerSignInIssue.message(): String = stringResource(
+    when (this) {
+        ServerSignInIssue.WEBSITE -> R.string.servers_error_website
+        ServerSignInIssue.SILO_WEBSITE -> R.string.servers_error_silo_website
+        ServerSignInIssue.SILO_JELLYFIN_OFF -> R.string.servers_error_silo_jellyfin_off
+        ServerSignInIssue.PROFILE_NEEDED -> R.string.servers_error_profile_needed
+        ServerSignInIssue.PROFILE_NOT_FOUND -> R.string.servers_error_profile_not_found
+        ServerSignInIssue.PROFILE_PIN -> R.string.servers_error_profile_pin
+        ServerSignInIssue.PROFILE_AND_PIN -> R.string.servers_error_profile_and_pin
+        ServerSignInIssue.PIN_WRONG -> R.string.servers_error_pin_wrong
+        ServerSignInIssue.TEMPORARY_PASSWORD -> R.string.servers_error_temporary_password
+        ServerSignInIssue.PASSWORD_SIGN_IN_OFF -> R.string.servers_error_password_sign_in_off
+        ServerSignInIssue.TOO_MANY_TRIES -> R.string.servers_error_too_many_tries
+        ServerSignInIssue.SILO_NOT_NATIVE -> R.string.servers_error_silo_not_native
+        ServerSignInIssue.SERVER_MESSAGE -> R.string.servers_error_failed
+    }
+)
 
 @Composable
 private fun ServerFailure.signInMessage(provider: ServerProvider): String = when (this) {

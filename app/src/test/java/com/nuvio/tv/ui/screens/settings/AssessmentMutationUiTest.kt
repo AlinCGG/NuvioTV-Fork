@@ -25,7 +25,7 @@ class AssessmentMutationUiTest {
     private fun state(): DeviceAssessmentState {
         val result = mockk<AssessmentResult>()
         every { result.profiles } returns emptyList()
-        every { result.applyPlan } returns AssessmentApplyPlan(enableHttp2 = true)
+        every { result.applyPlan } returns AssessmentApplyPlan(stripHdr10PlusSei = true)
         every { result.header } returns mockk { every { safeLimitMb } returns 2_048 }
         return DeviceAssessmentState().apply { this.result = result; assessedProfileId = 1; applyArmed = true }
     }

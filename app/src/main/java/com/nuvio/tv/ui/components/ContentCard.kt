@@ -440,6 +440,7 @@ fun ContentCard(
                             )
                     )
                 } else if (!imageUrl.isNullOrBlank()) {
+                    val watchedDim = watchedPosterDim(isWatched, isFocused)
                     AsyncImage(
                         model = imageModel,
                         onSuccess = {
@@ -455,14 +456,19 @@ fun ContentCard(
                             portraitArtwork.onFailed()
                         },
                         contentDescription = item.name,
-                        modifier = Modifier.fillMaxSize().portraitArtworkBackdrop(fitPortraitArtwork),
+                        modifier = Modifier.fillMaxSize().portraitArtworkBackdrop(fitPortraitArtwork).watchedPosterFade(watchedDim),
                         placeholder = backgroundPainter,
                         error = backgroundPainter,
                         fallback = backgroundPainter,
                         contentScale = ContentScale.Crop,
-                        colorFilter = portraitArtworkBackdropFilter(fitPortraitArtwork)
+                        colorFilter = portraitArtworkBackdropFilter(fitPortraitArtwork) ?: watchedPosterFilter(watchedDim.value)
                     )
-                    if (fitPortraitArtwork) FittedPortraitArtwork(imageModel, contentDescription = null)
+                    if (fitPortraitArtwork) FittedPortraitArtwork(
+                        imageModel,
+                        contentDescription = null,
+                        modifier = Modifier.watchedPosterFade(watchedDim),
+                        colorFilter = watchedPosterFilter(watchedDim.value)
+                    )
                 } else {
                     MonochromePosterPlaceholder()
                 }
@@ -662,6 +668,14 @@ fun ContentCard(
                     )
                 }
 
+                if (isWatched && LocalDimWatchedPosters.current) {
+                    WatchedPosterVeil(
+                        focused = isFocused,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .zIndex(1.9f)
+                    )
+                }
                 if (isWatched) {
                     WatchedMarker(
                         modifier = Modifier

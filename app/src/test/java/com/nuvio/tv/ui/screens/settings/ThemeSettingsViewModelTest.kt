@@ -1,6 +1,7 @@
 package com.nuvio.tv.ui.screens.settings
 
 import com.nuvio.tv.MainDispatcherRule
+import com.nuvio.tv.data.local.SupportNuvioDataStore
 import com.nuvio.tv.data.local.ThemeDataStore
 import com.nuvio.tv.data.repository.MemberAccessRepository
 import com.nuvio.tv.domain.model.AppFont
@@ -134,9 +135,37 @@ class ThemeSettingsViewModelTest {
         assertEquals(solid, viewModel.uiState.value.customThemeColors)
     }
 
+    @Test
+    fun lockedSupporterThemesShowForNonSupportersUntilSuggestionsAreHidden() = runTest {
+        val viewModel = createViewModel()
+        runCurrent()
+
+        assertEquals(
+            listOf(AppTheme.GOLD, AppTheme.JADE, AppTheme.ROSE_GOLD, AppTheme.ARCTIC_BLUE, AppTheme.GRAPHITE),
+            viewModel.uiState.value.lockedThemes
+        )
+
+        suggestionsHidden.value = true
+        runCurrent()
+
+        assertEquals(emptyList<AppTheme>(), viewModel.uiState.value.lockedThemes)
+    }
+
+    @Test
+    fun supportersSeeNoLockedThemes() = runTest {
+        access.value = MemberAccess(tier = MemberTier.SUPPORTER)
+        val viewModel = createViewModel()
+        runCurrent()
+
+        assertEquals(emptyList<AppTheme>(), viewModel.uiState.value.lockedThemes)
+    }
+
+    private val suggestionsHidden = MutableStateFlow(false)
+
     private fun createViewModel(): ThemeSettingsViewModel {
         val members = mockk<MemberAccessRepository> { every { access } returns this@ThemeSettingsViewModelTest.access }
         val icons = mockk<AppIconManager> { every { state } returns MutableStateFlow(AppIconSettingsState()) }
-        return ThemeSettingsViewModel(store, members, icons)
+        val support = mockk<SupportNuvioDataStore> { every { suggestionsHidden } returns this@ThemeSettingsViewModelTest.suggestionsHidden }
+        return ThemeSettingsViewModel(store, members, icons, support)
     }
 }

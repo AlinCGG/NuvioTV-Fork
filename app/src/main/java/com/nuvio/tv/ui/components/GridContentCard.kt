@@ -252,12 +252,13 @@ fun GridContentCard(
                 if (effectiveImageUrl.isNullOrBlank()) {
                     MonochromePosterPlaceholder()
                 } else {
+                    val watchedDim = watchedPosterDim(isWatched, isFocused)
                     AsyncImage(
                         model = imageModel,
                         contentDescription = item.name,
-                        modifier = Modifier.fillMaxSize().portraitArtworkBackdrop(fitPortraitArtwork),
+                        modifier = Modifier.fillMaxSize().portraitArtworkBackdrop(fitPortraitArtwork).watchedPosterFade(watchedDim),
                         contentScale = ContentScale.Crop,
-                        colorFilter = portraitArtworkBackdropFilter(fitPortraitArtwork),
+                        colorFilter = portraitArtworkBackdropFilter(fitPortraitArtwork) ?: watchedPosterFilter(watchedDim.value),
                         placeholder = bgPainter,
                         error = bgPainter,
                         fallback = bgPainter,
@@ -273,7 +274,12 @@ fun GridContentCard(
                             portraitArtwork.onFailed()
                         }
                     )
-                    if (fitPortraitArtwork) FittedPortraitArtwork(imageModel, contentDescription = null)
+                    if (fitPortraitArtwork) FittedPortraitArtwork(
+                        imageModel,
+                        contentDescription = null,
+                        modifier = Modifier.watchedPosterFade(watchedDim),
+                        colorFilter = watchedPosterFilter(watchedDim.value)
+                    )
                 }
 
                 // Landscape clearlogo overlay on backdrop cards
@@ -377,6 +383,14 @@ fun GridContentCard(
                     )
                 }
 
+                if (isWatched && LocalDimWatchedPosters.current) {
+                    WatchedPosterVeil(
+                        focused = isFocused,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .zIndex(1.9f)
+                    )
+                }
                 if (isWatched) {
                     WatchedMarker(
                         modifier = Modifier

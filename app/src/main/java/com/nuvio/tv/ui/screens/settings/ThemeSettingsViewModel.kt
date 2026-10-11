@@ -2,6 +2,8 @@ package com.nuvio.tv.ui.screens.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nuvio.tv.core.build.AppFeaturePolicy
+import com.nuvio.tv.data.local.SupportNuvioDataStore
 import com.nuvio.tv.data.local.ThemeDataStore
 import com.nuvio.tv.data.repository.MemberAccessRepository
 import com.nuvio.tv.domain.model.AppFont
@@ -10,7 +12,9 @@ import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.domain.model.CosmeticEntitlements
 import com.nuvio.tv.domain.model.CustomThemeColors
 import com.nuvio.tv.domain.model.SettingsUiStyle
+import com.nuvio.tv.domain.model.availableAppIcons
 import com.nuvio.tv.domain.model.availableAppThemes
+import com.nuvio.tv.domain.model.lockedSupporterThemes
 import com.nuvio.tv.domain.model.resolveAppTheme
 import com.nuvio.tv.domain.model.resolveCustomThemeColors
 import com.nuvio.tv.launcher.AppIconManager
@@ -31,6 +35,7 @@ data class ThemeSettingsUiState(
     val customThemeColors: CustomThemeColors = CustomThemeColors.solid(CustomThemeColors.Default.second),
     val customThemeGradientEnabled: Boolean = false,
     val availableThemes: List<AppTheme> = availableAppThemes(CosmeticEntitlements.None),
+    val lockedThemes: List<AppTheme> = emptyList(),
     val selectedFont: AppFont = AppFont.INTER,
     val availableFonts: List<AppFont> = AppFont.entries.toList(),
     val amoledMode: Boolean = false,
@@ -59,7 +64,8 @@ sealed class ThemeSettingsEvent {
 class ThemeSettingsViewModel @Inject constructor(
     private val themeDataStore: ThemeDataStore,
     private val memberAccessRepository: MemberAccessRepository,
-    private val appIconManager: AppIconManager
+    private val appIconManager: AppIconManager,
+    private val supportNuvioDataStore: SupportNuvioDataStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ThemeSettingsUiState())
@@ -100,6 +106,21 @@ class ThemeSettingsViewModel @Inject constructor(
                             customThemeGradientEnabled = gradientEnabled,
                             availableThemes = availableThemes
                         )
+                    }
+                }
+        }
+        viewModelScope.launch {
+            combine(
+                memberAccessRepository.access,
+                supportNuvioDataStore.suggestionsHidden
+            ) { memberAccess, hidden ->
+                if (hidden || memberAccess.tier != null || !AppFeaturePolicy.supportNuvioEnabled) emptyList()
+                else lockedSupporterThemes(memberAccess.entitlements)
+            }
+                .distinctUntilChanged()
+                .collectLatest { locked ->
+                    _uiState.update { state ->
+                        if (state.lockedThemes == locked) state else state.copy(lockedThemes = locked)
                     }
                 }
         }
@@ -187,7 +208,11 @@ class ThemeSettingsViewModel @Inject constructor(
         }
     }
 
-    fun selectAppIcon(option: AppIconOption): Boolean = appIconManager.select(option)
+    fun selectAppIcon(option: AppIconOption): Boolean {
+        val entitlements = memberAccessRepository.access.value.entitlements
+        if (option !in availableAppIcons(entitlements, appIconManager.state.value.selected)) return false
+        return appIconManager.select(option)
+    }
 
     private fun selectTheme(theme: AppTheme) {
         if (currentTheme() == theme) return

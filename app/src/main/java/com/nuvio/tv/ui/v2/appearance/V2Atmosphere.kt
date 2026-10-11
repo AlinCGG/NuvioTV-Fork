@@ -14,7 +14,9 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
@@ -66,7 +68,7 @@ fun V2Atmosphere(
                 .build()
         }
     }
-    Box(modifier.fillMaxSize().background(base).v2GlassSource()) {
+    Box(modifier.fillMaxSize().background(base).v2GlassSource().v2StaticBackdrop()) {
         if (background == SettingsBackground.POSTERS) {
             com.nuvio.tv.ui.v2.profile.ProfilePosterWallBackground(pageBackground = true)
         }
@@ -100,3 +102,7 @@ fun V2Atmosphere(
         })
     }
 }
+
+/** Paints a still page background once and reuses it while the page above it moves. Keep it inside
+ * [v2GlassSource] so frosted panels sample the same kept layer. */
+fun Modifier.v2StaticBackdrop(): Modifier = graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
