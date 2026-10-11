@@ -440,6 +440,43 @@ class IecAudioTimestampClockTest {
     }
 
     @Test
+    fun underrun_holdsAtWritten_andTheClockDoesNotRunAheadWhenAudioReturns() {
+        val clock = ClockRig()
+        clock.lockAdvancing(head = 192_000L)
+        val written = clock.head + clock.framesFor(300_000L)
+        clock.advanceUs(300_000L)
+        val dry = clock.stamp(written)
+        clock.timestamp = dry
+        assertEquals(ANCHOR + us(written), clock.pos(head = written, written = written))
+        repeat(60) {
+            clock.advanceUs(20_000L)
+            assertEquals(ANCHOR + us(written), clock.pos(head = written, written = written))
+        }
+        val refilled = written + clock.framesFor(1_000_000L)
+        var head = written
+        var position = 0L
+        repeat(30) {
+            clock.advanceUs(20_000L)
+            head += clock.framesFor(20_000L)
+            clock.timestamp = clock.stamp(head)
+            position = clock.pos(head = head, written = refilled)
+        }
+        assertNear(ANCHOR + us(head), position, slopUs = 3_000L)
+    }
+
+    @Test
+    fun underrun_inHeadMode_holdsAtWrittenLessLatency() {
+        val clock = ClockRig()
+        clock.latencyUs = 40_000L
+        val written = 192_000L
+        clock.pos(head = 96_000L, written = written)
+        clock.advanceUs(500_000L)
+        assertEquals(ANCHOR + us(written) - 40_000L, clock.pos(head = written, written = written))
+        clock.advanceUs(20_000L)
+        assertEquals(ANCHOR + us(written) - 40_000L, clock.pos(head = written, written = written))
+    }
+
+    @Test
     fun bothHeadAndTimestampFrozen_doNotInventTime() {
         val clock = ClockRig()
         clock.lockAdvancing(head = 192_000L)

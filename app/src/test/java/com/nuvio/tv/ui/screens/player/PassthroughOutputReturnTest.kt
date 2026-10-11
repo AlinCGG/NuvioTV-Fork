@@ -18,6 +18,16 @@ class PassthroughOutputReturnTest {
     private val unplugged = emptySet<Int>()
 
     @Test
+    fun busyOutputProbeOpensWhatTheOutputWouldTake() {
+        assertEquals(C.ENCODING_E_AC3_JOC, PassthroughOutputReturn.outputEncodingFor(hdmi, C.ENCODING_E_AC3_JOC))
+        assertEquals(C.ENCODING_E_AC3, PassthroughOutputReturn.outputEncodingFor(setOf(C.ENCODING_AC3, C.ENCODING_E_AC3), C.ENCODING_E_AC3_JOC))
+        assertEquals(C.ENCODING_DTS, PassthroughOutputReturn.outputEncodingFor(setOf(C.ENCODING_AC3, C.ENCODING_DTS), C.ENCODING_DTS_HD))
+        assertEquals(C.ENCODING_DTS_HD, PassthroughOutputReturn.outputEncodingFor(hdmi, C.ENCODING_DTS_HD))
+        assertNull(PassthroughOutputReturn.outputEncodingFor(setOf(C.ENCODING_AC3), C.ENCODING_DTS_HD))
+        assertNull(PassthroughOutputReturn.outputEncodingFor(unplugged, C.ENCODING_E_AC3))
+    }
+
+    @Test
     fun retryWaitsWhileHdmiIsGoneAndGoesOnceItIsBack() {
         assertFalse(PassthroughOutputReturn.outputReadyForRetry(unplugged, routeIsHdmi = false))
         assertTrue(PassthroughOutputReturn.outputReadyForRetry(hdmi, routeIsHdmi = true))

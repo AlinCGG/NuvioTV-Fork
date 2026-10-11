@@ -67,8 +67,16 @@ internal class IecAudioTimestampClock(
         } else {
             headUs
         }
-        positionUs = minOf(positionUs, framesToUs(safeWritten, sampleRate))
-        positionUs = smooth(systemTimeUs, positionUs, speed, playing)
+        val writtenUs = framesToUs(safeWritten, sampleRate)
+        if (positionUs >= writtenUs) {
+            // Everything written has played: hold there and take a fresh timestamp once audio flows again.
+            positionUs = writtenUs
+            resetPoller()
+            lastSystemTimeUs = C.TIME_UNSET
+            lastPositionUs = C.TIME_UNSET
+        } else {
+            positionUs = smooth(systemTimeUs, positionUs, speed, playing)
+        }
         val presentedUs = if (fromTimestamp) {
             positionUs.coerceAtLeast(0L)
         } else if (positionUs <= 0L) {

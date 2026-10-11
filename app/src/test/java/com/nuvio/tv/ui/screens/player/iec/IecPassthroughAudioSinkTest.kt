@@ -331,6 +331,48 @@ class IecPassthroughAudioSinkTest {
     }
 
     @Test
+    fun refusedCoreOpenThenReset_doesNotCountAsOurTrackHoldingTheOutput() {
+        var now = 50_000L
+        LiveDirectAudioPlayback.clock = { now }
+        val factory = ReadyFactory(track = FakeIecAudioTrack(192_000, 16), readyAt = { false })
+        val sink = IecPassthroughAudioSink(sink = RecordingSink(), trackFactory = factory)
+        sink.configure(
+            Format.Builder().setSampleMimeType(MimeTypes.AUDIO_E_AC3).setChannelCount(6).setSampleRate(48_000).build(),
+            0,
+            null
+        )
+        assertTrue(LiveDirectAudioPlayback.isPassthroughLive())
+        now += 5L
+        sink.reset()
+        assertFalse(
+            com.nuvio.tv.ui.screens.player.CompressedOutputCheck.ownTrackMayHoldOutput(
+                LiveDirectAudioPlayback.ownTrackOpen(),
+                LiveDirectAudioPlayback.msSinceOwnTrackClosed()
+            )
+        )
+    }
+
+    @Test
+    fun openedIecTrack_holdsTheOutputUntilShortlyAfterItCloses() {
+        var now = 50_000L
+        LiveDirectAudioPlayback.clock = { now }
+        val factory = ReadyFactory(FakeIecAudioTrack(192_000, 16))
+        val sink = IecPassthroughAudioSink(sink = RecordingSink(), trackFactory = factory)
+        sink.configure(dtsHdFormat(), 0, null)
+        assertTrue(sink.isIecActive)
+        fun holds() = com.nuvio.tv.ui.screens.player.CompressedOutputCheck.ownTrackMayHoldOutput(
+            LiveDirectAudioPlayback.ownTrackOpen(),
+            LiveDirectAudioPlayback.msSinceOwnTrackClosed()
+        )
+        assertTrue(holds())
+        sink.reset()
+        now += 500L
+        assertTrue(holds())
+        now += com.nuvio.tv.ui.screens.player.CompressedOutputCheck.OWN_TRACK_CLOSE_MS
+        assertFalse(holds())
+    }
+
+    @Test
     fun configure_coreCodecForward_marksWrappedDirectLive() {
         val factory = ReadyFactory(
             track = FakeIecAudioTrack(192_000, 16),

@@ -9,6 +9,7 @@ import com.nuvio.tv.data.local.DeniedCodecHandling
 import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.SurroundChannelTarget
 import com.nuvio.tv.data.local.SurroundFormatMode
+import kotlinx.coroutines.delay
 
 internal data class SurroundResolveInputs(
     val routeKey: String?,
@@ -89,17 +90,123 @@ internal fun resolveSurroundForRoute(
     )
 }
 
-internal fun PlayerRuntimeController.applySurroundResolutionInPlace(reason: String) {
+internal suspend fun PlayerRuntimeController.applySurroundResolutionInPlace(reason: String) {
     if (_exoPlayer == null || isUsingMpvEngine()) return
     val inputs = surroundResolveInputs ?: return
     if (inputs.isBluetooth || currentAudioOutputRoute?.isBluetooth == true) return
     val settings = currentPlayerSettingsForReport
-    val routeKey = currentAudioOutputRoute?.key ?: inputs.routeKey
-    val surround = resolveSurroundForRoute(
-        context,
-        settings,
-        inputs.copy(routeKey = routeKey)
+    val player = _exoPlayer
+    var surround = readSurroundInPlace(inputs, settings)
+    if (settings.surroundFormatMode != SurroundFormatMode.MANUAL &&
+        surroundResolveNeedsReselect(lastAppliedSurroundResolve, surround)
+    ) {
+        val applied = lastAppliedSurroundResolve
+        var delayMs = SurroundRecheckGuard.firstConfirmDelayMs(
+            appliedWhileUnplugged = lastAppliedSurroundHdmi?.unplugged == true,
+            pluggedNow = applied != null && !AudioChainProbe.hdmiPlugSnapshot(context).unplugged,
+            onlyAddsFormats = applied != null && SurroundRecheckGuard.onlyAddsFormats(applied, surround)
+        )
+        Log.d(
+            PlayerRuntimeController.TAG,
+            "SURROUND_RESOLVE_CONFIRM: reason=$reason formats differ; reading again in $delayMs ms"
+        )
+        var readings = 1
+        val settled = SurroundRecheckGuard.settledReading(
+            first = surround,
+            read = {
+                readings++
+                AudioChainProbe.invalidate()
+                AudioOutputRouteDetector.detect(context)?.let { currentAudioOutputRoute = it }
+                readSurroundInPlace(inputs, settings)
+            },
+            wait = {
+                AudioChainProbe.invalidate()
+                delay(delayMs)
+                delayMs = SurroundRecheckGuard.CONFIRM_DELAY_MS
+            }
+        )
+        if (isReleasingPlayer || _exoPlayer !== player || currentAudioOutputRoute?.isBluetooth == true) {
+            AudioChainProbe.invalidate()
+            return
+        }
+        if (settled == null) {
+            AudioChainProbe.invalidate()
+            Log.i(
+                PlayerRuntimeController.TAG,
+                "SURROUND_RESOLVE_UNSETTLED: reason=$reason readings=$readings; formats kept"
+            )
+            queuePlaybackRawEventLine("surround_resolve_unsettled reason=$reason readings=$readings")
+            return
+        }
+        surround = settled
+        if (surroundResolveNeedsReselect(lastAppliedSurroundResolve, surround) &&
+            keepFormatsForPlayingBitstream(reason, surround)
+        ) {
+            AudioChainProbe.invalidate()
+            return
+        }
+    }
+    commitSurroundResolution(reason, surround, inputs, settings)
+}
+
+private fun PlayerRuntimeController.keepFormatsForPlayingBitstream(
+    reason: String,
+    next: SurroundResolveResult
+): Boolean {
+    val sink = playbackSpeedAwareAudioSink ?: return false
+    val bitstreamPlaying = sink.isIecHbrActive() || sink.isDirectPlaybackActive()
+    if (!bitstreamPlaying) return false
+    val hdmi = AudioChainProbe.hdmiPlugSnapshot(context)
+    val plugListLost = SurroundRecheckGuard.plugListLostFormats(
+        atApply = lastAppliedSurroundHdmi?.encodings,
+        now = hdmi.encodings
     )
+    val decision = SurroundRecheckGuard.decide(
+        current = lastAppliedSurroundResolve,
+        next = next,
+        bitstreamPlaying = true,
+        hdmiUnplugged = hdmi.unplugged,
+        plugListLostFormats = plugListLost
+    )
+    if (plugListLost) {
+        Log.i(
+            PlayerRuntimeController.TAG,
+            "SURROUND_RESOLVE_HDMI_LIST: reason=$reason formats gone from the HDMI plug report " +
+                "(${lastAppliedSurroundHdmi?.encodings} -> ${hdmi.encodings}); applying"
+        )
+    }
+    if (decision != SurroundRecheckGuard.Decision.KEEP_FOR_BITSTREAM) return false
+    val nextPolicy = next.resolution.policy
+    Log.i(
+        PlayerRuntimeController.TAG,
+        "SURROUND_RESOLVE_KEPT: reason=$reason bitstream playing, HDMI plugged in; " +
+            "formats kept for this title, not applied: [ac3=${nextPolicy.allowAc3} eac3=${nextPolicy.allowEac3} " +
+            "truehd=${nextPolicy.allowTrueHd} dts=${nextPolicy.allowDts} dtshd=${nextPolicy.allowDtsHd}] " +
+            "route=${currentAudioOutputRoute?.key}"
+    )
+    queuePlaybackRawEventLine(
+        "surround_resolve_kept reason=$reason ac3=${nextPolicy.allowAc3} eac3=${nextPolicy.allowEac3} " +
+            "truehd=${nextPolicy.allowTrueHd} dts=${nextPolicy.allowDts} dtshd=${nextPolicy.allowDtsHd}"
+    )
+    return true
+}
+
+private fun PlayerRuntimeController.readSurroundInPlace(
+    inputs: SurroundResolveInputs,
+    settings: PlayerSettings
+): SurroundResolveResult = resolveSurroundForRoute(
+    context,
+    settings,
+    inputs.copy(routeKey = currentAudioOutputRoute?.key ?: inputs.routeKey)
+)
+
+private fun PlayerRuntimeController.commitSurroundResolution(
+    reason: String,
+    surround: SurroundResolveResult,
+    inputs: SurroundResolveInputs,
+    settings: PlayerSettings
+) {
+    val routeKey = currentAudioOutputRoute?.key ?: inputs.routeKey
     val policy = surround.resolution.policy
     val policyChanged = playbackSpeedAwareAudioSink?.setPassthroughPolicy(policy) == true
     currentAudioPassthroughPolicy = policy
@@ -112,6 +219,7 @@ internal fun PlayerRuntimeController.applySurroundResolutionInPlace(reason: Stri
     )
     val changed = surroundResolveNeedsReselect(lastAppliedSurroundResolve, surround) || policyChanged
     lastAppliedSurroundResolve = surround
+    if (changed) lastAppliedSurroundHdmi = AudioChainProbe.hdmiPlugSnapshot(context)
     Log.i(
         PlayerRuntimeController.TAG,
         "SURROUND_RESOLVE_INPLACE: reason=$reason changed=$changed route=$routeKey " +

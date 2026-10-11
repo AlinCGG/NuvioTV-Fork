@@ -412,6 +412,7 @@ internal class IecPassthroughAudioSink(
         ) ?: return false
         track.setVolume(volume)
         iecTrack = track
+        LiveDirectAudioPlayback.noteOwnTrackOpened()
         iecBufferSizeBytes = track.bufferSizeBytes
         iecOutputSampleRate = sampleRate
         return true
@@ -708,7 +709,10 @@ internal class IecPassthroughAudioSink(
         writeStallStartedNanos = WRITE_STALL_NOT_STARTED
         timestampClock.reset()
         if (!keepTrack) {
-            iecTrack?.release()
+            iecTrack?.let {
+                it.release()
+                LiveDirectAudioPlayback.noteOwnTrackClosed()
+            }
             iecTrack = null
             iecBufferSizeBytes = 0
             iecOutputSampleRate = IEC_SAMPLE_RATE

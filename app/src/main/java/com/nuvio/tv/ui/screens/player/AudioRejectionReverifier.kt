@@ -158,6 +158,48 @@ internal class AudioRejectionLedger {
     }
 }
 
+/**
+ * A refused open is the receiver's answer only when the box could have sent it. When the output still
+ * lists the format and a second listed Dolby format is refused too, the box's bitstream output is
+ * unavailable (another app can hold it), so nothing is learned. An earlier IEC61937 result says nothing
+ * about this moment: IEC can be usable at the start and the output taken minutes later.
+ */
+internal object CompressedOutputCheck {
+
+    fun companionEncoding(refused: Int, live: Set<Int>): Int? = when {
+        refused != AudioFormat.ENCODING_AC3 && AudioFormat.ENCODING_AC3 in live -> AudioFormat.ENCODING_AC3
+        refused != AudioFormat.ENCODING_E_AC3 && AudioFormat.ENCODING_E_AC3 in live -> AudioFormat.ENCODING_E_AC3
+        else -> null
+    }
+
+    fun outputUnavailable(refusedListedLive: Boolean, companionOpened: Boolean?): Boolean =
+        refusedListedLive && companionOpened == false
+
+    /** Our own passthrough track can still be open for a moment after it stops being live. */
+    const val OWN_TRACK_CLOSE_MS = 2_000L
+
+    fun ownTrackMayHoldOutput(ownPassthroughLive: Boolean, msSinceOwnCleared: Long?): Boolean =
+        ownPassthroughLive || (msSinceOwnCleared != null && msSinceOwnCleared < OWN_TRACK_CLOSE_MS)
+
+    /** Skipping the same-configuration retries also needs our own track not to be the one holding the output. */
+    fun skipSameConfigRetry(
+        pcmFallbackAvailable: Boolean,
+        refusedListedLive: Boolean,
+        ownTrackMayHold: Boolean,
+        companionOpened: Boolean?
+    ): Boolean = pcmFallbackAvailable && !ownTrackMayHold &&
+        outputUnavailable(refusedListedLive, companionOpened)
+}
+
+/** What the output looked like at one refused open, read once and shared by the retry and learning decisions. */
+internal class BitstreamOutputReading(
+    val refusedListedLive: Boolean,
+    val companionOpened: Boolean?
+) {
+    val outputUnavailable: Boolean
+        get() = CompressedOutputCheck.outputUnavailable(refusedListedLive, companionOpened)
+}
+
 internal object AudioRejectionReverifier {
 
     private const val TAG = "AudioRejection"
@@ -183,14 +225,19 @@ internal object AudioRejectionReverifier {
         }, "audio-rejection-reverify").apply { isDaemon = true }.start()
     }
 
-    private fun openAndRelease(group: AudioPassthroughPolicy.Group): Boolean {
-        val encoding = when (group) {
+    private fun openAndRelease(group: AudioPassthroughPolicy.Group): Boolean = openAndRelease(
+        when (group) {
             AudioPassthroughPolicy.Group.AC3 -> AudioFormat.ENCODING_AC3
             AudioPassthroughPolicy.Group.EAC3 -> AudioFormat.ENCODING_E_AC3
             AudioPassthroughPolicy.Group.TRUEHD -> AudioFormat.ENCODING_DOLBY_TRUEHD
             AudioPassthroughPolicy.Group.DTS -> AudioFormat.ENCODING_DTS
             AudioPassthroughPolicy.Group.DTS_HD -> AudioFormat.ENCODING_DTS_HD
         }
+    )
+
+    fun opensNow(encoding: Int): Boolean = synchronized(DirectOpenProbeLock) { openAndRelease(encoding) }
+
+    private fun openAndRelease(encoding: Int): Boolean {
         val channelMask = AudioFormat.CHANNEL_OUT_5POINT1
         val minBuffer = AudioTrack.getMinBufferSize(PROBE_SAMPLE_RATE, channelMask, encoding)
         if (minBuffer <= 0) return false

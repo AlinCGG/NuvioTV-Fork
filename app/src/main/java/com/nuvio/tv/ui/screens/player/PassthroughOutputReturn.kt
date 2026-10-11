@@ -53,6 +53,14 @@ internal object PassthroughOutputReturn {
         return MimeTypes.getEncoding(mime, format.codecs).takeIf { it in ENCODINGS }
     }
 
+    /** The encoding a bitstream open of [encoding] would use on an output listing [encodings], or null. */
+    fun outputEncodingFor(encodings: Set<Int>, encoding: Int): Int? = when {
+        encoding in encodings -> encoding
+        encoding == C.ENCODING_E_AC3_JOC && C.ENCODING_E_AC3 in encodings -> C.ENCODING_E_AC3
+        encoding == C.ENCODING_DTS_HD && C.ENCODING_DTS in encodings -> C.ENCODING_DTS
+        else -> null
+    }
+
     /** Same fallbacks the platform sink uses: E-AC-3 JOC as E-AC-3, DTS-HD as its DTS core. */
     fun canPass(encodings: Set<Int>, encoding: Int): Boolean = encoding in encodings ||
         (encoding == C.ENCODING_E_AC3_JOC && C.ENCODING_E_AC3 in encodings) ||
