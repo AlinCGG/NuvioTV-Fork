@@ -13,7 +13,8 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 PACKAGES = ("com.nuvio.tv.v2.validation", "com.nuvio.tv.v2.baseline")
 RUNNER = "com.nuvio.tv.baselineprofile/androidx.test.runner.AndroidJUnitRunner"
 TEST_PACKAGE = "com.nuvio.tv.baselineprofile"
-PROFILE_TESTS = ("generateStartup", "generateHomeV2", "generateHomeOriginal", "generateScreens", "generatePlayer")
+PROFILE_TESTS = ("generateStartup", "generateHomeV2", "generateHomeOriginal", "generateScreens", "generatePlayer",
+                 "generateMenuAndCalendar", "generateSources")
 
 
 def apk_package(sdk, apk):
@@ -81,7 +82,10 @@ def main():
     apk = REPOSITORY / "baselineprofile/build/outputs/apk/benchmarkRelease/baselineprofile-benchmarkRelease.apk"
     if not args.skip_build:
         subprocess.run([gradle, ":baselineprofile:assembleBenchmarkRelease"], cwd=REPOSITORY, check=True)
-    install(apk, TEST_PACKAGE)
+    runner_sha = hashlib.sha256(apk.read_bytes()).hexdigest()
+    runner_path = read("shell", "pm", "path", TEST_PACKAGE).splitlines()
+    if not runner_path or read("shell", "sha256sum", runner_path[0].removeprefix("package:")).split()[0] != runner_sha:
+        install(apk, TEST_PACKAGE)
     if args.command == "benchmark":
         compiled = read("shell", "cmd", "package", "compile", "-m", "speed", "-f", args.package)
         if compiled != "Success":

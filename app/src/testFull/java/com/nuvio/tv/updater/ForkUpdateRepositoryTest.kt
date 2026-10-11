@@ -44,6 +44,25 @@ class ForkUpdateRepositoryTest {
         ))
         assertEquals(nextCode, repo.getLatestUpdate(listOf("arm64-v8a")).getOrThrow().versionCode)
     }
+    @Test fun `accepts release files served under the renamed repository`() = runTest {
+        val renamed = asset().copy(browserDownloadUrl = "https://github.com/ysosrs123/Nuvio-Arc/releases/download/test/app-full-arm64-v8a-release.apk")
+        coEvery { api.getReleases("ysosrs123", "NuvioTV-Fork", any(), any()) } returns Response.success(listOf(release(assets = listOf(renamed))))
+        assertEquals(renamed.browserDownloadUrl, repo.getLatestUpdate(listOf("arm64-v8a")).getOrThrow().assetUrl)
+    }
+    @Test fun `release files from look-alike addresses are never offered`() = runTest {
+        val file = "releases/download/test/app-full-arm64-v8a-release.apk"
+        for (url in listOf(
+            "https://github.com/ysosrs123/NuvioTV-Fork-evil/$file",
+            "https://github.com/ysosrs123/Nuvio-Arc-x/$file",
+            "http://github.com/ysosrs123/Nuvio-Arc/$file",
+            "https://github.com.evil.example/ysosrs123/Nuvio-Arc/$file",
+            "https://github.com/someone/Nuvio-Arc/$file"
+        )) {
+            val lookAlike = asset().copy(browserDownloadUrl = url)
+            coEvery { api.getReleases(any(), any(), any(), any()) } returns Response.success(listOf(release(assets = listOf(lookAlike))))
+            assertTrue(url, repo.getLatestUpdate(listOf("arm64-v8a")).exceptionOrNull() is NoEligibleUpdateException)
+        }
+    }
     @Test fun `empty feed no matching assets and installed builds are not offered`() = runTest {
         for (releases in listOf(emptyList(), listOf(release(1)), listOf(release(assets = listOf(asset("x86")))))) {
             coEvery { api.getReleases(any(), any(), any(), any()) } returns Response.success(releases)

@@ -2,7 +2,10 @@ package com.nuvio.tv.baselineprofile
 
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
+import android.view.InputDevice
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.junit4.BaselineProfileRule
@@ -23,10 +26,16 @@ private const val TAG = "NuvioProfile"
 private const val ONBOARDING_FIRST_LABEL = "Continue without account"
 private const val STYLE_V2 = "Nuvio V2"
 private const val STYLE_ORIGINAL = "Original Nuvio"
-private val HOME_ROW: Pattern = Pattern.compile("Popular - (Movie|Series)")
+private val HOME_ROW: Pattern = Pattern.compile("Popular - (Movie|Series)|Continue watching|Latest movies for you|Upcoming")
 private val DETAILS_MARKER: Pattern = Pattern.compile("Play|Resume.*|Playback unavailable|Add to library|Director: .*")
 private val SIDEBAR_LABELS = setOf("Home", "Search", "Library", "Settings")
 private val ALLOWED_PACKAGES = setOf("com.nuvio.tv.v2.validation", "com.nuvio.tv.v2.baseline")
+private const val INTRO_DESC = "Nuvio Arc"
+private val CALENDAR_READY: Pattern = Pattern.compile("Just aired|Today|Tomorrow|Later|No date yet")
+private val CALENDAR_EMPTY: Pattern = Pattern.compile("Nothing followed yet|All quiet")
+private const val SORT_SOURCE_ORDER = "Source order"
+private const val SORT_BEST_FIRST = "Best quality first"
+private val THUMBNAIL_PREPARE: Pattern = Pattern.compile("Generating thumbnails|Thumbnails ready")
 
 private val keepRule: (String) -> Boolean = { it.contains("Lcom/nuvio/tv/") || it.contains("Landroidx/media3/") }
 
@@ -41,6 +50,7 @@ class BaselineProfileGenerator {
         .also { require(it in ALLOWED_PACKAGES) }
     private val clipId = arguments.getString("nuvioClipId", "am9dv:fmt-av1-10bit")
     private val clipStream = arguments.getString("nuvioClipStream", "AM9 local")
+    private val calendarSeries = arguments.getString("nuvioCalendarSeries", "tt0096697")
 
     private fun collect(iterations: Int, startup: Boolean = false, block: MacrobenchmarkScope.() -> Unit) {
         rule.collect(
@@ -89,6 +99,44 @@ class BaselineProfileGenerator {
         ensureInterface(targetPackage, STYLE_V2)
         collect(iterations = 3) { playClip(targetPackage, clipId, clipStream) }
     }
+
+    // A followed series gives the Calendar rows and a month; it is added before collection.
+    @Test
+    fun generateMenuAndCalendar() {
+        ensureInterface(targetPackage, STYLE_V2)
+        prepareCalendar(targetPackage, calendarSeries)
+        collect(iterations = 2) {
+            openPreparedHome(targetPackage)
+            step("menu") { visitMainMenu(targetPackage) }
+            step("calendar") { visitCalendar(targetPackage) }
+            step("profile-intro") { visitProfilePicker(targetPackage) }
+        }
+    }
+
+    @Test
+    fun generateSources() {
+        ensureInterface(targetPackage, STYLE_V2)
+        setSortSources(targetPackage, SORT_BEST_FIRST)
+        try {
+            collect(iterations = 2) {
+                openPreparedHome(targetPackage)
+                step("playback-settings") { visitPlaybackSettings(targetPackage) }
+                step("sources") { browseSources(targetPackage, clipId, clipStream) }
+            }
+        } finally {
+            setSortSources(targetPackage, SORT_SOURCE_ORDER)
+        }
+    }
+}
+
+// A failed optional step is logged with a screenshot and the journey carries on.
+private inline fun MacrobenchmarkScope.step(name: String, block: () -> Unit) {
+    try {
+        block()
+    } catch (e: Exception) {
+        Log.w(TAG, "Step $name skipped", e)
+        saveFailure("step-$name")
+    }
 }
 
 private fun MacrobenchmarkScope.browseHome(targetPackage: String) {
@@ -118,6 +166,139 @@ private fun MacrobenchmarkScope.browseHome(targetPackage: String) {
         device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT)
         device.settle(500)
     }
+    step("home-holds") { holdHome(targetPackage) }
+}
+
+// Held directions run the fast scroll and the repeat throttle, which single presses never reach.
+private fun MacrobenchmarkScope.holdHome(targetPackage: String) {
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN, 2_500)
+    device.settle(800)
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP, 3_500)
+    device.settle(800)
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT, 2_500)
+    device.settle(600)
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_LEFT, 2_000)
+    device.settle(600)
+    device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN)
+    device.settle(400)
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT, 1_500)
+    device.settle(600)
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN, 1_500)
+    device.settle(600)
+    device.holdKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP, 3_000)
+    device.settle(800)
+    if (device.sidebarFocused()) {
+        device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT)
+        device.settle(500)
+    }
+}
+
+// The V2 main menu: profile on top, every page, closed again with Right, twice over different cards.
+private fun MacrobenchmarkScope.visitMainMenu(targetPackage: String) {
+    repeat(2) { round ->
+        if (!device.openSidebar(targetPackage)) {
+            Log.w(TAG, "Main menu did not open")
+            return
+        }
+        device.settle(500)
+        repeat(3) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP); device.settle(250) }
+        repeat(7) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(250) }
+        repeat(4) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP); device.settle(250) }
+        device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT)
+        device.settle(800)
+        if (round == 0) {
+            repeat(2) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(300) }
+        }
+    }
+    repeat(2) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP); device.settle(300) }
+}
+
+private fun MacrobenchmarkScope.visitCalendar(targetPackage: String) {
+    if (!device.openSection(targetPackage, "Calendar")) {
+        Log.w(TAG, "Calendar not in the menu")
+        return
+    }
+    if (device.waitFor(By.text("Month"), 8_000) != true) {
+        Log.w(TAG, "Calendar did not open")
+        return
+    }
+    device.waitForAny(listOf(By.text(CALENDAR_READY), By.text(CALENDAR_EMPTY)), 20_000)
+    device.settle(1_000)
+    if (!device.freshHas(By.text(CALENDAR_READY))) {
+        Log.w(TAG, "Calendar has no dated titles; only its empty page is recorded")
+        return
+    }
+    repeat(6) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(300) }
+    repeat(6) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP); device.settle(250) }
+    if (!device.moveFocusTo(targetPackage, "Month", KeyEvent.KEYCODE_DPAD_UP, 6) &&
+        !device.moveFocusTo(targetPackage, "Month", KeyEvent.KEYCODE_DPAD_RIGHT, 2)) {
+        Log.w(TAG, "Month switch not reachable")
+        return
+    }
+    device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+    device.settle(1_500)
+    device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN)
+    device.settle(400)
+    repeat(4) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT); device.settle(250) }
+    repeat(2) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(300) }
+    repeat(3) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_LEFT); device.settle(250) }
+    device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP)
+    device.settle(300)
+    // OK on a day goes back to the list on that day.
+    device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+    device.settle(1_500)
+    repeat(3) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(300) }
+}
+
+private fun MacrobenchmarkScope.visitPlaybackSettings(targetPackage: String) {
+    if (!device.openPlaybackPage(targetPackage)) {
+        Log.w(TAG, "Playback settings not reachable")
+        return
+    }
+    if (device.expandSection(targetPackage, "Stream Selection")) {
+        if (device.moveFocusTo(targetPackage, "Sort sources", KeyEvent.KEYCODE_DPAD_DOWN, 10)) {
+            device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+            if (device.waitForSortDialog()) {
+                device.settle(800)
+                device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN)
+                device.settle(300)
+                device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP)
+                device.settle(300)
+            } else {
+                Log.w(TAG, "Sort sources dialog did not open")
+            }
+            device.profileKey(targetPackage, KeyEvent.KEYCODE_BACK)
+            device.settle(700)
+        } else {
+            Log.w(TAG, "Sort sources row not found")
+        }
+        device.collapseSection(targetPackage, "Stream Selection")
+    }
+    if (device.expandSection(targetPackage, "Player Interface")) {
+        repeat(12) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(300) }
+        repeat(4) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP); device.settle(250) }
+        device.collapseSection(targetPackage, "Player Interface")
+    }
+    device.backToSettingsRail(targetPackage)
+}
+
+// The source list of the local clip, ordered by Sort sources; the filter row above switches between sources.
+private fun MacrobenchmarkScope.browseSources(targetPackage: String, clipId: String, streamLabel: String) {
+    openSourceList(targetPackage, clipId)
+    if (device.waitFor(By.text(streamLabel), 20_000) != true) {
+        Log.w(TAG, "No '$streamLabel' source; the source list is recorded without links")
+        device.settle(1_500)
+        device.profileKey(targetPackage, KeyEvent.KEYCODE_BACK)
+        device.settle(1_000)
+        return
+    }
+    device.settle(1_000)
+    repeat(4) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN); device.settle(300) }
+    repeat(5) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_UP); device.settle(300) }
+    repeat(3) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT); device.settle(400) }
+    repeat(3) { device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_LEFT); device.settle(400) }
+    device.profileKey(targetPackage, KeyEvent.KEYCODE_BACK)
+    device.settle(1_000)
 }
 
 // A Continue watching card opens the source list instead of Details, so step down a row and try again.
@@ -222,12 +403,15 @@ private fun MacrobenchmarkScope.visitProfilePicker(targetPackage: String) {
         return
     }
     device.settle(1_500)
+    // Picking the profile plays the Arc intro before Home.
     device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+    device.settle(800)
+    device.waitIntroGone()
     device.waitFor(By.text(HOME_ROW), 15_000)
     device.settle(1_500)
 }
 
-private fun MacrobenchmarkScope.playClip(targetPackage: String, clipId: String, streamLabel: String) {
+private fun MacrobenchmarkScope.openSourceList(targetPackage: String, clipId: String) {
     pressHome()
     startActivityAndWait(Intent(Intent.ACTION_MAIN).apply {
         setClassName(targetPackage, "com.nuvio.tv.MainActivity")
@@ -238,6 +422,12 @@ private fun MacrobenchmarkScope.playClip(targetPackage: String, clipId: String, 
         putExtra("videoId", clipId)
         putExtra("name", "Profile clip")
     })
+    device.settle(800)
+    device.waitIntroGone()
+}
+
+private fun MacrobenchmarkScope.playClip(targetPackage: String, clipId: String, streamLabel: String) {
+    openSourceList(targetPackage, clipId)
     if (device.waitFor(By.text(streamLabel), 20_000) != true) {
         saveFailure("streams")
         error("No '$streamLabel' source: install the local clip addon in the validation app and keep adb reverse tcp:8765")
@@ -247,6 +437,12 @@ private fun MacrobenchmarkScope.playClip(targetPackage: String, clipId: String, 
     // Loading screen, first frames and the hidden controls; pausing then brings the control row up.
     device.waitGone(By.text(streamLabel), 10_000)
     Thread.sleep(8_000)
+    // With "Generate thumbnails before play" on, the generating screen holds playback; Back starts it.
+    if (device.freshHas(By.text(THUMBNAIL_PREPARE))) {
+        device.settle(3_000)
+        device.profileKey(targetPackage, KeyEvent.KEYCODE_BACK)
+        Thread.sleep(6_000)
+    }
     device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
     if (device.waitFor(By.desc("Subtitles"), 5_000) != true) {
         device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_DOWN)
@@ -322,14 +518,184 @@ private fun UiDevice.waitForPreparedHome(targetPackage: String) {
     waitForIdle()
     if (waitFor(By.text(ONBOARDING_FIRST_LABEL), 2_000) == true) {
         check(focusAndSelect(ONBOARDING_FIRST_LABEL))
-        check(focusAndSelect("Advanced"))
+        // Builds without the experience picker go straight to Home.
+        if (waitFor(By.text("Advanced"), 4_000)) focusAndSelect("Advanced")
+    }
+    // Signed-in builds open on the profile picker; the profile that has focus is the primary one.
+    val pickerEnd = System.currentTimeMillis() + 20_000
+    while (System.currentTimeMillis() < pickerEnd && !hasObject(By.text(HOME_ROW))) {
+        if (hasObject(By.text("Who's watching?"))) {
+            Thread.sleep(800)
+            pressDPadCenter()
+            waitForIdle()
+            break
+        }
+        Thread.sleep(500)
     }
     if (waitFor(By.text(HOME_ROW), 30_000) != true) {
         saveFailure("home")
         error("Prepare the isolated validation app with English labels and populated Home; foreground=$currentPackageName")
     }
+    waitIntroGone()
     waitForIdle()
     Thread.sleep(3_000)
+}
+
+// The Arc intro is a full-screen view named after the app; until it has dissolved into Home it keeps the keys.
+private fun UiDevice.waitIntroGone(timeoutMs: Long = 14_000) {
+    val end = System.currentTimeMillis() + timeoutMs
+    while (introShowing()) {
+        if (System.currentTimeMillis() > end) {
+            Log.w(TAG, "Intro still showing after $timeoutMs ms")
+            return
+        }
+        Thread.sleep(400)
+    }
+}
+
+private fun UiDevice.introShowing(): Boolean = try {
+    clearAccessibilityCache()
+    findObjects(By.desc(INTRO_DESC)).any { it.visibleBounds.width() > displayWidth * 4 / 5 }
+} catch (e: StaleObjectException) {
+    true
+}
+
+private fun UiDevice.waitForAny(selectors: List<BySelector>, timeoutMs: Long): Boolean {
+    val end = System.currentTimeMillis() + timeoutMs
+    while (true) {
+        if (selectors.any { freshHas(it) }) return true
+        if (System.currentTimeMillis() > end) return false
+        Thread.sleep(400)
+    }
+}
+
+// Presses down, waits past the long-press delay, then repeats every 50 ms like a held remote button.
+private fun UiDevice.holdKey(targetPackage: String, key: Int, holdMs: Long) {
+    check(currentPackageName == targetPackage) { "Another app took focus during profile collection" }
+    val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+    val downTime = SystemClock.uptimeMillis()
+    fun send(action: Int, repeat: Int, flags: Int, sync: Boolean) {
+        val event = KeyEvent(
+            downTime, SystemClock.uptimeMillis(), action, key, repeat, 0,
+            KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags, InputDevice.SOURCE_DPAD or InputDevice.SOURCE_KEYBOARD
+        )
+        automation.injectInputEvent(event, sync)
+    }
+    send(KeyEvent.ACTION_DOWN, 0, 0, true)
+    Thread.sleep(450)
+    var repeat = 1
+    while (SystemClock.uptimeMillis() - downTime < holdMs) {
+        send(KeyEvent.ACTION_DOWN, repeat, if (repeat == 1) KeyEvent.FLAG_LONG_PRESS else 0, false)
+        repeat++
+        Thread.sleep(50)
+    }
+    send(KeyEvent.ACTION_UP, 0, 0, true)
+}
+
+// Outside collection: adds a running series to the library and lets the Calendar find its dates once.
+private fun prepareCalendar(targetPackage: String, seriesId: String) {
+    val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    try {
+        device.executeShellCommand("input keyevent KEYCODE_WAKEUP")
+        device.pressHome()
+        device.executeShellCommand(
+            "am start -W -n $targetPackage/com.nuvio.tv.MainActivity -f 0x10008000 --es contentId $seriesId --es contentType series"
+        )
+        device.waitFor(By.pkg(targetPackage), 5_000)
+        device.settle(1_000)
+        device.waitIntroGone()
+        val add = By.desc("Add to library")
+        val saved = By.desc("Remove from library")
+        if (!device.waitForAny(listOf(add, saved), 25_000)) {
+            Log.w(TAG, "Details of $seriesId did not open")
+        } else if (!device.freshHas(saved)) {
+            if (device.focusControl(targetPackage, "Add to library")) {
+                device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+                if (!device.waitFor(saved, 5_000)) Log.w(TAG, "$seriesId was not added to the library")
+            } else {
+                Log.w(TAG, "Add to library not focusable")
+            }
+        }
+        device.pressHome()
+        device.executeShellCommand("am start -W -n $targetPackage/com.nuvio.tv.MainActivity -f 0x10008000")
+        device.waitForPreparedHome(targetPackage)
+        if (device.openSection(targetPackage, "Calendar") && !device.waitFor(By.text(CALENDAR_READY), 45_000)) {
+            Log.w(TAG, "Calendar found no dates while preparing")
+        }
+    } catch (e: Exception) {
+        Log.w(TAG, "Calendar preparation skipped", e)
+        device.saveFailure("calendar-prepare")
+    }
+    device.pressHome()
+}
+
+// Outside collection: Settings > Playback > Stream Selection > Sort sources.
+private fun setSortSources(targetPackage: String, option: String) {
+    val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    try {
+        device.executeShellCommand("input keyevent KEYCODE_WAKEUP")
+        device.pressHome()
+        device.executeShellCommand("am start -W -n $targetPackage/com.nuvio.tv.MainActivity -f 0x10008000")
+        device.waitForPreparedHome(targetPackage)
+        check(device.openPlaybackPage(targetPackage)) { "Playback settings not reachable" }
+        check(device.expandSection(targetPackage, "Stream Selection")) { "Stream Selection not found" }
+        check(device.moveFocusTo(targetPackage, "Sort sources", KeyEvent.KEYCODE_DPAD_DOWN, 10)) { "Sort sources not found" }
+        device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+        check(device.waitForSortDialog()) { "Sort sources dialog did not open" }
+        if (device.moveFocusTo(targetPackage, option, KeyEvent.KEYCODE_DPAD_DOWN, 3) ||
+            device.moveFocusTo(targetPackage, option, KeyEvent.KEYCODE_DPAD_UP, 3)) {
+            device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+        } else {
+            Log.w(TAG, "Sort option $option not found")
+            device.profileKey(targetPackage, KeyEvent.KEYCODE_BACK)
+        }
+        device.settle(800)
+    } catch (e: Exception) {
+        Log.w(TAG, "Sort sources not set to $option", e)
+        device.saveFailure("sort-sources")
+    }
+    device.pressHome()
+}
+
+// Both choices are only on screen together inside the dialog.
+private fun UiDevice.waitForSortDialog(): Boolean {
+    val end = System.currentTimeMillis() + 5_000
+    while (true) {
+        if (freshHas(By.text(SORT_SOURCE_ORDER)) && freshHas(By.text(SORT_BEST_FIRST))) return true
+        if (System.currentTimeMillis() > end) return false
+        Thread.sleep(400)
+    }
+}
+
+private fun UiDevice.openPlaybackPage(targetPackage: String): Boolean {
+    if (!openSection(targetPackage, "Settings")) return false
+    if (!waitFor(By.text("Account and sync status"), 10_000)) return false
+    settle(600)
+    if (!railTo(targetPackage, "Playback")) return false
+    profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_RIGHT)
+    settle(600)
+    return true
+}
+
+// Playback sections are collapsible rows whose value reads Open or Closed.
+private fun UiDevice.expandSection(targetPackage: String, label: String): Boolean {
+    if (!moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_DOWN, 12) &&
+        !moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_UP, 14)) {
+        Log.w(TAG, "Section $label not found")
+        return false
+    }
+    if (focusedHas("Closed")) {
+        profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+        settle(700)
+    }
+    return true
+}
+
+private fun UiDevice.collapseSection(targetPackage: String, label: String) {
+    if (moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_UP, 16) && focusedHas("Open")) {
+        profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_CENTER)
+        settle(500)
+    }
 }
 
 // Runs before collection, so switching the interface never ends up in the recorded profile.
@@ -341,7 +707,18 @@ private fun ensureInterface(targetPackage: String, style: String) {
     device.waitForPreparedHome(targetPackage)
     check(device.openSection(targetPackage, "Settings")) { "Settings not reachable for the interface switch" }
     check(device.waitFor(By.text("Account and sync status"), 10_000) == true)
-    check(device.moveFocusTo(targetPackage, "Appearance", KeyEvent.KEYCODE_DPAD_DOWN, 6)) { "Appearance not found" }
+    val onAppearance = device.moveFocusTo(targetPackage, "Appearance", KeyEvent.KEYCODE_DPAD_DOWN, 6) || run {
+        // A signed-in account page takes the first focus; step back to the category list.
+        device.profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_LEFT)
+        device.settle(350)
+        device.moveFocusTo(targetPackage, "Appearance", KeyEvent.KEYCODE_DPAD_UP, 10) ||
+            device.moveFocusTo(targetPackage, "Appearance", KeyEvent.KEYCODE_DPAD_DOWN, 10)
+    }
+    if (!onAppearance) {
+        Log.w(TAG, "Appearance not reached, keeping the current interface")
+        device.pressHome()
+        return
+    }
     Thread.sleep(800)
     val other = if (style == STYLE_V2) STYLE_ORIGINAL else STYLE_V2
     if (device.freshHas(By.text(style)) && !device.freshHas(By.text(other))) {
@@ -427,8 +804,10 @@ private fun UiDevice.moveFocusTo(targetPackage: String, label: String, key: Int,
 
 // The expanded sidebar shows its labels; its entries, including the profile one, sit at the left edge.
 private fun UiDevice.sidebarFocused(): Boolean = try {
+    val density = InstrumentationRegistry.getInstrumentation().context.resources.displayMetrics.density
     val bounds = freshFocused()?.visibleBounds
-    bounds != null && bounds.left < 60 && bounds.right < 400 && SIDEBAR_LABELS.all { freshHas(By.text(it)) }
+    bounds != null && bounds.left < 40 * density && bounds.right < 270 * density &&
+        SIDEBAR_LABELS.all { freshHas(By.text(it)) }
 } catch (e: StaleObjectException) {
     false
 }
@@ -462,7 +841,12 @@ private fun UiDevice.openSection(targetPackage: String, label: String): Boolean 
 
 private fun UiDevice.railTo(targetPackage: String, label: String): Boolean =
     moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_UP, 10) ||
-        moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_DOWN, 10)
+        moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_DOWN, 10) || run {
+            profileKey(targetPackage, KeyEvent.KEYCODE_DPAD_LEFT)
+            settle(350)
+            moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_UP, 10) ||
+                moveFocusTo(targetPackage, label, KeyEvent.KEYCODE_DPAD_DOWN, 10)
+        }
 
 private fun UiDevice.backToSettingsRail(targetPackage: String) {
     profileKey(targetPackage, KeyEvent.KEYCODE_BACK)
