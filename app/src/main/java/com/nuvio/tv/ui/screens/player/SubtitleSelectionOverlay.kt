@@ -151,6 +151,7 @@ internal fun SubtitleSelectionOverlay(
             preferredLanguage = subtitleStyle.preferredLanguage,
             secondaryPreferredLanguage = subtitleStyle.secondaryPreferredLanguage,
             tertiaryPreferredLanguage = subtitleStyle.tertiaryPreferredLanguage,
+            preferredLanguageBeforeOff = subtitleStyle.preferredLanguageBeforeOff,
             showOnlyPreferredLanguages = subtitleStyle.showOnlyPreferredLanguages,
             currentLanguageKey = openLanguageKey,
             noneLabel = noneLabel,
@@ -417,7 +418,7 @@ private fun SubtitleStyleRail(
     val moveLeftKey = if (isRtl) android.view.KeyEvent.KEYCODE_DPAD_RIGHT else android.view.KeyEvent.KEYCODE_DPAD_LEFT
     // libass and MPV render ASS/SSA styling themselves, so the user style controls
     // are inert for those tracks: events are dropped and cards dimmed. Cards stay
-    // focusable so D-pad can still leave the editor.
+    // focusable so D-pad can still leave the editor. The delay still applies to them.
     val dispatchStyleEvent: (PlayerEvent) -> Unit = { event ->
         if (!isStyleDisabledByLibass) {
             onEvent(event)
@@ -434,12 +435,11 @@ private fun SubtitleStyleRail(
         ) {
             item {
                 Card(
-                    onClick = { dispatchStyleEvent(PlayerEvent.OnShowSubtitleDelayOverlay) },
+                    onClick = { onEvent(PlayerEvent.OnShowSubtitleDelayOverlay) },
                     colors = overlayCardColors(selected = false),
                     shape = CardDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .then(styleCardModifier)
                         .focusRequester(requireNotNull(focusRequesters[StyleFocusKey.DelaySet]))
                         .onPreviewKeyEvent { event ->
                             when (event.nativeKeyEvent.keyCode) {
@@ -1094,7 +1094,7 @@ private fun preferredVisibleStartIndex(targetIndex: Int): Int {
     return (targetIndex - 1).coerceAtLeast(0)
 }
 
-private data class SubtitleLanguageRailItem(
+internal data class SubtitleLanguageRailItem(
     val key: String,
     val label: String,
     val count: Int
@@ -1116,12 +1116,13 @@ private data class SubtitleOptionRailItem(
     val addonSubtitle: Subtitle? = null
 )
 
-private fun buildSubtitleLanguageRailItems(
+internal fun buildSubtitleLanguageRailItems(
     internalTracks: List<TrackInfo>,
     addonSubtitles: List<Subtitle>,
     preferredLanguage: String,
     secondaryPreferredLanguage: String?,
     tertiaryPreferredLanguage: String?,
+    preferredLanguageBeforeOff: String? = null,
     showOnlyPreferredLanguages: Boolean,
     currentLanguageKey: String,
     noneLabel: String,
@@ -1138,7 +1139,8 @@ private fun buildSubtitleLanguageRailItems(
     }
 
     val preferredOrder = preferredOverlayLanguageOrder(
-        preferredLanguage = preferredLanguage,
+        preferredLanguage = preferredLanguage.takeUnless { it.equals("none", ignoreCase = true) }
+            ?: preferredLanguageBeforeOff.orEmpty(),
         secondaryPreferredLanguage = secondaryPreferredLanguage,
         tertiaryPreferredLanguage = tertiaryPreferredLanguage
     )

@@ -202,8 +202,17 @@ internal fun PlaybackSubtitlesSection(
             value = libassRenderTypeOptions().firstOrNull { it.value == settings.libassRenderType }?.title,
             onClick = { onOpenDialog(PlaybackDialog.LIBASS_RENDER_TYPE) }
         )
+        if (settings.libassRenderType.isEffectsMode()) {
+            SettingsNote(
+                text = stringResource(R.string.sub_mode_effects_warning),
+                tone = SettingsNoteTone.Warning
+            )
+        }
     }
 }
+
+private fun LibassRenderType.isEffectsMode(): Boolean =
+    this == LibassRenderType.EFFECTS_OPEN_GL || this == LibassRenderType.EFFECTS_CANVAS
 
 @Composable
 internal fun subtitleLanguageLabel(style: SubtitleStyleSettings): String = when {
@@ -228,12 +237,14 @@ private fun libassRenderTypeOptions(): List<SettingsPickerOption<LibassRenderTyp
     SettingsPickerOption(
         LibassRenderType.EFFECTS_OPEN_GL,
         stringResource(R.string.sub_mode_effects_gl),
-        stringResource(R.string.sub_mode_effects_gl_sub)
+        stringResource(R.string.sub_mode_effects_gl_sub),
+        warning = stringResource(R.string.sub_mode_effects_warning)
     ),
     SettingsPickerOption(
         LibassRenderType.EFFECTS_CANVAS,
         stringResource(R.string.sub_mode_effects_canvas),
-        stringResource(R.string.sub_mode_effects_canvas_sub)
+        stringResource(R.string.sub_mode_effects_canvas_sub),
+        warning = stringResource(R.string.sub_mode_effects_warning)
     ),
     SettingsPickerOption(
         LibassRenderType.CUES,

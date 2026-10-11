@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.network.safeApiCall
+import com.nuvio.tv.core.logging.redactLinksForLog
 import com.nuvio.tv.data.local.AddonPreferences
 import com.nuvio.tv.data.mediaserver.ServerItemRef
 import com.nuvio.tv.data.remote.api.AddonApi
@@ -194,7 +195,7 @@ class SubtitleRepositoryImpl @Inject constructor(
             "$basePath/subtitles/$encodedType/$encodedActualId.json$baseQuery"
         }
         
-        Log.d(TAG, "Fetching subtitles from ${addon.name}: $subtitleUrl")
+        Log.d(TAG, "Fetching subtitles from ${addon.name}: ${subtitleUrl.redactLinksForLog()}")
         
         val healthT0 = android.os.SystemClock.elapsedRealtime()
         return try {
