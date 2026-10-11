@@ -648,6 +648,7 @@ private fun PartyMemberRow(member: PartyMemberView, canAdd: Boolean, asked: Bool
         PartyMemberStatus.BUFFERING -> stringResource(R.string.party_member_buffering) to NuvioTheme.colors.Warning
         PartyMemberStatus.CATCHING_UP -> stringResource(R.string.party_member_catching_up) to NuvioTheme.colors.Warning
         PartyMemberStatus.AWAY -> stringResource(R.string.party_member_away) to NuvioTheme.colors.TextTertiary
+        PartyMemberStatus.NEEDS_UPDATE -> stringResource(R.string.party_member_needs_update) to NuvioTheme.colors.Warning
     }
     val content: @Composable RowScope.() -> Unit = {
         PartyAvatar(name = name, colour = member.colour, avatarUrl = member.avatarUrl)

@@ -13,6 +13,14 @@ import javax.crypto.spec.SecretKeySpec
 /** What a relay sees of a room (the tag) and what only holders of the code can derive (the key). */
 class PartyRoomKeys(val roomTag: String, val payloadKey: ByteArray)
 
+/**
+ * What a member needs to be in a room: the code everyone sees and a long random key. A room with a key runs on it;
+ * the code only lets someone ask the host for it.
+ */
+data class PartyRoomAccess(val code: String, val key: String? = null) {
+    override fun toString(): String = "PartyRoomAccess(keyed=${key != null})"
+}
+
 class PartyIdentity(val secretKey: ByteArray, val publicKeyHex: String) {
     companion object {
         fun random(random: SecureRandom = SecureRandom()): PartyIdentity {
@@ -28,6 +36,9 @@ class PartyIdentity(val secretKey: ByteArray, val publicKeyHex: String) {
 object PartyCrypto {
     private const val KDF_ITERATIONS = 100_000
     private const val KDF_SALT = "nuvio-party-v1"
+    private const val KEYED_SALT = "nuvio-party-key-v1"
+    private const val ADMIT_SALT = "nuvio-party-admit-v1"
+    const val ROOM_KEY_BYTES = 32
     private const val NONCE_BYTES = 12
     private const val TAG_BITS = 128
 
@@ -38,6 +49,33 @@ object PartyCrypto {
             roomTag = hex(derived.copyOfRange(32, 48)),
             payloadKey = derived.copyOfRange(0, 32),
         )
+    }
+
+    fun newRoomKey(random: SecureRandom = SecureRandom()): String = hex(ByteArray(ROOM_KEY_BYTES).also(random::nextBytes))
+
+    fun isRoomKey(value: String?): Boolean = value != null && value.length == ROOM_KEY_BYTES * 2 && value.all { it in '0'..'9' || it in 'a'..'f' }
+
+    /** A long random key needs no slow derivation. */
+    fun deriveKeyedRoom(key: String): PartyRoomKeys? {
+        val secret = unhex(key)?.takeIf { isRoomKey(key) } ?: return null
+        val prk = hmac(KEYED_SALT.toByteArray(Charsets.UTF_8), secret)
+        return PartyRoomKeys(
+            roomTag = hex(hmac(prk, byteArrayOf(1)).copyOf(16)),
+            payloadKey = hmac(prk, byteArrayOf(2)),
+        )
+    }
+
+    /** A key only [identity] and the holder of [otherKey] can work out, for handing over a room key. */
+    fun pairKey(identity: PartyIdentity, otherKey: String): ByteArray? {
+        val other = unhex(otherKey)?.takeIf { it.size == 32 } ?: return null
+        val shared = runCatching { Bip340.sharedX(identity.secretKey, other) }.getOrNull() ?: return null
+        return hmac(hmac(ADMIT_SALT.toByteArray(Charsets.UTF_8), shared), byteArrayOf(1))
+    }
+
+    private fun hmac(key: ByteArray, data: ByteArray): ByteArray {
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(key, "HmacSHA256"))
+        return mac.doFinal(data)
     }
 
     fun seal(key: ByteArray, plaintext: String, random: SecureRandom): String {

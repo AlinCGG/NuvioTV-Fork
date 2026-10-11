@@ -12,7 +12,7 @@ class PartySessionTest {
 
     private class Sim(val latencyMs: Long = 120L) {
         var now = 1_000_000L
-        private class Envelope(val from: String, val payload: String, val at: Long)
+        private class Envelope(val from: String, val payload: String, val at: Long, val room: String)
 
         private val queue = ArrayDeque<Envelope>()
         val transports = mutableListOf<BusTransport>()
@@ -20,24 +20,42 @@ class PartySessionTest {
         private var ids = 0
 
         inner class BusTransport : PartyTransport {
-            override val localId: String = "id" + (ids++).toString().padStart(2, '0')
+            override val localId: String = (ids++).toString().padStart(64, '0')
             var listener: PartyTransport.Listener? = null
             var online = true
             private var announced = false
 
-            override fun open(code: String, listener: PartyTransport.Listener) {
+            override fun open(access: PartyRoomAccess, listener: PartyTransport.Listener) {
                 this.listener = listener
-                this.code = code
+                this.access = access
                 transports += this
             }
 
-            var code: String = ""
+            var access = PartyRoomAccess("")
+            val code: String get() = access.code
+            val room: String get() = access.key ?: access.code
+            val lobby: String? get() = access.code.takeIf { access.key != null }
             val sent = mutableListOf<String>()
 
             override fun send(payload: String) {
                 sent += payload
-                if (online) queue.addLast(Envelope(localId, payload, now + latencyMs))
+                if (online) queue.addLast(Envelope(localId, payload, now + latencyMs, room))
             }
+
+            override fun sendLobby(payload: String) {
+                val to = lobby ?: return
+                sent += payload
+                if (online) queue.addLast(Envelope(localId, payload, now + latencyMs, to))
+            }
+
+            override fun moveTo(access: PartyRoomAccess) {
+                this.access = access
+            }
+
+            override fun sealFor(otherId: String, text: String): String = "sealed:$otherId:${text.reversed()}"
+
+            override fun openFrom(otherId: String, sealed: String): String? =
+                sealed.takeIf { it.startsWith("sealed:$localId:") }?.removePrefix("sealed:$localId:")?.reversed()
 
             override fun close() {
                 transports.remove(this)
@@ -62,10 +80,12 @@ class PartySessionTest {
                 transports.toList().forEach { it.pump() }
                 while (queue.isNotEmpty() && queue.first().at <= now) {
                     val envelope = queue.removeFirst()
-                    val sender = transports.firstOrNull { it.localId == envelope.from }
                     transports.toList().forEach { target ->
-                        if (target.online && target.localId != envelope.from && (sender == null || sender.code == target.code)) {
-                            target.listener?.onMessage(envelope.from, envelope.payload)
+                        if (target.online && target.localId != envelope.from) {
+                            when (envelope.room) {
+                                target.room -> target.listener?.onMessage(envelope.from, envelope.payload)
+                                target.lobby -> target.listener?.onLobbyMessage(envelope.from, envelope.payload)
+                            }
                         }
                     }
                 }
@@ -170,10 +190,10 @@ class PartySessionTest {
 
     private fun gap(a: FakePlayer, b: FakePlayer): Long = abs(a.positionMs - b.positionMs)
 
-    private fun party(sim: Sim, guestSpeedOk: Boolean = true, guestOffset: Long = 0L): Triple<Device, Device, FakePlayer> {
+    private fun party(sim: Sim, guestSpeedOk: Boolean = true, guestOffset: Long = 0L, keyed: Boolean = true): Triple<Device, Device, FakePlayer> {
         val host = sim.device("Lounge")
         host.attach(film, start = 600_000)
-        host.session.createParty()
+        host.session.createParty(keyed)
         sim.advance(1_000)
         val guest = sim.device("Fire TV", guestOffset)
         assertTrue(guest.session.joinParty("h7k q29"))
@@ -440,6 +460,312 @@ class PartySessionTest {
         assertEquals(PartyRole.HOST, guest.state.role)
         sim.advance(20_000)
         assertTrue("gap ${gap(guestPlayer, host.player!!)}", gap(guestPlayer, host.player!!) <= 150)
+    }
+
+    @Test
+    fun `a guest cannot make itself host while the host is still there`() {
+        val sim = Sim()
+        val (host, guest, _) = party(sim)
+        val third = sim.device("Bedroom")
+        third.session.joinParty("H7KQ29")
+        sim.advance(1_500)
+        third.session.consumeMediaRequest()
+        third.attach(film)
+        host.session.setGuestsControl(false)
+        sim.advance(20_000)
+        repeat(3) {
+            val claim = PartyMessage.State(
+                term = 2, epoch = 1, sentAt = sim.now, hostClock = sim.now, positionMs = 0L, playing = false,
+                roster = listOf(guest.id), guestsControl = true,
+            )
+            guest.transport!!.send(PartyCodec.encode(PartyMessage.Hello("Fire TV", host = true, term = 2, speedOk = true)))
+            guest.transport!!.send(PartyCodec.encode(claim))
+            sim.advance(5_000)
+        }
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(host.id, third.state.members.single { it.isHost }.id)
+        assertTrue(host.player!!.wantsToPlay)
+        assertTrue(third.player!!.wantsToPlay)
+    }
+
+    private fun rogueClaim(rogue: Sim.BusTransport, sim: Sim, term: Int) {
+        rogue.send(PartyCodec.encode(PartyMessage.Hello("Rogue", host = true, term = term, speedOk = true)))
+        rogue.send(PartyCodec.encode(PartyMessage.State(term, 1, sim.now, sim.now, 0L, false, roster = listOf(rogue.localId))))
+    }
+
+    private fun threeBoxes(sim: Sim): Triple<Device, Device, Device> {
+        val (host, guest, _) = party(sim)
+        val third = sim.device("Bedroom")
+        third.session.joinParty("H7KQ29")
+        sim.advance(3_000)
+        third.session.consumeMediaRequest()
+        third.attach(film)
+        sim.advance(20_000)
+        return Triple(host, guest, third)
+    }
+
+    @Test
+    fun `a claim backed by one extra id that sat in the room does not take a three-box party`() {
+        val sim = Sim()
+        val (host, guest, _) = party(sim)
+        sim.advance(20_000)
+        host.session.setGuestsControl(false)
+        val access = PartyRoomAccess("H7KQ29", host.session.roomKey)
+        val rogue = sim.BusTransport().also { it.open(access, Recorder()) }
+        val helper = sim.BusTransport().also { it.open(access, Recorder()) }
+        fun backUp() = helper.send(
+            PartyCodec.encode(PartyMessage.Status(1, "Helper", 0L, stalled = false, ready = true, speedOk = true, host = rogue.localId))
+        )
+        repeat(10) {
+            backUp()
+            sim.advance(1_000)
+        }
+        repeat(15) {
+            backUp()
+            rogueClaim(rogue, sim, term = 2)
+            sim.advance(1_000)
+        }
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(host.id, guest.state.members.single { it.isHost }.id)
+        assertTrue(host.player!!.wantsToPlay)
+    }
+
+    @Test
+    fun `a claim on the same term with a lower id and as many followers does not take the room`() {
+        val sim = Sim()
+        val rogue = sim.BusTransport()
+        val helper = sim.BusTransport()
+        val (host, guest, _) = party(sim)
+        sim.advance(20_000)
+        val access = PartyRoomAccess("H7KQ29", host.session.roomKey)
+        rogue.open(access, Recorder())
+        helper.open(access, Recorder())
+        assertTrue(rogue.localId < host.id)
+        fun backUp() = helper.send(
+            PartyCodec.encode(PartyMessage.Status(1, "Helper", 0L, stalled = false, ready = true, speedOk = true, host = rogue.localId))
+        )
+        repeat(10) {
+            backUp()
+            sim.advance(1_000)
+        }
+        repeat(15) {
+            backUp()
+            rogueClaim(rogue, sim, term = 1)
+            sim.advance(1_000)
+        }
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(host.id, guest.state.members.single { it.isHost }.id)
+    }
+
+    @Test
+    fun `a claim right after the host was away does not win without followers`() {
+        val sim = Sim()
+        val (host, guest, _) = party(sim)
+        sim.advance(20_000)
+        val rogue = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29", host.session.roomKey), Recorder()) }
+        host.running = false
+        sim.advance(12_000)
+        host.running = true
+        repeat(10) {
+            rogueClaim(rogue, sim, term = 2)
+            sim.advance(1_000)
+        }
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(host.id, guest.state.members.single { it.isHost }.id)
+    }
+
+    @Test
+    fun `a friend joining from an invite follows the host the invite named, not the first claim it hears`() {
+        val sim = Sim()
+        val (host, guest, third) = threeBoxes(sim)
+        val rogue = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29", host.session.roomKey), Recorder()) }
+        val friend = sim.device("Study")
+        friend.session.joinParty("H7KQ29", host.session.roomKey, host.id)
+        repeat(12) {
+            rogueClaim(rogue, sim, term = 2)
+            sim.advance(1_000)
+        }
+        assertEquals(host.id, friend.state.members.single { it.isHost }.id)
+        assertEquals(0, friend.state.hostChanges)
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(host.id, guest.state.members.single { it.isHost }.id)
+        assertEquals(host.id, third.state.members.single { it.isHost }.id)
+    }
+
+    @Test
+    fun `a fake host in the code room does not stop the real host letting a box in`() {
+        val sim = Sim()
+        val host = sim.device("Lounge")
+        host.attach(film, start = 600_000)
+        host.session.createParty()
+        sim.advance(1_000)
+        val rogue = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29"), Recorder()) }
+        rogueClaim(rogue, sim, term = 1)
+        val typed = sim.device("Fire TV")
+        typed.session.joinParty("H7KQ29")
+        repeat(5) {
+            rogueClaim(rogue, sim, term = 1)
+            sim.advance(1_000)
+        }
+        assertEquals(host.session.roomKey, typed.transport!!.access.key)
+        assertEquals(host.id, typed.state.members.single { it.isHost }.id)
+    }
+
+    @Test
+    fun `a box caught by a fake host in the code room is still let in when the real host answers late`() {
+        val sim = Sim()
+        val host = sim.device("Lounge")
+        host.attach(film, start = 600_000)
+        host.session.createParty()
+        sim.advance(1_000)
+        val rogue = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29"), Recorder()) }
+        host.transport!!.online = false
+        val typed = sim.device("Fire TV")
+        typed.session.joinParty("H7KQ29")
+        repeat(5) {
+            rogueClaim(rogue, sim, term = 1)
+            sim.advance(1_000)
+        }
+        assertEquals(rogue.localId, typed.state.members.single { it.isHost }.id)
+        host.transport!!.online = true
+        repeat(20) {
+            rogueClaim(rogue, sim, term = 1)
+            sim.advance(1_000)
+        }
+        assertEquals(host.session.roomKey, typed.transport!!.access.key)
+        assertEquals(host.id, typed.state.members.single { it.isHost }.id)
+        assertTrue(host.state.members.none { it.id == typed.id && it.status == PartyMemberStatus.NEEDS_UPDATE })
+        assertTrue(host.state.members.any { it.id == typed.id && it.name == "Fire TV" })
+    }
+
+    @Test
+    fun `a box on an older version that knocks shows up as needing the update`() {
+        val sim = Sim()
+        val host = sim.device("Lounge")
+        host.attach(film, start = 600_000)
+        host.session.createParty()
+        sim.advance(1_000)
+        val old = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29"), Recorder()) }
+        old.send(PartyCodec.encode(PartyMessage.Hello("Grandma", host = false, term = 0, speedOk = true)))
+        sim.advance(1_000)
+        val shown = host.state.members.single { it.id == old.localId }
+        assertEquals("Grandma", shown.name)
+        assertEquals(PartyMemberStatus.NEEDS_UPDATE, shown.status)
+        assertTrue(host.transport!!.sent.none { PartyCodec.decode(it) is PartyMessage.Admit })
+        sim.advance(301_000)
+        assertTrue(host.state.members.none { it.id == old.localId })
+    }
+
+    private class Recorder : PartyTransport.Listener {
+        val heard = mutableListOf<String>()
+        override fun onConnected() = Unit
+        override fun onDisconnected() = Unit
+        override fun onMessage(senderId: String, payload: String) {
+            heard += payload
+        }
+        override fun onProblem(problem: PartyTransportProblem) = Unit
+    }
+
+    @Test
+    fun `a box claiming the room while someone joins does not take the newcomer or the host`() {
+        val sim = Sim()
+        val (host, guest, _) = party(sim, keyed = false)
+        sim.advance(20_000)
+        val rogue = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29"), Recorder()) }
+        fun claim() {
+            rogue.send(PartyCodec.encode(PartyMessage.Hello("Rogue", host = true, term = 2, speedOk = true)))
+            rogue.send(PartyCodec.encode(PartyMessage.State(2, 1, sim.now, sim.now, 0L, false, roster = listOf(rogue.localId))))
+        }
+        claim()
+        val third = sim.device("Bedroom")
+        third.session.joinParty("H7KQ29")
+        repeat(10) {
+            claim()
+            sim.advance(1_000)
+        }
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(host.id, guest.state.members.single { it.isHost }.id)
+        assertEquals(host.id, third.state.members.single { it.isHost }.id)
+    }
+
+    @Test
+    fun `a guest back from a long network drop gives the room back to the host`() {
+        val sim = Sim()
+        val (host, guest, _) = party(sim)
+        val third = sim.device("Bedroom")
+        third.session.joinParty("H7KQ29")
+        sim.advance(1_500)
+        third.session.consumeMediaRequest()
+        third.attach(film)
+        sim.advance(20_000)
+        third.transport!!.online = false
+        sim.advance(40_000)
+        third.transport!!.online = true
+        sim.advance(20_000)
+        assertEquals(PartyRole.HOST, host.state.role)
+        assertEquals(PartyRole.GUEST, third.state.role)
+        assertEquals(host.id, guest.state.members.single { it.isHost }.id)
+        assertEquals(host.id, third.state.members.single { it.isHost }.id)
+    }
+
+    @Test
+    fun `a party runs on a long key and the code only knocks`() {
+        val sim = Sim()
+        val host = sim.device("Lounge")
+        host.attach(film, start = 600_000)
+        host.session.createParty(keyed = true)
+        val key = host.session.roomKey
+        assertTrue(PartyCrypto.isRoomKey(key))
+        sim.advance(1_000)
+        val listener = Recorder()
+        val heard = listener.heard
+        sim.BusTransport().open(PartyRoomAccess("H7KQ29"), listener)
+        val typed = sim.device("Fire TV")
+        assertTrue(typed.session.joinParty("H7KQ29"))
+        sim.advance(3_000)
+        assertEquals(key, typed.transport!!.access.key)
+        assertEquals(film.copy(sharedUrl = null), typed.session.mediaRequest.value)
+        assertEquals("H7KQ29", typed.state.code)
+        val friend = sim.device("Bedroom")
+        assertTrue(friend.session.joinParty("H7KQ29", key))
+        sim.advance(1_500)
+        assertNotNull(friend.session.mediaRequest.value)
+        assertEquals(3, host.state.members.size)
+        sim.advance(20_000)
+        assertTrue(heard.isNotEmpty())
+        heard.forEach { payload ->
+            val message = PartyCodec.decode(payload)
+            assertTrue(payload, message is PartyMessage.Admit || (message is PartyMessage.Hello && message.name.isEmpty() && message.friendKey == null))
+        }
+        assertTrue(heard.none { it.contains(key!!) })
+        val silent = sim.BusTransport().also { it.open(PartyRoomAccess("H7KQ29"), Recorder()) }
+        silent.send(PartyCodec.encode(PartyMessage.Hello("", host = false, term = 0, speedOk = true)))
+        sim.advance(1_000)
+        assertTrue(host.state.members.any { it.id == silent.localId && it.name.isEmpty() })
+        assertEquals(3, host.state.members.count { it.id != silent.localId })
+    }
+
+    @Test
+    fun `a takeover in a keyed room still lets people in with the code`() {
+        val sim = Sim()
+        val host = sim.device("Lounge")
+        host.attach(film, start = 600_000)
+        host.session.createParty(keyed = true)
+        sim.advance(1_000)
+        val friend = sim.device("Bedroom")
+        friend.session.joinParty("H7KQ29", host.session.roomKey)
+        sim.advance(1_500)
+        friend.session.consumeMediaRequest()
+        friend.attach(film)
+        sim.advance(5_000)
+        host.session.leaveParty()
+        sim.advance(3_000)
+        assertEquals(PartyRole.HOST, friend.state.role)
+        val typed = sim.device("Fire TV")
+        typed.session.joinParty("H7KQ29")
+        sim.advance(3_000)
+        assertEquals(friend.session.roomKey, typed.transport!!.access.key)
+        assertEquals(friend.id, typed.state.members.single { it.isHost }.id)
     }
 
     @Test

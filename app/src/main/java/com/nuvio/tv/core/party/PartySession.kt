@@ -37,7 +37,10 @@ class PartySession(
         var avatar: String? = null
         var colour: String? = null
         var friendKey: String? = null
+        var follows: String? = null
     }
+
+    private class Claim(var since: Long, var last: Long)
 
     private class Room(val epoch: Int, val hostClock: Long, val positionMs: Long, val playing: Boolean, val hold: PartyHoldInfo?)
 
@@ -68,12 +71,44 @@ class PartySession(
     /** What the party is watching, for the guest's stream picker. */
     val partyMedia: PartyMedia? get() = hostMedia
 
+    /** The party's long key; null for an older room that runs on its code. */
+    val roomKey: String? get() = access?.key
+
+    /** A guest no host has answered yet: it tells the room nothing about itself. */
+    private val knocking: Boolean get() = role == PartyRole.GUEST && hostId == null && !steppedDown
+
+    /**
+     * A guest that joined with the code and has no room key yet, perhaps because a fake host in the code's room
+     * answered first. It keeps its hello blank, so the real host still lets it in, until a room without a key (an
+     * older host) is the likely answer.
+     */
+    private fun waitingForKey(now: Long): Boolean =
+        role == PartyRole.GUEST && !steppedDown && access?.key == null && now - startedAt < ADMIT_WINDOW_MS
+
     private var transport: PartyTransport? = null
     private var localId: String = ""
     private var status = PartyStatus.IDLE
     private var role: PartyRole? = null
-    private var code: String? = null
+    private var access: PartyRoomAccess? = null
     private var term = 0
+    /**
+     * The member to follow as host: the one our host said it now follows, the box that let us in with the code, or the
+     * host an invite named. Until [redirectUntil] a newcomer waits for it instead of taking the first host it hears.
+     */
+    private var redirectTo: String? = null
+    private var redirectUntil = Long.MIN_VALUE / 2
+    private var hostSince = Long.MIN_VALUE / 2
+    private var replacedHost: String? = null
+    private val oldKnocks = LinkedHashMap<String, Pair<PartyMessage.Hello, Long>>()
+    private var lastAbsentAt = Long.MIN_VALUE / 2
+    private var lastTickAt: Long? = null
+    private val admitted = LinkedHashMap<String, Long>()
+    private val recentAdmits = ArrayDeque<Long>()
+    /** Boxes let in with the code that have not said anything in the room yet. */
+    private val silentAdmits = LinkedHashMap<String, Long>()
+    /** When each member was first heard in this room; kept when a member times out, for [followersOf]. */
+    private val firstSeen = HashMap<String, Long>()
+    private val claims = HashMap<String, Claim>()
     private var epoch = 0
     /** Host and term of the last accepted State and Media, and the newest State time from them: relays can reorder. */
     private var stateFrom: String? = null
@@ -147,18 +182,23 @@ class PartySession(
     private var helloProof: Triple<String, String, String>? = null
     private val random = SecureRandom()
 
-    fun createParty(): String {
+    /** A [keyed] room runs on a long random key that invites carry; its code only lets people knock. */
+    fun createParty(keyed: Boolean = true): String {
         val newCode = codeFactory()
-        start(newCode, PartyRole.HOST)
+        start(PartyRoomAccess(newCode, if (keyed) PartyCrypto.newRoomKey(random) else null), PartyRole.HOST)
         return newCode
     }
 
-    /** False when the code is not a valid party code. */
-    fun joinParty(rawCode: String): Boolean {
+    /** False when the code is not a valid party code. [key] and [host] come with an invite. */
+    fun joinParty(rawCode: String, key: String? = null, host: String? = null): Boolean {
         val normalized = PartyCode.normalize(rawCode) ?: return false
-        start(normalized, PartyRole.GUEST)
+        start(PartyRoomAccess(normalized, key?.takeIf(PartyCrypto::isRoomKey)), PartyRole.GUEST)
+        host?.takeIf { key != null && PartyInvites.isKey(it) }?.let { follow(it, clock()) }
         return true
     }
+
+    /** The current host's id, for invites. */
+    val hostMemberId: String? get() = hostId
 
     fun leaveParty() {
         if (status == PartyStatus.IDLE) return
@@ -190,7 +230,7 @@ class PartySession(
 
     /** Asks [memberId] to become a friend. Nothing is stored until they accept on their own screen. */
     fun addFriend(memberId: String) {
-        if (status != PartyStatus.ACTIVE || memberId == localId || !members.containsKey(memberId)) return
+        if (status != PartyStatus.ACTIVE || memberId == localId || !members.containsKey(memberId) || knocking) return
         val me = friendIdentity(true) ?: return
         friendAsked[memberId] = clock()
         log("friend request to ${short(memberId)}")
@@ -416,6 +456,8 @@ class PartySession(
     fun tick() {
         if (status == PartyStatus.IDLE) return
         val now = clock()
+        lastTickAt?.let { if (now - it > TICK_GAP_MS) lastAbsentAt = now }
+        lastTickAt = now
         player?.speedAllowed?.let { ok ->
             if (ok != lastSpeedOk) {
                 log("speedOk=$ok")
@@ -434,13 +476,13 @@ class PartySession(
         publish()
     }
 
-    private fun start(newCode: String, newRole: PartyRole) {
+    private fun start(newAccess: PartyRoomAccess, newRole: PartyRole) {
         if (status != PartyStatus.IDLE) {
             transport?.send(PartyCodec.encode(PartyMessage.Bye))
             shutDown(endedByHost = false)
         }
         val now = clock()
-        code = newCode
+        access = newAccess
         role = newRole
         status = PartyStatus.CONNECTING
         term = if (newRole == PartyRole.HOST) 1 else 0
@@ -453,7 +495,7 @@ class PartySession(
         transport = created
         localId = created.localId
         startedAt = now
-        log("start ${newRole.name.lowercase()} id=${short(localId)}")
+        log("start ${newRole.name.lowercase()} id=${short(localId)} keyed=${newAccess.key != null}")
         if (newRole == PartyRole.HOST) {
             hostId = localId
             sawHost = true
@@ -462,7 +504,7 @@ class PartySession(
             everSynced = true
         }
         player?.let { resetBaseline(it, now) }
-        created.open(newCode, Listener(created))
+        created.open(newAccess, Listener(created))
         publish()
     }
 
@@ -473,8 +515,19 @@ class PartySession(
         transport = null
         status = PartyStatus.IDLE
         role = null
-        code = null
+        access = null
         term = 0
+        redirectTo = null
+        admitted.clear()
+        recentAdmits.clear()
+        silentAdmits.clear()
+        oldKnocks.clear()
+        firstSeen.clear()
+        redirectUntil = Long.MIN_VALUE / 2
+        hostSince = Long.MIN_VALUE / 2
+        replacedHost = null
+        claims.clear()
+        lastTickAt = null
         epoch = 0
         hostId = null
         hostLeft = false
@@ -521,6 +574,7 @@ class PartySession(
         override fun onConnected() {
             if (!current) return
             val now = clock()
+            if (status == PartyStatus.RECONNECTING) lastAbsentAt = now
             log("connected after ${now - startedAt} ms")
             status = PartyStatus.ACTIVE
             problem = null
@@ -538,6 +592,7 @@ class PartySession(
         override fun onDisconnected() {
             if (!current) return
             log("disconnected, reconnecting")
+            lastAbsentAt = clock()
             status = PartyStatus.RECONNECTING
             publish()
         }
@@ -547,6 +602,21 @@ class PartySession(
             val message = PartyCodec.decode(payload) ?: return
             handle(senderId, message, clock())
             publish()
+        }
+
+        override fun onLobbyMessage(senderId: String, payload: String) {
+            if (!current || senderId == localId || role != PartyRole.HOST) return
+            val hello = PartyCodec.decode(payload) as? PartyMessage.Hello ?: return
+            val now = clock()
+            if (hello.name.isNotEmpty() || hello.friendKey != null) {
+                if (senderId !in oldKnocks) log("${short(senderId)} knocked with an older version")
+                oldKnocks.remove(senderId)
+                oldKnocks[senderId] = hello to now
+                while (oldKnocks.size > MAX_SHOWN_KNOCKS) oldKnocks.remove(oldKnocks.keys.first())
+                publish()
+                return
+            }
+            admit(senderId, now)
         }
 
         override fun onProblem(problem: PartyTransportProblem) {
@@ -561,15 +631,20 @@ class PartySession(
         val known = members.containsKey(senderId)
         val member = members.getOrPut(senderId) { Member(senderId) }
         member.lastSeenAt = now
+        firstSeen.putIfAbsent(senderId, now)
+        silentAdmits.remove(senderId)
         when (message) {
             is PartyMessage.Hello -> {
                 if (!known || member.name != message.name) {
                     log("member ${short(senderId)} name=${message.name} host=${message.host} term=${message.term} speedOk=${message.speedOk}")
                 }
-                member.name = message.name
+                val anonymous = message.name.isEmpty() && message.avatar == null && message.friendKey == null
+                if (!anonymous || !known) {
+                    member.name = message.name
+                    member.avatar = message.avatar
+                    member.colour = message.colour
+                }
                 member.speedOk = message.speedOk
-                member.avatar = message.avatar
-                member.colour = message.colour
                 val offered = message.friendKey
                 if (offered != null && offered != member.friendKey && message.friendProof != null &&
                     PartyInvites.checkProof(offered, senderId, PartyInvites.ANYONE, message.friendProof)
@@ -582,6 +657,8 @@ class PartySession(
                     sendHello(now, force = !known)
                     sendMedia()
                     broadcastState()
+                } else if (!known && hostId != null && now - lastStatusSentAt > NEW_MEMBER_STATUS_MS) {
+                    sendStatus(now)
                 }
             }
             is PartyMessage.Media -> {
@@ -643,6 +720,11 @@ class PartySession(
                 member.away = message.away
                 message.avatar?.let { member.avatar = it }
                 message.colour?.let { member.colour = it }
+                member.follows = message.host
+                if (role == PartyRole.GUEST && senderId == hostId && message.host != null && message.host != senderId) {
+                    log("host ${short(senderId)} now follows ${short(message.host)}")
+                    follow(message.host, now)
+                }
                 val current = message.epoch == epoch
                 member.stalled = current && message.stalled
                 val ready = current && message.ready
@@ -666,8 +748,12 @@ class PartySession(
             is PartyMessage.End -> {
                 if (senderId == hostId) shutDown(endedByHost = true)
             }
+            is PartyMessage.Admit -> {
+                members.remove(senderId)
+                enterKeyedRoom(senderId, message, now)
+            }
             is PartyMessage.FriendRequest -> {
-                if (message.to != localId || !PartyInvites.checkProof(message.key, senderId, localId, message.proof)) return
+                if (knocking || message.to != localId || !PartyInvites.checkProof(message.key, senderId, localId, message.proof)) return
                 member.friendKey = message.key
                 val request = PartyFriendRequest(
                     memberId = senderId,
@@ -711,10 +797,28 @@ class PartySession(
         }
     }
 
-    /** True when [senderId] is the host we follow after seeing a host message with [senderTerm]. */
+    /**
+     * True when [senderId] is the host we follow after seeing a host message with [senderTerm]. While the host we
+     * have is still here, a claim wins only with more followers: members that were in the room before the claim
+     * started and say they follow the claimant. On a tie a host that took over gives the room back to the host it
+     * replaced, and a host that has followers and did not just take over keeps it. Other ties go to the higher term,
+     * then the lower id.
+     */
     private fun acceptHost(senderId: String, senderTerm: Int, now: Long): Boolean {
+        if (senderTerm > MAX_TERM || senderTerm > term + MAX_TERM_STEP && hostId != null) return false
+        val claim = claims.getOrPut(senderId) { Claim(now, now) }
+        if (now - claim.last > HOST_TIMEOUT_MS) claim.since = now
+        claim.last = now
         if (role == PartyRole.HOST) {
-            val outranked = senderTerm > term || (senderTerm == term && senderId < localId)
+            val theirs = followersOf(senderId, now, strict = true)
+            val mine = followersOf(localId, now, strict = false)
+            val outranked = when {
+                theirs != mine -> theirs > mine
+                mine > 0 && senderId == replacedHost -> true
+                mine > 0 && now - hostSince > NEW_HOST_MS -> false
+                senderTerm != term -> senderTerm > term
+                else -> senderId < localId
+            }
             if (!outranked) {
                 if (now - lastStateSentAt > REASSERT_INTERVAL_MS) broadcastState()
                 return false
@@ -733,8 +837,16 @@ class PartySession(
             resyncRequested = true
         } else {
             val current = hostId
-            val accept = current == null || senderTerm > term ||
-                (senderTerm == term && (senderId == current || senderId < current))
+            val accept = when {
+                senderId == redirectTo -> true
+                current == null -> redirectTo == null || now > redirectUntil
+                senderId == current -> senderTerm >= term
+                hostGone(current, now) -> senderTerm >= term
+                else -> {
+                    val settled = now - startedAt > NEWCOMER_MS
+                    followersOf(senderId, now, strict = settled) > followersOf(current, now, strict = false) + if (settled) 1 else 0
+                }
+            }
             if (!accept) return false
             if (current != senderId) {
                 log("host is ${short(senderId)} term=$senderTerm")
@@ -746,12 +858,81 @@ class PartySession(
                 nextPingAt = now
             }
         }
+        val wasKnocking = role == PartyRole.GUEST && hostId == null
         hostId = senderId
         term = senderTerm
+        redirectTo = null
         hostLeft = false
         sawHost = true
         steppedDown = false
+        if (wasKnocking) sendHello(now, force = true)
         return true
+    }
+
+    private fun hostGone(id: String, now: Long): Boolean {
+        val seen = members[id]?.lastSeenAt
+        return hostLeft || seen == null || now - seen > HOST_TIMEOUT_MS
+    }
+
+    /**
+     * Recently heard members other than [id] that say they follow [id]. [strict] counts only members seen well before
+     * [id] started claiming the room, so boxes that joined during a claim, or ids made after it started, do not count.
+     */
+    private fun followersOf(id: String, now: Long, strict: Boolean): Int {
+        val since = claims[id]?.since ?: now
+        return members.values.count { member ->
+            member.id != id && member.follows == id && now - member.lastSeenAt <= MEMBER_FRESH_MS &&
+                (!strict || (firstSeen[member.id] ?: now) + SENIORITY_MS <= since)
+        }
+    }
+
+    /** Host of a keyed room: hands the key to someone who knocked with the code, sealed for them alone. */
+    private fun admit(senderId: String, now: Long) {
+        val key = access?.key ?: return
+        val last = admitted[senderId]
+        if (last != null && now - last < ADMIT_REPEAT_MS) return
+        while (recentAdmits.isNotEmpty() && now - recentAdmits.first() > 60_000L) recentAdmits.removeFirst()
+        if (recentAdmits.size >= MAX_ADMITS_PER_MINUTE) return
+        val box = transport?.sealFor(senderId, key) ?: return
+        recentAdmits.addLast(now)
+        admitted.remove(senderId)
+        admitted[senderId] = now
+        while (admitted.size > MAX_ADMITS) admitted.remove(admitted.keys.first())
+        if (senderId !in firstSeen) silentAdmits[senderId] = now
+        while (silentAdmits.size > MAX_ADMITS) silentAdmits.remove(silentAdmits.keys.first())
+        log("let ${short(senderId)} in with the code")
+        transport?.sendLobby(PartyCodec.encode(PartyMessage.Admit(to = senderId, box = box)))
+    }
+
+    /** A guest that joined with the code moves into the keyed room the host let it into. */
+    private fun enterKeyedRoom(senderId: String, message: PartyMessage.Admit, now: Long) {
+        val current = access ?: return
+        if (role != PartyRole.GUEST || current.key != null || steppedDown || message.to != localId) return
+        if (hostId != null && now - startedAt > ADMIT_WINDOW_MS) return
+        val key = transport?.openFrom(senderId, message.box)?.takeIf(PartyCrypto::isRoomKey) ?: return
+        log("let in by ${short(senderId)}, moving to the keyed room")
+        val moved = current.copy(key = key)
+        access = moved
+        members.clear()
+        firstSeen.clear()
+        roster = emptyList()
+        catchingUp.clear()
+        hostId = null
+        sawHost = false
+        hostLeft = false
+        term = 0
+        hostClock.reset()
+        pendingPings.clear()
+        pingsSent = 0
+        nextPingAt = now
+        transport?.moveTo(moved)
+        follow(senderId, now)
+        sendHello(now, force = true)
+    }
+
+    private fun follow(id: String, now: Long) {
+        redirectTo = id
+        redirectUntil = now + FOLLOW_HINT_MS
     }
 
     // ---- Host ----
@@ -947,6 +1128,7 @@ class PartySession(
     // ---- Guest ----
 
     private fun guestTick(now: Long) {
+        if (status == PartyStatus.ACTIVE && (knocking || waitingForKey(now)) && now - lastHelloAt >= KNOCK_INTERVAL_MS) sendHello(now)
         if (status == PartyStatus.ACTIVE && hostId != null && now >= nextPingAt) {
             pingsSent++
             nextPingAt = now + if (pingsSent < FAST_PINGS) FAST_PING_INTERVAL_MS else PING_INTERVAL_MS
@@ -978,7 +1160,7 @@ class PartySession(
         val current = hostId ?: return false
         if (!sawHost || status != PartyStatus.ACTIVE) return false
         val seen = members[current]?.lastSeenAt
-        val gone = hostLeft || seen == null || now - seen > HOST_TIMEOUT_MS
+        val gone = hostLeft || seen == null || now - max(seen, lastAbsentAt) > HOST_TIMEOUT_MS
         if (!gone) return false
         val candidates = if (localId in roster) roster else roster + localId
         val successor = candidates.firstOrNull { id ->
@@ -992,11 +1174,11 @@ class PartySession(
         log("host ${short(current)} gone (left=$hostLeft, silent ${seen?.let { now - it }} ms), taking over")
         members.remove(current)
         roster = roster.filter { it != current }
-        takeOver(now)
+        takeOver(now, replaced = current)
         return true
     }
 
-    private fun takeOver(now: Long) {
+    private fun takeOver(now: Long, replaced: String? = null) {
         val previous = room
         val wasHeld = previous?.hold != null
         adopted = if (player == null && previous != null) {
@@ -1012,7 +1194,10 @@ class PartySession(
         }
         role = PartyRole.HOST
         hostChanges++
-        if (term < Int.MAX_VALUE) term += 1
+        if (term < MAX_TERM) term += 1
+        hostSince = now
+        replacedHost = replaced
+        redirectTo = null
         hostId = localId
         hostLeft = false
         sawHost = true
@@ -1183,7 +1368,7 @@ class PartySession(
     }
 
     private fun sendStatus(now: Long) {
-        if (status != PartyStatus.ACTIVE || role != PartyRole.GUEST) return
+        if (status != PartyStatus.ACTIVE || role != PartyRole.GUEST || knocking) return
         val p = player
         val ready = aligned && !selfStalled
         lastStatusSentAt = now
@@ -1202,6 +1387,7 @@ class PartySession(
                 away = away,
                 avatar = card.avatarUrl,
                 colour = card.colour,
+                host = hostId,
             )
         )
     }
@@ -1347,14 +1533,15 @@ class PartySession(
     private fun sendHello(now: Long, force: Boolean = false) {
         if (!force && now - lastHelloAt < HELLO_INTERVAL_MS) return
         lastHelloAt = now
-        val card = profile()
-        val friendKey = friendIdentity(false)?.let { me ->
+        val knocking = knocking || waitingForKey(now)
+        val card = if (knocking) PartyProfile() else profile()
+        val friendKey = if (knocking) null else friendIdentity(false)?.let { me ->
             helloProof?.takeIf { it.first == localId && it.second == me.publicKeyHex }
                 ?: Triple(localId, me.publicKeyHex, PartyInvites.proof(me, localId, PartyInvites.ANYONE, random)).also { helloProof = it }
         }
         send(
             PartyMessage.Hello(
-                name = deviceName(),
+                name = if (knocking) "" else deviceName(),
                 host = role == PartyRole.HOST,
                 term = term,
                 speedOk = player?.speedAllowed ?: true,
@@ -1394,6 +1581,25 @@ class PartySession(
                         friendKey = friendIdentity(false)?.publicKeyHex,
                     )
                 )
+                if (isHost) {
+                    silentAdmits.filter { (id, at) -> id !in members && now - at <= ADMITTED_SHOWN_MS }.keys
+                        .take(MAX_SHOWN_KNOCKS).forEach { id ->
+                            add(PartyMemberView(id = id, name = "", isHost = false, isSelf = false, status = PartyMemberStatus.SYNCING))
+                        }
+                    oldKnocks.filter { (id, knock) -> id !in members && now - knock.second <= OLD_KNOCK_SHOWN_MS }.forEach { (id, knock) ->
+                        add(
+                            PartyMemberView(
+                                id = id,
+                                name = knock.first.name,
+                                isHost = false,
+                                isSelf = false,
+                                status = PartyMemberStatus.NEEDS_UPDATE,
+                                avatarUrl = knock.first.avatar,
+                                colour = knock.first.colour,
+                            )
+                        )
+                    }
+                }
                 otherMembers().forEach { member ->
                     val memberIsHost = member.id == hostId
                     add(
@@ -1430,7 +1636,7 @@ class PartySession(
         val next = PartyState(
             status = status,
             role = role,
-            code = code,
+            code = access?.code,
             members = views,
             hostPresent = hostSeen && !hostLeft,
             guestsControl = guestsControl,
@@ -1527,5 +1733,21 @@ class PartySession(
         private const val MAX_PENDING_PINGS = 8
         private const val DRIFT_LOG_INTERVAL_MS = 10_000L
         private const val FRIEND_ASK_TIMEOUT_MS = 120_000L
+        const val MAX_TERM = 10_000
+        private const val MAX_TERM_STEP = 20
+        private const val SENIORITY_MS = 5_000L
+        private const val NEWCOMER_MS = 20_000L
+        private const val NEW_MEMBER_STATUS_MS = 1_000L
+        private const val TICK_GAP_MS = 10_000L
+        private const val ADMIT_REPEAT_MS = 2_500L
+        private const val ADMIT_WINDOW_MS = 30_000L
+        private const val ADMITTED_SHOWN_MS = 120_000L
+        private const val KNOCK_INTERVAL_MS = 10_000L
+        private const val MAX_ADMITS = 64
+        private const val MAX_ADMITS_PER_MINUTE = 20
+        private const val MAX_SHOWN_KNOCKS = 3
+        private const val OLD_KNOCK_SHOWN_MS = 300_000L
+        private const val FOLLOW_HINT_MS = 10_000L
+        private const val NEW_HOST_MS = 30_000L
     }
 }

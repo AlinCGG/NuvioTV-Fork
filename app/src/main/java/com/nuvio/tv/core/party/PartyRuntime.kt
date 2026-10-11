@@ -12,6 +12,8 @@ import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.data.local.ProfileLockStateDataStore
 import com.nuvio.tv.data.remote.supabase.AvatarCatalogItem
 import com.nuvio.tv.data.remote.supabase.AvatarRepository
+import com.nuvio.tv.data.repository.MemberAccessRepository
+import com.nuvio.tv.domain.model.CosmeticEntitlement
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +55,7 @@ class PartyRuntime @Inject constructor(
     profileLocks: ProfileLockStateDataStore,
     private val localAvatars: LocalProfileAvatars,
     private val friendStore: PartyFriendStore,
+    private val memberAccess: MemberAccessRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -188,13 +191,29 @@ class PartyRuntime @Inject constructor(
             }
         }
         scope.launch {
-            for (attempt in 0 until CATALOGUE_ATTEMPTS) {
-                avatarCatalog = runCatching { avatarRepository.getAvatarCatalog() }.getOrDefault(emptyList())
-                if (avatarCatalog.isNotEmpty()) break
-                delay(CATALOGUE_RETRY_MS)
-            }
-            _avatarCatalogLoads.value++
-            session.announceName()
+            memberAccess.access
+                .map { it.entitlements.includes(CosmeticEntitlement.PROFILE_AVATARS) }
+                .distinctUntilChanged()
+                .collectLatest { supporter ->
+                    if (!supporter) {
+                        PartyAvatars.setMemberImages(emptyMap())
+                        avatarCatalog = avatarCatalog.filterNot { it.memberOnly }
+                    }
+                    for (attempt in 0 until CATALOGUE_ATTEMPTS) {
+                        val loaded = runCatching { avatarRepository.getAvatarCatalog(supporter) }.getOrDefault(emptyList())
+                        if (loaded.isNotEmpty() && loaded != avatarCatalog) {
+                            avatarCatalog = loaded
+                            PartyAvatars.setMemberImages(
+                                if (supporter) loaded.filter { it.memberOnly }.associate { it.id to it.imageUrl } else emptyMap()
+                            )
+                            _avatarCatalogLoads.value++
+                            session.announceName()
+                        }
+                        if (loaded.isNotEmpty() && (!supporter || loaded.any { it.memberOnly })) break
+                        delay(CATALOGUE_RETRY_MS)
+                    }
+                    if (avatarCatalog.isEmpty()) _avatarCatalogLoads.value++
+                }
         }
         scope.launch {
             state.map { it.code }.distinctUntilChanged().collect { code -> cancelInvitesNotFor(code) }
@@ -249,6 +268,8 @@ class PartyRuntime @Inject constructor(
             name = memberName(),
             host = host ?: memberName(),
             code = code,
+            roomKey = session.roomKey,
+            hostId = session.hostMemberId,
             title = media?.title?.ifBlank { null },
             poster = PartyInvites.cleanImage(media?.poster),
             watching = state.value.members.size.coerceAtLeast(1),
@@ -302,19 +323,34 @@ class PartyRuntime @Inject constructor(
         colour = PartyInvites.cleanColour(profileManager.activeProfile?.avatarColorHex),
     )
 
-    /** The picture of the profile in use, as others can load it: one from the built-in set, or an https picture. */
+    /**
+     * The picture of the profile in use, as others can load it: one from the built-in set, an https picture, or a
+     * supporter avatar while this box's account has them.
+     */
     fun profileAvatar(): String? {
         val active = profileManager.activeProfile
         active?.let { localAvatars.get(it.id) }?.let { return it }
-        val picked = active?.avatarId?.let { id -> runCatching { avatarRepository.getAvatarImageUrl(id, avatarCatalog) }.getOrNull() }
-        return PartyInvites.cleanImage(active?.avatarUrl) ?: PartyInvites.cleanImage(picked)
+        PartyInvites.cleanImage(active?.avatarUrl)?.let { return it }
+        val id = active?.avatarId ?: return null
+        if (avatarCatalog.any { it.id == id && it.memberOnly }) return PartyAvatars.memberRef(id)
+        return PartyInvites.cleanImage(runCatching { avatarRepository.getAvatarImageUrl(id, avatarCatalog) }.getOrNull())
     }
 
     /** Nuvio's own avatars that every box can load. */
-    fun nuvioAvatars(): List<String> = avatarCatalog.mapNotNull { PartyInvites.cleanImage(it.imageUrl) }.distinct()
+    fun nuvioAvatars(): List<String> =
+        avatarCatalog.filterNot { it.memberOnly }.mapNotNull { PartyInvites.cleanImage(it.imageUrl) }.distinct()
 
-    /** The avatar chosen for parties by the profile in use; null means the profile's own. */
-    val partyAvatarChoice: String? get() = PartyInvites.cleanAvatar(friendStore.partyAvatar(activeId))
+    /** Nuvio's supporter avatars, only while this box's account has them. */
+    fun supporterAvatars(): List<String> =
+        avatarCatalog.filter { it.memberOnly }.mapNotNull { PartyAvatars.memberRef(it.id) }.distinct()
+
+    /**
+     * The avatar chosen for parties by the profile in use; null means the profile's own. A supporter avatar counts
+     * only while this box's account has supporter avatars.
+     */
+    val partyAvatarChoice: String?
+        get() = PartyInvites.cleanAvatar(friendStore.partyAvatar(activeId))
+            ?.takeUnless { PartyAvatars.isMember(it) && PartyAvatars.imageUri(it) == null }
 
     fun setPartyAvatar(ref: String?) {
         friendStore.setPartyAvatar(activeId, PartyInvites.cleanAvatar(ref))
@@ -341,7 +377,7 @@ class PartyRuntime @Inject constructor(
         invites.clear()
         _invite.value = null
         if (current.profileId == activeId) {
-            session.joinParty(current.invite.code)
+            session.joinParty(current.invite.code, current.invite.roomKey, current.invite.hostId)
             return
         }
         scope.launch {
@@ -349,7 +385,7 @@ class PartyRuntime @Inject constructor(
                 profileManager.setActiveProfile(current.profileId)
                 withTimeoutOrNull(PROFILE_SWITCH_WAIT_MS) { profileManager.activeProfileId.first { it == current.profileId } } != null
             }.getOrDefault(false)
-            if (switched) session.joinParty(current.invite.code) else log("profile switch for an invite failed")
+            if (switched) session.joinParty(current.invite.code, current.invite.roomKey, current.invite.hostId) else log("profile switch for an invite failed")
         }
     }
 

@@ -6,9 +6,20 @@ enum class PartyTransportProblem { NO_RELAY_REACHABLE, DEVICE_CLOCK_REJECTED }
 interface PartyTransport {
     val localId: String
 
-    fun open(code: String, listener: Listener)
+    fun open(access: PartyRoomAccess, listener: Listener)
 
     fun send(payload: String)
+
+    /** Sends to the code's room while this room runs on a key: answers to members knocking with the code. */
+    fun sendLobby(payload: String)
+
+    /** Moves to the room [access] opens, keeping this member's id. */
+    fun moveTo(access: PartyRoomAccess)
+
+    /** [text] sealed so only [otherId] can open it. */
+    fun sealFor(otherId: String, text: String): String?
+
+    fun openFrom(otherId: String, sealed: String): String?
 
     fun close()
 
@@ -16,6 +27,7 @@ interface PartyTransport {
         fun onConnected()
         fun onDisconnected()
         fun onMessage(senderId: String, payload: String)
+        fun onLobbyMessage(senderId: String, payload: String) {}
         fun onProblem(problem: PartyTransportProblem)
     }
 }

@@ -38,6 +38,8 @@ internal class NostrPartyTransport(
     }
     private val pending = ArrayDeque<Pending>()
     private var keys: PartyRoomKeys? = null
+    private var lobby: PartyRoomKeys? = null
+    private var codeKeys: Pair<String, PartyRoomKeys>? = null
     private var listener: PartyTransport.Listener? = null
     private var closed = true
     private var connected = false
@@ -51,7 +53,7 @@ internal class NostrPartyTransport(
 
     override val localId: String get() = identity.publicKeyHex
 
-    override fun open(code: String, listener: PartyTransport.Listener) {
+    override fun open(access: PartyRoomAccess, listener: PartyTransport.Listener) {
         worker.execute {
             this.listener = listener
             closed = false
@@ -59,11 +61,48 @@ internal class NostrPartyTransport(
             unreachableReported = false
             openedAt = monotonicMs()
             lastConnectedAt = openedAt
-            keys = if (kdfIterations != null) PartyCrypto.deriveRoom(code, kdfIterations) else PartyCrypto.deriveRoom(code)
+            applyAccess(access)
             lastSummaryAt = monotonicMs()
-            log("room key ready in ${lastSummaryAt - openedAt} ms, ${relays.size} relays known")
+            log("room key ready in ${lastSummaryAt - openedAt} ms, keyed=${lobby != null}, ${relays.size} relays known")
             maintain()
         }
+    }
+
+    override fun moveTo(access: PartyRoomAccess) {
+        worker.execute {
+            if (closed) return@execute
+            applyAccess(access)
+            log("moved rooms, keyed=${lobby != null}")
+            slots.filter { it.open }.forEach { slot ->
+                if (!subscribe(slot)) fail(slot, monotonicMs(), reason = "subscribe failed")
+            }
+        }
+    }
+
+    private fun applyAccess(access: PartyRoomAccess) {
+        val fromCode = codeKeys?.takeIf { it.first == access.code }?.second
+            ?: (if (kdfIterations != null) PartyCrypto.deriveRoom(access.code, kdfIterations) else PartyCrypto.deriveRoom(access.code))
+        codeKeys = access.code to fromCode
+        val keyed = access.key?.let(PartyCrypto::deriveKeyedRoom)
+        keys = keyed ?: fromCode
+        lobby = if (keyed != null) fromCode else null
+    }
+
+    override fun sendLobby(payload: String) {
+        worker.execute {
+            if (closed) return@execute
+            lobby?.let { publish(payload, it) }
+        }
+    }
+
+    override fun sealFor(otherId: String, text: String): String? {
+        val key = PartyCrypto.pairKey(identity, otherId) ?: return null
+        return PartyCrypto.seal(key, text, random)
+    }
+
+    override fun openFrom(otherId: String, sealed: String): String? {
+        val key = PartyCrypto.pairKey(identity, otherId) ?: return null
+        return PartyCrypto.open(key, sealed)
     }
 
     override fun send(payload: String) {
@@ -89,6 +128,8 @@ internal class NostrPartyTransport(
             }
             slots.clear()
             keys = null
+            lobby = null
+            codeKeys = null
         }
     }
 
@@ -145,11 +186,16 @@ internal class NostrPartyTransport(
         if (slot.connection == null) fail(slot, now, reason = "could not connect")
     }
 
-    private fun onRelayOpen(slot: Slot) {
-        val room = keys ?: return
-        if (closed || slot !in slots) return
+    private fun subscribe(slot: Slot): Boolean {
+        val room = keys ?: return false
         val since = wallClockSeconds() - SUBSCRIBE_LOOKBACK_SECONDS
-        if (slot.connection?.send(Nostr.requestMessage(slot.subscriptionId, Nostr.KIND_PARTY, room.roomTag, since)) != true) {
+        val tags = listOfNotNull(room.roomTag, lobby?.roomTag)
+        return slot.connection?.send(Nostr.requestMessage(slot.subscriptionId, Nostr.KIND_PARTY, tags, since)) == true
+    }
+
+    private fun onRelayOpen(slot: Slot) {
+        if (keys == null || closed || slot !in slots) return
+        if (!subscribe(slot)) {
             fail(slot, monotonicMs(), reason = "subscribe failed")
             return
         }
@@ -171,14 +217,20 @@ internal class NostrPartyTransport(
             is RelayMessage.Event -> {
                 val event = message.event
                 if (event.kind != Nostr.KIND_PARTY || event.pubkey == identity.publicKeyHex) return
-                if (event.tags.none { it.size >= 2 && it[0] == Nostr.ROOM_TAG && it[1] == room.roomTag }) return
+                val door = lobby
+                val inLobby = when {
+                    event.tags.any { it.size >= 2 && it[0] == Nostr.ROOM_TAG && it[1] == room.roomTag } -> false
+                    door != null && event.tags.any { it.size >= 2 && it[0] == Nostr.ROOM_TAG && it[1] == door.roomTag } -> true
+                    else -> return
+                }
                 if (seen.containsKey(event.id)) return
                 if (!Nostr.verify(event)) return
-                val payload = PartyCrypto.open(room.payloadKey, event.content) ?: return
+                val payload = PartyCrypto.open(if (inLobby) door!!.payloadKey else room.payloadKey, event.content) ?: return
                 seen[event.id] = true
                 slot.received++
                 val target = listener ?: return
-                deliver.execute { target.onMessage(event.pubkey, payload) }
+                if (inLobby) deliver.execute { target.onLobbyMessage(event.pubkey, payload) }
+                else deliver.execute { target.onMessage(event.pubkey, payload) }
             }
             is RelayMessage.Ok -> {
                 if (message.accepted) {
@@ -209,8 +261,8 @@ internal class NostrPartyTransport(
         }
     }
 
-    private fun publish(payload: String): Boolean {
-        val room = keys ?: return false
+    private fun publish(payload: String, room: PartyRoomKeys? = keys): Boolean {
+        if (room == null) return false
         val targets = slots.filter { it.open }
         if (targets.isEmpty()) return false
         val event = Nostr.sign(

@@ -125,6 +125,20 @@ class PartyFriendsTest {
     }
 
     @Test
+    fun `an invite to a keyed room carries its key only inside the sealed invite`() {
+        val friend: (String) -> Boolean = { it == sam.publicKeyHex }
+        val key = PartyCrypto.newRoomKey(random)
+        val event = PartyInvites.seal(sam, jo.publicKeyHex, invite().copy(roomKey = key), now, random)!!
+        assertFalse(Nostr.eventMessage(event).contains(key))
+        assertEquals(key, PartyInvites.open(event, jo, friend, now)!!.roomKey)
+        val hosted = PartyInvites.seal(sam, jo.publicKeyHex, invite().copy(roomKey = key, hostId = sam.publicKeyHex), now, random)!!
+        assertEquals(sam.publicKeyHex, PartyInvites.open(hosted, jo, friend, now)!!.hostId)
+        assertNull(PartyInvites.open(PartyInvites.seal(sam, jo.publicKeyHex, invite(), now, random)!!, jo, friend, now)!!.roomKey)
+        val bad = PartyInvites.seal(sam, jo.publicKeyHex, invite().copy(roomKey = "not-a-key"), now, random)!!
+        assertNull(PartyInvites.open(bad, jo, friend, now)!!.roomKey)
+    }
+
+    @Test
     fun `a taken back invite opens as a cancellation for that party only`() {
         val friend: (String) -> Boolean = { it == sam.publicKeyHex }
         val cancel = PartyInvites.sealCancel(sam, jo.publicKeyHex, "H7KQ29", now, random)!!
@@ -334,6 +348,22 @@ class PartyFriendsTest {
         assertEquals("https://a/p.png", PartyAvatars.imageUri("https://a/p.png"))
         assertNull(PartyAvatars.imageUri("content://x"))
         val hello = PartyMessage.Hello("Sam", true, 1, true, avatar = "fun:bottts/kai")
+        assertEquals(hello, PartyCodec.decode(PartyCodec.encode(hello)))
+    }
+
+    @Test
+    fun `supporter avatars travel by id and show only where this box has supporter avatars`() {
+        assertEquals("member:neon-hood-03", PartyInvites.cleanAvatar("member:neon-hood-03"))
+        assertEquals("member:neon-hood-03", PartyAvatars.memberRef("neon-hood-03"))
+        assertNull(PartyInvites.cleanAvatar("member:"))
+        assertNull(PartyInvites.cleanAvatar("member:../x/y"))
+        assertNull(PartyInvites.cleanAvatar("member:a b"))
+        assertNull(PartyAvatars.memberRef("a/b"))
+        val cached = mapOf("neon-hood-03" to "file:///data/cache/member_profile_avatars/neon-hood-03-v2.png")
+        assertEquals(cached.values.single(), PartyAvatars.imageUri("member:neon-hood-03", cached))
+        assertNull(PartyAvatars.imageUri("member:neon-hood-03", emptyMap()))
+        assertNull(PartyAvatars.imageUri("member:orb-01", cached))
+        val hello = PartyMessage.Hello("Sam", true, 1, true, avatar = "member:orb-01")
         assertEquals(hello, PartyCodec.decode(PartyCodec.encode(hello)))
     }
 

@@ -72,11 +72,12 @@ private const val READY_AFTER_MS = 400L
 
 @Composable
 internal fun PartyAvatar(name: String, colour: String?, avatarUrl: String?, size: Dp = 34.dp) {
+    val members by PartyAvatars.memberImages.collectAsState()
     ProfileAvatarCircle(
         name = name.ifBlank { "?" },
         colorHex = colour ?: DEFAULT_COLOUR,
         size = size,
-        avatarImageUrl = PartyAvatars.imageUri(avatarUrl),
+        avatarImageUrl = PartyAvatars.imageUri(avatarUrl, members),
     )
 }
 

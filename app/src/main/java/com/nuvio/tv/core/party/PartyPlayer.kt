@@ -23,7 +23,7 @@ enum class PartyRole { HOST, GUEST }
 
 enum class PartyStatus { IDLE, CONNECTING, ACTIVE, RECONNECTING }
 
-enum class PartyMemberStatus { IN_SYNC, SYNCING, BUFFERING, CATCHING_UP, AWAY }
+enum class PartyMemberStatus { IN_SYNC, SYNCING, BUFFERING, CATCHING_UP, AWAY, NEEDS_UPDATE }
 
 data class PartyMemberView(
     val id: String,

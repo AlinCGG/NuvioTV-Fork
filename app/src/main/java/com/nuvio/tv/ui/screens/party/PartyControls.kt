@@ -127,6 +127,7 @@ private fun memberLine(member: PartyMemberView): String {
         PartyMemberStatus.BUFFERING -> stringResource(R.string.party_member_buffering)
         PartyMemberStatus.CATCHING_UP -> stringResource(R.string.party_member_catching_up)
         PartyMemberStatus.AWAY -> stringResource(R.string.party_member_away)
+        PartyMemberStatus.NEEDS_UPDATE -> stringResource(R.string.party_member_needs_update)
     }
     return stringResource(R.string.party_member_line, who, status)
 }

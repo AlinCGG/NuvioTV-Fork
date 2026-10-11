@@ -194,12 +194,14 @@ internal fun PartyLookDialog(runtime: PartyRuntime, onDone: () -> Unit) {
     var name by remember { mutableStateOf(runtime.displayName) }
     var savedName by remember { mutableStateOf(runtime.displayName) }
     var choice by remember { mutableStateOf(runtime.partyAvatarChoice) }
+    var picked by remember { mutableStateOf(false) }
     var saves by remember { mutableIntStateOf(0) }
     var savedShown by remember { mutableStateOf(false) }
     var ready by remember { mutableStateOf(false) }
     val catalogueLoads by runtime.avatarCatalogLoads.collectAsState()
     val profileAvatar = remember(catalogueLoads) { runtime.profileAvatar() }
     val nuvio = remember(catalogueLoads) { runtime.nuvioAvatars() }
+    val supporter = remember(catalogueLoads) { runtime.supporterAvatars() }
     val sets = remember { bundledAvatarSets(context) }
     val quickPicks = remember(nuvio, sets) { (nuvio.take(2) + sets.map { it.second.first() }).distinct().take(QUICK_PICKS) }
     var tab by remember {
@@ -227,8 +229,16 @@ internal fun PartyLookDialog(runtime: PartyRuntime, onDone: () -> Unit) {
         savedShown = false
     }
 
+    LaunchedEffect(catalogueLoads) {
+        val stored = runtime.partyAvatarChoice
+        if (picked || stored == choice) return@LaunchedEffect
+        choice = stored
+        if (stored != null && tab == LookTab.PROFILE) tab = if (PartyAvatars.isBundled(stored)) LookTab.FUN else LookTab.NUVIO
+    }
+
     fun pick(ref: String?) {
         if (!ready) return
+        picked = true
         choice = ref
         runtime.setPartyAvatar(ref)
         saves++
@@ -333,8 +343,18 @@ internal fun PartyLookDialog(runtime: PartyRuntime, onDone: () -> Unit) {
                                     }
                                 }
                             }
-                            LookTab.NUVIO -> items(nuvio) { ref ->
-                                AvatarCell(shownName, colour, ref, selected = ref == choice) { pick(ref) }
+                            LookTab.NUVIO -> {
+                                items(nuvio) { ref ->
+                                    AvatarCell(shownName, colour, ref, selected = ref == choice) { pick(ref) }
+                                }
+                                if (supporter.isNotEmpty()) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        SetCaption(stringResource(R.string.profile_avatar_category_supporter))
+                                    }
+                                    items(supporter) { ref ->
+                                        AvatarCell(shownName, colour, ref, selected = ref == choice) { pick(ref) }
+                                    }
+                                }
                             }
                             LookTab.FUN -> sets.forEach { (set, refs) ->
                                 item(span = { GridItemSpan(maxLineSpan) }) { SetCaption(stringResource(avatarSetTitle(set))) }

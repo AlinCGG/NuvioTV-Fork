@@ -54,6 +54,10 @@ data class PartyInvite(
     val sentAt: Long,
     /** The sender took this invite back; [code] says which party. */
     val cancelled: Boolean = false,
+    /** The party's long key; with it the friend skips the code. */
+    val roomKey: String? = null,
+    /** The party id of the host when the invite was sent, so the friend follows the real host. */
+    val hostId: String? = null,
 )
 
 object PartyFriendCodec {
@@ -121,8 +125,9 @@ object PartyInvites {
 
     fun cleanColour(colour: String?): String? = colour?.takeIf { COLOUR.matches(it) }
 
-    /** An avatar from another device: a picture of the built-in set, or an https picture. */
-    fun cleanAvatar(ref: String?): String? = if (PartyAvatars.isBundled(ref)) ref else cleanImage(ref)
+    /** An avatar from another device: a picture of the built-in set, a supporter avatar, or an https picture. */
+    fun cleanAvatar(ref: String?): String? =
+        if (PartyAvatars.isBundled(ref) || PartyAvatars.isMember(ref)) ref else cleanImage(ref)
 
     private val COLOUR = Regex("#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?")
 
@@ -174,6 +179,8 @@ object PartyInvites {
             put("name", JsonPrimitive(invite.name.take(MAX_TEXT)))
             put("host", JsonPrimitive(invite.host.take(MAX_TEXT)))
             put("code", JsonPrimitive(invite.code))
+            optional("rk", invite.roomKey?.takeIf(PartyCrypto::isRoomKey))
+            optional("hid", invite.hostId?.takeIf(::isKey))
             optional("title", invite.title?.take(MAX_TEXT))
             optional("poster", invite.poster)
             put("watching", JsonPrimitive(invite.watching))
@@ -263,6 +270,8 @@ object PartyInvites {
             colour = cleanColour(obj.string("colour")),
             sentAt = sent,
             cancelled = type == "cancel",
+            roomKey = obj.string("rk")?.takeIf(PartyCrypto::isRoomKey),
+            hostId = obj.string("hid")?.takeIf(::isKey),
         )
     }
 }

@@ -108,6 +108,8 @@ sealed interface PartyMessage {
         val away: Boolean = false,
         val avatar: String? = null,
         val colour: String? = null,
+        /** The member this guest follows as host. */
+        val host: String? = null,
     ) : PartyMessage
 
     data class Ping(val t0: Long) : PartyMessage
@@ -115,6 +117,9 @@ sealed interface PartyMessage {
     data class Pong(val to: String, val t0: Long, val t1: Long) : PartyMessage
 
     data class End(val term: Int) : PartyMessage
+
+    /** The host's answer to someone who knocked with the code: the room key, readable only by [to]. */
+    data class Admit(val to: String, val box: String) : PartyMessage
 
     /** [proof] shows the sender holds [key], for [to] only; see [PartyInvites.proof]. */
     data class FriendRequest(
@@ -203,6 +208,7 @@ object PartyCodec {
                 if (message.away) put("away", JsonPrimitive(true))
                 optional("avatar", message.avatar)
                 optional("colour", message.colour)
+                optional("hid", message.host)
             }
             is PartyMessage.Ping -> {
                 type("ping")
@@ -217,6 +223,11 @@ object PartyCodec {
             is PartyMessage.End -> {
                 type("end")
                 put("term", JsonPrimitive(message.term))
+            }
+            is PartyMessage.Admit -> {
+                type("admit")
+                put("to", JsonPrimitive(message.to))
+                put("box", JsonPrimitive(message.box))
             }
             PartyMessage.Bye -> type("bye")
             is PartyMessage.FriendRequest -> {
@@ -283,6 +294,7 @@ object PartyCodec {
                 away = obj.boolean("away") ?: false,
                 avatar = PartyInvites.cleanAvatar(obj.string("avatar")),
                 colour = PartyInvites.cleanColour(obj.string("colour")),
+                host = obj.string("hid")?.takeIf(PartyInvites::isKey),
             )
             "ping" -> PartyMessage.Ping(obj.long("t0") ?: return null)
             "pong" -> PartyMessage.Pong(
@@ -291,6 +303,10 @@ object PartyCodec {
                 t1 = obj.long("t1") ?: return null,
             )
             "end" -> PartyMessage.End(obj.int("term") ?: 0)
+            "admit" -> PartyMessage.Admit(
+                to = obj.string("to")?.takeIf(PartyInvites::isKey) ?: return null,
+                box = obj.string("box")?.takeIf { it.length <= ADMIT_BOX_MAX } ?: return null,
+            )
             "bye" -> PartyMessage.Bye
             "friend" -> PartyMessage.FriendRequest(
                 to = obj.string("to") ?: return null,
@@ -396,3 +412,4 @@ object PartyCodec {
 private const val ID_MAX = 200
 private const val TYPE_MAX = 32
 private const val TEXT_MAX = 300
+private const val ADMIT_BOX_MAX = 200

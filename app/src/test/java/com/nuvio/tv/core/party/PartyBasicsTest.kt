@@ -36,6 +36,26 @@ class PartyBasicsTest {
     }
 
     @Test
+    fun `a keyed room shares nothing with its code and only the two ends open a handed over key`() {
+        val key = PartyCrypto.newRoomKey()
+        assertTrue(PartyCrypto.isRoomKey(key))
+        assertFalse(PartyCrypto.isRoomKey(key.uppercase()))
+        assertFalse(PartyCrypto.isRoomKey(key.dropLast(2)))
+        val keyed = PartyCrypto.deriveKeyedRoom(key)!!
+        val code = PartyCrypto.deriveRoom("H7KQ29", iterations = 50)
+        assertNotEquals(code.roomTag, keyed.roomTag)
+        assertEquals(keyed.roomTag, PartyCrypto.deriveKeyedRoom(key)!!.roomTag)
+        assertNull(PartyCrypto.deriveKeyedRoom("H7KQ29"))
+        val host = PartyIdentity.random()
+        val guest = PartyIdentity.random()
+        val other = PartyIdentity.random()
+        val sealed = PartyCrypto.seal(PartyCrypto.pairKey(host, guest.publicKeyHex)!!, key, SecureRandom())
+        assertEquals(key, PartyCrypto.open(PartyCrypto.pairKey(guest, host.publicKeyHex)!!, sealed))
+        assertNull(PartyCrypto.open(PartyCrypto.pairKey(other, host.publicKeyHex)!!, sealed))
+        assertEquals("PartyRoomAccess(keyed=true)", PartyRoomAccess("H7KQ29", key).toString())
+    }
+
+    @Test
     fun `key derivation matches the published PBKDF2 vector`() {
         // RFC 7914 section 11: PBKDF2-HMAC-SHA-256, P="passwd", S="salt", c=1, dkLen=64 (first 48 bytes used here).
         val expected = "55ac046e56e3089fec1691c22544b605f94185216dde0465e68b9d57c20dacbc49ca9cccf179b645991664b39d77ef31"
@@ -111,6 +131,8 @@ class PartyBasicsTest {
             PartyMessage.State(1, 0, 10, 10, 0, false),
             PartyMessage.Command(3, PartyAction.SEEK, 123_456),
             PartyMessage.Status(3, "Fire TV", 5, stalled = true, ready = false, speedOk = true, driftMs = -40),
+            PartyMessage.Status(3, "Fire TV", 5, stalled = false, ready = true, speedOk = true, host = "a".repeat(64)),
+            PartyMessage.Admit("b".repeat(64), "c2VhbGVk"),
             PartyMessage.Ping(77),
             PartyMessage.Pong("m1", 77, 88),
             PartyMessage.End(2),
