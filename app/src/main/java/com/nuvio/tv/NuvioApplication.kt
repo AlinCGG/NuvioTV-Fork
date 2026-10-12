@@ -271,21 +271,8 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache").toOkioPath())
-                    // A 500 MB cache cycles against a large shared Emby library. Percent plus
-                    // clamp keeps Coil's free-space proportional sizing: maxSizeBytes and
-                    // maxSizePercent are mutually exclusive in DiskCache.Builder, setting one
-                    // zeroes the other. With 22 GiB free this gives the 2 GiB ceiling, 1 GiB at
-                    // 10 GiB free, and the floor binds below ~2.5 GiB free.
-                    //
-                    // Coil reads FREE space, not total, so the cap recomputes at every app start
-                    // and drifts down as the disk fills. The floor is unconditional (coerceIn
-                    // applies it even when the space is not there), so it stays at 256 MB rather
-                    // than 512, trading re-downloads against a quarter of a nearly-full disk.
-                    // The 2 GiB ceiling is an estimate. Journal replay at high entry counts may
-                    // add to cold start.
-                    .maxSizePercent(0.10)
-                    .minimumMaxSizeBytes(256L * 1024 * 1024)
-                    .maximumMaxSizeBytes(2L * 1024 * 1024 * 1024)
+                    // Fixed size like the official app; boxes under ~3.3 GB of RAM get 200 MB.
+                    .maxSizeBytes(if (memoryInfo.totalMem >= 3_300L * 1024 * 1024) 300L * 1024 * 1024 else 200L * 1024 * 1024)
                     .build()
             }
             .crossfade(false)

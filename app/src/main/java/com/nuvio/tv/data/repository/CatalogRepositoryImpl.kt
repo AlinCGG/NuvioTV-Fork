@@ -30,14 +30,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.io.File
 import java.net.URLEncoder
 import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,43 +52,56 @@ class CatalogRepositoryImpl @Inject constructor(
         private const val CATALOG_CACHE_TTL_MS = 90_000L
         private const val CATALOG_CACHE_MAX_ENTRIES = 64
 
+        // Searches get their own LRU: every typed word asks every search catalog, which would
+        // otherwise push the Home rows out of the one above.
+        private const val SEARCH_CACHE_MAX_ENTRIES = 48
+
         // Disk first-paint cache. DIFFERENT purpose to the in-memory cache: it is a
         // stale-while-revalidate FIRST PAINT, not a freshness gate. On a disk hit we
         // serve the stored row immediately and ALWAYS revalidate over the network,
         // swapping in the fresh row when it lands (unless identical). Only skip==0,
         // no-extra requests -- the first page of a home row -- are eligible. The
-        // ceiling only caps how old a blob may be before we stop serving it at all.
-        private const val DISK_CACHE_FILE_NAME = "catalog_rows_v1.json"
-        private const val DISK_CACHE_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000 // 7 days
-        private const val DISK_CACHE_MAX_ENTRIES = 128
+        // ceiling only caps how old a row may be before we stop serving it at all.
+        // One small file per row, see CatalogDiskStore for the size limits.
+        private const val DISK_CACHE_DIR_NAME = "catalog_rows"
+        private const val LEGACY_DISK_CACHE_FILE_NAME = "catalog_rows_v1.json"
 
         private data class CacheEntry(val row: CatalogRow, val storedAtMs: Long)
-        private data class DiskEntry(val dtoJson: String, val storedAtMs: Long)
 
         // access-ordered LinkedHashMap wrapped for LRU eviction; synchronized
         // because catalogue fetches run concurrently across rows.
-        private val catalogCache: MutableMap<String, CacheEntry> =
+        private val catalogCache: MutableMap<String, CacheEntry> = lruCache(CATALOG_CACHE_MAX_ENTRIES)
+        private val searchCache: MutableMap<String, CacheEntry> = lruCache(SEARCH_CACHE_MAX_ENTRIES)
+
+        private fun lruCache(maxEntries: Int): MutableMap<String, CacheEntry> =
             Collections.synchronizedMap(
                 object : LinkedHashMap<String, CacheEntry>(16, 0.75f, true) {
                     override fun removeEldestEntry(eldest: Map.Entry<String, CacheEntry>): Boolean =
-                        size > CATALOG_CACHE_MAX_ENTRIES
+                        size > maxEntries
                 }
             )
+
+        private fun cacheFor(extraArgs: Map<String, String>): MutableMap<String, CacheEntry> =
+            if (extraArgs.containsKey("search")) searchCache else catalogCache
     }
 
     private val moshi: Moshi = Moshi.Builder().build()
     private val catalogResponseAdapter = moshi.adapter(CatalogResponseDto::class.java)
 
-    private val diskFile: File by lazy { File(context.cacheDir, DISK_CACHE_FILE_NAME) }
-    private val diskCache = ConcurrentHashMap<String, DiskEntry>()
-    private val diskMutex = Mutex()
-    @Volatile private var diskLoaded = false
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val diskStore: CatalogDiskStore? by lazy {
+        runCatching {
+            val cacheDir = context.cacheDir
+            CatalogDiskStore(
+                dir = File(cacheDir, DISK_CACHE_DIR_NAME),
+                legacyFiles = listOf(File(cacheDir, LEGACY_DISK_CACHE_FILE_NAME)),
+                scope = ioScope
+            )
+        }.getOrNull()
+    }
 
     init {
-        // Warm the disk mirror off the critical path so it is ready before the first
-        // getCatalog collection; the guard in ensureDiskLoaded() covers the race.
-        ioScope.launch { runCatching { ensureDiskLoaded() } }
+        ioScope.launch { runCatching { diskStore?.warm() } }
     }
 
     override fun getCatalog(
@@ -140,14 +148,15 @@ class CatalogRepositoryImpl @Inject constructor(
             if (posterPattern.isBlank()) this else copy(items = items.withCustomPosterUrls(posterPattern))
 
         // 1) In-memory freshness cache hit within TTL: serve and skip the network.
-        val cached = catalogCache[url]
+        val memoryCache = cacheFor(extraArgs)
+        val cached = memoryCache[url]
         if (cached != null) {
             if (System.currentTimeMillis() - cached.storedAtMs <= CATALOG_CACHE_TTL_MS) {
                 Log.d(TAG, "Catalog cache hit type=$type catalogId=$catalogId skip=$skip url=${url.redactLinksForLog()}")
                 emit(NetworkResult.Success(cached.row.withPosterPattern()))
                 return@flow
             } else {
-                catalogCache.remove(url)
+                memoryCache.remove(url)
             }
         }
 
@@ -212,9 +221,12 @@ class CatalogRepositoryImpl @Inject constructor(
                         "addonName=$addonName catalogId=$catalogId"
                 )
 
-                catalogCache[url] = CacheEntry(catalogRow, System.currentTimeMillis())
+                memoryCache[url] = CacheEntry(catalogRow, System.currentTimeMillis())
                 if (diskEligible) {
-                    runCatching { writeDiskRow(url, catalogResponseAdapter.toJson(result.data)) }
+                    val data = result.data
+                    runCatching {
+                        diskStore?.put(url, data.metas.size) { sink -> catalogResponseAdapter.toJson(sink, data) }
+                    }
                 }
 
                 // Emit the fresh row unless it is identical to the disk row already
@@ -308,31 +320,6 @@ class CatalogRepositoryImpl @Inject constructor(
 
     // ---- disk first-paint cache -------------------------------------------------
 
-    private suspend fun ensureDiskLoaded() {
-        if (diskLoaded) return
-        diskMutex.withLock {
-            if (diskLoaded) return
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    if (diskFile.exists()) {
-                        val root = JSONObject(diskFile.readText())
-                        val now = System.currentTimeMillis()
-                        val keys = root.keys()
-                        while (keys.hasNext()) {
-                            val key = keys.next()
-                            val obj = root.getJSONObject(key)
-                            val storedAt = obj.getLong("t")
-                            if (now - storedAt <= DISK_CACHE_MAX_AGE_MS) {
-                                diskCache[key] = DiskEntry(obj.getString("b"), storedAt)
-                            }
-                        }
-                    }
-                }
-            }
-            diskLoaded = true
-        }
-    }
-
     private suspend fun readDiskRow(
         url: String,
         addonBaseUrl: String,
@@ -345,13 +332,7 @@ class CatalogRepositoryImpl @Inject constructor(
         skipStep: Int,
         supportsSkip: Boolean
     ): CatalogRow? {
-        ensureDiskLoaded()
-        val entry = diskCache[url] ?: return null
-        if (System.currentTimeMillis() - entry.storedAtMs > DISK_CACHE_MAX_AGE_MS) {
-            diskCache.remove(url)
-            return null
-        }
-        val dto = catalogResponseAdapter.fromJson(entry.dtoJson) ?: return null
+        val dto = diskStore?.read(url) { source -> catalogResponseAdapter.fromJson(source) } ?: return null
         return buildCatalogRow(
             data = dto,
             addonBaseUrl = addonBaseUrl,
@@ -367,49 +348,14 @@ class CatalogRepositoryImpl @Inject constructor(
         )
     }
 
-    private suspend fun writeDiskRow(url: String, dtoJson: String) {
-        ensureDiskLoaded()
-        diskCache[url] = DiskEntry(dtoJson, System.currentTimeMillis())
-        if (diskCache.size > DISK_CACHE_MAX_ENTRIES) {
-            diskCache.entries
-                .sortedBy { it.value.storedAtMs }
-                .take(diskCache.size - DISK_CACHE_MAX_ENTRIES)
-                .forEach { diskCache.remove(it.key) }
-        }
-        flushDisk()
-    }
-
-    private suspend fun flushDisk() {
-        diskMutex.withLock {
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    val root = JSONObject()
-                    diskCache.entries.forEach { (key, entry) ->
-                        root.put(key, JSONObject().put("b", entry.dtoJson).put("t", entry.storedAtMs))
-                    }
-                    diskFile.writeText(root.toString())
-                }
-            }
-        }
-    }
-
     override suspend fun clearCaches() {
         // In-memory freshness LRU: a synchronizedMap, so a single clear() is
         // atomic on its own.
         catalogCache.clear()
-        // Disk first-paint cache: clear the map and delete the backing file
-        // under the same mutex ensureDiskLoaded()/flushDisk() take, so a
-        // concurrent flush cannot interleave with the delete. diskLoaded is
-        // left true so a later read does not reload the file just deleted.
-        // A writeDiskRow racing this clear simply repopulates afterwards,
-        // which is a fresh fetch doing exactly what it should.
-        diskMutex.withLock {
-            diskCache.clear()
-            withContext(Dispatchers.IO) {
-                runCatching { if (diskFile.exists()) diskFile.delete() }
-            }
-            diskLoaded = true
-        }
+        searchCache.clear()
+        // A write already in progress may land after this, which is a fresh fetch
+        // doing exactly what it should.
+        runCatching { diskStore?.clear() }
     }
 
     private fun buildCatalogUrl(
