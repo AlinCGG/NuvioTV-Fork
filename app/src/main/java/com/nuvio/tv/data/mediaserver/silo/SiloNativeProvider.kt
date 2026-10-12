@@ -72,7 +72,8 @@ class SiloNativeProvider internal constructor(
         ServerCapability.SEARCH,
         ServerCapability.EXTERNAL_ID_LOOKUP,
         ServerCapability.USER_STATE_READ,
-        ServerCapability.USER_STATE_WRITE
+        ServerCapability.USER_STATE_WRITE,
+        ServerCapability.HOME_ROWS
     )
     override val minimumVersion: String = ""
 

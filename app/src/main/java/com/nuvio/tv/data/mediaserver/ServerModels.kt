@@ -312,6 +312,17 @@ class ServerException(
     val code: String? = null
 ) : Exception(message ?: failure.name)
 
+/** A failure for a log line: its kind, HTTP status, Silo's problem code and whether the network failed. */
+internal fun Throwable.forLog(): String = when (this) {
+    is ServerException -> listOfNotNull(
+        failure.name,
+        httpStatus?.let { "http $it" },
+        code,
+        "network".takeIf { network }
+    ).joinToString(" ")
+    else -> javaClass.simpleName
+}
+
 data class ServerLocation(
     val address: String,
     val serverId: String?

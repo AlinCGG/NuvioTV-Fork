@@ -11,8 +11,12 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -66,6 +70,56 @@ class ServerCatalogTest {
         val last = catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 100)
         assertEquals(20, last.items.size)
         assertFalse(last.hasMore)
+    }
+
+    @Test
+    fun aLibraryRowReadsTheServersOwnRowsOncePerRun() = runTest {
+        val provider = FakeServerProvider(homeRows = true).apply {
+            homeRowsToReturn = listOf(ServerHomeRow("r1", "My Picks", ServerMediaKind.MOVIE))
+        }
+        val (catalog, repository, connection) = catalog(provider)
+
+        catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0)
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (repository.connection(connection.id)?.homeRows.isNullOrEmpty()) delay(10) }
+        }
+        catalog.page(connection, FakeServerProvider.SERIES_LIBRARY.id, skip = 0)
+
+        assertEquals(listOf("r1"), repository.connection(connection.id)?.homeRows?.map { it.id })
+        assertEquals(1, provider.homeRowReads)
+    }
+
+    @Test
+    fun rowsSwitchedOffAreNotReadAgain() = runTest {
+        val provider = FakeServerProvider(homeRows = true)
+        val (catalog, repository, connection) = catalog(provider)
+        repository.setShowHomeRows(connection.id, false)
+
+        catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0)
+        withContext(Dispatchers.Default) { delay(200) }
+
+        assertEquals(0, provider.homeRowReads)
+    }
+
+    @Test
+    fun serversWithoutTheirOwnRowsAreNotAsked() = runTest {
+        val provider = FakeServerProvider()
+        val (catalog, _, connection) = catalog(provider)
+
+        catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0)
+        withContext(Dispatchers.Default) { delay(200) }
+
+        assertEquals(0, provider.homeRowReads)
+    }
+
+    @Test
+    fun aFailureIsWrittenForTheLog() {
+        assertEquals(
+            "UNREACHABLE http 503 network",
+            ServerException(ServerFailure.UNREACHABLE, network = true, httpStatus = 503).forLog()
+        )
+        assertEquals("INCOMPLETE", ServerException(ServerFailure.INCOMPLETE).forLog())
+        assertEquals("IllegalStateException", IllegalStateException("x").forLog())
     }
 
     @Test
@@ -155,6 +209,79 @@ class ServerCatalogTest {
         val search = catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0, extra = mapOf("search" to "item"))
         assertEquals(listOf(ServerItemRef(connection.id, "7").encode()), search.items.map { it.id })
         assertFalse(search.hasMore)
+    }
+
+    private suspend fun ServerCatalog.search(connection: ServerConnection, word: String, library: ServerLibrary = FakeServerProvider.MOVIE_LIBRARY) =
+        page(connection, library.id, 0, mapOf("search" to word))
+
+    private suspend fun FakeServerProvider.awaitSearches(count: Int) {
+        withTimeout(5_000) { while (searchQueries.size < count) delay(5) }
+    }
+
+    @Test
+    fun aNewerWordWaitsForTheSearchStillRunningOnTheServer() = runTest {
+        val provider = FakeServerProvider().apply { searchDelayMs = 300 }
+        val (catalog, _, connection) = catalog(provider)
+
+        withContext(Dispatchers.Default) {
+            val dropped = launch { catalog.search(connection, "to") }
+            provider.awaitSearches(1)
+            dropped.cancel()
+            assertEquals(1, catalog.search(connection, "toy").items.size)
+        }
+
+        assertEquals(listOf("start to", "end to", "start toy", "end toy"), provider.searchEvents.toList())
+        assertEquals(1, provider.mostSearchesAtOnce)
+    }
+
+    @Test
+    fun aNewerWordGoesAnywayOnceTheWaitIsOverAndTheOldSearchIsDropped() = runTest {
+        val provider = FakeServerProvider().apply { searchDelayMs = 2_000 }
+        val (catalog, _, connection) = catalog(provider)
+        catalog.searchWaitMs = 200
+
+        withContext(Dispatchers.Default) {
+            val dropped = launch { catalog.search(connection, "to") }
+            provider.awaitSearches(1)
+            dropped.cancel()
+            val newer = launch { catalog.search(connection, "toy") }
+            provider.awaitSearches(2)
+            newer.cancel()
+            delay(800)
+        }
+
+        assertEquals(setOf("start to", "dropped to", "start toy", "dropped toy"), provider.searchEvents.toSet())
+        assertEquals(4, provider.searchEvents.size)
+    }
+
+    @Test
+    fun theSameWordRunningOnTheServerIsShared() = runTest {
+        val provider = FakeServerProvider().apply { searchDelayMs = 200 }
+        val (catalog, _, connection) = catalog(provider)
+
+        withContext(Dispatchers.Default) {
+            val first = launch { catalog.search(connection, "toy") }
+            provider.awaitSearches(1)
+            catalog.search(connection, "Toy")
+            first.join()
+        }
+
+        assertEquals(listOf("toy"), provider.searchQueries.toList())
+    }
+
+    @Test
+    fun eachLibrarySearchesAlongsideTheOthers() = runTest {
+        val provider = FakeServerProvider().apply { searchDelayMs = 300 }
+        val (catalog, _, connection) = catalog(provider)
+
+        withContext(Dispatchers.Default) {
+            val movies = launch { catalog.search(connection, "toy") }
+            provider.awaitSearches(1)
+            catalog.search(connection, "toy", FakeServerProvider.SERIES_LIBRARY)
+            movies.join()
+        }
+
+        assertEquals(2, provider.mostSearchesAtOnce)
     }
 
     @Test

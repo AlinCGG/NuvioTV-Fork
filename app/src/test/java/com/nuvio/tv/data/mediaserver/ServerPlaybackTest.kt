@@ -62,6 +62,16 @@ class ServerPlaybackTest {
     }
 
     @Test
+    fun knowsTheServerAddressOfAVersionWithoutAPlaybackSession() {
+        val harness = harness()
+        val target = ServerPlaybackTarget(ServerItemRef(harness.connection.id, "42"), "src-42")
+
+        assertEquals("https://fake.example", harness.playback.serverAddress(target))
+        assertNull(harness.playback.serverAddress(ServerPlaybackTarget(ServerItemRef("gone", "42"), null)))
+        assertNull(harness.playback.serverAddress(null))
+    }
+
+    @Test
     fun namesTheProviderOfAnActiveServerStreamOnly() = runBlocking {
         val harness = harness()
         val target = ServerPlaybackTarget(ServerItemRef(harness.connection.id, "42"), "src-42")

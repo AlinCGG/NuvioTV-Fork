@@ -418,6 +418,7 @@ class ServerRepository(
         throw error
     } catch (error: ServerException) {
         if (error.failure == ServerFailure.AUTH_REQUIRED) throw error
+        Log.w(TAG, "Home rows not read: ${error.forLog()}")
         null
     }
 

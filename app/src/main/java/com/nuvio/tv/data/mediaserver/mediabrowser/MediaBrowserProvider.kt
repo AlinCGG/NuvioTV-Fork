@@ -53,7 +53,7 @@ internal abstract class MediaBrowserProvider(
     http: OkHttpClient,
     identity: ServerClientIdentity
 ) : ServerProvider {
-    override val capabilities: Set<ServerCapability> = ServerCapability.entries.toSet()
+    override val capabilities: Set<ServerCapability> = ServerCapability.entries.toSet() - ServerCapability.HOME_ROWS
 
     protected val client = MediaBrowserClient(authorizationHeader, http, identity)
 

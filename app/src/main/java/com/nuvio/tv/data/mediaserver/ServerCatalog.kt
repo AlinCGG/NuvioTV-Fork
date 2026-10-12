@@ -1,5 +1,6 @@
 package com.nuvio.tv.data.mediaserver
 
+import android.util.Log
 import com.nuvio.tv.core.poster.CustomPosterUrlResolver.ContentIds
 import com.nuvio.tv.core.poster.withCustomPosterUrl
 import com.nuvio.tv.core.streams.supportsResource
@@ -15,15 +16,23 @@ import com.nuvio.tv.domain.model.supportsExtra
 import com.nuvio.tv.domain.repository.AddonRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.TimeSource
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class ServerLibraryRef(
     val connection: ServerConnection,
@@ -91,6 +100,9 @@ class ServerCatalog @Inject constructor(
 
     private val refreshedHomeRows = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val searchLock = Mutex()
+    private val serverSearches = HashMap<String, ServerSearch>()
+    internal var searchWaitMs = SEARCH_WAIT_MS
 
     val libraryLoaded = MutableSharedFlow<String>(extraBufferCapacity = DETAILS_BUFFER)
 
@@ -136,6 +148,7 @@ class ServerCatalog @Inject constructor(
         val connectionId = connectionId(addonBaseUrl) ?: throw ServerException(ServerFailure.NOT_FOUND)
         val connection = repository.connection(connectionId) ?: throw ServerException(ServerFailure.NOT_FOUND)
         val query = extraArgs["search"]?.trim()?.takeIf { it.isNotEmpty() }
+        if (skip == 0 && query == null) refreshHomeRowsOnce(connection)
         val page = when {
             catalogId.startsWith(HOME_ROW_PREFIX) -> homeRowPage(connection, catalogId.removePrefix(HOME_ROW_PREFIX), skip, posterPattern)
             catalogId.startsWith(COLLECTION_PREFIX) -> pageOf(connection, skip, posterPattern) {
@@ -280,11 +293,25 @@ class ServerCatalog @Inject constructor(
         )
     }
 
+    /** Once per app run the server's own rows are read again, also when none were read at sign-in. */
+    private fun refreshHomeRowsOnce(connection: ServerConnection) {
+        if (!connection.showHomeRows) return
+        if (repository.provider(connection)?.capabilities?.contains(ServerCapability.HOME_ROWS) != true) return
+        if (!refreshedHomeRows.add(connection.id)) return
+        refreshScope.launch {
+            try {
+                repository.refreshHomeRows(connection.id)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.w(TAG, "Home rows not read again: ${error.forLog()}")
+                if ((error as? ServerException)?.failure == ServerFailure.INCOMPLETE) refreshedHomeRows.remove(connection.id)
+            }
+        }
+    }
+
     private suspend fun homeRowPage(connection: ServerConnection, rowId: String, skip: Int, posterPattern: String): Page {
         if (skip > 0) return Page(emptyList(), null)
-        if (refreshedHomeRows.add(connection.id)) {
-            refreshScope.launch { runCatching { repository.refreshHomeRows(connection.id) } }
-        }
         val titles = repository.call(connection.id) { provider, session -> provider.homeRowItems(session, rowId) }
         return Page(present(connection, titles, posterPattern), null)
     }
@@ -298,11 +325,59 @@ class ServerCatalog @Inject constructor(
     ): Page {
         if (skip > 0) return Page(emptyList(), null)
         val library = connection.libraries.firstOrNull { it.id == libraryId } ?: throw ServerException(ServerFailure.NOT_FOUND)
-        val titles = repository.call(connection.id) { provider, session ->
-            if (!provider.supports(ServerCapability.SEARCH)) throw ServerException(ServerFailure.UNSUPPORTED)
-            provider.search(session, library, query, SEARCH_LIMIT)
-        }
+        val titles = serverSearch(connection, library, query)
         return Page(present(connection, titles, posterPattern), null)
+    }
+
+    /**
+     * One search per library on a server at a time. A server keeps working on a search the app has
+     * stopped waiting for, so a newer word waits for it, up to [searchWaitMs], instead of piling up
+     * behind it. The same word already running is shared. A search nobody waits for any more is
+     * dropped once that wait is over.
+     */
+    private suspend fun serverSearch(connection: ServerConnection, library: ServerLibrary, query: String): List<ServerTitle> {
+        val key = "${connection.id}/${library.id}"
+        while (true) {
+            val search = searchLock.withLock {
+                val running = serverSearches[key]?.takeIf { it.result.isActive && (it.matches(query) || it.waitLeftMs() > 0) }
+                    ?: ServerSearch(query, searchWaitMs, startSearch(connection, library, query)).also { serverSearches[key] = it }
+                running.also { if (it.matches(query)) it.waiters.incrementAndGet() }
+            }
+            if (!search.matches(query)) {
+                withTimeoutOrNull(search.waitLeftMs()) { search.result.join() }
+                continue
+            }
+            try {
+                return search.result.await()
+            } finally {
+                if (search.waiters.decrementAndGet() == 0 && search.result.isActive) dropWhenUnwanted(search)
+            }
+        }
+    }
+
+    private fun dropWhenUnwanted(search: ServerSearch) {
+        refreshScope.launch {
+            delay(search.waitLeftMs())
+            searchLock.withLock { if (search.waiters.get() == 0) search.result.cancel() }
+        }
+    }
+
+    private fun startSearch(connection: ServerConnection, library: ServerLibrary, query: String): Deferred<List<ServerTitle>> =
+        refreshScope.async {
+            repository.call(connection.id) { provider, session ->
+                if (!provider.supports(ServerCapability.SEARCH)) throw ServerException(ServerFailure.UNSUPPORTED)
+                provider.search(session, library, query, SEARCH_LIMIT)
+            }
+        }
+
+    private class ServerSearch(val query: String, private val waitMs: Long, val result: Deferred<List<ServerTitle>>) {
+        private val started = TimeSource.Monotonic.markNow()
+
+        val waiters = java.util.concurrent.atomic.AtomicInteger()
+
+        fun matches(other: String): Boolean = query.equals(other, ignoreCase = true)
+
+        fun waitLeftMs(): Long = waitMs - started.elapsedNow().inWholeMilliseconds
     }
 
     private suspend fun pageOf(
@@ -335,8 +410,10 @@ class ServerCatalog @Inject constructor(
     private class Page(val items: List<MetaPreview>, val nextSkip: Int?)
 
     companion object {
+        private const val TAG = "ServerCatalog"
         const val PAGE_SIZE = 50
         private const val SEARCH_LIMIT = 30
+        private const val SEARCH_WAIT_MS = 6_000L
         private const val DETAILS_BUFFER = 16
         private const val ARTWORK_WAIT_MS = 700L
         private const val ARTWORK_SETTLE_MS = 8_000L

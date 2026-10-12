@@ -7,7 +7,8 @@ enum class ServerCapability {
     EXTERNAL_ID_LOOKUP,
     USER_STATE_READ,
     USER_STATE_WRITE,
-    TRANSCODING
+    TRANSCODING,
+    HOME_ROWS
 }
 
 interface ServerProvider {

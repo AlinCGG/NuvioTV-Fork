@@ -100,6 +100,10 @@ class ServerPlayback internal constructor(
         null
     }
 
+    /** The address [target]'s server is reached at now; null when its connection is gone. Never contacts the server. */
+    fun serverAddress(target: ServerPlaybackTarget?): String? =
+        target?.let { repository.connection(it.item.connectionId) }?.let(repository::activeAddress)
+
     /** Tracking services the server sends the play behind [url] to by itself; Nuvio leaves those to it. */
     suspend fun scrobbledServices(url: String?): Set<String> {
         if (url == null) return emptySet()

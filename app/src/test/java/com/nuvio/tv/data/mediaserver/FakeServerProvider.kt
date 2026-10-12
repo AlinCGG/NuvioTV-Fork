@@ -15,7 +15,8 @@ internal class FakeServerProvider(
     private val transcodes: Boolean = false,
     private val offersTranscode: Boolean = false,
     private val transcodeFailure: ServerFailure? = null,
-    override val id: String = "fake"
+    override val id: String = "fake",
+    homeRows: Boolean = false
 ) : ServerProvider {
     override val displayName: String = "Fake"
     override val minimumVersion: String = "1.0"
@@ -24,7 +25,7 @@ internal class FakeServerProvider(
         ServerCapability.EXTERNAL_ID_LOOKUP,
         ServerCapability.USER_STATE_READ,
         ServerCapability.USER_STATE_WRITE
-    )
+    ) + listOfNotNull(ServerCapability.HOME_ROWS.takeIf { homeRows })
 
     val indexedIds = mutableMapOf<String, TrackingExternalIds>()
     val episodes = mutableMapOf<Pair<Int, Int>, ServerEpisode>()
@@ -43,6 +44,13 @@ internal class FakeServerProvider(
     var detailsDelayMs = 0L
     var failingDetails = false
     var detailsRequests = 0
+    var homeRowsToReturn: List<ServerHomeRow> = emptyList()
+    @Volatile var homeRowReads = 0
+
+    override suspend fun homeRows(session: ServerSession): List<ServerHomeRow> {
+        homeRowReads++
+        return homeRowsToReturn
+    }
 
     val downAddresses = mutableSetOf<String>()
     val failingWithStatus = mutableSetOf<String>()
@@ -87,12 +95,33 @@ internal class FakeServerProvider(
         2
     )
 
+    var searchDelayMs = 0L
+    val searchQueries: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
+    val searchEvents: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
+    private val searchesRunning = java.util.concurrent.atomic.AtomicInteger()
+    private val mostSearches = java.util.concurrent.atomic.AtomicInteger()
+    val mostSearchesAtOnce: Int get() = mostSearches.get()
+
     override suspend fun search(
         session: ServerSession,
         library: ServerLibrary,
         query: String,
         limit: Int
-    ): List<ServerTitle> = listOf(title(session, "7"))
+    ): List<ServerTitle> {
+        searchQueries += query
+        searchEvents += "start $query"
+        mostSearches.accumulateAndGet(searchesRunning.incrementAndGet(), ::maxOf)
+        try {
+            delay(searchDelayMs)
+            searchEvents += "end $query"
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            searchEvents += "dropped $query"
+            throw error
+        } finally {
+            searchesRunning.decrementAndGet()
+        }
+        return listOf(title(session, "7"))
+    }
 
     val resumeEntries = mutableListOf<ServerResumeEntry>()
     var resumeRequests = 0
