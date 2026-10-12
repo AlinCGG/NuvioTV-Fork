@@ -4036,4 +4036,5 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Ngón cái</string>
     <string name="party_invite_leaves_current">Tham gia sẽ rời khỏi phòng bạn đang ở.</string>
+    <string name="search_row_updating">Đang cập nhật</string>
 </resources>

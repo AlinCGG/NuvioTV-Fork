@@ -671,4 +671,5 @@
     <string name="party_avatar_set_pixel_art">Пиксел арт</string>
     <string name="party_avatar_set_thumbs">Палчеви</string>
     <string name="party_invite_leaves_current">Придруживањем напуштате групу у којој сте сада.</string>
+    <string name="search_row_updating">Ажурира се</string>
 </resources>

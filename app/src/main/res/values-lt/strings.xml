@@ -1679,4 +1679,5 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="party_avatar_set_pixel_art">Pikselių menas</string>
     <string name="party_avatar_set_thumbs">Nykščiai</string>
     <string name="party_invite_leaves_current">Prisijungę paliksite grupę, kurioje esate dabar.</string>
+    <string name="search_row_updating">Atnaujinama</string>
 </resources>

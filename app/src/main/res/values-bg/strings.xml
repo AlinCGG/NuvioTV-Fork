@@ -3367,4 +3367,5 @@
     <string name="party_avatar_set_pixel_art">Пикселно изкуство</string>
     <string name="party_avatar_set_thumbs">Палци</string>
     <string name="party_invite_leaves_current">При присъединяване напускаш партито, в което си сега.</string>
+    <string name="search_row_updating">Обновява се</string>
 </resources>

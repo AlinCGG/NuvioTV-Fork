@@ -3577,4 +3577,5 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Pouces</string>
     <string name="party_invite_leaves_current">Rejoindre vous fait quitter la soirée en cours.</string>
+    <string name="search_row_updating">Mise à jour…</string>
 </resources>

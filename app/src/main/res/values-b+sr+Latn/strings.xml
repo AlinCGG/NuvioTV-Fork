@@ -3852,4 +3852,5 @@
     <string name="party_avatar_set_pixel_art">Piksel art</string>
     <string name="party_avatar_set_thumbs">Palčevi</string>
     <string name="party_invite_leaves_current">Pridruživanjem napuštate grupu u kojoj ste sada.</string>
+    <string name="search_row_updating">Ažurira se</string>
 </resources>

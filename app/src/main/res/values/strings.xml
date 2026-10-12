@@ -3227,6 +3227,7 @@
     <!-- Search errors -->
     <string name="search_error_load_addons_failed">Failed to load addons</string>
     <string name="search_error_failed">Search failed</string>
+    <string name="search_row_updating">Updating</string>
 
     <!-- Stream / TMDB / addons fallbacks -->
     <string name="stream_unknown">Unknown Stream</string>

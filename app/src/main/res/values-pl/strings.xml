@@ -4110,4 +4110,5 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Kciuki</string>
     <string name="party_invite_leaves_current">Dołączenie oznacza opuszczenie obecnego seansu.</string>
+    <string name="search_row_updating">Aktualizowanie</string>
 </resources>

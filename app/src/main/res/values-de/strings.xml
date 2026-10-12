@@ -2949,4 +2949,5 @@
     <string name="party_avatar_set_pixel_art">Pixel-Art</string>
     <string name="party_avatar_set_thumbs">Daumen</string>
     <string name="party_invite_leaves_current">Mit dem Beitritt verlassen Sie Ihre aktuelle Party.</string>
+    <string name="search_row_updating">Wird aktualisiert</string>
 </resources>

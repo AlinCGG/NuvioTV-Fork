@@ -3943,4 +3943,5 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Αντίχειρες</string>
     <string name="party_invite_leaves_current">Με τη συμμετοχή αποχωρείτε από το πάρτι στο οποίο είστε τώρα.</string>
+    <string name="search_row_updating">Ενημερώνεται</string>
 </resources>

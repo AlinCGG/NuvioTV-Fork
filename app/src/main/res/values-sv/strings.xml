@@ -2291,4 +2291,5 @@
     <string name="party_avatar_set_pixel_art">Pixelkonst</string>
     <string name="party_avatar_set_thumbs">Tummar</string>
     <string name="party_invite_leaves_current">Om du går med lämnar du festen du är i nu.</string>
+    <string name="search_row_updating">Uppdateras</string>
 </resources>

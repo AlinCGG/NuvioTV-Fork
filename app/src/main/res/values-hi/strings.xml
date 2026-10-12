@@ -1675,4 +1675,5 @@
     <string name="party_avatar_set_pixel_art">पिक्सेल आर्ट</string>
     <string name="party_avatar_set_thumbs">अंगूठे</string>
     <string name="party_invite_leaves_current">जुड़ने पर आप अपनी मौजूदा पार्टी छोड़ देंगे।</string>
+    <string name="search_row_updating">अपडेट हो रहा है</string>
 </resources>

@@ -1800,4 +1800,5 @@
     <string name="party_avatar_set_pixel_art">Pikselkunst</string>
     <string name="party_avatar_set_thumbs">Tomler</string>
     <string name="party_invite_leaves_current">Hvis du blir med, forlater du festen du er i nå.</string>
+    <string name="search_row_updating">Oppdaterer</string>
 </resources>

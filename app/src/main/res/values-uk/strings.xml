@@ -3412,4 +3412,5 @@
     <string name="party_avatar_set_pixel_art">Піксель-арт</string>
     <string name="party_avatar_set_thumbs">Пальчики</string>
     <string name="party_invite_leaves_current">Приєднавшись, ви покинете поточну кімнату.</string>
+    <string name="search_row_updating">Оновлюється</string>
 </resources>

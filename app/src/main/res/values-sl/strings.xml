@@ -2851,4 +2851,5 @@
     <string name="party_avatar_set_pixel_art">Pikselska grafika</string>
     <string name="party_avatar_set_thumbs">Palci</string>
     <string name="party_invite_leaves_current">S pridružitvijo zapustite skupni ogled, v katerem ste zdaj.</string>
+    <string name="search_row_updating">Posodabljanje</string>
 </resources>

@@ -3814,4 +3814,5 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Pollici</string>
     <string name="party_invite_leaves_current">Partecipando lasci il party in cui sei ora.</string>
+    <string name="search_row_updating">In aggiornamento</string>
 </resources>

@@ -3913,4 +3913,5 @@
     <string name="party_avatar_set_pixel_art">像素畫</string>
     <string name="party_avatar_set_thumbs">大拇指</string>
     <string name="party_invite_leaves_current">加入後會離開您目前所在的派對。</string>
+    <string name="search_row_updating">更新中</string>
 </resources>
