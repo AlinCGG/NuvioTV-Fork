@@ -1,0 +1,109 @@
+name: Issue and PR housekeeping
+
+on:
+  schedule:
+    - cron: "41 19 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only list what would be closed
+        type: boolean
+        default: true
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: issue-housekeeping
+  cancel-in-progress: false
+
+jobs:
+  tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          HAS_PAT: ${{ secrets.ISSUES_TOKEN != '' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || (vars.HOUSEKEEPING_LIVE != 'true' && 'true' || 'false') }}
+        with:
+          github-token: ${{ secrets.ISSUES_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const dryRun = process.env.DRY_RUN !== "false";
+            const canComment = process.env.HAS_PAT === "true";
+            const day = 24 * 60 * 60 * 1000;
+            const keep = ["confirmed", "planned", "fixed-next", "keep-open", "upstream"];
+            const maintainers = ["OWNER", "MEMBER", "COLLABORATOR"];
+            const handled = new Set();
+
+            async function prWaitingOnAuthor(item) {
+              const [comments, reviews] = await Promise.all([
+                github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: item.number, per_page: 100 }),
+                github.paginate(github.rest.pulls.listReviews, { owner, repo, pull_number: item.number, per_page: 100 }),
+              ]);
+              const events = [
+                ...comments.map(c => ({ at: c.created_at, who: c.author_association })),
+                ...reviews.map(r => ({ at: r.submitted_at, who: r.author_association })),
+              ].sort((a, b) => (a.at < b.at ? -1 : 1));
+              const last = events[events.length - 1];
+              return !!last && maintainers.includes(last.who);
+            }
+
+            const rules = [
+              {
+                name: "needs-info, no reply",
+                query: 'is:issue is:open label:"needs-info"',
+                days: 14,
+                reason: "not_planned",
+                text: "Closing this for now as there's not enough here for me to go on. " +
+                      "If it still happens, add the details here and I'll open it again.",
+              },
+              {
+                name: "bug, quiet",
+                query: "is:issue is:open label:bug",
+                days: 45,
+                reason: "not_planned",
+                text: "Closing this as it's been quiet for a while. " +
+                      "If it still happens on the latest version, let me know here and I'll open it again.",
+              },
+              {
+                name: "idea, quiet",
+                query: "is:issue is:open label:idea",
+                days: 90,
+                reason: "not_planned",
+                text: "Closing this one as it hasn't made the list for now. Thanks for the idea though.",
+              },
+              {
+                name: "pull request, quiet",
+                query: "is:pr is:open -is:draft",
+                days: 30,
+                reason: null,
+                pr: true,
+                text: "Closing this as it's been quiet for a month. Happy to look again if you pick it back up.",
+              },
+            ];
+
+            core.info(dryRun ? "Dry run: nothing is changed." : "Live run.");
+            for (const rule of rules) {
+              const cutoff = new Date(Date.now() - rule.days * day).toISOString().slice(0, 10);
+              const items = await github.paginate(github.rest.search.issuesAndPullRequests, {
+                q: `repo:${owner}/${repo} ${rule.query} updated:<${cutoff}`,
+                per_page: 100,
+              });
+              for (const item of items) {
+                if (handled.has(item.number) || item.labels.some(l => keep.includes(l.name))) continue;
+                if (rule.pr && (maintainers.includes(item.author_association) || !(await prWaitingOnAuthor(item)))) continue;
+                handled.add(item.number);
+                core.info(`${rule.name}: #${item.number} ${dryRun ? "would close" : "closing"}`);
+                if (dryRun) continue;
+                const update = { owner, repo, issue_number: item.number, state: "closed" };
+                if (rule.reason) update.state_reason = rule.reason;
+                await github.rest.issues.update(update);
+                if (canComment) {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: item.number, body: `<!-- arc:housekeeping -->\n${rule.text}`,
+                  });
+                }
+              }
+            }

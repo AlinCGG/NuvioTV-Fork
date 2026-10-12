@@ -1,0 +1,57 @@
+name: Close issues fixed in a release
+
+on:
+  release:
+    types: [released]
+
+permissions:
+  issues: write
+
+concurrency:
+  group: issue-release
+  cancel-in-progress: false
+
+jobs:
+  close_fixed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          HAS_PAT: ${{ secrets.ISSUES_TOKEN != '' }}
+        with:
+          github-token: ${{ secrets.ISSUES_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const release = context.payload.release;
+            const tag = release.tag_name;
+            const mentioned = new Set(
+              [...(release.body || "").matchAll(/(?<![\w\/])#(\d+)\b/g)].map(m => Number(m[1]))
+            );
+            const items = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: "open", labels: "fixed-next", per_page: 100,
+            });
+            for (const item of items) {
+              if (item.pull_request) continue;
+              const issue_number = item.number;
+              if (!mentioned.has(issue_number)) {
+                core.warning(`#${issue_number} has fixed-next but is not mentioned in the ${tag} notes, left open`);
+                continue;
+              }
+              await github.rest.issues.update({
+                owner, repo, issue_number,
+                state: "closed",
+                state_reason: "completed",
+                labels: item.labels.map(l => l.name).filter(n => n !== "fixed-next"),
+              });
+              if (process.env.HAS_PAT === "true") {
+                const isBug = item.labels.some(l => l.name === "bug");
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number,
+                  body:
+                    "<!-- arc:released -->\n" +
+                    (isBug ? `Fixed in ${tag}, which is out now.` : `This is in ${tag}, which is out now.`) +
+                    " Settings > About > Check for updates gets it. Thanks for raising it.",
+                });
+              }
+              core.info(`#${issue_number}: closed for ${tag}`);
+            }

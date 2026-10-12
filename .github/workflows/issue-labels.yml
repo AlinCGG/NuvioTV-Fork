@@ -1,0 +1,33 @@
+name: Issue labels
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  act:
+    if: ${{ github.event.label.name == 'upstream' && github.event.issue.state == 'open' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          HAS_PAT: ${{ secrets.ISSUES_TOKEN != '' }}
+        with:
+          github-token: ${{ secrets.ISSUES_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            if (process.env.HAS_PAT !== "true") return;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            if (comments.some(c => (c.body || "").includes("<!-- arc:upstream -->"))) return;
+            await github.rest.issues.createComment({
+              owner, repo, issue_number,
+              body:
+                "<!-- arc:upstream -->\n" +
+                "This one comes from the official Nuvio app rather than something Arc added. " +
+                "When I fix things like this here, I send the fix to the official app as well so both get it. " +
+                "If you'd like to raise it with them too: https://github.com/NuvioMedia/NuvioTV/issues",
+            });
