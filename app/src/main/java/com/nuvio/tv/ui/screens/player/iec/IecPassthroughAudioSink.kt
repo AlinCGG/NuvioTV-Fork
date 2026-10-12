@@ -8,6 +8,7 @@ import androidx.media3.exoplayer.audio.ForwardingAudioSink
 import androidx.media3.extractor.DtsUtil
 import com.nuvio.tv.ui.screens.player.PassthroughWaterLevelPacer
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.ArrayDeque
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -18,6 +19,7 @@ internal class IecPassthroughAudioSink(
     private val hbrIecEnabled: Boolean = true,
     private val nanoTime: () -> Long = System::nanoTime,
     private val onDiagnosticEvent: ((String) -> Unit)? = null,
+    private val onIecFailed: (() -> Unit)? = null,
     private val onIecBecameReady: (() -> Unit)? = null
 ) : ForwardingAudioSink(sink) {
 
@@ -28,6 +30,8 @@ internal class IecPassthroughAudioSink(
     private var mode: Mode = Mode.FORWARD
     private val pendingFrames = ArrayDeque<ByteArray>()
     private val uncommitted = ArrayDeque<UncommittedAu>()
+    private val replays = ArrayDeque<Replay>()
+    private var replayEndOfStream: Boolean = false
     private val sourcesOnFrame = ArrayDeque<Int>()
     private var sourcesSinceFrame: Int = 0
     private val dtsBurstPool = ArrayDeque<ByteArray>()
@@ -49,7 +53,13 @@ internal class IecPassthroughAudioSink(
     private var configuredFormat: Format? = null
     private var configuredBufferSize: Int = 0
     private var configuredOutputChannels: IntArray? = null
+    @Volatile
     private var iecFailedThisSession: Boolean = false
+    // Read by error recovery after the player has reset the sink, so reset() leaves them alone.
+    @Volatile
+    private var iecChosenForFormat: Boolean = false
+    @Volatile
+    private var configuredHbr: Boolean = false
     private var writeStallStartedNanos: Long = WRITE_STALL_NOT_STARTED
     private var totalWriteStalls: Long = 0L
     private var lastHealthNanos: Long = 0L
@@ -71,6 +81,10 @@ internal class IecPassthroughAudioSink(
 
     val isIecActive: Boolean
         get() = mode != Mode.FORWARD && iecTrack != null
+
+    /** The current format is TrueHD or DTS-HD and goes, or went until it failed, through the own IEC track. */
+    val iecInvolved: Boolean
+        get() = configuredHbr && (iecChosenForFormat || iecFailedThisSession)
 
     // Read-only figures for the stats overlay, which samples them off the playback thread.
     fun iecUnderrunCount(): Int? = runCatching { iecTrack?.underrunCount() }.getOrNull()
@@ -110,7 +124,10 @@ internal class IecPassthroughAudioSink(
         configuredFormat = inputFormat
         configuredBufferSize = specifiedBufferSize
         configuredOutputChannels = outputChannels
+        dropReplays()
         releaseIec()
+        configuredHbr = isHbrPassthrough(inputFormat)
+        iecChosenForFormat = false
         LiveDirectAudioPlayback.setPassthroughLive(false)
         if (hbrIecEnabled) trackFactory.startProbe()
         val tunnelReady = !tunnelingRequested
@@ -119,6 +136,7 @@ internal class IecPassthroughAudioSink(
         if (tryCustomHbr) {
             val opened = openIec(inputFormat)
             if (opened) {
+                iecChosenForFormat = true
                 mode = if (isTrueHd(inputFormat)) Mode.TRUEHD else Mode.DTS_HD
                 dtsChannelCount = inputFormat.channelCount.takeIf { it > 0 } ?: 8
                 dtsDuration.clockSampleRate = clockSampleRateFor(iecOutputSampleRate)
@@ -154,7 +172,7 @@ internal class IecPassthroughAudioSink(
         encodedAccessUnitCount: Int
     ): Boolean {
         if (mode == Mode.FORWARD) {
-            return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+            return forwardBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
         }
         maybeReportHealth()
         if (firstBufferPtsUs == C.TIME_UNSET && presentationTimeUs != C.TIME_UNSET) {
@@ -165,13 +183,13 @@ internal class IecPassthroughAudioSink(
         }
         if (!drainPending()) return false
         if (mode == Mode.FORWARD) {
-            return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+            return forwardBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
         }
         rememberSource(buffer, presentationTimeUs, encodedAccessUnitCount)
         val accepted = when (mode) {
             Mode.TRUEHD -> handleTrueHd(buffer, presentationTimeUs)
             Mode.DTS_HD -> handleDtsHd(buffer, presentationTimeUs)
-            Mode.FORWARD -> super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+            Mode.FORWARD -> forwardBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
         }
         drainPending()
         if (mode == Mode.FORWARD) return true
@@ -220,6 +238,7 @@ internal class IecPassthroughAudioSink(
     }
 
     override fun flush() {
+        clearReplays()
         if (isIecActive) {
             resetIecState(keepTrack = true)
             iecTrack?.flush()
@@ -248,6 +267,7 @@ internal class IecPassthroughAudioSink(
     }
 
     override fun reset() {
+        clearReplays()
         releaseIec()
         mode = Mode.FORWARD
         tunnelingRequested = false
@@ -257,6 +277,7 @@ internal class IecPassthroughAudioSink(
     }
 
     override fun release() {
+        clearReplays()
         releaseIec()
         mode = Mode.FORWARD
         trackFactory.setReadyListener(null)
@@ -265,28 +286,43 @@ internal class IecPassthroughAudioSink(
     }
 
     override fun playToEndOfStream() {
-        if (!isIecActive) {
-            super.playToEndOfStream()
-            return
-        }
-        leftover = ByteArray(0)
-        drainPending()
-        if (isIecActive) {
-            handledEndOfStream = true
-        } else {
-            super.playToEndOfStream()
+        try {
+            if (!isIecActive) {
+                forwardEndOfStream()
+                return
+            }
+            leftover = ByteArray(0)
+            drainPending()
+            if (isIecActive) {
+                handledEndOfStream = true
+            } else {
+                forwardEndOfStream()
+            }
+        } catch (e: AudioSink.InitializationException) {
+            throw AudioSink.WriteException(e.audioTrackState, e.format, e.isRecoverable).apply { initCause(e) }
         }
     }
 
+    // isEnded() must not throw, so a failed hand-over at the end is only logged here.
     override fun isEnded(): Boolean {
-        if (!isIecActive) return super.isEnded()
-        if (handledEndOfStream) drainPending(stallIsFatal = false)
-        if (!isIecActive) return super.isEnded()
+        if (!isIecActive) return forwardIsEnded()
+        if (handledEndOfStream) {
+            try {
+                drainPending(stallIsFatal = false)
+            } catch (e: AudioSink.WriteException) {
+                onDiagnosticEvent?.invoke("iec_end_of_stream_write_failed code=${e.errorCode}")
+                return false
+            } catch (e: AudioSink.InitializationException) {
+                onDiagnosticEvent?.invoke("iec_end_of_stream_init_failed state=${e.audioTrackState}")
+                return false
+            }
+        }
+        if (!isIecActive) return forwardIsEnded()
         return handledEndOfStream && !hasPendingData()
     }
 
     override fun hasPendingData(): Boolean {
-        if (!isIecActive) return super.hasPendingData()
+        if (!isIecActive) return replays.isNotEmpty() || super.hasPendingData()
         val track = iecTrack ?: return false
         return pendingFrames.isNotEmpty() || leftover.isNotEmpty() || writtenFrames > track.playbackHeadFrames()
     }
@@ -622,13 +658,16 @@ internal class IecPassthroughAudioSink(
     }
 
     private fun fallbackToWrappedSink(reason: String): Boolean {
-        val replays = ArrayList(uncommitted)
+        val queued = ArrayList(uncommitted)
         val format = configuredFormat
         val endOfStreamRequested = handledEndOfStream
         android.util.Log.w("IecPassthrough", "IEC write failed; falling back to RAW")
-        onDiagnosticEvent?.invoke("iec_fallback_to_raw reason=$reason mime=${format?.sampleMimeType}")
+        onDiagnosticEvent?.invoke(
+            "iec_fallback_to_raw reason=$reason mime=${format?.sampleMimeType} replay=${queued.size}"
+        )
         trackFactory.markIecUnusable()
         iecFailedThisSession = true
+        onIecFailed?.invoke()
         resetIecState(keepTrack = false)
         mode = Mode.FORWARD
         if (format != null) {
@@ -644,20 +683,65 @@ internal class IecPassthroughAudioSink(
                     .apply { initCause(e) }
             }
             if (playing) super.play()
-            var handedOff = true
-            for (replay in replays) {
-                val bytes = ByteBuffer.wrap(replay.bytes)
-                if (!super.handleBuffer(bytes, replay.ptsUs, replay.count)) {
-                    handedOff = false
-                    break
-                }
+            for (au in queued) {
+                val bytes = ByteBuffer.wrap(au.bytes).order(ByteOrder.LITTLE_ENDIAN)
+                replays.add(Replay(bytes, au.ptsUs, au.count))
             }
-            if (endOfStreamRequested) super.playToEndOfStream()
+            replayEndOfStream = endOfStreamRequested
+            val handedOff = drainReplays()
+            if (!handedOff) {
+                onDiagnosticEvent?.invoke("iec_replay_pending count=${replays.size}")
+            }
             refreshPassthroughLive()
             return handedOff
         }
         refreshPassthroughLive()
         return true
+    }
+
+    // The wrapped sink may take a replayed buffer only in part; it then expects that same
+    // buffer again before anything new, so the rest of the queue waits here.
+    private fun drainReplays(): Boolean {
+        while (replays.isNotEmpty()) {
+            val replay = replays.first()
+            if (!super.handleBuffer(replay.buffer, replay.ptsUs, replay.count)) return false
+            replays.removeFirst()
+        }
+        if (replayEndOfStream) {
+            replayEndOfStream = false
+            super.playToEndOfStream()
+        }
+        return true
+    }
+
+    private fun forwardBuffer(
+        buffer: ByteBuffer,
+        presentationTimeUs: Long,
+        encodedAccessUnitCount: Int
+    ): Boolean {
+        if (!drainReplays()) return false
+        return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+    }
+
+    private fun forwardEndOfStream() {
+        if (replays.isEmpty()) {
+            super.playToEndOfStream()
+            return
+        }
+        replayEndOfStream = true
+        drainReplays()
+    }
+
+    private fun forwardIsEnded(): Boolean = replays.isEmpty() && !replayEndOfStream && super.isEnded()
+
+    private fun clearReplays() {
+        replays.clear()
+        replayEndOfStream = false
+    }
+
+    private fun dropReplays() {
+        if (replays.isNotEmpty()) super.flush()
+        clearReplays()
     }
 
     private fun rememberSource(buffer: ByteBuffer, ptsUs: Long, count: Int) {
@@ -742,6 +826,8 @@ internal class IecPassthroughAudioSink(
     }
 
     private class UncommittedAu(val bytes: ByteArray, val ptsUs: Long, val count: Int)
+
+    private class Replay(val buffer: ByteBuffer, val ptsUs: Long, val count: Int)
 
     private enum class Mode { FORWARD, TRUEHD, DTS_HD }
 

@@ -222,7 +222,7 @@ class PlayerRuntimeController(
     internal val rememberedAudioLanguage: String? = navigationArgs.rememberedAudioLanguage
     internal val rememberedAudioName: String? = navigationArgs.rememberedAudioName
     internal val cloudSessionToken: String? = navigationArgs.cloudSessionToken
-    internal val mediaSourceFactory = PlayerMediaSourceFactory(context.applicationContext)
+    internal val mediaSourceFactory = PlayerMediaSourceFactory(context.applicationContext, serverPlayback::isServerSource)
 
     // Resolved per sample so it follows the player across rebuilds.
     private val bufferedAheadProvider: () -> Long = {
@@ -536,6 +536,7 @@ class PlayerRuntimeController(
     internal var sourceStreamsJob: Job? = null
     internal var sourceBadgeJob: Job? = null
     internal var sourceFilterFullList: List<com.nuvio.tv.domain.model.Stream> = emptyList()
+    internal var sourceThumbnailCopyStreams: List<com.nuvio.tv.domain.model.Stream> = emptyList()
     internal var sourceBadgedAddonNames: Set<String> = emptySet()
     internal var sourceStreamsScope: kotlinx.coroutines.CoroutineScope? = null
     internal var episodeStreamsScope: kotlinx.coroutines.CoroutineScope? = null
@@ -855,6 +856,9 @@ class PlayerRuntimeController(
     internal val vc1DecoderRetryStreamUrls: MutableSet<String> = mutableSetOf()
     internal val mpvFormatFallbackStreamUrls: MutableSet<String> = mutableSetOf()
     internal val safeAudioForcedStreamUrls: MutableSet<String> = mutableSetOf()
+    // Own IEC output failures per stream; from the second one, rebuilds leave HD audio to the system sink.
+    internal val iecFailureStrikes: MutableMap<String, Int> = mutableMapOf()
+    internal val iecOffStreamUrls: MutableSet<String> = mutableSetOf()
     internal val audioDisabledForcedStreamUrls: MutableSet<String> = mutableSetOf()
     // URLs proven dead this session (sniff failure on a non-media body, or HTTP
     // 404/410): auto-failover skips them and the source panel greys them out.

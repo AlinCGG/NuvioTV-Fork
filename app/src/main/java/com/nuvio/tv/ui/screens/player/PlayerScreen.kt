@@ -584,6 +584,7 @@ fun PlayerScreen(
                 identityExact = viewModel.seekThumbnailIdentityExact(),
                 copySources = copySources,
                 usenet = copySources.playingIsUsenet(thumbSourceUrl),
+                mediaServer = viewModel.isServerStream(thumbSourceUrl),
             ),
             playerProvider = { viewModel.exoPlayer },
             reserveProvider = { viewModel.seekThumbnailBufferReserve() },

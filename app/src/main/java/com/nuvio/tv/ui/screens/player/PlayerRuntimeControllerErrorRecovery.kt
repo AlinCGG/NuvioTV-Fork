@@ -4,6 +4,7 @@ import com.nuvio.tv.data.local.InternalPlayerEngine
 import android.os.SystemClock
 import android.util.Log
 import com.nuvio.tv.core.logging.redactLinksForLog
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -157,6 +158,73 @@ internal fun isAudioTrackFailure(errorCode: Int, combinedMessage: String): Boole
     if (errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED) return true
     return combinedMessage.contains("audiotrack init failed", ignoreCase = true) ||
         combinedMessage.contains("audiotrack write failed", ignoreCase = true)
+}
+
+/**
+ * A runtime check that tripped in the audio output path (audio renderer, audio sink or the IEC
+ * engine). Video fallbacks such as dropping Dolby Vision cannot cure it. Read from the failing
+ * renderer's format when there is one, otherwise from the cause's stack. media3 class names
+ * survive minification and every audio output stack passes through them; the app's own iec
+ * package only shows by name in debug builds.
+ */
+internal fun isAudioOutputRuntimeFailure(
+    errorCode: Int,
+    rendererSampleMimeType: String?,
+    cause: Throwable?
+): Boolean {
+    if (errorCode != PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK) return false
+    if (rendererSampleMimeType != null) return MimeTypes.isAudio(rendererSampleMimeType)
+    return generateSequence(cause) { it.cause }.take(8).any { throwable ->
+        throwable.stackTrace.any { frame -> isAudioOutputFrame(frame.className) }
+    }
+}
+
+private fun isAudioOutputFrame(className: String): Boolean =
+    className.startsWith("androidx.media3.exoplayer.audio.") ||
+        className.startsWith("com.nuvio.tv.ui.screens.player.iec.")
+
+/**
+ * The first audio rung turns the app's own IEC output off, when the failing player sent the
+ * current TrueHD or DTS-HD track through it. A known failing format must be one of those too.
+ */
+internal fun iecOffRungApplies(audioPathFailure: Boolean, iecInvolved: Boolean, failingMimeType: String?): Boolean =
+    audioPathFailure && iecInvolved &&
+        (failingMimeType == null || PassthroughWaterLevelPacer.isHbrMime(failingMimeType))
+
+internal const val IEC_FAILURES_BEFORE_OFF = 2
+
+/**
+ * Counts an own IEC output failure for [url]. The first one only lets the film carry on through
+ * the normal output, the next rebuild tries IEC again; a second one keeps the stream off IEC.
+ * Returns the failure count for the stream.
+ */
+internal fun noteIecFailure(strikes: MutableMap<String, Int>, iecOff: MutableSet<String>, url: String): Int {
+    val count = (strikes[url] ?: 0) + 1
+    strikes[url] = count
+    if (count >= IEC_FAILURES_BEFORE_OFF) iecOff.add(url)
+    return count
+}
+
+internal fun PlayerRuntimeController.onOwnIecOutputFailed() {
+    val url = currentStreamUrl
+    val count = noteIecFailure(iecFailureStrikes, iecOffStreamUrls, url)
+    Log.i(
+        PlayerRuntimeController.TAG,
+        if (url in iecOffStreamUrls) {
+            "IEC_OFF_FOR_STREAM: own IEC output failed $count times host=${url.safeHost()}"
+        } else {
+            "IEC_FAILURE_NOTED: own IEC output failed once, tried again on the next rebuild host=${url.safeHost()}"
+        }
+    )
+}
+
+internal fun PlayerRuntimeController.retryCurrentStreamWithoutIec(fromPositionMs: Long) {
+    iecOffStreamUrls.add(currentStreamUrl)
+    Log.i(
+        PlayerRuntimeController.TAG,
+        "IEC_OFF_AUDIO_FALLBACK: rebuilding without IEC output host=${currentStreamUrl.safeHost()}"
+    )
+    scheduleDeferredPlayerReinitialize(fromPositionMs = fromPositionMs)
 }
 
 internal fun isStuckBufferingWatchdog(errorCode: Int, combinedMessage: String): Boolean {

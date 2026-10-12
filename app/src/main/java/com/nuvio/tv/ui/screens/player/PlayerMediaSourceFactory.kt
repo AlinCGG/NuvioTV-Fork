@@ -60,7 +60,11 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-internal class PlayerMediaSourceFactory(private val context: Context) {
+internal class PlayerMediaSourceFactory(
+    private val context: Context,
+    /** A media server's stream (Silo, Jellyfin, Emby): read with one request at a time. */
+    private val isMediaServerUrl: (String) -> Boolean = { false }
+) {
     private var customExtractorsFactory: ExtractorsFactory? = null
     private var customSubtitleParserFactory: SubtitleParser.Factory? = null
     private val loadErrorHandlingPolicy = PlayerLoadErrorHandlingPolicy()
@@ -198,6 +202,12 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         return factory
     }
 
+    /** Connections playback opens to [url]. */
+    fun playbackConnections(url: String?): Int {
+        val mediaServer = url != null && isMediaServerUrl(url)
+        return if (usesParallelConnections(useParallelConnections, mediaServer)) parallelConnectionCount else 1
+    }
+
     fun configureSubtitleParsing(
         extractorsFactory: ExtractorsFactory?,
         subtitleParserFactory: SubtitleParser.Factory?
@@ -239,10 +249,10 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
         )
         val isHls = resolvedMimeType == MimeTypes.APPLICATION_M3U8
         val isDash = resolvedMimeType == MimeTypes.APPLICATION_MPD
-        // A loopback engine can hold a read while it fetches pieces, so it keeps the long-timeout plain path.
-        val mp4SessionMode = !useParallelConnections && !isHls && !isDash &&
-            resolvedMimeType == MimeTypes.VIDEO_MP4 && !isLoopbackUrl(url)
-        val useChunkSessionSource = (useParallelConnections || mp4SessionMode) && !isHls && !isDash
+        val mediaServer = isMediaServerUrl(url)
+        val parallel = usesParallelConnections(useParallelConnections, mediaServer)
+        val mp4SessionMode = usesMp4Session(parallel, mediaServer, isHls || isDash, resolvedMimeType, url)
+        val useChunkSessionSource = (parallel || mp4SessionMode) && !isHls && !isDash
         return ChunkSessionShape(
             resolvedMimeType = resolvedMimeType,
             isHls = isHls,
@@ -341,6 +351,8 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
 
         val mediaItem = mediaItemBuilder.build()
 
+        val parallelCount =
+            if (usesParallelConnections(useParallelConnections, isMediaServerUrl(url))) parallelConnectionCount else 0
         Log.i(
             "PlayerMediaSource",
             "PLAYBACK_CONFIG: native=$nativeEngineEnabled " +
@@ -350,7 +362,7 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
                 "backBufferMs=${NuvioExoPlayerPerformanceHelper.backBufferMs} " +
                 "targetMb=${NuvioExoPlayerPerformanceHelper.targetBufferSizeMb} " +
                 "safeNativeMb=${NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)} " +
-                "parallel=${if (useParallelConnections) parallelConnectionCount else 0} chunkKb=$parallelChunkSizeKb " +
+                "parallel=$parallelCount chunkKb=$parallelChunkSizeKb " +
                 PlayerMemoryReporter.snapshot(context)
         )
         PlayerMemoryReporter.startSampling(context)
@@ -730,6 +742,22 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
             val host = url.toHttpUrlOrNull()?.host ?: return false
             return host == "127.0.0.1" || host == "::1" || host.equals("localhost", ignoreCase = true)
         }
+
+        /** Parallel connections, with performance mode's deeper window and HTTP/2 lanes: never on a media server. */
+        internal fun usesParallelConnections(setting: Boolean, mediaServer: Boolean): Boolean = setting && !mediaServer
+
+        /**
+         * Progressive MP4 on the single-connection chunk session. Not on a media server, where it would keep two
+         * chunks in flight, and not on a loopback engine, which can hold a read while it fetches pieces: both take the
+         * plain path.
+         */
+        internal fun usesMp4Session(
+            parallel: Boolean,
+            mediaServer: Boolean,
+            adaptive: Boolean,
+            mimeType: String?,
+            url: String
+        ): Boolean = !parallel && !mediaServer && !adaptive && mimeType == MimeTypes.VIDEO_MP4 && !isLoopbackUrl(url)
 
         fun parseHeaders(headers: String?): Map<String, String> {
             if (headers.isNullOrEmpty()) return emptyMap()

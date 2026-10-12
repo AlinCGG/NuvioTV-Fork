@@ -224,6 +224,29 @@ class PlayerMediaSourceFactoryTest {
         assertEquals(15_000, client.readTimeoutMillis)
     }
 
+    @Test
+    fun `a media server stream never gets parallel connections`() {
+        assertTrue(PlayerMediaSourceFactory.usesParallelConnections(setting = true, mediaServer = false))
+        assertFalse(PlayerMediaSourceFactory.usesParallelConnections(setting = true, mediaServer = true))
+        assertFalse(PlayerMediaSourceFactory.usesParallelConnections(setting = false, mediaServer = false))
+    }
+
+    @Test
+    fun `a media server MP4 takes the plain single connection path`() {
+        val url = "https://jellyfin.example.com/Videos/abc/stream.mp4?static=true"
+        assertTrue(PlayerMediaSourceFactory.usesMp4Session(false, false, false, MimeTypes.VIDEO_MP4, url))
+        assertFalse(PlayerMediaSourceFactory.usesMp4Session(false, true, false, MimeTypes.VIDEO_MP4, url))
+    }
+
+    @Test
+    fun `the MP4 session keeps its other rules`() {
+        val url = "https://cdn.example.com/Film.mp4"
+        assertFalse(PlayerMediaSourceFactory.usesMp4Session(true, false, false, MimeTypes.VIDEO_MP4, url))
+        assertFalse(PlayerMediaSourceFactory.usesMp4Session(false, false, true, MimeTypes.VIDEO_MP4, url))
+        assertFalse(PlayerMediaSourceFactory.usesMp4Session(false, false, false, MimeTypes.VIDEO_MATROSKA, url))
+        assertFalse(PlayerMediaSourceFactory.usesMp4Session(false, false, false, MimeTypes.VIDEO_MP4, "http://127.0.0.1:8090/x.mp4"))
+    }
+
     private fun String.basicAuthHeader(): String =
         "Basic " + Base64.getEncoder().encodeToString(toByteArray(Charsets.UTF_8))
 }

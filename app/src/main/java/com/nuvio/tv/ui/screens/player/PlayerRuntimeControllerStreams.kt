@@ -199,6 +199,7 @@ internal fun PlayerRuntimeController.clearSourceStreams() {
     sourceStreamsFetchCompleted = false
     sourceBadgedAddonNames = emptySet()
     sourceFilterFullList = emptyList()
+    sourceThumbnailCopyStreams = emptyList()
     _uiState.update {
         it.copy(
             isLoadingSourceStreams = false,
@@ -243,7 +244,10 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
     sourceStreamsJob = newScope.launch {
         sourceStreamsCacheRequestKey = requestKey
         sourceStreamsFetchCompleted = false
-        if (forceRefresh || targetChanged) sourceBadgedAddonNames = emptySet()
+        if (forceRefresh || targetChanged) {
+            sourceBadgedAddonNames = emptySet()
+            sourceThumbnailCopyStreams = emptyList()
+        }
         _uiState.update {
             it.copy(
                 isLoadingSourceStreams = true,
@@ -279,6 +283,12 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
                     val addonStreams = StreamAutoPlaySelector.orderAddonStreams(result.data, installedAddonOrder, preferredServerNames)
                     val allStreams = addonStreams.flatMap { it.streams }
                     val availableAddons = addonStreams.map { it.addonName }
+                    val copyStreams = addonStreams.flatMap { it.thumbnailCopyStreams }
+                    sourceThumbnailCopyStreams = if (isResume && sourceThumbnailCopyStreams.isNotEmpty()) {
+                        mergeSourceStreams(sourceThumbnailCopyStreams, copyStreams)
+                    } else {
+                        copyStreams
+                    }
                     _uiState.update {
                         // On resume, merge fresh results with any previously cached streams
                         val mergedAllStreams = if (isResume && it.sourceAllStreams.isNotEmpty()) {

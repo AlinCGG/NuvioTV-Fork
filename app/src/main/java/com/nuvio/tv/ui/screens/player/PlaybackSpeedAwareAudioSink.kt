@@ -120,6 +120,8 @@ internal class PlaybackSpeedAwareAudioSink(
 
     fun isIecHbrActive(): Boolean = iecSink?.isIecActive == true
 
+    fun iecInvolved(): Boolean = iecSink?.iecInvolved == true
+
     fun isDirectPlaybackActive(): Boolean = isCurrentlyPassthrough
 
     fun setPlaybackActive(active: Boolean) = monitor.setPlaybackActive(active)

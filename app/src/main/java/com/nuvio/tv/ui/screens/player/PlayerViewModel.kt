@@ -973,6 +973,9 @@ class PlayerViewModel @Inject constructor(
     /** The media server's own seek thumbnails for [url] when it is a server stream. */
     fun serverThumbnails(url: String?): ServerThumbnailSource? = serverPlayback.thumbnails(url)
 
+    /** [url] plays from a media server (Silo, Jellyfin, Emby). */
+    fun isServerStream(url: String?): Boolean = serverPlayback.isServerSource(url)
+
     fun isAutoPlayedEpisode(): Boolean = controller.currentEpisodeAutoPlayed
 
     fun pauseForSeekThumbnails(): Boolean? = controller.pauseForSeekThumbnails()
@@ -981,9 +984,8 @@ class PlayerViewModel @Inject constructor(
         if (controller.isErrorCardPlayback()) "error card or a film/episode stream under 2 minutes" else null
 
     /** Connections playback keeps open to the stream. */
-    fun playbackConnectionCount(): Int = controller.mediaSourceFactory.let {
-        if (it.useParallelConnections) it.parallelConnectionCount else 1
-    }
+    fun playbackConnectionCount(): Int =
+        controller.mediaSourceFactory.playbackConnections(controller.getCurrentStreamUrl())
 
     /** Playback's read-ahead reserve; null until the player is built. */
     fun seekThumbnailBufferReserve(): com.nuvio.tv.core.player.thumbnail.PlaybackBufferReserve? =

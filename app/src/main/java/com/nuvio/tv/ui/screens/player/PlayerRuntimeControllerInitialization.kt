@@ -193,6 +193,7 @@ internal data class ExoConstructionFingerprint(
     val maintainOriginalAudioOnDownmix: Boolean,
     val forceOpticalPassthroughActive: Boolean,
     val useSystemPassthrough: Boolean,
+    val iecOff: Boolean = false,
     val initialForcePcm: Boolean,
     val audioPassthroughPolicy: com.nuvio.tv.core.player.AudioPassthroughPolicy,
     val deniedTranscodeMimes: Set<String>,
@@ -1365,6 +1366,10 @@ internal fun PlayerRuntimeController.initializePlayer(
                 downmixNormalizationEnabled = !playerSettings.maintainOriginalAudioOnDownmix,
                 forceOpticalPassthrough = isForcePassthroughActive,
                 useSystemPassthrough = playerSettings.useSystemPassthrough,
+                iecOff = iecOffStreamUrls.contains(url),
+                onIecFailed = {
+                    Handler(Looper.getMainLooper()).post { onOwnIecOutputFailed() }
+                },
                 deniedTranscodeMimes = deniedTranscodeMimes,
                 preferFfmpegAudio = preferFfmpegAudioActive,
                 bluetoothForcePcm = isBluetoothAudioOutput,
@@ -1484,6 +1489,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                 maintainOriginalAudioOnDownmix = playerSettings.maintainOriginalAudioOnDownmix,
                 forceOpticalPassthroughActive = isForcePassthroughActive,
                 useSystemPassthrough = playerSettings.useSystemPassthrough,
+                iecOff = iecOffStreamUrls.contains(url),
                 initialForcePcm = hasTriedAudioPcmFallback,
                 audioPassthroughPolicy = surroundResolution.policy,
                 deniedTranscodeMimes = deniedTranscodeMimes,
@@ -1648,7 +1654,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     "PLAYER_INIT: engine=EXOPLAYER host=${url.safeHost()} " +
                         "playbackSpeed=${_uiState.value.playbackSpeed} " +
                         "resumePositionMs=$initialResumePosition mime=${currentStreamMimeType ?: "unknown"} " +
-                        "bufferEngine=${playerSettings.bufferEngineEnabled} parallel=${mediaSourceFactory.useParallelConnections} " +
+                        "bufferEngine=${playerSettings.bufferEngineEnabled} parallel=${mediaSourceFactory.playbackConnections(url) > 1} " +
                         "vodCache=${mediaSourceFactory.vodCacheEnabled} tunneling=${playerSettings.effectiveTunnelingEnabled}"
                 playbackAnalyticsDiagnostics.recordRawEventLine(playerInitLine)
                 TtffTrace.mirror(playerInitLine)
@@ -2212,8 +2218,10 @@ internal fun PlayerRuntimeController.initializePlayer(
                         // fallback ladder as a DV decoder failure instead of burning the
                         // audio fallbacks (safe-audio/audio-disabled) on it — they rebuild
                         // the player with the same broken conversion and fail identically.
+                        val audioOutputRuntimeFailure = error.isAudioOutputRuntimeFailure()
                         if (error.errorCode == PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK &&
                             !error.isStuckBufferingWatchdog() &&
+                            !audioOutputRuntimeFailure &&
                             (isExperimentalDv7ToDv81ActiveForCurrentPlayback ||
                                 isManualDv81Mode2ActiveForCurrentPlayback) &&
                             !isMapDv7ToHevcActiveForCurrentPlayback
@@ -2245,6 +2253,16 @@ internal fun PlayerRuntimeController.initializePlayer(
                             )
                             dv7ToHevcForcedStreamUrls.add(currentStreamUrl)
                             retryCurrentStreamWithDolbyVisionFallback(currentPosition)
+                            return
+                        }
+
+                        if (iecOffRungApplies(
+                                audioPathFailure = audioOutputRuntimeFailure || error.isAudioTrackFailure(),
+                                iecInvolved = playbackSpeedAwareAudioSink?.iecInvolved() == true,
+                                failingMimeType = error.failingAudioMimeType()
+                            )
+                        ) {
+                            retryCurrentStreamWithoutIec(currentPosition)
                             return
                         }
 
@@ -3179,6 +3197,8 @@ private class SubtitleOffsetRenderersFactory(
     private val downmixNormalizationEnabled: Boolean,
     private val forceOpticalPassthrough: Boolean,
     private val useSystemPassthrough: Boolean,
+    private val iecOff: Boolean = false,
+    private val onIecFailed: (() -> Unit)? = null,
     private val deniedTranscodeMimes: Set<String>,
     private val preferFfmpegAudio: Boolean,
     private val audioPassthroughPolicy: AudioPassthroughPolicy,
@@ -3337,12 +3357,13 @@ private class SubtitleOffsetRenderersFactory(
         var speedAwareSink: PlaybackSpeedAwareAudioSink? = null
         val iecAudioSink = IecPassthroughAudioSink(
             sink = baseAudioSink,
-            hbrIecEnabled = !useSystemPassthrough && !forceOpticalPassthrough && !bluetoothForcePcm,
+            hbrIecEnabled = !useSystemPassthrough && !forceOpticalPassthrough && !bluetoothForcePcm && !iecOff,
             onIecBecameReady = {
                 Handler(Looper.getMainLooper()).post {
                     speedAwareSink?.notifyAudioProcessingRequirementChanged()
                 }
             },
+            onIecFailed = onIecFailed,
             onDiagnosticEvent = onAudioDiagnosticEvent
         )
         val playbackSpeedAwareAudioSink = PlaybackSpeedAwareAudioSink(
@@ -3769,6 +3790,20 @@ private fun PlaybackException.isAudioTrackFailure(): Boolean {
     }
     return isAudioTrackFailure(errorCode, details)
 }
+
+@androidx.annotation.OptIn(UnstableApi::class)
+private fun PlaybackException.failingAudioMimeType(): String? =
+    (this as? androidx.media3.exoplayer.ExoPlaybackException)?.rendererFormat?.sampleMimeType
+        ?: failedAudioTrackInputFormat(this)?.sampleMimeType
+
+@androidx.annotation.OptIn(UnstableApi::class)
+private fun PlaybackException.isAudioOutputRuntimeFailure(): Boolean =
+    isAudioOutputRuntimeFailure(
+        errorCode = errorCode,
+        rendererSampleMimeType = (this as? androidx.media3.exoplayer.ExoPlaybackException)
+            ?.rendererFormat?.sampleMimeType,
+        cause = cause
+    )
 
 private fun PlaybackException.isStuckPlayingNoProgress(): Boolean {
     if (errorCode != PlaybackException.ERROR_CODE_TIMEOUT) return false
