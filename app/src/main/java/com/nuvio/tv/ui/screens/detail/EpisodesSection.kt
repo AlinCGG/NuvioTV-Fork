@@ -615,9 +615,14 @@ fun EpisodesRow(
             firstEpisodeInSeason?.episode != null &&
             selectedEpisode.episode > firstEpisodeInSeason.episode
 
-        EpisodeOptionsDialog(
+        EpisodeOptionsOverlay(
             episode = selectedEpisode,
+            imdbRating = selectedEpisode.season?.let { season ->
+                selectedEpisode.episode?.let { episode -> episodeRatings[season to episode] }
+            },
             isWatched = selectedWatched,
+            blurUnwatchedEpisodes = blurUnwatchedEpisodes,
+            style = episodeOptionsOverlayStyle,
             isPending = isPending,
             isSeasonFullyWatched = isSeasonFullyWatched,
             hasPreviousEpisodes = hasPreviousEpisodes,
@@ -1143,88 +1148,6 @@ private fun EpisodeCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalTvMaterial3Api::class)
-@Composable
-private fun EpisodeOptionsDialog(
-    episode: Video,
-    isWatched: Boolean,
-    isPending: Boolean,
-    isSeasonFullyWatched: Boolean = false,
-    hasPreviousEpisodes: Boolean = false,
-    hasProgress: Boolean = false,
-    onDismiss: () -> Unit,
-    onPlay: () -> Unit,
-    isPlayEnabled: Boolean = true,
-    onStartFromBeginning: () -> Unit = {},
-    onOpenEpisodeComments: () -> Unit = {},
-    showOpenEpisodeComments: Boolean = false,
-    onPlayManually: () -> Unit = {},
-    showPlayManually: Boolean = false,
-    onToggleWatched: () -> Unit,
-    onMarkSeasonWatched: () -> Unit = {},
-    onMarkSeasonUnwatched: () -> Unit = {},
-    onMarkPreviousEpisodesWatched: () -> Unit = {}
-) {
-    val primaryFocusRequester = remember { FocusRequester() }
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        primaryFocusRequester.requestFocus()
-    }
-
-    NuvioDialog(
-        onDismiss = onDismiss,
-        title = episode.title.localizeEpisodeTitle(context),
-        subtitle = stringResource(R.string.episodes_dialog_subtitle)
-    ) {
-        PanelActionRow(
-            label = if (isWatched) stringResource(R.string.episodes_mark_unwatched) else stringResource(R.string.episodes_mark_watched),
-            onClick = onToggleWatched,
-            enabled = !isPending,
-            focusRequester = primaryFocusRequester
-        )
-
-        PanelActionRow(
-            label = if (isSeasonFullyWatched) stringResource(R.string.episodes_mark_season_unwatched) else stringResource(R.string.episodes_mark_season_watched),
-            onClick = if (isSeasonFullyWatched) onMarkSeasonUnwatched else onMarkSeasonWatched
-        )
-
-        if (hasPreviousEpisodes) {
-            PanelActionRow(
-                label = stringResource(R.string.episodes_mark_previous_watched),
-                onClick = onMarkPreviousEpisodesWatched
-            )
-        }
-
-        PanelActionRow(
-            label = stringResource(if (isPlayEnabled) R.string.episodes_play else R.string.playback_unavailable),
-            enabled = isPlayEnabled,
-            onClick = onPlay
-        )
-
-        if (showOpenEpisodeComments) {
-            PanelActionRow(
-                label = stringResource(R.string.episodes_open_comments),
-                onClick = onOpenEpisodeComments
-            )
-        }
-
-        if (showPlayManually && isPlayEnabled) {
-            PanelActionRow(
-                label = stringResource(R.string.play_manually),
-                onClick = onPlayManually
-            )
-        }
-
-        if (hasProgress && isPlayEnabled) {
-            PanelActionRow(
-                label = stringResource(R.string.cw_action_start_from_beginning),
-                onClick = onStartFromBeginning
-            )
         }
     }
 }

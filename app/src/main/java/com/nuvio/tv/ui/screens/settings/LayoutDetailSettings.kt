@@ -23,6 +23,12 @@ internal fun LayoutDetailPageSection(
     var showRatingsDialog by rememberSaveable { mutableStateOf(false) }
 
     SettingsSectionLabel(text = stringResource(R.string.layout_detail_group_episodes))
+    SettingsActionRow(
+        title = stringResource(R.string.layout_episode_options_overlay),
+        subtitle = stringResource(R.string.layout_episode_options_overlay_sub),
+        value = episodeOptionsOverlayStyleLabel(uiState.episodeOptionsOverlayStyle),
+        onClick = { showOverlayStyleDialog = true }
+    )
     SettingsToggleRow(
         title = stringResource(R.string.random_episode_title),
         subtitle = stringResource(R.string.layout_random_episode_sub),

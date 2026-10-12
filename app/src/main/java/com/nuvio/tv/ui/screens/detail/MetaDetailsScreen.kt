@@ -164,9 +164,12 @@ private class DetailTapScroll {
     var rapidDown: Boolean = false
     var lastKey: Int = 0
     var lastDownAt: Long = 0L
+    var heroDownMoving: Boolean = false
+    var heroDownPressAt: Long = -1L
 }
 
 private const val RAPID_DOWN_TAP_MS = 280L
+internal const val HERO_DOWN_DESTINATION_WAIT_MS = 1_500L
 
 private enum class PeopleSectionTab {
     CAST,
@@ -2205,32 +2208,63 @@ private fun MetaDetailsContent(
         }
     }
 
-    LaunchedEffect(pendingDown, secondaryReady, hasVisiblePeopleSection, seasons) {
-        if (!pendingDown || !secondaryReady) return@LaunchedEffect
-        val target = when {
-            isSeries && seasons.isNotEmpty() && !(seasons.size == 1 && meta.apiType.equals("other", true)) -> selectedSeasonFocusRequester
-            isSeries && seasonDownFocusRequester != null -> seasonDownFocusRequester
-            hasVisiblePeopleTabs -> activePeopleTabFocusRequester
-            hasVisiblePeopleSection -> when (activePeopleTab) {
-                PeopleSectionTab.CAST -> castSectionFocusRequester
-                PeopleSectionTab.MORE_LIKE_THIS -> moreLikeSectionFocusRequester
-                PeopleSectionTab.TRAILER -> trailerSectionFocusRequester
-                PeopleSectionTab.COLLECTION -> collectionSectionFocusRequester
-                PeopleSectionTab.RATINGS -> ratingsContentFocusRequester
+    val heroDownTarget = when {
+        isSeries && seasons.isNotEmpty() && !(seasons.size == 1 && meta.apiType.equals("other", true)) -> selectedSeasonFocusRequester
+        isSeries && seasonDownFocusRequester != null -> seasonDownFocusRequester
+        hasVisiblePeopleTabs -> activePeopleTabFocusRequester
+        hasVisiblePeopleSection -> when (activePeopleTab) {
+            PeopleSectionTab.CAST -> castSectionFocusRequester
+            PeopleSectionTab.MORE_LIKE_THIS -> moreLikeSectionFocusRequester
+            PeopleSectionTab.TRAILER -> trailerSectionFocusRequester
+            PeopleSectionTab.COLLECTION -> collectionSectionFocusRequester
+            PeopleSectionTab.RATINGS -> ratingsContentFocusRequester
+        }
+        shouldShowCommentsSection && canToggleEpisodeComments -> commentsSelectedModeFocusRequester
+        else -> null
+    }
+    val heroDownHasMoreBelow = shouldShowCommentsSection || people.companies.isNotEmpty() || people.networks.isNotEmpty()
+    val heroDownHasDestination = heroDownTarget != null || heroDownHasMoreBelow
+    val currentHeroDownTarget by rememberUpdatedState(heroDownTarget)
+    LaunchedEffect(pendingDown, secondaryReady, heroDownHasDestination) {
+        val waitStart = SystemClock.uptimeMillis()
+        fun decide() = heroDownMove(
+            pending = pendingDown,
+            secondaryReady = secondaryReady,
+            hasDestination = heroDownHasDestination,
+            fastScrolling = detailFastScrolling,
+            moving = tapScroll.heroDownMoving,
+            waitedMs = SystemClock.uptimeMillis() - waitStart
+        )
+        var move = decide()
+        if (move == HeroDownMove.WAIT && secondaryReady && !heroDownHasDestination) {
+            delay(HERO_DOWN_DESTINATION_WAIT_MS)
+            move = decide()
+        }
+        when (move) {
+            HeroDownMove.NONE, HeroDownMove.WAIT -> Unit
+            HeroDownMove.DROP -> pendingDown = false
+            HeroDownMove.MOVE -> {
+                pendingDown = false
+                tapScroll.heroDownMoving = true
+                // Focus alone moves the page, so the bring-into-view spec is the only scroll.
+                coroutineScope.launch {
+                    try {
+                        withFrameNanos { }
+                        val target = currentHeroDownTarget
+                        val rowBelowShown = listState.layoutInfo.visibleItemsInfo.any { it.index >= 1 }
+                        if (target == null) {
+                            detailFocusManager.moveFocus(FocusDirection.Down)
+                        } else if (!rowBelowShown || !runCatching { target.requestFocus() }.getOrDefault(false)) {
+                            if (!detailFocusManager.moveFocus(FocusDirection.Down)) {
+                                target.requestFocusAfterFrames()
+                            }
+                        }
+                    } finally {
+                        tapScroll.heroDownMoving = false
+                    }
+                }
             }
-            shouldShowCommentsSection && canToggleEpisodeComments -> commentsSelectedModeFocusRequester
-            else -> null
         }
-        if (target != null) {
-            androidx.compose.runtime.withFrameNanos { }
-            listState.scrollToItem(1)
-            target.requestFocusAfterFrames()
-        } else if (shouldShowCommentsSection || people.companies.isNotEmpty() || people.networks.isNotEmpty()) {
-            androidx.compose.runtime.withFrameNanos { }
-            detailFocusManager.moveFocus(FocusDirection.Down)
-        }
-        // Clearing this LaunchedEffect key before suspension cancels its own focus move.
-        pendingDown = false
     }
 
     // Pre-compute screen dimensions to avoid BoxWithConstraints subcomposition overhead
@@ -2389,15 +2423,33 @@ private fun MetaDetailsContent(
                                 tapScroll.lastKey = native.keyCode
                             }
                         }
+                        if (pendingDown && cancelsWaitingHeroDown(native.keyCode)) {
+                            pendingDown = false
+                        }
                         if (native.keyCode == KeyEvent.KEYCODE_DPAD_DOWN && native.repeatCount == 0) {
                             val now = SystemClock.uptimeMillis()
                             tapScroll.rapidDown = now - tapScroll.lastDownAt <= RAPID_DOWN_TAP_MS
                             tapScroll.lastDownAt = now
-                            if (tapScroll.rapidDown) {
+                            if (detailQuickTapScrollAllowed(
+                                    rapidDown = tapScroll.rapidDown,
+                                    heroDownPending = pendingDown,
+                                    heroDownMoving = tapScroll.heroDownMoving,
+                                    pressTakenByHero = false
+                                )
+                            ) {
                                 coroutineScope.launch {
                                     val beforeIndex = listState.firstVisibleItemIndex
                                     val beforeOffset = listState.firstVisibleItemScrollOffset
                                     repeat(2) { withFrameNanos { } }
+                                    if (!detailQuickTapScrollAllowed(
+                                            rapidDown = true,
+                                            heroDownPending = pendingDown,
+                                            heroDownMoving = tapScroll.heroDownMoving,
+                                            pressTakenByHero = tapScroll.heroDownPressAt == now
+                                        )
+                                    ) {
+                                        return@launch
+                                    }
                                     val moved = listState.firstVisibleItemIndex != beforeIndex ||
                                         kotlin.math.abs(listState.firstVisibleItemScrollOffset - beforeOffset) > 2
                                     if (moved || listState.isScrollInProgress || !listState.canScrollForward) {
@@ -2571,6 +2623,7 @@ private fun MetaDetailsContent(
                             {
                                 secondaryDemanded = true
                                 onSecondaryContentRequested()
+                                tapScroll.heroDownPressAt = tapScroll.lastDownAt
                                 pendingDown = true
                             }
                         },
@@ -3253,6 +3306,43 @@ internal fun isDetailEdgeBackPress(
     val backKey = if (isRtl) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
     return action == KeyEvent.ACTION_DOWN && keyCode == backKey && repeatCount == 0 && !overlayOpen
 }
+
+internal enum class HeroDownMove { NONE, WAIT, DROP, MOVE }
+
+/** Down from the hero buttons: wait for the page below, let a held Down drag keep the scroll, or move focus once. [waitedMs] counts while the loaded page has nowhere to go. */
+internal fun heroDownMove(
+    pending: Boolean,
+    secondaryReady: Boolean,
+    hasDestination: Boolean,
+    fastScrolling: Boolean,
+    moving: Boolean,
+    waitedMs: Long
+): HeroDownMove = when {
+    !pending -> HeroDownMove.NONE
+    fastScrolling || moving -> HeroDownMove.DROP
+    !secondaryReady -> HeroDownMove.WAIT
+    !hasDestination -> if (waitedMs >= HERO_DOWN_DESTINATION_WAIT_MS) HeroDownMove.DROP else HeroDownMove.WAIT
+    else -> HeroDownMove.MOVE
+}
+
+/** Any other D-pad key or OK means the viewer has moved on, so a waiting Down from the hero is let go. */
+internal fun cancelsWaitingHeroDown(keyCode: Int): Boolean = when (keyCode) {
+    KeyEvent.KEYCODE_DPAD_UP,
+    KeyEvent.KEYCODE_DPAD_LEFT,
+    KeyEvent.KEYCODE_DPAD_RIGHT,
+    KeyEvent.KEYCODE_DPAD_CENTER,
+    KeyEvent.KEYCODE_ENTER,
+    KeyEvent.KEYCODE_NUMPAD_ENTER -> true
+    else -> false
+}
+
+/** The quick second-Down scroll stays out of the way while a Down from the hero is still moving focus. */
+internal fun detailQuickTapScrollAllowed(
+    rapidDown: Boolean,
+    heroDownPending: Boolean,
+    heroDownMoving: Boolean,
+    pressTakenByHero: Boolean
+): Boolean = rapidDown && !heroDownPending && !heroDownMoving && !pressTakenByHero
 
 @Composable
 private fun PlaybackHandoffBackdrop(backdropUrl: String?) {
