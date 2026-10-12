@@ -9,6 +9,8 @@ internal object AviIndexReader {
     private const val READ_STEP = 2 * 1024 * 1024
     private const val AVIIF_KEYFRAME = 0x10
     private const val MAX_FIRST_FRAME = 1024 * 1024
+    /** An OpenDML standard index holds 8 bytes per chunk: 16 MB is two million chunks. */
+    private const val MAX_IX_BYTES = 16 * 1024 * 1024
 
     fun looksLikeAvi(head: ByteArray): Boolean =
         head.size >= 12 && LegacyCodecs.fourccAt(head, 0) == "RIFF" && LegacyCodecs.fourccAt(head, 8) == "AVI "
@@ -181,8 +183,8 @@ internal object AviIndexReader {
         val out = ArrayList<Entry>()
         var frame = 0L
         for ((offset, size) in s.superIndex) {
-            if (size <= 32) continue
-            val ix = reader.read(offset, size + 8)
+            if (size <= 32 || size > MAX_IX_BYTES) continue
+            val ix = ThumbReads.readStepped(reader, offset, size + 8)
             if (ix.size < 32 || !LegacyCodecs.fourccAt(ix, 0).startsWith("ix")) continue
             val longsPerEntry = u16(ix, 8)
             val indexType = ix[11].toInt() and 0xFF

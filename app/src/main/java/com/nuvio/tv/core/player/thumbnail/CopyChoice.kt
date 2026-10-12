@@ -142,16 +142,16 @@ internal object CopyChoice {
 
     /**
      * Copies with no account side effects first (TorBox list, server versions, ready links), then a TorBox copy added
-     * and removed again, then Premiumize, then Usenet (an indexer grab); within that 1080p before 720p, SDR before HDR,
-     * H.264 before HEVC, WEB first, smaller files first, and by source cost last (TorBox list before server versions
-     * and links). For a title playing from Usenet ([usenet]) the source comes first: server versions, the TorBox list,
+     * and removed again, then Premiumize, then Usenet (an indexer grab); within that SDR before HDR, H.264 before HEVC
+     * (a thumbnail is 480 wide, so a 720p H.264 copy gives the same picture faster than a 1080p HEVC one), 1080p before
+     * 720p, WEB first, smaller files first, and by source cost last (TorBox list before server versions and links). For a title playing from Usenet ([usenet]) the source comes first: server versions, the TorBox list,
      * Premiumize, ready links, then a TorBox copy added and removed again.
      */
     fun order(offers: List<CopyOffer>, usenet: Boolean = false): List<CopyOffer> = offers.sortedWith(
         compareBy<CopyOffer> { if (usenet) usenetRank(it.kind) else sideEffects(it.kind) }
-            .thenBy { HEIGHTS.indexOf(it.height).let { i -> if (i < 0) HEIGHTS.size else i } }
             .thenBy { if (it.hdr) 1 else 0 }
             .thenBy { codecRank(it.codec) }
+            .thenBy { HEIGHTS.indexOf(it.height).let { i -> if (i < 0) HEIGHTS.size else i } }
             .thenBy { if (it.web) 0 else 1 }
             .thenBy { it.sizeBytes ?: Long.MAX_VALUE }
             .thenBy { if (it.kind == CopyKind.DEBRID) 0 else 1 }

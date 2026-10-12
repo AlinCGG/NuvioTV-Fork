@@ -16,6 +16,48 @@ internal enum class DecodeTier(val rssMb: Int, val addressSpaceMb: Int) {
 
 internal data class GovernorVerdict(val allowed: Boolean, val reason: String)
 
+/**
+ * Whether a session's coverage pass stops for memory: at once after an OutOfMemoryError, or once the box has stayed
+ * short of memory for [stopAfterMs] (asked at most every [checkEveryMs]). Once stopped it stays stopped: nothing is
+ * retried for the title. Not thread-safe.
+ */
+internal class MemoryStop(private val checkEveryMs: Long = 5_000L, private val stopAfterMs: Long = 30_000L) {
+    var stopped = false
+        private set
+    var reason: String? = null
+        private set
+    private var checkedAt = Long.MIN_VALUE
+    private var shortSince = -1L
+
+    /** Tapped keyframes and a copy pass stop with the coverage pass. */
+    val allowsSideWork: Boolean get() = !stopped
+
+    /** True the first time only. */
+    fun outOfMemory(why: String): Boolean {
+        if (stopped) return false
+        stopped = true
+        reason = why
+        return true
+    }
+
+    /** [pressure] says why memory is short now, or null. */
+    fun check(now: Long, pressure: () -> String?): Boolean {
+        if (stopped) return true
+        if (checkedAt != Long.MIN_VALUE && now - checkedAt < checkEveryMs) return false
+        checkedAt = now
+        val why = pressure()
+        if (why == null) {
+            shortSince = -1L
+            return false
+        }
+        if (shortSince < 0) shortSince = now
+        if (now - shortSince < stopAfterMs) return false
+        stopped = true
+        reason = why
+        return true
+    }
+}
+
 /** Live-headroom gate in front of every decode: thumbnails only take memory the box can spare right now. */
 internal object MemoryGovernor {
     private const val TAG = "ThumbMem"
@@ -33,15 +75,40 @@ internal object MemoryGovernor {
     private const val FUNDED_FLOOR_DEFAULT_MB = 150L
     /** 2.5 GiB: boxes sold as 3 GB report about 2.7-2.9 GB, 2 GB boxes stay below. */
     private const val STRONG_BOX_TOTAL_BYTES = 2_560L * 1024 * 1024
+    /** The smallest Java heap limit (dalvik.vm.heapsize) the strong 4K path has run on. */
+    private const val STRONG_MIN_HEAP_BYTES = 384L * 1024 * 1024
+    /**
+     * Java heap still free at session start: the strong path keeps up to 32 MB of saved pictures, the playback tap's
+     * 8 MB buffer and a few keyframe-sized copies of tapped samples on the heap.
+     */
+    private const val STRONG_MIN_HEAP_FREE_BYTES = 64L * 1024 * 1024
+    /**
+     * MemAvailable at session start: the decode floor (300 MB), two 4K decoders (2 x 80 MB) and the 4K read-ahead still
+     * to fill (about 140 MB).
+     */
+    private const val STRONG_MIN_AVAIL_MB = 600L
+    private const val STRONG_MIN_SWAP_FREE_MB = 2 * SWAP_FLOOR_MB
     /** 32-bit only: ceiling for VmSize plus the decode's cost, keeps about 700 MB of the 4 GB address space spare. */
     private const val VA_CEILING_32BIT_MB = 3_300L
 
     @Volatile private var lowRam = true
     @Volatile private var is64Bit = false
     @Volatile private var totalMemBytes = 0L
+    @Volatile private var strongBox = false
+    @Volatile private var activityManager: ActivityManager? = null
 
-    /** 64-bit process on a 3 GB or bigger box: 4K thumbnails may also decode during playback. */
-    val isStrongBox: Boolean get() = is64Bit && totalMemBytes >= STRONG_BOX_TOTAL_BYTES
+    /**
+     * 64-bit process on a 3 GB or bigger box with a big enough Java heap, and memory to spare when the session started:
+     * 4K thumbnails may also decode during playback. Otherwise the protected path (playback monitor, pacer) runs.
+     */
+    val isStrongBox: Boolean get() = strongBox
+
+    /**
+     * The box class alone (64-bit, RAM, Java heap limit), without the memory free at the moment: for media-server
+     * thumbnails, the disk budget and the settings figure, which have no session of their own to decide in.
+     */
+    val isStrongHardware: Boolean get() = strongHardware
+    @Volatile private var strongHardware = false
     @Volatile private var registered = false
 
     /** Listeners told to drop decoder contexts / caches (the active session registers itself). */
@@ -56,6 +123,9 @@ internal object MemoryGovernor {
         lowRam = am == null || am.isLowRamDevice || info.totalMem in 1 until LOW_RAM_TOTAL_BYTES
         is64Bit = Process.is64Bit()
         totalMemBytes = info.totalMem
+        activityManager = am
+        strongHardware = strongHardware(is64Bit, totalMemBytes, Runtime.getRuntime().maxMemory())
+        strongBox = decideStrongBox(info).allowed
         MemoryPressure.register(app)
         // RUNNING_LOW and above while visible, or anything once in the background.
         MemoryPressure.addListener(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) { level ->
@@ -63,8 +133,96 @@ internal object MemoryGovernor {
             trimListeners.forEach { runCatching { it(level) } }
         }
         registered = true
-        Log.i(TAG, "init lowRam=$lowRam process64=$is64Bit strongBox=$isStrongBox totalMb=${totalMemBytes / (1024 * 1024)}")
+        Log.i(TAG, "init lowRam=$lowRam process64=$is64Bit strongBox=$isStrongBox strongHardware=$strongHardware totalMb=${totalMemBytes / (1024 * 1024)}")
     }
+
+    /**
+     * Before each thumbnail session, off the main thread: decides the strong path again from the memory the box has
+     * right now.
+     */
+    fun initForSession(context: Context) {
+        init(context)
+        val info = ActivityManager.MemoryInfo()
+        activityManager?.getMemoryInfo(info)
+        val v = decideStrongBox(info) { Runtime.getRuntime().gc() }
+        strongBox = v.allowed
+        Log.i(TAG, "session strongBox=${v.allowed}: ${v.reason}")
+    }
+
+    private fun decideStrongBox(info: ActivityManager.MemoryInfo, collect: () -> Unit = {}): GovernorVerdict {
+        val mem = readMeminfo()
+        val rt = Runtime.getRuntime()
+        return verdictAfterCollect({ rt.totalMemory() - rt.freeMemory() }, collect) { used ->
+            strongBoxVerdict(
+                is64Bit = is64Bit,
+                totalMemBytes = totalMemBytes,
+                heapMaxBytes = rt.maxMemory(),
+                heapUsedBytes = used,
+                lowMemory = info.lowMemory,
+                availMb = if (info.totalMem > 0) info.availMem / MB else -1L,
+                swapTotalMb = mem?.swapTotalMb ?: 0L,
+                swapFreeMb = mem?.swapFreeMb ?: 0L,
+            )
+        }
+    }
+
+    /**
+     * The heap in use counts garbage not collected yet: when the free-heap rule is the only one that fails, [collect]
+     * runs once and the heap is measured again.
+     */
+    internal fun verdictAfterCollect(
+        heapUsed: () -> Long, collect: () -> Unit, verdict: (Long) -> GovernorVerdict,
+    ): GovernorVerdict {
+        val first = verdict(heapUsed())
+        if (first.allowed || !verdict(0L).allowed) return first
+        collect()
+        val again = verdict(heapUsed())
+        return if (again.allowed) again.copy(reason = again.reason + " (after GC)") else again
+    }
+
+    internal fun strongHardware(is64Bit: Boolean, totalMemBytes: Long, heapMaxBytes: Long): Boolean =
+        is64Bit && totalMemBytes >= STRONG_BOX_TOTAL_BYTES && heapMaxBytes >= STRONG_MIN_HEAP_BYTES
+
+    /** [availMb] < 0: not known. Swap is only checked where the box has some. */
+    internal fun strongBoxVerdict(
+        is64Bit: Boolean, totalMemBytes: Long, heapMaxBytes: Long, heapUsedBytes: Long, lowMemory: Boolean,
+        availMb: Long, swapTotalMb: Long, swapFreeMb: Long,
+    ): GovernorVerdict = when {
+        !is64Bit -> GovernorVerdict(false, "32-bit process")
+        totalMemBytes < STRONG_BOX_TOTAL_BYTES -> GovernorVerdict(false, "RAM ${totalMemBytes / MB} MB")
+        heapMaxBytes < STRONG_MIN_HEAP_BYTES ->
+            GovernorVerdict(false, "Java heap limit ${heapMaxBytes / MB} MB < ${STRONG_MIN_HEAP_BYTES / MB}")
+        heapMaxBytes - heapUsedBytes < STRONG_MIN_HEAP_FREE_BYTES ->
+            GovernorVerdict(false, "Java heap free ${(heapMaxBytes - heapUsedBytes) / MB} MB < " +
+                "${STRONG_MIN_HEAP_FREE_BYTES / MB}")
+        lowMemory -> GovernorVerdict(false, "system low on memory")
+        availMb in 0 until STRONG_MIN_AVAIL_MB -> GovernorVerdict(false, "available $availMb MB < $STRONG_MIN_AVAIL_MB")
+        swapTotalMb > 0 && swapFreeMb < STRONG_MIN_SWAP_FREE_MB ->
+            GovernorVerdict(false, "SwapFree $swapFreeMb MB < $STRONG_MIN_SWAP_FREE_MB")
+        else -> GovernorVerdict(true, "RAM ${totalMemBytes / MB} MB, heap ${heapUsedBytes / MB}/${heapMaxBytes / MB} MB, " +
+            "available ${if (availMb >= 0) "$availMb MB" else "unknown"}, " +
+            "SwapFree ${if (swapTotalMb > 0) "$swapFreeMb MB" else "no swap"}")
+    }
+
+    /** Why the box is short of memory right now (the low-memory flag, MemAvailable or swap under its floor), or null. */
+    fun pressure(): String? {
+        val info = ActivityManager.MemoryInfo()
+        val am = activityManager
+        am?.getMemoryInfo(info)
+        val mem = readMeminfo()
+        return pressureReason(am != null && info.lowMemory, mem?.availableMb ?: -1L, mem?.swapTotalMb ?: 0L,
+            mem?.swapFreeMb ?: 0L, if (lowRam) FLOOR_LOW_RAM_MB else FLOOR_DEFAULT_MB)
+    }
+
+    internal fun pressureReason(
+        lowMemory: Boolean, availMb: Long, swapTotalMb: Long, swapFreeMb: Long, floorMb: Long,
+    ): String? =
+        when {
+            lowMemory -> "system low on memory"
+            availMb in 0 until floorMb -> "MemAvailable $availMb MB < $floorMb"
+            swapTotalMb > 0 && swapFreeMb < SWAP_FLOOR_MB -> "SwapFree $swapFreeMb MB < $SWAP_FLOOR_MB"
+            else -> null
+        }
 
     private const val PRELOAD_STRONG_BYTES = 32L * 1024 * 1024
     private const val PRELOAD_SMALL_BYTES = 6L * 1024 * 1024
@@ -78,7 +236,7 @@ internal object MemoryGovernor {
      * Display only.
      */
     fun displayChargeMb(rgb565: Boolean, fourK: Boolean): Int =
-        displayChargeMb(rgb565, fourK, isStrongBox)
+        displayChargeMb(rgb565, fourK, isStrongHardware)
 
     internal fun displayChargeMb(rgb565: Boolean, fourK: Boolean, strong: Boolean): Int {
         val tier = if (fourK) DecodeTier.SW_4K else DecodeTier.SW_UP_TO_1080P

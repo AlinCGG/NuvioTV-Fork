@@ -28,7 +28,7 @@ class SeekThumbnailSkipTest {
         every { player.duration } returns 8_000L
         mockkObject(ThumbNative, MemoryGovernor)
         every { ThumbNative.available } returns true
-        every { MemoryGovernor.init(any()) } just runs
+        every { MemoryGovernor.initForSession(any()) } just runs
     }
 
     @After fun tearDown() {
@@ -50,7 +50,7 @@ class SeekThumbnailSkipTest {
         assertEquals(1, asked)
         verify(exactly = 0) { MemoryGovernor.tierFor(any(), any()) }
         verify(exactly = 0) { ThumbNative.available }
-        verify(exactly = 0) { MemoryGovernor.init(any()) }
+        verify(exactly = 0) { MemoryGovernor.initForSession(any()) }
         assertFalse(SeekThumbnails.pausesPlaybackWhileScrubbing())
     }
 
@@ -66,7 +66,7 @@ class SeekThumbnailSkipTest {
         )
 
         assertEquals(2, asked)
-        verify(exactly = 1) { MemoryGovernor.init(any()) }
+        verify(exactly = 1) { MemoryGovernor.initForSession(any()) }
         verify(exactly = 0) { pause.invoke() }
         assertFalse(SeekThumbnails.pausesPlaybackWhileScrubbing())
     }

@@ -1,5 +1,6 @@
 package com.nuvio.tv.core.player.thumbnail
 
+import android.app.ActivityManager
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.datastore.core.DataMigration
@@ -45,10 +46,33 @@ object SeekThumbnailPreferences {
     private val legacyEnabledKey = booleanPreferencesKey("seek_thumbnails_enabled")
     private val legacyFourKKey = stringPreferencesKey("seek_thumbnails_4k_mode")
 
-    internal fun modeOf(prefs: Preferences): SeekThumbMode {
+    /**
+     * Thumbnails start on only on boxes with 4 GB of RAM or more. Android reports less than the nominal size, 4 GB boxes
+     * well above this, 3 GB boxes below 3 GiB.
+     */
+    internal const val DEFAULT_ON_MIN_TOTAL_MB = 3_300L
+
+    /** The mode of an install that never chose one. [totalMemBytes] <= 0: not known. */
+    internal fun defaultMode(totalMemBytes: Long): SeekThumbMode =
+        if (totalMemBytes in 1 until DEFAULT_ON_MIN_TOTAL_MB * 1024 * 1024) SeekThumbMode.OFF else SeekThumbMode.ALL
+
+    @Volatile private var totalMemBytes = -1L
+
+    private fun defaultMode(context: Context): SeekThumbMode {
+        if (totalMemBytes < 0) {
+            val info = ActivityManager.MemoryInfo()
+            val am = context.applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            am?.getMemoryInfo(info)
+            totalMemBytes = info.totalMem
+        }
+        return defaultMode(totalMemBytes)
+    }
+
+    /** A stored choice (or an older key's) always wins; only an install without one gets [default]. */
+    internal fun modeOf(prefs: Preferences, default: SeekThumbMode = SeekThumbMode.ALL): SeekThumbMode {
         prefs[modeKey]?.let { v -> return SeekThumbMode.entries.firstOrNull { it.name == v } ?: SeekThumbMode.OFF }
         return when (prefs[legacyEnabledKey]) {
-            null -> SeekThumbMode.ALL
+            null -> default
             false -> SeekThumbMode.OFF
             else -> if (prefs[legacyFourKKey] == "OFF") SeekThumbMode.HD else SeekThumbMode.ALL
         }
@@ -58,10 +82,11 @@ object SeekThumbnailPreferences {
     private fun <T> Flow<Preferences>.readOr(fallback: T, read: (Preferences) -> T): Flow<T> =
         map(read).catch { if (it is IOException) emit(fallback) else throw it }
 
-    internal fun modeFlow(data: Flow<Preferences>): Flow<SeekThumbMode> = data.readOr(SeekThumbMode.OFF, ::modeOf)
+    internal fun modeFlow(data: Flow<Preferences>, default: SeekThumbMode = SeekThumbMode.ALL): Flow<SeekThumbMode> =
+        data.readOr(SeekThumbMode.OFF) { modeOf(it, default) }
 
     fun modeFlow(context: Context): Flow<SeekThumbMode> =
-        modeFlow(context.applicationContext.seekThumbnailDataStore.data)
+        modeFlow(context.applicationContext.seekThumbnailDataStore.data, defaultMode(context))
 
     /** True unless the mode is Off (the player starts a session only then). */
     fun enabledFlow(context: Context): Flow<Boolean> = modeFlow(context).map { it != SeekThumbMode.OFF }

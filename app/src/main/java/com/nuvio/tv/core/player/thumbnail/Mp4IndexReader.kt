@@ -6,6 +6,8 @@ package com.nuvio.tv.core.player.thumbnail
  */
 internal object Mp4IndexReader {
     private const val MAX_MOOV = 48 * 1024 * 1024
+    /** Boxes on the protected path: a 3-hour 4K film's moov is a few MB. */
+    private const val MAX_MOOV_SMALL = 16 * 1024 * 1024
 
     fun looksLikeMp4(head: ByteArray): Boolean =
         head.size >= 8 && String(head, 4, 4, Charsets.ISO_8859_1) in setOf("ftyp", "moov", "free", "skip", "wide", "mdat")
@@ -87,14 +89,13 @@ internal object Mp4IndexReader {
             }
             val t = type(hdr, 4)
             if (t == "moov") {
-                if (size > MAX_MOOV) throw UnsupportedMediaException("moov too large ($size)")
-                val body = if (pos + size <= head.size) {
+                val maxMoov = if (MemoryGovernor.isStrongBox) MAX_MOOV else MAX_MOOV_SMALL
+                if (size > maxMoov) throw UnsupportedMediaException("moov too large ($size > $maxMoov)")
+                return if (pos + size <= head.size) {
                     head.copyOfRange((pos + hdrLen).toInt(), (pos + size).toInt())
                 } else {
-                    reader.read(pos + hdrLen, (size - hdrLen).toInt())
+                    ThumbReads.readExact(reader, pos + hdrLen, (size - hdrLen).toInt())
                 }
-                if (body.size.toLong() != size - hdrLen) throw UnsupportedMediaException("truncated moov")
-                return body
             }
             if (t == "moof") throw UnsupportedMediaException("fragmented MP4")
             if (size < hdrLen) throw UnsupportedMediaException("bad box size")

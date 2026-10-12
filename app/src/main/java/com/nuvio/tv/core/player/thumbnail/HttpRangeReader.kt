@@ -1,9 +1,11 @@
 package com.nuvio.tv.core.player.thumbnail
 
+import android.util.Log
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,8 +27,9 @@ internal class RateLimitedException(
 
 /**
  * Bounded Range reads over the playback OkHttp client, so a title's thumbnail fetches reuse keep-alive connections.
- * Safe for reads from several threads at once. Never open-ended; a 200 (Range ignored) is refused without reading
- * the body. Never log URLs or headers. Each read takes a slot in the [ConnectionLedger] first.
+ * Safe for reads from several threads at once. Never open-ended and never above [ThumbReads.MAX_READ]; a 200 (Range
+ * ignored) is refused without reading the body. Never log URLs or headers. Each read takes a slot in the
+ * [ConnectionLedger] first.
  */
 internal class HttpRangeReader(
     private val url: String,
@@ -37,6 +40,7 @@ internal class HttpRangeReader(
     @Volatile var slotWaitMs: Long = ConnectionLedger.SLOT_WAIT_MS,
 ) : RangeReader {
     private companion object {
+        const val TAG = "ThumbWorker"
         val RESOLVED_URL_FAILURES = setOf(401, 403, 404, 410)
         const val TOO_MANY_PEEK_BYTES = 512L
     }
@@ -78,24 +82,39 @@ internal class HttpRangeReader(
     }
 
     override fun read(offset: Long, length: Int): ByteArray {
+        val out = ByteArray(capped(length))
+        val n = readInto(offset, out.size, ByteBuffer.wrap(out))
+        return if (n == out.size) out else out.copyOf(n)
+    }
+
+    override fun readInto(offset: Long, length: Int, dst: ByteBuffer): Int {
         require(offset >= 0 && length > 0)
+        val n = capped(minOf(length, dst.remaining()))
+        if (n <= 0) return 0
         val target = effectiveUrl
         return try {
-            readFrom(target, offset, length)
+            readFrom(target, offset, n, dst)
         } catch (e: HttpStatusException) {
             // The redirect target may be short-lived: retry once from the original.
             if (target != url && e.code in RESOLVED_URL_FAILURES) {
                 effectiveUrl = url
-                readFrom(url, offset, length)
+                readFrom(url, offset, n, dst)
             } else {
                 throw e
             }
         }
     }
 
+    /** A longer read is cut to the cap (callers treat it like a short read at end of file). */
+    private fun capped(length: Int): Int {
+        if (length <= ThumbReads.MAX_READ) return length
+        Log.w(TAG, "range read of ${length / 1024} KB cut to ${ThumbReads.MAX_READ / 1024} KB")
+        return ThumbReads.MAX_READ
+    }
+
     class HttpStatusException(val code: Int, val tooMany: Boolean) : IOException("HTTP $code")
 
-    private fun readFrom(target: String, offset: Long, length: Int): ByteArray {
+    private fun readFrom(target: String, offset: Long, length: Int, dst: ByteBuffer): Int {
         val builder = Request.Builder().url(target)
         for ((k, v) in headers) {
             if (!k.equals("Range", ignoreCase = true)) builder.header(k, v)
@@ -120,7 +139,7 @@ internal class HttpRangeReader(
                 held.moveTo(resp.request.url.toString())
                 when (resp.code) {
                     206 -> Unit
-                    416 -> return ByteArray(0)
+                    416 -> return 0
                     429, 503 -> throw RateLimitedException(
                         ThumbRateLimit.retryAfterMs(resp.header("Retry-After"), System.currentTimeMillis()),
                         resp.code,
@@ -134,18 +153,22 @@ internal class HttpRangeReader(
                 val finalUrl = resp.request.url.toString()
                 if (finalUrl != target) effectiveUrl = finalUrl
                 val body = resp.body ?: throw IOException("empty body")
-                val out = ByteArray(length)
-                var n = 0
-                body.byteStream().use { input ->
-                    while (n < length) {
-                        val r = input.read(out, n, length - n)
-                        if (r < 0) break
-                        n += r
+                // Straight from OkHttp's segments into dst: no array of the whole range.
+                val start = dst.position()
+                val limit = dst.limit()
+                dst.limit(start + length)
+                try {
+                    val source = body.source()
+                    while (dst.hasRemaining()) {
+                        if (source.read(dst) < 0) break
                     }
+                } finally {
+                    dst.limit(limit)
                 }
+                val n = dst.position() - start
                 byteCount.addAndGet(n.toLong())
                 held.succeeded()
-                return if (n == length) out else out.copyOf(n)
+                return n
             }
         } catch (e: IOException) {
             val refusal = ConnectionLedger.refusalOf(e) ?: (e as? HttpStatusException)?.let {

@@ -67,7 +67,7 @@ class CopyChoiceTest {
     }
 
     @Test
-    fun orderPrefersNoSideEffectsThen1080pSdrH264WebSmaller() {
+    fun orderPrefersNoSideEffectsThenSdrH264Then1080pWebSmaller() {
         val ordered = CopyChoice.order(listOf(
             offer("debrid", kind = CopyKind.DEBRID, size = 1_000_000_000L),
             offer("720", height = 720, size = 1_000_000_000L),
@@ -79,7 +79,18 @@ class CopyChoiceTest {
             offer("server", kind = CopyKind.SERVER, size = 3_000_000_000L),
             offer("nosize", size = null),
         )).map { it.id }
-        assertEquals(listOf("debrid", "small", "server", "big", "nosize", "bluray", "hevc", "hdr", "720"), ordered)
+        assertEquals(listOf("debrid", "small", "server", "big", "nosize", "bluray", "720", "hevc", "hdr"), ordered)
+    }
+
+    @Test
+    fun a720pH264CopyComesBeforeA1080pHevcOneButNotBeforeAnAccountChange() {
+        val ordered = CopyChoice.order(listOf(
+            offer("hevc1080", codec = CopyCodec.HEVC),
+            offer("added720", kind = CopyKind.TORBOX_ADD, height = 720),
+            offer("h264720", height = 720),
+            offer("h2641080"),
+        )).map { it.id }
+        assertEquals(listOf("h2641080", "h264720", "hevc1080", "added720"), ordered)
     }
 
     @Test

@@ -104,7 +104,7 @@ internal class ServerThumbSet private constructor(
     private val capBytes = compressedCapBytes()
     private val decodeWidth = decodeWidth()
     private val decoded = object : LruCache<Int, Bitmap>(
-        ((if (MemoryGovernor.isStrongBox) STRONG_DECODED_BYTES else SMALL_DECODED_BYTES) / 1024).toInt()
+        ((if (MemoryGovernor.isStrongHardware) STRONG_DECODED_BYTES else SMALL_DECODED_BYTES) / 1024).toInt()
     ) {
         override fun sizeOf(key: Int, value: Bitmap): Int = (value.allocationByteCount / 1024).coerceAtLeast(1)
     }
@@ -434,9 +434,9 @@ internal class ServerThumbSet private constructor(
             retained = null
         }
 
-        fun compressedCapBytes(): Long = if (MemoryGovernor.isStrongBox) STRONG_CAP_BYTES else SMALL_CAP_BYTES
+        fun compressedCapBytes(): Long = if (MemoryGovernor.isStrongHardware) STRONG_CAP_BYTES else SMALL_CAP_BYTES
 
-        fun decodeWidth(): Int = if (MemoryGovernor.isStrongBox) STRONG_DECODE_WIDTH else SMALL_DECODE_WIDTH
+        fun decodeWidth(): Int = if (MemoryGovernor.isStrongHardware) STRONG_DECODE_WIDTH else SMALL_DECODE_WIDTH
 
         private fun decodeOptions(servedWidth: Int, decodeWidth: Int, rgb565: Boolean) = BitmapFactory.Options().apply {
             inSampleSize = TrickplayGrid.sampleSize(servedWidth, decodeWidth)

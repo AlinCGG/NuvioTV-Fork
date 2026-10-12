@@ -101,6 +101,23 @@ Java_com_nuvio_tv_core_player_thumbnail_ThumbNative_nativeDecode(JNIEnv *env, jc
     return r;
 }
 
+/** As nativeDecode, from a direct ByteBuffer: copied from its address into the packet, no Java array. */
+JNIEXPORT jint JNICALL
+Java_com_nuvio_tv_core_player_thumbnail_ThumbNative_nativeDecodeDirect(JNIEnv *env, jclass, jlong handle,
+                                                                        jobject data, jint len, jintArray info) {
+    auto *j = reinterpret_cast<JHandle *>(handle);
+    if (!j || len <= 0) return -EINVAL;
+    const auto *src = static_cast<const uint8_t *>(env->GetDirectBufferAddress(data));
+    if (!src || env->GetDirectBufferCapacity(data) < len) return -EINVAL;
+    uint8_t *buf = j->b->packet(j->h, len);
+    if (!buf) return -ENOMEM;
+    memcpy(buf, src, static_cast<size_t>(len));
+    int32_t out[thumb::INFO_COUNT];
+    int r = j->b->decode(j->h, out);
+    if (r == 0) env->SetIntArrayRegion(info, 0, thumb::INFO_COUNT, reinterpret_cast<jint *>(out));
+    return r;
+}
+
 /**
  * Scales and tone-maps the decoded frame into bitmap (RGBA_8888 or RGB_565). The bitmap's size is the output size.
  * rowSkip: pre-decimate rows by 2, for >= 4x vertical downscales. 0 or a negative error.

@@ -79,6 +79,68 @@ class DirectDebridStreamFilterTest {
     }
 
     @Test
+    fun `resolution rules keep a stream off the list but not out of the thumbnail copies`() {
+        val uhd = stream(name = "UHD", resolve = resolve(resolution = "2160p", size = 40))
+        val hd = stream(name = "HD", resolve = resolve(resolution = "720p", codec = "AVC", size = 4))
+        val camHd = stream(name = "CAM", resolve = resolve(resolution = "720p", quality = "CAM", size = 3))
+        val sgfHd = stream(name = "SGF", resolve = resolve(resolution = "720p", group = "SGF", size = 5))
+        val sgfUhd = stream(name = "SGF UHD", resolve = resolve(resolution = "2160p", group = "SGF", size = 50))
+        val preferences = unfiltered.copy(
+            excludedResolutions = listOf(DebridStreamResolution.P720),
+            excludedQualities = listOf(DebridStreamQuality.CAM),
+            excludedReleaseGroups = listOf("SGF")
+        )
+
+        val presented = DirectDebridStreamFilter.presentWithCopies(
+            listOf(uhd, hd, camHd, sgfHd, sgfUhd),
+            DebridSettings(streamPreferences = preferences)
+        )
+
+        assertEquals(listOf("UHD"), presented.shown.map { it.name })
+        assertEquals(listOf("HD"), presented.thumbnailCopies.map { it.name })
+        assertEquals(
+            presented.shown,
+            DirectDebridStreamFilter.applyPreferences(listOf(uhd, hd, camHd, sgfHd, sgfUhd), DebridSettings(streamPreferences = preferences))
+        )
+    }
+
+    @Test
+    fun `a minimum resolution does not stop a thumbnail copy either`() {
+        val fhd = stream(name = "FHD", resolve = resolve(resolution = "1080p", size = 10_000_000_000L))
+        val hd = stream(name = "HD", resolve = resolve(resolution = "720p", size = 4_000_000_000L))
+        val big = stream(name = "Big HD", resolve = resolve(resolution = "720p", size = 30_000_000_000L))
+
+        val presented = DirectDebridStreamFilter.presentWithCopies(
+            listOf(fhd, hd, big),
+            DebridSettings(
+                streamPreferences = unfiltered.copy(
+                    requiredResolutions = listOf(DebridStreamResolution.P2160, DebridStreamResolution.P1080),
+                    sizeMaxGb = 20
+                )
+            )
+        )
+
+        assertEquals(listOf("FHD"), presented.shown.map { it.name })
+        assertEquals(listOf("HD"), presented.thumbnailCopies.map { it.name })
+    }
+
+    @Test
+    fun `no resolution rule means no extra copies`() {
+        val streams = listOf(
+            stream(name = "HD", resolve = resolve(resolution = "720p", size = 4)),
+            stream(name = "CAM", resolve = resolve(resolution = "720p", quality = "CAM", size = 3))
+        )
+
+        val presented = DirectDebridStreamFilter.presentWithCopies(
+            streams,
+            DebridSettings(streamPreferences = unfiltered.copy(excludedQualities = listOf(DebridStreamQuality.CAM)))
+        )
+
+        assertEquals(listOf("HD"), presented.shown.map { it.name })
+        assertTrue(presented.thumbnailCopies.isEmpty())
+    }
+
+    @Test
     fun `limits and sorts streams by quality and size`() {
         val streams = listOf(
             stream(resolve = resolve(resolution = "1080p", size = 20)),

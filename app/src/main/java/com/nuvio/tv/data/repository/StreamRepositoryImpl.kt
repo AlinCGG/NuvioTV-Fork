@@ -608,7 +608,7 @@ class StreamRepositoryImpl @Inject constructor(
         if (existingIndex >= 0) {
             val existing = accumulatedResults[existingIndex]
             val merged = existing.copy(
-                streams = mergeStreams(existing.streams, result.streams)
+                streams = mergeStreams(existing.streams + existing.thumbnailCopyStreams, result.streams)
             )
             accumulatedResults[existingIndex] = presentStreams(merged, debridSettings)
         } else {

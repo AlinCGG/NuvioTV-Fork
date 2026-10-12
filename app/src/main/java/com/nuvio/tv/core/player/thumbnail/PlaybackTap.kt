@@ -70,8 +70,8 @@ private class TapExtractorOutput(private val delegate: ExtractorOutput) : Extrac
 @UnstableApi
 private class TapTrackOutput(private val delegate: TrackOutput) : TrackOutput by delegate {
     private companion object {
-        /** A 4K remux keyframe is ~1-3 MB. */
-        const val MAX_BUFFER = 24 * 1024 * 1024
+        /** A 4K remux keyframe is ~1-3 MB; a larger one than the engine reads is not copied either. */
+        const val MAX_BUFFER = ThumbReads.MAX_READ
     }
 
     /** H.264 / HEVC, incl. Dolby Vision over them. */

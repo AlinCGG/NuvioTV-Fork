@@ -68,4 +68,25 @@ class PrepareHandoverTest {
         assertFalse(PrepareHandover.retriesHold(sinceRefusedMs = 12_000L, playedMs = 0L))
         assertFalse(PrepareHandover.retriesHold(sinceRefusedMs = 4_000L, playedMs = 3_001L))
     }
+
+    @Test fun workLeftCountsTheFinerSlotsThePassMakesOnTheWay() {
+        // Every 10 s slot near the start first, then the 30 s grid further out: 7 to make, only 3 of them on the grid.
+        val order = listOf(0, 1, 2, 3, 4, 5, 6, 9, 12)
+        val stored = setOf(0)
+        assertEquals(8, PrepareHandover.workLeft(order, 3) { it !in stored })
+    }
+
+    @Test fun workLeftStopsAtTheLastGridSlotStillMissing() {
+        val order = listOf(0, 1, 2, 3, 4, 5, 6, 9, 12)
+        val stored = setOf(0, 3, 6, 9, 12)
+        assertEquals(0, PrepareHandover.workLeft(order, 3) { it !in stored })
+        assertEquals(3, PrepareHandover.workLeft(order, 3) { it !in stored - 3 })
+    }
+
+    @Test fun aLongFilmIsJudgedOnEveryThumbnailMade() {
+        // 0.6 s per thumbnail: 135 grid slots left with 270 finer ones on the way is about 4 min.
+        val order = (0 until 405).toList()
+        val left = (PrepareHandover.workLeft(order, 3) { true } * 0.6).toInt()
+        assertEquals(241, left)
+    }
 }

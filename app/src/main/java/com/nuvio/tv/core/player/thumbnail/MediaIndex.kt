@@ -1,12 +1,21 @@
 package com.nuvio.tv.core.player.thumbnail
 
 import java.io.IOException
+import java.nio.ByteBuffer
 
 /** Blocking, bounded byte-range access to one media file (HTTP in the app, a byte array in tests). */
 internal interface RangeReader {
     /** Reads up to [length] bytes at [offset], fewer only at end of file. */
     @Throws(IOException::class)
     fun read(offset: Long, length: Int): ByteArray
+
+    /** As [read], into [dst] from its position, which moves on by the count returned. */
+    @Throws(IOException::class)
+    fun readInto(offset: Long, length: Int, dst: ByteBuffer): Int {
+        val b = read(offset, length)
+        dst.put(b)
+        return b.size
+    }
 
     /** Total file length once known (from the first response), else -1. */
     val totalLength: Long

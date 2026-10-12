@@ -173,7 +173,7 @@ internal class ThumbStore private constructor(
             MemoryGovernor.init(context)
             val cache = context.applicationContext.cacheDir
             val free = runCatching { StatFs(cache.absolutePath).availableBytes }.getOrDefault(0L)
-            val cap = if (MemoryGovernor.isStrongBox) MAX_BUDGET_STRONG_BYTES else MAX_BUDGET_SMALL_BYTES
+            val cap = if (MemoryGovernor.isStrongHardware) MAX_BUDGET_STRONG_BYTES else MAX_BUDGET_SMALL_BYTES
             var b = minOf(cap, free / 20)
             if (Build.VERSION.SDK_INT >= 26) {
                 runCatching {

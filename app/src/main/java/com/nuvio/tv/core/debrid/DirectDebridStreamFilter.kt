@@ -81,11 +81,35 @@ object DirectDebridStreamFilter {
         return DebridProviders.all().any { addonName == DebridProviders.instantName(it.id) }
     }
 
-    fun applyPreferences(streams: List<Stream>, settings: DebridSettings): List<Stream> {
-        val preferences = effectivePreferences(settings)
-        val matchedStreams = streams.map { it to streamFacts(it, preferences) }
-            .filter { (_, facts) -> facts.matchesFilters(preferences) }
+    fun applyPreferences(streams: List<Stream>, settings: DebridSettings): List<Stream> =
+        presentWithCopies(streams, settings).shown
 
+    class Presented(
+        val shown: List<Stream>,
+        /** Left out by the resolution rules only: offered as thumbnail copies, never listed or played. */
+        val thumbnailCopies: List<Stream>
+    )
+
+    fun presentWithCopies(streams: List<Stream>, settings: DebridSettings): Presented {
+        val preferences = effectivePreferences(settings)
+        val anyResolution = preferences.copy(excludedResolutions = emptyList(), requiredResolutions = emptyList())
+        val (matched, unmatched) = streams.map { it to streamFacts(it, preferences) }
+            .partition { (_, facts) -> facts.matchesFilters(preferences) }
+        val copies = if (anyResolution == preferences) {
+            emptyList()
+        } else {
+            unmatched.filter { (_, facts) -> facts.matchesFilters(anyResolution) }
+        }
+        return Presented(
+            shown = orderAndLimit(matched, preferences),
+            thumbnailCopies = orderAndLimit(copies, preferences)
+        )
+    }
+
+    private fun orderAndLimit(
+        matchedStreams: List<Pair<Stream, StreamFacts>>,
+        preferences: DebridStreamPreferences
+    ): List<Stream> {
         // Cached streams always sort above CHECKING/UNKNOWN entries; the sort
         // is stable, so relative order within each cache bucket is preserved.
         val orderedStreams = if (preferences.sortCriteria.isEmpty()) {

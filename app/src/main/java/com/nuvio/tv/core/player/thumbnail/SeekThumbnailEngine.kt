@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicLongArray
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 
 /** What the player hands the engine (ExoPlayer only). */
@@ -66,6 +67,8 @@ internal class ThumbSource(
     val copySources: CopySources? = null,
     /** The stream is an AIOStreams Usenet stream (its link or its add-on says so). */
     val usenet: Boolean = false,
+    /** A media server's stream (Silo, Jellyfin, Emby) without thumbnails of its own; see [MediaServerThumbs]. */
+    val mediaServer: Boolean = false,
 )
 
 /** Seek thumbnails: one keyframe per slot, fetched by range request, decoded with the in-APK FFmpeg, kept per title. */
@@ -249,9 +252,9 @@ object SeekThumbnails {
             Log.i(TAG, "skip: native thumbnail decoder unavailable")
             return
         }
-        MemoryGovernor.init(context)
         stopSession()
         awaitStoppedSession()          // one writer per store
+        withContext(Dispatchers.IO) { MemoryGovernor.initForSession(context) }
         // The stream can be rejected while the decoder loads.
         if (skipped()) return
         val s = Session(context.applicationContext, source, playerProvider, reserveProvider, fourK, pauseForPrepare)
@@ -536,7 +539,7 @@ object SeekThumbnails {
         private enum class Outcome { DONE, FAILED, POSTPONED }
 
         private class Fetched(
-            val au: ByteArray?, val error: Exception?, val requests: Int, val bytes: Long, val ms: Long, val startedAt: Long,
+            val au: ThumbAu?, val error: Exception?, val requests: Int, val bytes: Long, val ms: Long, val startedAt: Long,
         )
 
         private class Decoded(
@@ -580,6 +583,8 @@ object SeekThumbnails {
         @Volatile private var copyAllowed = false
         /** Plays from Usenet: thumbnails come from a copy where one fits, and the stream is spared meanwhile. */
         @Volatile private var usenet = source.usenet
+        /** A media server away from the home network: only the spot a seek asks for is made. */
+        private val onDemand = MediaServerThumbs.onDemandOnly(source.mediaServer, source.url)
         private var copyTried = false
         private var copyStartedAt = 0L
         private var copySetKey: String? = null
@@ -612,6 +617,10 @@ object SeekThumbnails {
         @Volatile private var preparePausedPlayer = false
         @Volatile private var prepareAnchorMs = 0L
         private var prepareDoneAtStart = -1
+        private var prepareMadeAtStart = -1
+        /** Every coverage slot stored, finer ones included, and what the pass still makes before the screen's grid is done. */
+        @Volatile private var latticeMade = 0
+        @Volatile private var latticeWorkLeft = 0
         private var prepareStartedAt = 0L
         private var prepareReadyAt = 0L
         private var prepareLastDone = -1
@@ -622,8 +631,8 @@ object SeekThumbnails {
         /** The coverage is really stored, not just the budget spent. */
         @Volatile private var latticeComplete = false
         @Volatile private var latticeTotal = 0
-        /** The coverage pass finished or ran out of budget. */
-        @Volatile private var latticeFinished = false
+        /** The coverage pass finished or ran out of budget. On demand there is none. */
+        @Volatile private var latticeFinished = onDemand
         @Volatile private var afterPlayback = false
         private var afterPlaybackSince = 0L
         private var lastSampledPlaying = false
@@ -659,6 +668,8 @@ object SeekThumbnails {
         private val laneCtl = ThumbDecodeLanes(
             MemoryGovernor.isStrongBox, fourK, Runtime.getRuntime().availableProcessors(), FetchPhase.PLAYBACK,
         )
+        /** Raw keyframe reads land here, outside the Java heap; sized to the decode lanes. */
+        private val buffers = ThumbBufferPool(ThumbBufferPool.limitFor(laneCtl.lanes, fourK, MemoryGovernor.isStrongBox))
         @Volatile private var laneTrimRequested = false
         private var laneClockAt = 0L
         private var laneHeldUntil = 0L
@@ -754,6 +765,8 @@ object SeekThumbnails {
                 setUpBorrow(it.index, it.store, confirmedOnly = true)
             }
             if (sourceRateLimited) Log.i(TAG, "source rate limited recently: one thumbnail fetch at a time")
+            if (onDemand) Log.i(TAG, "media server away from the home network: only the spot a seek asks for, " +
+                "${MediaServerThumbs.ON_DEMAND_FETCHES} request at a time")
             run {
                 val mode = runCatching { SeekThumbnailPreferences.prepareMode(context) }.getOrDefault(ThumbPrepareMode.OFF)
                 val size = source.fileSizeHint?.takeIf { it > 0 }
@@ -767,6 +780,8 @@ object SeekThumbnails {
                     Log.i(TAG, "prepare: autoplayed next episode - not holding")
                 } else if (mode != ThumbPrepareMode.OFF && sourceRateLimited) {
                     Log.i(TAG, "prepare: source rate limited recently - not holding")
+                } else if (mode != ThumbPrepareMode.OFF && onDemand) {
+                    Log.i(TAG, "prepare: media server away from the home network - not holding")
                 } else if (mode != ThumbPrepareMode.OFF) {
                     if (beginPrepareOnMain()) {
                         showPrepare(PrepareUi.Checking)
@@ -783,7 +798,7 @@ object SeekThumbnails {
             val fileLength = r.totalLength
             ConnectionLedger.app.notePlayingUrl(r.resolvedUrl)
             if (!usenet && SlowStartServer.isUsenet(r.resolvedUrl)) usenet = true
-            if ((fourK || usenet) && source.copySources != null) {
+            if ((fourK || usenet) && source.copySources != null && !onDemand) {
                 copyAllowed = runCatching { SeekThumbnailPreferences.copyEnabled(context) }.getOrDefault(false)
                 if (usenet) Log.i(COPY_TAG, "Usenet stream: thumbnails from a copy of this title where one fits" +
                     if (copyAllowed) "" else " - off in settings")
@@ -841,7 +856,8 @@ object SeekThumbnails {
             r.slotWaitMs = ConnectionLedger.SLOT_WAIT_MS
             makeExtractor = { KeyframeExtractor(idx, r) }
             tapOpen = true
-            setUpBorrow(idx, s, confirmedOnly = false)
+            // Another release's pictures need own ones fetched to be confirmed: on demand only confirmed ones are used.
+            setUpBorrow(idx, s, confirmedOnly = onDemand)
             loop(idx)
         }
 
@@ -953,11 +969,18 @@ object SeekThumbnails {
             Log.i(TAG, "app back in front after ${(back - since) / 1000} s: thumbnails carry on")
         }
 
-        /** The index read (up to a few MB) waits for a healthy buffer or a pause, unless the user scrubs first. */
+        /**
+         * The index read (up to a few MB) waits for a healthy buffer or a pause, unless the user scrubs first. On demand
+         * nothing is read before the first scrub.
+         */
         private suspend fun awaitIndexGate() {
             while (true) {
                 awaitForeground()
                 if (pendingPriorityMs >= 0) return
+                if (onDemand) {
+                    delay(1_000L)
+                    continue
+                }
                 val ps = sample() ?: return
                 if (!ps.buffering && (!ps.isPlaying || ps.bufferedMs - ps.positionMs >= INDEX_GATE_AHEAD_MS ||
                         (ps.durationMs > 0 && ps.bufferedMs >= ps.durationMs - 1_000L))) return
@@ -1144,12 +1167,14 @@ object SeekThumbnails {
         }
 
         private fun afterPlaybackExpired(): Boolean =
-            afterPlayback && SystemClock.elapsedRealtime() - afterPlaybackSince > AFTER_PLAYBACK_MAX_MS
+            afterPlayback &&
+                (SystemClock.elapsedRealtime() - afterPlaybackSince > AFTER_PLAYBACK_MAX_MS || memoryShortAfterClose())
 
         /** True when this session carries on without the player to finish its coverage pass. */
         fun finishAfterPlayback(): Boolean {
             // No index yet is fine: a small box may still be waiting for a pause, and reads it once the player is gone.
-            if (!fourK || ended || latticeFinished || afterPlayback) return false
+            if (!fourK || !MediaServerThumbs.continuesAfterClose(source.mediaServer) || ended || latticeFinished ||
+                afterPlayback) return false
             afterPlaybackSince = SystemClock.elapsedRealtime()
             afterPlayback = true
             if (synchronized(prepareLock) { (prepareStage in 1..4).also { if (it) prepareStage = 5 } }) {
@@ -1218,7 +1243,7 @@ object SeekThumbnails {
                 beforeSlots = (LOCAL_BEFORE_MS / SPACING_MS).toInt(), afterSlots = (LOCAL_AFTER_MS / SPACING_MS).toInt())
             var lattice = order(anchorSlot)
             latticeMaxRequests = lattice.size * 5 / 4 + 10
-            hardMaxRequests = latticeMaxRequests + SCRUB_REQUEST_ALLOWANCE
+            hardMaxRequests = (if (onDemand) (reader?.requests ?: 0) else latticeMaxRequests) + SCRUB_REQUEST_ALLOWANCE
             var latticeLogged = false
             var latticePos = 0
             var neighbourCenter = -1
@@ -1244,6 +1269,8 @@ object SeekThumbnails {
                     latticeTotal = counted.size
                     latticeDone = counted.count { !needs(st, it) }
                     if (prepareStage in 1..4) {
+                        latticeMade = lattice.count { !needs(st, it) }
+                        latticeWorkLeft = PrepareHandover.workLeft(lattice, prepareStride()) { needs(st, it) }
                         prepareLastCoverage = counted.sorted().map { !needs(st, it) }
                         tendPrepare(latticeTotal, latticeDone)
                     }
@@ -1286,6 +1313,16 @@ object SeekThumbnails {
                         slot = p0
                         priority = 0
                     }
+                } else if (onDemand) {
+                    // Only the settle target itself, no neighbours.
+                    if (p0 >= 0 && wanted(st, p0)) {
+                        neighbourCenter = -1
+                        neighbours = listOf(p0)
+                        slot = p0
+                        priority = 0
+                    } else if (p0 >= 0 && prioritySlot == p0) {
+                        prioritySlot = -1
+                    }
                 } else if (p0 >= 0) {
                     // P0: the settle target, then P1: its neighbours, forward first.
                     if (p0 != neighbourCenter) {
@@ -1306,7 +1343,7 @@ object SeekThumbnails {
                         prioritySlot = -1
                     }
                 }
-                if (slot < 0 && !fetchesStopped) {
+                if (slot < 0 && !fetchesStopped && !onDemand) {
                     val check = nextCheckSlot(st)
                     if (check >= 0) slot = check
                 }
@@ -1318,7 +1355,7 @@ object SeekThumbnails {
                         priority = 3
                     }
                 }
-                if (slot < 0 && !fetchesStopped && !copyHolds) {
+                if (slot < 0 && !fetchesStopped && !copyHolds && !onDemand) {
                     while (latticePos < lattice.size && !wanted(st, lattice[latticePos])) latticePos++
                     if (latticePos < lattice.size) slot = lattice[latticePos]
                 }
@@ -1342,10 +1379,16 @@ object SeekThumbnails {
                     if (fourK) {
                         val open = sample()?.let(::fourKAllowed) ?: false
                         decodeOpen = open
-                        if (!open || idle) closeDecoders()
+                        if (!open || idle) {
+                            closeDecoders()
+                            buffers.releaseIdle()
+                        }
                     } else {
                         if (prepareStage in 1..4) sample()
-                        if (idle) trimDecoders()
+                        if (idle) {
+                            trimDecoders()
+                            buffers.releaseIdle()
+                        }
                     }
                     delay(500L)
                     continue
@@ -1503,6 +1546,7 @@ object SeekThumbnails {
             if (!verdict.allowed) {
                 // Playback first: give our working set back, so the next decode must clear floor + charge again.
                 trimDecoders()
+                buffers.releaseIdle()
                 deferredSinceLog++
                 val now = SystemClock.elapsedRealtime()
                 if (now - lastDeferLogAt >= DEFER_LOG_INTERVAL_MS) {
@@ -1550,9 +1594,10 @@ object SeekThumbnails {
                     Decoded(null, 0L, 0L, false, 0, 0, "", error = t)
                 } finally {
                     lane.release()
+                    au.release()
                 }
             }
-            val job = DecodeJob(idx, st, slot, kf, priority, lane, tapped != null, au.size, reqs, fetchedBytes, tFetch,
+            val job = DecodeJob(idx, st, slot, kf, priority, lane, tapped != null, au.length, reqs, fetchedBytes, tFetch,
                 tWaited, laneCtl.lanes, concurrent, result)
             decodeJobs[kf] = job
             // Every lane busy: wait for one. With one lane this is the decode just started.
@@ -1561,7 +1606,7 @@ object SeekThumbnails {
         }
 
         /** Lane thread. Background priority, so playback's threads win the CPU. A 4K decode takes up to 5 s on a Fire TV Stick. */
-        private fun decodeOn(lane: DecoderLane, au: ByteArray, idx: MediaIndex): Decoded {
+        private fun decodeOn(lane: DecoderLane, au: ThumbAu, idx: MediaIndex): Decoded {
             val cold = !lane.decoder.warm
             val t1 = SystemClock.elapsedRealtime()
             val frame = pacedDecode {
@@ -1601,7 +1646,11 @@ object SeekThumbnails {
 
         private fun finishDecode(job: DecodeJob): Outcome {
             val d = job.result.getCompleted()
-            d.error?.let { throw it }
+            d.error?.let {
+                if (it !is OutOfMemoryError) throw it
+                stopForMemory("out of memory decoding")
+                return Outcome.FAILED
+            }
             val bmp = d.bitmap ?: return Outcome.FAILED
             if (!d.cold) laneChange(laneCtl.onDecode(d.decodeMs + d.renderMs, job.concurrent, laneHeld()))
             measureBars(bmp)
@@ -1650,6 +1699,7 @@ object SeekThumbnails {
             c ?: return
             Log.i(TAG, "decode lanes ${c.from} -> ${c.to} (${c.reason}, medianMs=${c.medianMs})")
             for (i in c.to until c.from) decoderLanes[i].close()
+            buffers.limit = ThumbBufferPool.limitFor(c.to, fourK, MemoryGovernor.isStrongBox)
         }
 
         private fun laneHeld(): Boolean = SystemClock.elapsedRealtime() < laneHeldUntil
@@ -1689,12 +1739,12 @@ object SeekThumbnails {
             else -> FetchPhase.PLAYBACK
         }
 
-        private fun fetchLimit(): Int = fetchRamp.limit(ThumbFetchLanes.limit(
+        private fun fetchLimit(): Int = MediaServerThumbs.fetchLimit(onDemand, fetchRamp.limit(ThumbFetchLanes.limit(
             phase = phase(),
             rateLimited = fetchRateLimited,
             smallBox4K = fourK && !MemoryGovernor.isStrongBox,
             ledgerCap = ConnectionLedger.app.thumbnailCap(reader?.resolvedUrl ?: source.url),
-        ))
+        )))
 
         /** Remembers the host that answered 429, and lets a held generating screen start playback. */
         private fun noteRateLimited(e: RateLimitedException) {
@@ -1729,30 +1779,52 @@ object SeekThumbnails {
                 for (i in latticePos until minOf(lattice.size, latticePos + ThumbFetchLanes.MAX * 4)) want(lattice[i])
             }
             // Done fetches the plan has moved away from (an earlier settle target's neighbours) give their lane back.
-            fetches.entries.removeAll { (kf, d) -> kf !in plan && d.isCompleted && d.getCompleted().error == null }
+            fetches.entries.removeAll { (kf, d) ->
+                (kf !in plan && d.isCompleted && d.getCompleted().error == null).also { if (it) d.getCompleted().au?.release() }
+            }
             val limit = fetchLimit()
             if (limit <= 1 || (priority == 0 && lastSampledPlaying)) plan.subList(ahead, plan.size).clear()
-            for (kf in ThumbFetchLanes.pick(plan, fetches.keys, limit - fetches.size)) startFetch(kf, make)
+            for (kf in ThumbFetchLanes.pick(plan, fetches.keys, minOf(limit - fetches.size, buffers.available))) {
+                startFetch(kf, make, buffers.tryAcquire() ?: break)
+            }
         }
 
-        private fun startFetch(kf: Int, make: () -> KeyframeExtractor): Deferred<Fetched> {
+        private fun startFetch(kf: Int, make: () -> KeyframeExtractor, buf: ThumbBuffer): Deferred<Fetched> {
             val ex = spareExtractors.poll() ?: make()
             val startedAt = SystemClock.elapsedRealtime()
-            val d = fetchScope.async {
+            // ATOMIC: the body always runs, so the buffer always goes back, also when the result is never collected.
+            val made = AtomicReference<ThumbAu?>()
+            val d = fetchScope.async(start = CoroutineStart.ATOMIC) {
                 val req0 = ex.requests
                 val bytes0 = ex.bytesRead
                 val t0 = SystemClock.elapsedRealtime()
+                var au: ThumbAu? = null
                 try {
-                    val au = ex.extract(kf)
+                    au = ex.extractAu(kf, buf)
+                    made.set(au)
                     Fetched(au, null, ex.requests - req0, ex.bytesRead - bytes0, SystemClock.elapsedRealtime() - t0, startedAt)
                 } catch (e: Exception) {
                     Fetched(null, e, ex.requests - req0, ex.bytesRead - bytes0, SystemClock.elapsedRealtime() - t0, startedAt)
+                } catch (e: OutOfMemoryError) {
+                    Fetched(null, MemoryShortException("out of memory reading a keyframe"), ex.requests - req0,
+                        ex.bytesRead - bytes0, SystemClock.elapsedRealtime() - t0, startedAt)
                 } finally {
+                    if (au == null) buf.release()
                     spareExtractors.add(ex)
                 }
             }
+            d.invokeOnCompletion { if (it != null) made.get()?.release() }
             fetches[kf] = d
             return d
+        }
+
+        /** Drops the latest fetched keyframe other than [kf], to free its buffer. Worker only. */
+        private fun dropReadyFetch(kf: Int): Boolean {
+            val ready = fetches.entries.lastOrNull { (k, d) -> k != kf && d.isCompleted && d.getCompleted().error == null }
+                ?: return false
+            fetches.remove(ready.key)
+            ready.value.getCompleted().au?.release()
+            return true
         }
 
         private fun fetchState(kf: Int): ThumbFetchLanes.State {
@@ -1774,19 +1846,31 @@ object SeekThumbnails {
 
         /** This keyframe's fetch; started now, once a lane is free, if it is not under way yet. */
         private suspend fun awaitFetch(kf: Int, make: () -> KeyframeExtractor): Fetched {
-            val d = fetches[kf] ?: run {
-                val limit = fetchLimit()
-                while (true) {
-                    val running = fetches.values.filter { !it.isCompleted }
-                    if (running.size < limit) break
-                    select<Unit> { for (j in running) j.onJoin { } }
-                }
-                startFetch(kf, make)
-            }
+            val d = fetches[kf] ?: startFetch(kf, make, awaitBuffer(kf))
             try {
                 return d.await()
+            } catch (e: CancellationException) {
+                d.invokeOnCompletion { if (it == null) d.getCompleted().au?.release() }
+                throw e
             } finally {
                 fetches.remove(kf)
+            }
+        }
+
+        /** A buffer for [kf]'s fetch once a fetch lane is free; a fetched keyframe not needed now gives its own up. */
+        private suspend fun awaitBuffer(kf: Int): ThumbBuffer {
+            val limit = fetchLimit()
+            while (true) {
+                val running = fetches.values.filter { !it.isCompleted }
+                if (running.size < limit) {
+                    buffers.tryAcquire()?.let { return it }
+                    if (dropReadyFetch(kf)) continue
+                    if (running.isEmpty()) {
+                        delay(50L)          // the decodes still hold them
+                        continue
+                    }
+                }
+                select<Unit> { for (j in running) j.onJoin { } }
             }
         }
 
@@ -1799,6 +1883,7 @@ object SeekThumbnails {
                 val unneeded = fetchesStopped || keyframeSlots[kf]?.none { needs(st, it) } != false
                 if (f.error == null && !unneeded) continue
                 fetches.remove(kf)
+                f.au?.release()
                 if (f.error != null && !fetchesStopped) fetchFailed(f, st, keyframeSlots[kf]?.firstOrNull() ?: -1)
             }
         }
@@ -1816,6 +1901,10 @@ object SeekThumbnails {
                     Log.w(TAG, "rate limited: pausing thumbnail fetches ${waitMs / 1000}s ($why)")
                 }
                 is UnsupportedMediaException -> throw e
+                is MemoryShortException -> {
+                    stopForMemory(e.message ?: "out of memory")
+                    releasePrepareHold()
+                }
                 is ConnectionLedger.NoSlotException -> {
                     rethrowIfStopping(e)
                     rateLimitedUntil = maxOf(rateLimitedUntil, SystemClock.elapsedRealtime() + 1_000L)
@@ -1839,6 +1928,30 @@ object SeekThumbnails {
                 }
                 else -> throw e
             }
+        }
+
+        private val memoryStop = MemoryStop()
+
+        /** After the player closed: the box stays short of memory, so the coverage pass stops for this title. */
+        private fun memoryShortAfterClose(): Boolean {
+            if (memoryStop.stopped) return true
+            if (!memoryStop.check(SystemClock.elapsedRealtime()) { MemoryGovernor.pressure() }) return false
+            Log.i(TAG, "4K-C: memory short (${memoryStop.reason}) - stopping the coverage pass for this title")
+            return true
+        }
+
+        /** Out of memory: no new thumbnails for this title, nothing retried. Worker only. */
+        private fun stopForMemory(why: String) {
+            if (memoryStop.outOfMemory(why)) {
+                Log.w(TAG, "$why: no new thumbnails for this title (stored=${store?.slots()?.size})")
+            }
+            fetchesStopped = true
+            latticeFinished = true
+            tapOpen = false
+            copy?.stop("out of memory")
+            trimDecoders()
+            buffers.releaseIdle()
+            bumpTick()
         }
 
         private inline fun <T> pacedDecode(block: () -> T): T {
@@ -2044,13 +2157,16 @@ object SeekThumbnails {
             f.delete()
         }
 
-        private fun spooledAccessUnit(kf: Int, idx: MediaIndex): ByteArray? {
+        private fun spooledAccessUnit(kf: Int, idx: MediaIndex): ThumbAu? {
             if (spool[kf] != true) return null
-            val bytes = runCatching { File(spoolDir, "$kf.au").readBytes() }.getOrNull() ?: return null
-            return tapSampleToAnnexB(bytes, idx.video)
+            val f = File(spoolDir, "$kf.au")
+            if (f.length() > ThumbReads.MAX_READ) return null
+            val bytes = runCatching { f.readBytes() }.getOrNull() ?: return null
+            return tapSampleToAnnexB(bytes, idx.video)?.let { ThumbAu.of(it) }
         }
 
         private fun spooledSlot(st: ThumbStore): Int {
+            if (!memoryStop.allowsSideWork) return -1
             for ((kf, ready) in spool) {
                 if (!ready) continue
                 val slot = keyframeSlots[kf]?.firstOrNull { wanted(st, it) }
@@ -2378,6 +2494,7 @@ object SeekThumbnails {
          * A Usenet title starts at once, also behind the generating screen.
          */
         private fun maybeStartCopy(idx: MediaIndex, st: ThumbStore) {
+            if (!memoryStop.allowsSideWork) return
             if (copyTried || !copyAllowed || !(fourK || usenet) || !source.identityExact) return
             val sources = source.copySources ?: return
             if (afterPlayback || ended || (prepareStage in 1..4 && !usenet) || borrow != null || slotKeyframe.isEmpty()) return
@@ -2744,6 +2861,7 @@ object SeekThumbnails {
         }
 
         private fun onTrim() {
+            buffers.releaseIdle()
             store?.trimMemory(4)
             borrow?.store?.trimMemory(0)
             trimRequested = true     // done in tendReserve, never during a decode
@@ -2975,8 +3093,9 @@ object SeekThumbnails {
                 if (stepped) return
                 sampledPlaying = false
             }
-            val perThumb = if (prepareDoneAtStart in 0 until done - 2 && prepareStartedAt > 0L) {
-                (now - prepareStartedAt) / 1000.0 / (done - prepareDoneAtStart)
+            val made = latticeMade
+            val perThumb = if (prepareMadeAtStart in 0 until made - 2 && prepareStartedAt > 0L) {
+                (now - prepareStartedAt) / 1000.0 / (made - prepareMadeAtStart)
             } else when {
                 !fourK -> PREPARE_SECONDS_HD
                 MemoryGovernor.isStrongBox -> PREPARE_SECONDS_STRONG_4K
@@ -2984,7 +3103,7 @@ object SeekThumbnails {
                 else -> PREPARE_SECONDS_WEB
             }
             val (recent, endSeq) = synchronized(recentMade) { recentMade.toList() to madeSeq }
-            val left = ((total - done).coerceAtLeast(0) * perThumb).toInt()
+            val left = (maxOf(latticeWorkLeft, total - done, 0) * perThumb).toInt()
             when (prepareStage) {
                 1 -> when {
                     done >= total -> if (advancePrepare(1, 5)) {
@@ -3007,6 +3126,7 @@ object SeekThumbnails {
                 3 -> {
                     if (prepareDoneAtStart < 0) {
                         prepareDoneAtStart = done
+                        prepareMadeAtStart = made
                         prepareStartedAt = now
                         Log.i(TAG, "prepare: generating ($done/$total, about $left s)")
                     }
@@ -3092,6 +3212,8 @@ object SeekThumbnails {
                 st.flush()
                 runCatching { ThumbStore.housekeeping(context, activeKey = st.key) }
             }
+            for (d in fetches.values) d.invokeOnCompletion { if (it == null) d.getCompleted().au?.release() }
+            buffers.close()
             worker.cancel()
             spoolWriter.cancel()
             spool.clear()

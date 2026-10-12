@@ -3,6 +3,7 @@ package com.nuvio.tv.core.player.thumbnail
 import android.graphics.Bitmap
 import android.util.Log
 import java.io.Closeable
+import java.nio.ByteBuffer
 import kotlin.math.roundToInt
 
 /** JNI bridge to libnuviothumb (app/src/main/cpp/thumb_shim.cpp). */
@@ -40,6 +41,8 @@ internal object ThumbNative {
     /** [decoder]: FFmpeg decoder name. width/height: coded size. */
     @JvmStatic external fun nativeOpen(decoder: String, extradata: ByteArray?, width: Int, height: Int, threads: Int): Long
     @JvmStatic external fun nativeDecode(handle: Long, data: ByteArray, len: Int, info: IntArray): Int
+    /** As [nativeDecode], from a direct buffer: the native side copies from its address, no Java array. */
+    @JvmStatic external fun nativeDecodeDirect(handle: Long, data: ByteBuffer, len: Int, info: IntArray): Int
     @JvmStatic external fun nativeRender(
         handle: Long, bitmap: Bitmap, transfer: Int, bt2020: Boolean, fullRange: Boolean,
         peakNits: Float, rowSkip: Boolean,
@@ -85,13 +88,36 @@ internal class FfmpegThumbDecoder : Closeable {
     private var handleThreads = 0
     private val info = IntArray(ThumbNative.INFO_COUNT)
     private var decodedSinceTrim = false
+    @Volatile private var directDecode = true
 
     /** The working set is allocated and already missing from MemAvailable, so the governor must not charge it again. */
     val warm: Boolean get() = handle != 0L && decodedSinceTrim
 
     /** [annexB]: one keyframe access unit, Annex-B for H.264/HEVC, the raw sample otherwise. */
     fun decode(annexB: ByteArray, track: VideoTrack, threads: Int): DecodedFrame? {
-        if (!ThumbNative.available) return null
+        if (!open(track, threads)) return null
+        return frame(ThumbNative.nativeDecode(handle, annexB, annexB.size, info))
+    }
+
+    /** As above, from a buffer; a direct one reaches FFmpeg without a copy on the Java heap. */
+    fun decode(au: ThumbAu, track: VideoTrack, threads: Int): DecodedFrame? {
+        if (!open(track, threads)) return null
+        val d = au.data
+        val r = when {
+            d.isDirect && directDecode -> try {
+                ThumbNative.nativeDecodeDirect(handle, d, au.length, info)
+            } catch (e: UnsatisfiedLinkError) {
+                directDecode = false
+                ThumbNative.nativeDecode(handle, au.toByteArray(), au.length, info)
+            }
+            d.hasArray() && d.arrayOffset() == 0 -> ThumbNative.nativeDecode(handle, d.array(), au.length, info)
+            else -> ThumbNative.nativeDecode(handle, au.toByteArray(), au.length, info)
+        }
+        return frame(r)
+    }
+
+    private fun open(track: VideoTrack, threads: Int): Boolean {
+        if (!ThumbNative.available) return false
         if (handle == 0L || handleTrack !== track || handleThreads != threads) {
             close()
             handle = ThumbNative.nativeOpen(
@@ -99,12 +125,15 @@ internal class FfmpegThumbDecoder : Closeable {
             )
             if (handle == 0L) {
                 Log.w("ThumbDecode", "no ${track.codec.ffmpegName} decoder in this FFmpeg")
-                return null
+                return false
             }
             handleTrack = track
             handleThreads = threads
         }
-        val r = ThumbNative.nativeDecode(handle, annexB, annexB.size, info)
+        return true
+    }
+
+    private fun frame(r: Int): DecodedFrame? {
         if (r < 0) {
             Log.w("ThumbDecode", "decode failed: $r")
             return null

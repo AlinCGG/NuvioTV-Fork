@@ -11,6 +11,7 @@ import com.nuvio.tv.core.player.thumbnail.CopyLink
 import com.nuvio.tv.core.player.thumbnail.CopyOffer
 import com.nuvio.tv.core.player.thumbnail.CopyOffers
 import com.nuvio.tv.core.player.thumbnail.CopySources
+import com.nuvio.tv.core.player.thumbnail.MediaServerThumbs
 import com.nuvio.tv.data.mediaserver.ServerPlayMethod
 import com.nuvio.tv.domain.model.DebridStreamEncode
 import com.nuvio.tv.domain.model.DebridStreamQuality
@@ -22,11 +23,11 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * The player's source list as copies for 4K thumbnails, failing closed: media-server versions (only while the playing
- * server stream is direct play), Usenet links streamed by a local AIOStreams, plain file links, and app debrid entries
- * or add-on sources naming their torrent, through the app's own keys: TorBox (from the user's list, or a cached copy
- * added and removed again) and Premiumize (direct download). Real-Debrid, and links that resolve through an add-on's
- * debrid service, are left out ([CopyChoice.linkRejection]).
+ * The player's source list as copies for 4K thumbnails, failing closed: media-server versions (only from a server on
+ * the home network, and only while the playing server stream is direct play), Usenet links streamed by a local
+ * AIOStreams, plain file links, and app debrid entries or add-on sources naming their torrent, through the app's own
+ * keys: TorBox (from the user's list, or a cached copy added and removed again) and Premiumize (direct download).
+ * Real-Debrid, and links that resolve through an add-on's debrid service, are left out ([CopyChoice.linkRejection]).
  */
 internal class ThumbnailCopySources(
     private val controller: PlayerRuntimeController,
@@ -85,7 +86,7 @@ internal class ThumbnailCopySources(
                 return@withContext null
             }
             val ui = controller._uiState.value
-            val streams = ui.sourceAllStreams
+            val streams = copyCandidates(ui.sourceAllStreams, controller.sourceThumbnailCopyStreams)
             val request = controller.currentSourceStreamsRequest()
             val playing = findCurrentStreamIndex(
                 streams = streams,
@@ -125,6 +126,10 @@ internal class ThumbnailCopySources(
                 stream.serverTarget != null -> {
                     if (!snap.serverCopies) {
                         leaveOut("server version while the server transcodes playback")
+                        return@mapIndexedNotNull null
+                    }
+                    if (!MediaServerThumbs.copyAllowed(controller.serverPlayback.serverAddress(stream.serverTarget))) {
+                        leaveOut("server version on a server away from the home network")
                         return@mapIndexedNotNull null
                     }
                     CopyKind.SERVER
@@ -195,7 +200,8 @@ internal class ThumbnailCopySources(
         return when (offer.kind) {
             CopyKind.SERVER -> {
                 val target = stream.serverTarget ?: return null
-                controller.serverPlayback.staticUrl(target)?.let { CopyLink(it, emptyMap(), "the media server") }
+                controller.serverPlayback.staticUrl(target)?.takeIf(MediaServerThumbs::onHomeNetwork)
+                    ?.let { CopyLink(it, emptyMap(), "the media server") }
             }
             CopyKind.LINK -> stream.getStreamUrl()?.let {
                 CopyLink(it, stream.behaviorHints?.proxyHeaders?.request.orEmpty(), "a ready link")
@@ -229,3 +235,10 @@ internal class ThumbnailCopySources(
         }
     }
 }
+
+/**
+ * The source list unchanged (its positions stay valid), then the app debrid streams that only the resolution rules
+ * keep off it: offered as copies, never listed or played.
+ */
+internal fun copyCandidates(listed: List<Stream>, resolutionOnly: List<Stream>): List<Stream> =
+    if (resolutionOnly.isEmpty()) listed else listed + resolutionOnly

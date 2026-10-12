@@ -280,7 +280,9 @@ data class ProxyHeaders(
 data class AddonStreams(
     val addonName: String,
     val addonLogo: String?,
-    val streams: List<Stream>
+    val streams: List<Stream>,
+    /** App debrid streams the resolution rules keep out of [streams]: thumbnail copies only. */
+    val thumbnailCopyStreams: List<Stream> = emptyList()
 )
 
 private fun String?.isMagnetLink(): Boolean =

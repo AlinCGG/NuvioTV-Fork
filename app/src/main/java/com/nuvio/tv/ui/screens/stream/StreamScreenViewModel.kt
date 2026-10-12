@@ -1419,6 +1419,7 @@ class StreamScreenViewModel @Inject constructor(
     }
 
     suspend fun prewarmSelectedPlayback(playbackInfo: StreamPlaybackInfo) {
+        if (playbackInfo.isServerStream) return
         com.nuvio.tv.ui.screens.player.PlayerPlaybackNetworking.prewarmSelectedPlayback(
             playbackInfo.url, playbackInfo.headers
         )

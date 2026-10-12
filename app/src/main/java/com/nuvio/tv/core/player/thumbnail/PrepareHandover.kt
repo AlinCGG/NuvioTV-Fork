@@ -28,6 +28,18 @@ internal object PrepareHandover {
     fun waitsForBuffering(buffering: Boolean, screenUp: Boolean, playWhenReady: Boolean, small4K: Boolean): Boolean =
         buffering && (!screenUp || playWhenReady || small4K)
 
+    /**
+     * Thumbnails still to make before every slot on the screen's grid ([stride]) is done, in the pass's own [order]: the
+     * pass also makes the finer slots it meets on the way, so those count as work too.
+     */
+    fun workLeft(order: List<Int>, stride: Int, needs: (Int) -> Boolean): Int {
+        val last = order.indexOfLast { it % stride == 0 && needs(it) }
+        if (last < 0) return 0
+        var left = 0
+        for (i in 0..last) if (needs(order[i])) left++
+        return left
+    }
+
     /** Null while the screen should keep waiting. A rate-limited source fetches one at a time: it never keeps up. */
     fun reason(
         nowMs: Long,

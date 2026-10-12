@@ -44,6 +44,29 @@ class SeekThumbnailPreferencesTest {
     }
 
     @Test
+    fun `untouched store is on with 4 GB of RAM and off below`() {
+        val mb = 1024L * 1024
+        val am9 = SeekThumbnailPreferences.defaultMode(3_712 * mb)
+        val shield = SeekThumbnailPreferences.defaultMode(2_900 * mb)
+        val fireStick = SeekThumbnailPreferences.defaultMode(1_669 * mb)
+        assertEquals(SeekThumbMode.ALL, SeekThumbnailPreferences.modeOf(emptyPreferences(), am9))
+        assertEquals(SeekThumbMode.OFF, SeekThumbnailPreferences.modeOf(emptyPreferences(), shield))
+        assertEquals(SeekThumbMode.OFF, SeekThumbnailPreferences.modeOf(emptyPreferences(), fireStick))
+        assertEquals(SeekThumbMode.ALL, SeekThumbnailPreferences.defaultMode(0L))
+    }
+
+    @Test
+    fun `a stored choice is kept whatever the RAM`() {
+        listOf(SeekThumbMode.ALL, SeekThumbMode.OFF).forEach { default ->
+            SeekThumbMode.entries.forEach { mode ->
+                assertEquals(mode, SeekThumbnailPreferences.modeOf(prefs { this[modeKey] = mode.name }, default))
+            }
+            assertEquals(SeekThumbMode.ALL, SeekThumbnailPreferences.modeOf(prefs { this[legacyEnabledKey] = true }, default))
+            assertEquals(SeekThumbMode.OFF, SeekThumbnailPreferences.modeOf(prefs { this[legacyEnabledKey] = false }, default))
+        }
+    }
+
+    @Test
     fun `stored mode is kept`() {
         SeekThumbMode.entries.forEach { mode ->
             assertEquals(mode, SeekThumbnailPreferences.modeOf(prefs { this[modeKey] = mode.name }))

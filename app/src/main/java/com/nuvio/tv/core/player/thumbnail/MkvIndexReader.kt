@@ -228,9 +228,7 @@ internal object MkvIndexReader {
         if (size[0] == Ebml.UNKNOWN_SIZE || size[0] > cap || size[0] <= 0) {
             throw UnsupportedMediaException("element size ${size[0]}")
         }
-        val body = reader.read(pos + id[1] + size[1], size[0].toInt())
-        if (body.size.toLong() != size[0]) throw UnsupportedMediaException("truncated element")
-        return body
+        return ThumbReads.readExact(reader, pos + id[1] + size[1], size[0].toInt())
     }
 
     /** V_MS/VFW/FOURCC carries a BITMAPINFOHEADER: FourCC at byte 16, extradata after the 40-byte header. */
