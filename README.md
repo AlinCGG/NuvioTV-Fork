@@ -90,8 +90,9 @@ and the right HDR -- without needing to be the kind of person who tunes buffer s
   commentary tracks, and picks the lossless track so you don't start every film in the wrong audio.
 - **Native Dolby Vision Profile 7, FEL and MEL** -- the full dual-layer signal decoded inside
   Nuvio on Android, enhancement layer included, the way a disc player does it. For now this needs a
-  Ugoos AM9 Pro on Android 14 running my custom FEL kernel, plus a Dolby Vision display. Stock
-  firmware and other boxes can't do it yet, so there the mode simply behaves like Auto.
+  Ugoos AM9 Pro on Android 14 running my own test kernel, plus a Dolby Vision display. That kernel
+  is not available yet; I plan to share it once it has had more testing. Stock firmware and other
+  boxes can't do it, so there the mode simply behaves like Auto.
 - **Dolby Vision on more TVs** -- app-side Profile 7 and Profile 5 -> 8.1 conversion via libdovi with
   no per-frame stutter, correct enhancement-layer handling for single-track remuxes, and **Auto**
   converting Profile 7 on every Dolby Vision TV, including TVs with Android built in whose decoder
@@ -171,7 +172,7 @@ https://github.com/user-attachments/assets/b2063feb-7c4a-4fa1-924d-63686184f5dd
 
 **Native Dolby Vision Profile 7 FEL on the Ugoos AM9 Pro** -- the stats overlay showing "Profile 7.6 FEL - RPU + BL + EL" on the native route.
 
-For now this needs a Ugoos AM9 Pro on Android 14 running my custom FEL kernel, plus a Dolby Vision display. Stock firmware and other boxes can't do it yet, so there the mode simply behaves like Auto.
+For now this needs a Ugoos AM9 Pro on Android 14 running my own test kernel, plus a Dolby Vision display. That kernel is not available yet; I plan to share it once it has had more testing. Stock firmware and other boxes can't do it, so there the mode simply behaves like Auto.
 
 <img width="1920" height="1080" alt="Screenshot_20261004_215744" src="https://github.com/user-attachments/assets/86dba33b-f2c3-496c-a0d6-5b6ba6c9d41f" />
 <img width="4032" height="3024" alt="IMG_4946 - Copy" src="https://github.com/user-attachments/assets/c6bbf874-916c-4433-9a5b-bba6fedd5603" />
