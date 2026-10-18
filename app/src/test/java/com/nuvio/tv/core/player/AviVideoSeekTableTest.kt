@@ -1,7 +1,6 @@
 package com.nuvio.tv.core.player
 
 import androidx.media3.extractor.SeekPoint
-import java.io.ByteArrayOutputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -46,29 +45,27 @@ class AviVideoSeekTableTest {
         assertNull(AviVideoSeekTable.create(video, AviIndex.KeyFrames(IntArray(0), LongArray(0))))
     }
 
-    private fun ByteArrayOutputStream.tag(s: String) = write(s.toByteArray(Charsets.ISO_8859_1))
-
-    private fun ByteArrayOutputStream.u32(v: Long) {
-        for (shift in 0 until 32 step 8) write(((v shr shift) and 0xFF).toInt())
-    }
-
     @Test
     fun keyFramesAreNumberedAmongAllChunksOfTheVideoStream() {
-        val body = ByteArrayOutputStream().apply {
-            listOf(
-                Triple("01wb", 0x10L, 4L),
-                Triple("00dc", 0x10L, 8_076L),
-                Triple("00db", 0L, 9_000L),
-                Triple("01wb", 0x10L, 9_500L),
-                Triple("00dc", 0L, 10_000L),
-                Triple("00dc", 0x10L, 11_000L),
-            ).forEach { (id, flags, offset) ->
-                tag(id); u32(flags); u32(offset); u32(100)
-            }
-        }.toByteArray()
-        val frames = AviIndex.videoKeyFrames(body, 0, body.size, 10_240L, 0)!!
+        val entries = listOf(
+            Triple("01wb", 0x10, 10_252L),
+            Triple("00dc", 0x10, 18_324L),
+            Triple("00db", 0, 19_248L),
+            Triple("01wb", 0x10, 19_748L),
+            Triple("00dc", 0, 20_248L),
+            Triple("00dc", 0x10, 21_248L),
+        )
+        val index = AviIndex.Chunks(
+            entries.map { (id) -> id[0].code or (id[1].code shl 8) or (id[2].code shl 16) or (id[3].code shl 24) }
+                .toIntArray(),
+            entries.map { it.second }.toIntArray(),
+            entries.map { it.third }.toLongArray(),
+            IntArray(entries.size) { 100 },
+            entries.size,
+        )
+        val frames = AviIndex.videoKeyFrames(index, 0)!!
         assertEquals(listOf(0, 3), frames.chunkIndices.toList())
         assertEquals(listOf(18_324L, 21_248L), frames.positions.toList())
-        assertNull(AviIndex.videoKeyFrames(body, 0, body.size, 10_240L, 2))
+        assertNull(AviIndex.videoKeyFrames(index, 2))
     }
 }

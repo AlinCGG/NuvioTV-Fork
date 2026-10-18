@@ -12,13 +12,14 @@ import androidx.media3.extractor.Extractor
 import androidx.media3.extractor.ExtractorInput
 import androidx.media3.extractor.ExtractorOutput
 import androidx.media3.extractor.ExtractorsFactory
-import androidx.media3.extractor.ForwardingExtractorInput
 import androidx.media3.extractor.ForwardingSeekMap
 import androidx.media3.extractor.ForwardingTrackOutput
 import androidx.media3.extractor.PositionHolder
 import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
 import androidx.media3.extractor.avi.AviExtractor
+import androidx.media3.extractor.text.SubtitleParser
+import com.nuvio.tv.core.player.avi.AviExtractor as OpenDmlAviExtractor
 import java.io.EOFException
 import java.io.IOException
 
@@ -28,6 +29,9 @@ import java.io.IOException
  * extractor drops because it does not know the codec (DivX 3 and other old FourCCs) is reported as an unknown
  * video track, so the player can tell there is a picture it cannot decode instead of playing sound only.
  * AC-3 and DTS audio chunks are split into single syncframes, see [AviAudioFramer].
+ *
+ * The stock reader is swapped for [com.nuvio.tv.core.player.avi.AviExtractor], which also reads OpenDML files
+ * (AVI 2.0, the usual layout above 1 GB) and hands over the index it uses.
  */
 @UnstableApi
 internal class AviTrackFormatExtractorsFactory(private val delegate: ExtractorsFactory) : ExtractorsFactory {
@@ -39,24 +43,29 @@ internal class AviTrackFormatExtractorsFactory(private val delegate: ExtractorsF
         delegate.createExtractors(uri, responseHeaders).map(::wrap).toTypedArray()
 
     private fun wrap(extractor: Extractor): Extractor =
-        if (extractor is AviExtractor) AviTrackFormatExtractor(extractor) else extractor
+        if (extractor is AviExtractor) {
+            AviTrackFormatExtractor(
+                OpenDmlAviExtractor(OpenDmlAviExtractor.FLAG_EMIT_RAW_SUBTITLE_DATA, SubtitleParser.Factory.UNSUPPORTED)
+            )
+        } else {
+            extractor
+        }
 }
 
 @UnstableApi
-private class AviTrackFormatExtractor(private val delegate: AviExtractor) : Extractor {
+private class AviTrackFormatExtractor(private val delegate: OpenDmlAviExtractor) : Extractor {
 
     private var headerRead = false
     private var video: AviHeader.Video? = null
     private var streams: List<AviHeader.Stream> = emptyList()
     private val audioTracks = ArrayList<AudioFrameTrackOutput>()
-    private var watchingIndex = true
-    private var moviListPosition = C.INDEX_UNSET.toLong()
-    private var indexBodyPosition = C.INDEX_UNSET.toLong()
-    private var indexBodySize = 0L
     private var videoStreamId = C.INDEX_UNSET
     @Volatile private var videoSeekTable: AviVideoSeekTable? = null
 
     override fun init(output: ExtractorOutput) {
+        delegate.setIndexListener { chunkIds, flags, positions, sizes, count ->
+            onIndexRead(AviIndex.Chunks(chunkIds, flags, positions, sizes, count))
+        }
         delegate.init(object : ExtractorOutput {
             private var videoTrackSeen = false
 
@@ -87,7 +96,6 @@ private class AviTrackFormatExtractor(private val delegate: AviExtractor) : Extr
             }
 
             override fun seekMap(seekMap: SeekMap) {
-                watchingIndex = false
                 output.seekMap(VideoSeekMap(seekMap))
             }
         })
@@ -102,7 +110,7 @@ private class AviTrackFormatExtractor(private val delegate: AviExtractor) : Extr
             peekHeader(input)
             headerRead = true
         }
-        return delegate.read(if (watchingIndex) IndexWatchingInput(input) else input, seekPosition)
+        return delegate.read(input, seekPosition)
     }
 
     // The header list can be longer than a few KB when an audio stream with an index block comes first.
@@ -121,11 +129,11 @@ private class AviTrackFormatExtractor(private val delegate: AviExtractor) : Extr
         }
     }
 
-    private fun onIndexRead(body: ByteArray, offset: Int, length: Int) {
-        val entries = AviIndex.audioEntries(body, offset, length, moviListPosition, audioTracks.map { it.id })
+    private fun onIndexRead(chunks: AviIndex.Chunks) {
+        val entries = AviIndex.audioEntries(chunks, audioTracks.map { it.id })
         audioTracks.forEach { track -> entries[track.id]?.let(track::useIndex) }
         val videoStream = streams.getOrNull(videoStreamId) ?: return
-        videoSeekTable = AviIndex.videoKeyFrames(body, offset, length, moviListPosition, videoStreamId)
+        videoSeekTable = AviIndex.videoKeyFrames(chunks, videoStreamId)
             ?.let { AviVideoSeekTable.create(videoStream, it) }
     }
 
@@ -136,52 +144,6 @@ private class AviTrackFormatExtractor(private val delegate: AviExtractor) : Extr
             val table = videoSeekTable ?: return points
             return if (table.isSafeStart(points.first.position)) points else table.seekPoints(timeUs)
         }
-    }
-
-    /** Sees the reader find the movi list and read the idx1 body, which it does before the first sample. */
-    private inner class IndexWatchingInput(private val input: ExtractorInput) : ForwardingExtractorInput(input) {
-        override fun peekFully(target: ByteArray, offset: Int, length: Int, allowEndOfInput: Boolean): Boolean {
-            val at = input.peekPosition
-            val peeked = input.peekFully(target, offset, length, allowEndOfInput)
-            if (peeked) onPeeked(at, target, offset, length)
-            return peeked
-        }
-
-        override fun peekFully(target: ByteArray, offset: Int, length: Int) {
-            val at = input.peekPosition
-            input.peekFully(target, offset, length)
-            onPeeked(at, target, offset, length)
-        }
-
-        override fun readFully(target: ByteArray, offset: Int, length: Int, allowEndOfInput: Boolean): Boolean {
-            val at = input.position
-            val read = input.readFully(target, offset, length, allowEndOfInput)
-            if (read) onRead(at, target, offset, length)
-            return read
-        }
-
-        override fun readFully(target: ByteArray, offset: Int, length: Int) {
-            val at = input.position
-            input.readFully(target, offset, length)
-            onRead(at, target, offset, length)
-        }
-
-        private fun onPeeked(at: Long, data: ByteArray, offset: Int, length: Int) {
-            if (length >= 12 && tag(data, offset) == "LIST" && tag(data, offset + 8) == "movi") moviListPosition = at
-        }
-
-        private fun onRead(at: Long, data: ByteArray, offset: Int, length: Int) {
-            if (length == 8 && tag(data, offset) == "idx1") {
-                indexBodyPosition = at + 8
-                indexBodySize = (data[offset + 4].toLong() and 0xFF) or ((data[offset + 5].toLong() and 0xFF) shl 8) or
-                    ((data[offset + 6].toLong() and 0xFF) shl 16) or ((data[offset + 7].toLong() and 0xFF) shl 24)
-            } else if (at == indexBodyPosition && length.toLong() == indexBodySize) {
-                indexBodyPosition = C.INDEX_UNSET.toLong()
-                onIndexRead(data, offset, length)
-            }
-        }
-
-        private fun tag(data: ByteArray, at: Int) = String(data, at, 4, Charsets.ISO_8859_1)
     }
 
     @Throws(IOException::class)
@@ -358,19 +320,27 @@ private class AviTrackFormatExtractor(private val delegate: AviExtractor) : Extr
 
 /** Reads the first video stream's frame rate and FourCC from the first bytes of an AVI file (hdrl list). */
 internal object AviHeader {
-    const val LIST_START_BYTES = 24
+    const val LIST_START_BYTES = 256
     private const val MIN_PROBE_BYTES = 4096
     private const val MAX_PROBE_BYTES = 256 * 1024
 
-    /** How much of the file to look at: the whole hdrl list when its size is known, within sane bounds. */
+    /**
+     * How much of the file to look at: the whole hdrl list when its size is known, within sane bounds. Some muxers
+     * put a JUNK chunk before the hdrl list.
+     */
     fun probeBytes(start: ByteArray, length: Int): Int {
-        if (length < LIST_START_BYTES || fourCc(start, 0) != "RIFF" || fourCc(start, 8) != "AVI " ||
-            fourCc(start, 12) != "LIST" || fourCc(start, 20) != "hdrl"
-        ) {
-            return MIN_PROBE_BYTES
+        val end = minOf(length, start.size)
+        if (end < 12 || fourCc(start, 0) != "RIFF" || fourCc(start, 8) != "AVI ") return MIN_PROBE_BYTES
+        var at = 12L
+        while (at + 12 <= end) {
+            val i = at.toInt()
+            val size = u32(start, i + 4)
+            if (fourCc(start, i) == "LIST" && fourCc(start, i + 8) == "hdrl") {
+                return (at + 8 + size).coerceIn(MIN_PROBE_BYTES.toLong(), MAX_PROBE_BYTES.toLong()).toInt()
+            }
+            at += 8 + size + (size and 1L)
         }
-        val headerListEnd = 20L + u32(start, 16)
-        return headerListEnd.coerceIn(MIN_PROBE_BYTES.toLong(), MAX_PROBE_BYTES.toLong()).toInt()
+        return MIN_PROBE_BYTES
     }
     private const val MIN_FPS = 5f
     private const val MAX_FPS = 121f

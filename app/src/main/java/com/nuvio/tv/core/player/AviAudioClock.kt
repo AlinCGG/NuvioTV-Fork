@@ -133,40 +133,30 @@ internal class AviAudioClock private constructor(
     }
 }
 
-/** Reads the entries of an AVI idx1 chunk the way the stock reader does. */
+/** The chunk index the AVI reader uses, from idx1 or from the OpenDML indexes. */
 internal object AviIndex {
 
     /** Where the data of each chunk of a stream starts in the file, and its size, in index order. */
     class Entries(val dataPositions: LongArray, val sizes: IntArray)
 
-    private const val ENTRY_BYTES = 16
-    private const val CHUNK_HEADER_BYTES = 8
-    private const val KEY_FRAME_FLAG = 0x10L
+    /** The reader's index entries in its order: chunk id, AVIIF flags, chunk header position and data size. */
+    class Chunks(val chunkIds: IntArray, val flags: IntArray, val positions: LongArray, val sizes: IntArray, val count: Int)
 
-    /**
-     * The audio ('##wb') entries of [streams] in the idx1 body [body] ([length] bytes from [offset]).
-     * [moviListPosition] is where the movi LIST header starts: the offsets count from its list type unless the
-     * first offset lies beyond it, in which case they are file positions.
-     */
-    fun audioEntries(
-        body: ByteArray,
-        offset: Int,
-        length: Int,
-        moviListPosition: Long,
-        streams: Collection<Int>,
-    ): Map<Int, Entries> {
-        val end = offset + minOf(length, body.size - offset) / ENTRY_BYTES * ENTRY_BYTES
-        if (end <= offset || moviListPosition < 0 || streams.isEmpty()) return emptyMap()
-        val base = base(body, offset, moviListPosition)
+    private const val CHUNK_HEADER_BYTES = 8
+    private const val KEY_FRAME_FLAG = 0x10
+
+    /** The audio ('##wb') entries of [streams]. */
+    fun audioEntries(chunks: Chunks, streams: Collection<Int>): Map<Int, Entries> {
+        if (streams.isEmpty()) return emptyMap()
         val counts = HashMap<Int, Int>()
-        forEachEntry(body, offset, end, 'w', 'b', streams) { stream, _ -> counts[stream] = (counts[stream] ?: 0) + 1 }
+        forEachChunk(chunks, 'w', 'b', streams) { stream, _ -> counts[stream] = (counts[stream] ?: 0) + 1 }
         val positions = counts.mapValues { LongArray(it.value) }
         val sizes = counts.mapValues { IntArray(it.value) }
         val filled = HashMap<Int, Int>()
-        forEachEntry(body, offset, end, 'w', 'b', streams) { stream, at ->
+        forEachChunk(chunks, 'w', 'b', streams) { stream, at ->
             val i = filled[stream] ?: 0
-            positions.getValue(stream)[i] = base + u32(body, at + 8) + CHUNK_HEADER_BYTES
-            sizes.getValue(stream)[i] = u32(body, at + 12).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            positions.getValue(stream)[i] = chunks.positions[at] + CHUNK_HEADER_BYTES
+            sizes.getValue(stream)[i] = chunks.sizes[at]
             filled[stream] = i + 1
         }
         return counts.keys.associateWith { Entries(positions.getValue(it), sizes.getValue(it)) }
@@ -175,64 +165,47 @@ internal object AviIndex {
     /** The key frames of a video stream: their number among the stream's chunks, and where their chunk starts. */
     class KeyFrames(val chunkIndices: IntArray, val positions: LongArray)
 
-    /** The key frame entries ('##dc' or '##db') of video [stream], as the stock reader keeps them. */
-    fun videoKeyFrames(body: ByteArray, offset: Int, length: Int, moviListPosition: Long, stream: Int): KeyFrames? {
-        val end = offset + minOf(length, body.size - offset) / ENTRY_BYTES * ENTRY_BYTES
-        if (end <= offset || moviListPosition < 0) return null
-        val base = base(body, offset, moviListPosition)
+    /** The key frame entries ('##dc' or '##db') of video [stream], as the reader keeps them. */
+    fun videoKeyFrames(chunks: Chunks, stream: Int): KeyFrames? {
         val indices = ArrayList<Int>()
         val positions = ArrayList<Long>()
-        var chunks = 0
-        var at = offset
-        while (at < end) {
-            val type1 = body[at + 3].toInt()
-            if (body[at + 2].toInt() == 'd'.code && (type1 == 'c'.code || type1 == 'b'.code) &&
-                streamNumber(body, at) == stream
+        var count = 0
+        for (at in 0 until chunks.count) {
+            val id = chunks.chunkIds[at]
+            val type1 = (id ushr 24) and 0xFF
+            if ((id ushr 16) and 0xFF == 'd'.code && (type1 == 'c'.code || type1 == 'b'.code) &&
+                streamNumber(id) == stream
             ) {
-                if (u32(body, at + 4) and KEY_FRAME_FLAG != 0L) {
-                    indices += chunks
-                    positions += base + u32(body, at + 8)
+                if (chunks.flags[at] and KEY_FRAME_FLAG != 0) {
+                    indices += count
+                    positions += chunks.positions[at]
                 }
-                chunks++
+                count++
             }
-            at += ENTRY_BYTES
         }
         if (indices.isEmpty()) return null
         return KeyFrames(indices.toIntArray(), positions.toLongArray())
     }
 
-    // As the stock reader: the first entry's offset, read as a signed int, decides between the two bases.
-    private fun base(body: ByteArray, offset: Int, moviListPosition: Long): Long {
-        val firstOffset = u32(body, offset + 8).toInt().toLong()
-        return if (firstOffset > moviListPosition) 0L else moviListPosition + CHUNK_HEADER_BYTES
-    }
-
-    private inline fun forEachEntry(
-        body: ByteArray,
-        offset: Int,
-        end: Int,
+    private inline fun forEachChunk(
+        chunks: Chunks,
         type0: Char,
         type1: Char,
         streams: Collection<Int>,
         action: (stream: Int, at: Int) -> Unit,
     ) {
-        var at = offset
-        while (at < end) {
-            if (body[at + 2].toInt() == type0.code && body[at + 3].toInt() == type1.code) {
-                val stream = streamNumber(body, at)
+        for (at in 0 until chunks.count) {
+            val id = chunks.chunkIds[at]
+            if ((id ushr 16) and 0xFF == type0.code && (id ushr 24) and 0xFF == type1.code) {
+                val stream = streamNumber(id)
                 if (stream >= 0 && stream in streams) action(stream, at)
             }
-            at += ENTRY_BYTES
         }
     }
 
-    private fun streamNumber(body: ByteArray, at: Int): Int {
-        val tens = body[at].toInt() - '0'.code
-        val units = body[at + 1].toInt() - '0'.code
+    private fun streamNumber(chunkId: Int): Int {
+        val tens = (chunkId and 0xFF) - '0'.code
+        val units = ((chunkId ushr 8) and 0xFF) - '0'.code
         return if (tens in 0..9 && units in 0..9) tens * 10 + units else -1
     }
-
-    private fun u32(b: ByteArray, at: Int): Long =
-        (b[at].toLong() and 0xFF) or ((b[at + 1].toLong() and 0xFF) shl 8) or
-            ((b[at + 2].toLong() and 0xFF) shl 16) or ((b[at + 3].toLong() and 0xFF) shl 24)
 }

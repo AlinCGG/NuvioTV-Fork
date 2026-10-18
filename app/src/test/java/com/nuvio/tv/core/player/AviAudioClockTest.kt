@@ -1,6 +1,5 @@
 package com.nuvio.tv.core.player
 
-import java.io.ByteArrayOutputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -139,39 +138,32 @@ class AviAudioClockTest {
         assertEquals(3_000_000_000_000L, AviAudioClock.scale(3_000_000_000_000L, 1_000_000, 1_000_000))
     }
 
-    private fun ByteArrayOutputStream.tag(s: String) = write(s.toByteArray(Charsets.ISO_8859_1))
-
-    private fun ByteArrayOutputStream.u32(v: Long) {
-        for (shift in 0 until 32 step 8) write(((v shr shift) and 0xFF).toInt())
+    private fun chunks(vararg entries: Triple<String, Long, Int>): AviIndex.Chunks {
+        val ids = entries.map { (id) ->
+            id[0].code or (id[1].code shl 8) or (id[2].code shl 16) or (id[3].code shl 24)
+        }
+        return AviIndex.Chunks(
+            ids.toIntArray(),
+            IntArray(entries.size) { 0x10 },
+            LongArray(entries.size) { entries[it].second },
+            IntArray(entries.size) { entries[it].third },
+            entries.size,
+        )
     }
 
-    private fun idx1(vararg entries: Triple<String, Int, Int>): ByteArray = ByteArrayOutputStream().apply {
-        entries.forEach { (id, offset, size) ->
-            tag(id); u32(0x10); u32(offset.toLong()); u32(size.toLong())
-        }
-    }.toByteArray()
-
     @Test
-    fun indexOffsetsCountFromTheMoviListType() {
-        val body = idx1(
-            Triple("01wb", 4, 8064),
-            Triple("00dc", 8076, 5000),
-            Triple("01wb", 13084, 768),
-            Triple("02wb", 13860, 400),
+    fun audioEntriesStartAfterTheChunkHeader() {
+        val index = chunks(
+            Triple("01wb", 10_252L, 8064),
+            Triple("00dc", 18_324L, 5000),
+            Triple("01wb", 23_332L, 768),
+            Triple("02wb", 24_108L, 400),
         )
-        val entries = AviIndex.audioEntries(body, 0, body.size, 10_240L, listOf(1))
+        val entries = AviIndex.audioEntries(index, listOf(1))
         assertEquals(setOf(1), entries.keys)
         val stream = entries.getValue(1)
         assertEquals(listOf(10_260L, 23_340L), stream.dataPositions.toList())
         assertEquals(listOf(8064, 768), stream.sizes.toList())
-    }
-
-    @Test
-    fun indexOffsetsBeyondTheMoviListAreFilePositions() {
-        val body = idx1(Triple("00dc", 20_000, 5000), Triple("01wb", 25_008, 768))
-        val prefix = ByteArray(7)
-        val entries = AviIndex.audioEntries(prefix + body, 7, body.size, 10_240L, listOf(1, 3))
-        assertEquals(listOf(25_016L), entries.getValue(1).dataPositions.toList())
-        assertTrue(AviIndex.audioEntries(body, 0, body.size, -1L, listOf(1)).isEmpty())
+        assertTrue(AviIndex.audioEntries(index, emptyList()).isEmpty())
     }
 }
