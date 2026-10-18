@@ -1,5 +1,7 @@
 package com.nuvio.tv.core.player.thumbnail
 
+import android.os.SystemClock
+import com.nuvio.tv.ui.screens.player.ParallelRangeDataSource
 import com.nuvio.tv.ui.screens.player.ParallelRangeRetryAfter
 import java.util.concurrent.ConcurrentHashMap
 
@@ -21,15 +23,27 @@ internal object ThumbRateLimit {
     }
 
     const val PLAYBACK_QUIET_MS = 60_000L
+    /** A depth clamp with no new hit for this long is left over from an earlier title or a server that calmed down. */
+    const val STALE_CLAMP_MS = 10 * 60_000L
+
+    /** Playback's depth clamp is [latched] and not stale. A clamp without a hit time counts as current. */
+    fun playbackClamped(latched: Boolean, lastHitAtMs: Long, nowMs: Long): Boolean =
+        latched && (lastHitAtMs <= 0L || nowMs - lastHitAtMs < STALE_CLAMP_MS)
+
+    /** [playbackClamped] for the playback running now. */
+    fun playbackClampedNow(): Boolean = playbackClamped(
+        ParallelRangeDataSource.hudClampLatched, ParallelRangeDataSource.hudClampLastHitAtMs, SystemClock.uptimeMillis(),
+    )
 
     /**
      * Thumbnails wait for playback's own rate limit: [PLAYBACK_QUIET_MS] after its last hit, and while its depth clamp
-     * is [latched]. Only playback's reads clear the latch, so a paused or held player (or none) is not waited on for it.
+     * is [latched] (see [playbackClamped]). Only playback's reads clear the latch, so a paused or held player (or none)
+     * is not waited on for it.
      */
     fun waitsForPlayback(latched: Boolean, lastHitAtMs: Long, nowMs: Long, playing: Boolean, playerClosed: Boolean): Boolean {
         if (playerClosed) return false
         if (lastHitAtMs > 0L && nowMs - lastHitAtMs < PLAYBACK_QUIET_MS) return true
-        return latched && playing
+        return playing && playbackClamped(latched, lastHitAtMs, nowMs)
     }
 }
 

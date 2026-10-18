@@ -15,7 +15,7 @@ class MediaServerThumbsTest {
 
     @Test
     fun aServerOnTheHomeNetworkKeepsTheFullPass() {
-        assertFalse(MediaServerThumbs.onDemandOnly(true, "http://192.168.10.20:8096/Videos/abc/stream?static=true"))
+        assertFalse(MediaServerThumbs.onDemandOnly(true, "http://192.168.1.20:8096/Videos/abc/stream?static=true"))
         assertFalse(MediaServerThumbs.onDemandOnly(true, "http://10.0.0.5:8096/Videos/abc/stream"))
         assertFalse(MediaServerThumbs.onDemandOnly(true, "http://172.20.1.2:8096/Videos/abc/stream"))
         assertFalse(MediaServerThumbs.onDemandOnly(true, "http://jellyfin.local:8096/Videos/abc/stream"))
@@ -30,7 +30,7 @@ class MediaServerThumbsTest {
     fun otherSourcesAreNeverOnDemand() {
         assertFalse(MediaServerThumbs.onDemandOnly(false, "https://cdn.debrid.example.com/dl/Film.2160p.mkv"))
         assertFalse(MediaServerThumbs.onDemandOnly(false, "https://aio.example.com/api/v1/usenet/stream/abc/file.mkv"))
-        assertFalse(MediaServerThumbs.onDemandOnly(false, "http://192.168.10.240:3100/x.mkv"))
+        assertFalse(MediaServerThumbs.onDemandOnly(false, "http://192.168.1.10:3100/x.mkv"))
     }
 
     @Test
@@ -47,12 +47,12 @@ class MediaServerThumbsTest {
 
     @Test
     fun copiesComeOnlyFromAServerOnTheHomeNetwork() {
-        assertTrue(MediaServerThumbs.copyAllowed("http://192.168.10.20:8096"))
+        assertTrue(MediaServerThumbs.copyAllowed("http://192.168.1.20:8096"))
         assertTrue(MediaServerThumbs.copyAllowed("https://nas.tail1234.ts.net"))
         assertFalse(MediaServerThumbs.copyAllowed("https://silo.friend.example.com"))
         assertFalse(MediaServerThumbs.copyAllowed("https://203.0.113.7:8920"))
         assertFalse(MediaServerThumbs.copyAllowed(null))
-        assertTrue(MediaServerThumbs.onHomeNetwork("http://192.168.10.20:8096/Videos/abc/stream?static=true&api_key=x"))
+        assertTrue(MediaServerThumbs.onHomeNetwork("http://192.168.1.20:8096/Videos/abc/stream?static=true&api_key=x"))
         assertFalse(MediaServerThumbs.onHomeNetwork("https://media.example.com/Videos/abc/stream?static=true&api_key=x"))
     }
 

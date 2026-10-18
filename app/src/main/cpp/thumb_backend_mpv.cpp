@@ -23,8 +23,6 @@ extern "C" {
 }
 #include "thumb_backend.h"
 
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, "ThumbDecode", __VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ThumbDecode", __VA_ARGS__)
 #define BACKEND_NAME "mpv"
 
 static_assert(LIBAVCODEC_VERSION_MAJOR == 62, "mpv backend must build against the a7522f3fef headers");
@@ -40,7 +38,7 @@ bool load_symbols(Api &api, char *version, size_t n) {
     for (int i = 0; i < kCount; i++) {
         handles[i] = dlopen(kLibs[i], RTLD_NOW | RTLD_LOCAL);
         if (!handles[i]) {
-            LOGI("mpv: %s not available (%s)", kLibs[i], dlerror());
+            thumb::note_failure("mpv: %s not available (%s)", kLibs[i], dlerror());
             return false;
         }
     }
@@ -49,13 +47,13 @@ bool load_symbols(Api &api, char *version, size_t n) {
     auto util_v = reinterpret_cast<VersionFn>(find_symbol(handles, kCount, "avutil_version"));
     auto sws_v = reinterpret_cast<VersionFn>(find_symbol(handles, kCount, "swscale_version"));
     if (!codec_v || !util_v || !sws_v) {
-        LOGW("mpv: version symbols missing");
+        thumb::note_failure("mpv: version symbols missing");
         return false;
     }
     const unsigned cv = codec_v(), uv = util_v(), sv = sws_v();
     if ((cv >> 16) != LIBAVCODEC_VERSION_MAJOR || (uv >> 16) != LIBAVUTIL_VERSION_MAJOR ||
         (sv >> 16) != LIBSWSCALE_VERSION_MAJOR) {
-        LOGW("mpv: FFmpeg majors avcodec %u / avutil %u / swscale %u differ from the headers (%d/%d/%d); "
+        thumb::note_failure("mpv: FFmpeg majors avcodec %u / avutil %u / swscale %u differ from the headers (%d/%d/%d); "
              "update third_party/ffmpeg-* to use it", cv >> 16, uv >> 16, sv >> 16,
              LIBAVCODEC_VERSION_MAJOR, LIBAVUTIL_VERSION_MAJOR, LIBSWSCALE_VERSION_MAJOR);
         return false;

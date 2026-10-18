@@ -37,8 +37,11 @@ struct Backend {
     void (*release)(void *h);
 };
 
-/** Both return nullptr when the backend cannot be loaded. */
+/** Both return nullptr when the backend cannot be loaded; a later call tries to load it again. */
 const Backend *backend_mpv();
 const Backend *backend_ff60();
+
+/** Logs why a backend could not be loaded and keeps the text for nativeLastError (thumb_shim.cpp). */
+void note_failure(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 }  // namespace thumb

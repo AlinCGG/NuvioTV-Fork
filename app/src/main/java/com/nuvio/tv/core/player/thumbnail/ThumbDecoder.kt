@@ -1,6 +1,7 @@
 package com.nuvio.tv.core.player.thumbnail
 
 import android.graphics.Bitmap
+import android.os.SystemClock
 import android.util.Log
 import java.io.Closeable
 import java.nio.ByteBuffer
@@ -22,21 +23,59 @@ internal object ThumbNative {
     const val INFO_DOVI_IPT = 11
     const val INFO_COUNT = 12
 
+    private val retry = NativeLoadBackoff()
+    @Volatile private var libraryLoaded = false
+    @Volatile private var ready = false
+    @Volatile private var backendName: String? = null
+    @Volatile private var lastError: String? = null
+
+    /** True once the library and an in-APK FFmpeg are loaded. Never loads anything itself, see [load]. */
+    val available: Boolean get() = ready
+
     /**
-     * False when the library or an in-APK FFmpeg cannot be loaded, thumbnails then stay off. The native side prefers
-     * MPV's FFmpeg (~2x faster at 4K) and falls back to the FFmpeg 6.0 in libmediainfo.so.
+     * Loads the library and an FFmpeg backend unless already done. A failed load is tried again by a later session,
+     * after [NativeLoadBackoff]'s wait. The native side prefers MPV's FFmpeg (~2x faster at 4K) and falls back to the
+     * FFmpeg 6.0 in libmediainfo.so. Takes 150-440 ms the first time: never on the main thread.
      */
-    val available: Boolean by lazy {
-        try {
-            System.loadLibrary("nuviothumb")
-            nativeInit().also { ok -> if (ok) Log.i("ThumbDecode", "decoder backend: ${nativeBackend()}") }
-        } catch (t: Throwable) {
-            Log.w("ThumbDecode", "native decoder unavailable: ${t.javaClass.simpleName}: ${t.message}")
-            false
+    fun load(): Boolean {
+        if (ready) return true
+        synchronized(this) {
+            if (ready) return true
+            val now = SystemClock.elapsedRealtime()
+            if (!retry.mayTry(now)) return false
+            try {
+                if (!libraryLoaded) {
+                    System.loadLibrary("nuviothumb")
+                    libraryLoaded = true
+                }
+                if (nativeInit()) {
+                    val backend = nativeBackend()
+                    backendName = backend.substringBefore(' ')
+                    ready = true
+                    Log.i("ThumbDecode", "decoder backend: $backend" +
+                        if (retry.failures > 0) " (after ${retry.failures} failed tries)" else "")
+                    return true
+                }
+                lastError = runCatching { nativeLastError() }.getOrNull()?.takeIf { it.isNotBlank() } ?: "no FFmpeg backend"
+            } catch (t: Throwable) {
+                lastError = "${t.javaClass.simpleName}: ${t.message}"
+            }
+            retry.failed(now)
+            Log.w("ThumbDecode", "native decoder unavailable (try ${retry.failures}): $lastError; " +
+                "tried again in ${retry.waitMs(now) / 1000} s at the earliest")
+            return false
         }
     }
 
+    /** For the log: the backend in use, or why none is. */
+    fun state(): String = when {
+        ready -> "ok ${backendName.orEmpty()}".trim()
+        lastError == null -> "not loaded yet"
+        else -> "unavailable after ${retry.failures} tries ($lastError)"
+    }
+
     @JvmStatic external fun nativeInit(): Boolean
+    @JvmStatic external fun nativeLastError(): String
     @JvmStatic external fun nativeBackend(): String
     /** [decoder]: FFmpeg decoder name. width/height: coded size. */
     @JvmStatic external fun nativeOpen(decoder: String, extradata: ByteArray?, width: Int, height: Int, threads: Int): Long
@@ -51,6 +90,27 @@ internal object ThumbNative {
     @JvmStatic external fun nativeRelease(handle: Long)
     /** Returns freed allocator pages to the system (mallopt M_PURGE). */
     @JvmStatic external fun nativePurge()
+}
+
+/** When a failed native load may be tried again: [FIRST_WAIT_MS] after the first failure, doubling, at most [MAX_WAIT_MS]. */
+internal class NativeLoadBackoff {
+    companion object {
+        const val FIRST_WAIT_MS = 60_000L
+        const val MAX_WAIT_MS = 15 * 60_000L
+    }
+
+    @Volatile var failures = 0
+        private set
+    private var nextTryAtMs = Long.MIN_VALUE
+
+    fun mayTry(nowMs: Long): Boolean = nowMs >= nextTryAtMs
+
+    fun failed(nowMs: Long) {
+        failures++
+        nextTryAtMs = nowMs + (FIRST_WAIT_MS shl (failures - 1).coerceAtMost(10)).coerceAtMost(MAX_WAIT_MS)
+    }
+
+    fun waitMs(nowMs: Long): Long = if (failures == 0) 0L else (nextTryAtMs - nowMs).coerceAtLeast(0L)
 }
 
 internal class DecodedFrame(
@@ -200,6 +260,9 @@ internal class DecoderLane {
     private var trimWhenFree = false
 
     val inUse: Boolean get() = synchronized(this) { busy }
+
+    /** A close asked for during a decode, done once it ends. */
+    val closePending: Boolean get() = synchronized(this) { closeWhenFree }
 
     fun acquire() {
         synchronized(this) { busy = true }

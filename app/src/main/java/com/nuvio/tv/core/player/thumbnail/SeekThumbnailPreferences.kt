@@ -22,7 +22,9 @@ import java.io.IOException
 private val Context.seekThumbnailDataStore by preferencesDataStore(
     name = "seek_thumbnails",
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
-    produceMigrations = { listOf(SeekThumbnailPreferences.copyDefaultMigration) }
+    produceMigrations = {
+        listOf(SeekThumbnailPreferences.copyDefaultMigration, SeekThumbnailPreferences.beforePlayDefaultMigration)
+    }
 )
 
 /** When 4K thumbnails are made is not a user choice; the engine decides per device and free memory. */
@@ -40,11 +42,21 @@ enum class ThumbPrepareMode(@StringRes val label: Int, @StringRes val descriptio
     ALWAYS(R.string.seek_thumbnails_prepare_on, R.string.seek_thumbnails_prepare_on_desc),
 }
 
+/** How much of a title the generating screen covers before it starts; the engine picks the spacing per title. */
+enum class ThumbsBeforePlay(@StringRes val label: Int, @StringRes val description: Int, val gridTimes: Int) {
+    FULL(R.string.seek_thumbnails_before_play_full, R.string.seek_thumbnails_before_play_full_desc, 1),
+    FASTER(R.string.seek_thumbnails_before_play_faster, R.string.seek_thumbnails_before_play_faster_desc, 2),
+    FASTEST(R.string.seek_thumbnails_before_play_fastest, R.string.seek_thumbnails_before_play_fastest_desc, 4),
+}
+
 object SeekThumbnailPreferences {
     private val modeKey = stringPreferencesKey("seek_thumbnails_mode")
     // Older keys, read once to migrate.
     private val legacyEnabledKey = booleanPreferencesKey("seek_thumbnails_enabled")
     private val legacyFourKKey = stringPreferencesKey("seek_thumbnails_4k_mode")
+
+    /** The install chose a thumbnail mode at some point (the current key or the older switch). */
+    internal fun hasChosenMode(prefs: Preferences): Boolean = modeKey in prefs || legacyEnabledKey in prefs
 
     /**
      * Thumbnails start on only on boxes with 4 GB of RAM or more. Android reports less than the nominal size, 4 GB boxes
@@ -121,8 +133,7 @@ object SeekThumbnailPreferences {
 
         override suspend fun migrate(currentData: Preferences): Preferences {
             if (copyKey in currentData) return currentData
-            val chosen = modeKey in currentData || legacyEnabledKey in currentData
-            return currentData.toMutablePreferences().apply { this[copyKey] = chosen }.toPreferences()
+            return currentData.toMutablePreferences().apply { this[copyKey] = hasChosenMode(currentData) }.toPreferences()
         }
 
         override suspend fun cleanUp() = Unit
@@ -137,6 +148,39 @@ object SeekThumbnailPreferences {
 
     suspend fun setCopy(context: Context, on: Boolean) {
         context.applicationContext.seekThumbnailDataStore.edit { prefs -> prefs[copyKey] = on }
+    }
+
+    private val beforePlayKey = stringPreferencesKey("seek_thumbnails_before_play")
+
+    /**
+     * Stores the before-play choice once: Faster for a store with no thumbnail choice yet, Full (the old coverage) for
+     * one that has a choice. After that the key is always present.
+     */
+    internal val beforePlayDefaultMigration = object : DataMigration<Preferences> {
+        override suspend fun shouldMigrate(currentData: Preferences): Boolean = beforePlayKey !in currentData
+
+        override suspend fun migrate(currentData: Preferences): Preferences {
+            if (beforePlayKey in currentData) return currentData
+            val choice = if (hasChosenMode(currentData)) ThumbsBeforePlay.FULL else ThumbsBeforePlay.FASTER
+            return currentData.toMutablePreferences().apply { this[beforePlayKey] = choice.name }.toPreferences()
+        }
+
+        override suspend fun cleanUp() = Unit
+    }
+
+    internal fun beforePlayOf(prefs: Preferences): ThumbsBeforePlay =
+        prefs[beforePlayKey]?.let { v -> ThumbsBeforePlay.entries.firstOrNull { it.name == v } } ?: ThumbsBeforePlay.FASTER
+
+    internal fun beforePlayFlow(data: Flow<Preferences>): Flow<ThumbsBeforePlay> =
+        data.readOr(ThumbsBeforePlay.FASTER) { beforePlayOf(it) }
+
+    fun beforePlayFlow(context: Context): Flow<ThumbsBeforePlay> =
+        beforePlayFlow(context.applicationContext.seekThumbnailDataStore.data)
+
+    suspend fun beforePlay(context: Context): ThumbsBeforePlay = beforePlayFlow(context).first()
+
+    suspend fun setBeforePlay(context: Context, choice: ThumbsBeforePlay) {
+        context.applicationContext.seekThumbnailDataStore.edit { prefs -> prefs[beforePlayKey] = choice.name }
     }
 
     suspend fun setMode(context: Context, mode: SeekThumbMode) {

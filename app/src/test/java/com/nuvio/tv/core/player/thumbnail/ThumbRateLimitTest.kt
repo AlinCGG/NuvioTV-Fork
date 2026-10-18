@@ -48,6 +48,17 @@ class ThumbRateLimitTest {
         assertFalse(waits(latched = true, sinceHitMs = 1_000L, playing = false, closed = true))
     }
 
+    @Test fun aClampWithNoHitForTenMinutesIsNotWaitedOn() {
+        val t = 5_000_000L
+        assertTrue(ThumbRateLimit.playbackClamped(latched = true, lastHitAtMs = t - 9 * 60_000L, nowMs = t))
+        assertFalse(ThumbRateLimit.playbackClamped(latched = true, lastHitAtMs = t - 10 * 60_000L, nowMs = t))
+        assertFalse(ThumbRateLimit.playbackClamped(latched = false, lastHitAtMs = t - 1_000L, nowMs = t))
+        assertTrue(ThumbRateLimit.playbackClamped(latched = true, lastHitAtMs = 0L, nowMs = t))
+
+        assertTrue(ThumbRateLimit.waitsForPlayback(true, t - 9 * 60_000L, t, playing = true, playerClosed = false))
+        assertFalse(ThumbRateLimit.waitsForPlayback(true, t - 11 * 60_000L, t, playing = true, playerClosed = false))
+    }
+
     @Test fun noUsableRetryAfterIsNull() {
         assertNull(ThumbRateLimit.retryAfterMs(null, now))
         assertNull(ThumbRateLimit.retryAfterMs("", now))

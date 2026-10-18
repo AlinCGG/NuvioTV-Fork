@@ -18,7 +18,6 @@ struct Api {
 };
 
 Api g_api;
-bool g_tried = false;
 bool g_ready = false;
 char g_version[64] = "";
 pthread_mutex_t g_init_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -37,7 +36,7 @@ bool resolve_all(Api &api, void *const *handles, int count) {
     bool ok = true;
 #define RESOLVE(name) \
     api.name = reinterpret_cast<decltype(&::name)>(find_symbol(handles, count, #name)); \
-    if (!api.name) { LOGW("%s: missing symbol %s", BACKEND_NAME, #name); ok = false; }
+    if (!api.name) { thumb::note_failure("%s: missing symbol %s", BACKEND_NAME, #name); ok = false; }
     FF_FUNCS(RESOLVE)
 #undef RESOLVE
     return ok;
@@ -45,8 +44,7 @@ bool resolve_all(Api &api, void *const *handles, int count) {
 
 bool ensure_loaded() {
     pthread_mutex_lock(&g_init_lock);
-    if (!g_tried) {
-        g_tried = true;
+    if (!g_ready) {
         g_ready = load_symbols(g_api, g_version, sizeof g_version);
         if (g_ready) g_api.av_log_set_level(AV_LOG_ERROR);
     }

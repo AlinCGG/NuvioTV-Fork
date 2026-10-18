@@ -126,7 +126,7 @@ internal object NextEpisodeThumbs {
 
     private suspend fun run(context: Context, source: ThumbSource, allow4K: Boolean, playerProvider: () -> ExoPlayer?) {
         val t0 = SystemClock.elapsedRealtime()
-        if (!withContext(Dispatchers.IO) { ThumbNative.available }) return
+        if (!withContext(Dispatchers.IO) { ThumbNative.load() }) return
         MemoryGovernor.init(context)
         withContext(Dispatchers.IO) { ConnectionLedger.app.attach(PrefsLedgerMemory(context)) }
         val rgb565 = runCatching { ImagePerformancePreferences(context).rgb565Enabled }.getOrDefault(true)
@@ -241,6 +241,11 @@ internal object NextEpisodeThumbs {
                     Log.i(TAG, "no connection free on the server - stopping")
                     break
                 } ?: continue
+                val late = MemoryGovernor.swapAllows(funded = false)
+                if (!late.allowed) {
+                    Log.i(TAG, "memory short after the fetch (${late.reason}) - stopping")
+                    break
+                }
                 val frame = atBackground { decoder.decode(au, idx.video, threads = 1) } ?: continue
                 if (idx.video.dolbyVision?.profile == 5 && !frame.colour.doviIpt) {
                     Log.i(TAG, "Dolby Vision 5 without decoder metadata - stopping")
@@ -275,7 +280,7 @@ internal object NextEpisodeThumbs {
                 delay(5_000L)
                 continue
             }
-            val playback429 = ParallelRangeDataSource.hudClampLatched ||
+            val playback429 = ThumbRateLimit.playbackClampedNow() ||
                 (ParallelRangeDataSource.hudClampLastHitAtMs > 0 &&
                     SystemClock.uptimeMillis() - ParallelRangeDataSource.hudClampLastHitAtMs < PLAYBACK_429_QUIET_MS)
             val ok = !playback429 && withContext(Dispatchers.Main) {

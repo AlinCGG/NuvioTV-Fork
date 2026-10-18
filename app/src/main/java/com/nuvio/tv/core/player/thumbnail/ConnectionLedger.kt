@@ -17,7 +17,6 @@ import kotlin.concurrent.withLock
 /** Which server or service counts a request's connections: TorBox counts per account, anything else per host. */
 internal object LedgerKey {
     const val TORBOX = "torbox"
-    private const val TORBOX_CONNECTIONS = 4
 
     fun of(url: String?): String? {
         val host = url?.let { RateLimitedHosts.hostOf(it) } ?: return null
@@ -27,9 +26,6 @@ internal object LedgerKey {
     /** TorBox links, and add-on links that resolve through TorBox (only their path shows it before the redirect). */
     private fun isTorBox(host: String, lower: String): Boolean =
         host.startsWith("tb-cdn.") || ".tb-cdn." in host || host.contains("torbox") || "/torbox/" in lower
-
-    /** Connections a service allows one user at once, playback's included. */
-    fun knownTotal(key: String): Int? = if (key == TORBOX) TORBOX_CONNECTIONS else null
 }
 
 /** How a server turned a request away. Only [TOO_MANY], or [UNAVAILABLE] twice in a row, may change a kept level. */
@@ -39,7 +35,7 @@ internal enum class Refusal { TOO_MANY, UNAVAILABLE, CONNECTION }
  * Thumbnail connections one server allows on top of playback's, kept as a level ([extra]) relative to playback. One
  * more after a run of clean fetches that used what they had while playback could spare it. A refusal soon after a step
  * up goes back to the level before it; a clear one keeps that level as the server's [cap], tried once more after
- * [RETEST_AFTER_MS]. Anything else only slows this session. With a known total (TorBox) playback's count comes off it.
+ * [RETEST_AFTER_MS]. Anything else only slows this session. With a known total playback's count comes off it.
  */
 internal class ConnectionBudget(
     private val knownTotal: Int?,
@@ -360,6 +356,15 @@ internal class ConnectionLedger(
         return lock.withLock { entries[key]?.let { it.playback + it.thumbs } ?: 0 }
     }
 
+    /** For the log: requests open on [url]'s server now, playback's and the thumbnails'. */
+    fun inFlightNote(url: String?): String {
+        val key = LedgerKey.of(url) ?: return "not counted"
+        return lock.withLock {
+            val e = entries[key]
+            "in use playback ${e?.playback ?: 0}, thumbnails ${e?.thumbs ?: 0}"
+        }
+    }
+
     /** Playback's request: counted at once, never waits. [stream]: a single open stream that may sit idle. */
     fun playback(url: String?, stream: Boolean = false): Slot? = runCatching {
         val key = LedgerKey.of(url)
@@ -403,7 +408,7 @@ internal class ConnectionLedger(
 
     private fun budgetOf(key: String, e: Entry): ConnectionBudget = e.budget ?: run {
         val wall = wallClock()
-        ConnectionBudget(LedgerKey.knownTotal(key), ConnectionMemory.decode(remembered[key], wall), wall)
+        ConnectionBudget(null, ConnectionMemory.decode(remembered[key], wall), wall)
     }.also { e.budget = it }
 
     private fun slotsLocked(key: String, e: Entry): Int {
@@ -411,7 +416,7 @@ internal class ConnectionLedger(
         val b = budgetOf(key, e)
         persist(key, b)
         val yielding = yielding(now)
-        val live = e.playback - if (yielding && key != LedgerKey.TORBOX) e.streams else 0
+        val live = e.playback - if (yielding) e.streams else 0
         return b.thumbSlots(playbackOf(e), live, yielding || now < quietUntilMs, yielding)
     }
 

@@ -101,4 +101,17 @@ class SeekGridTest {
         assertEquals(listOf(0, 3, 6, 9), order.take(4))
         assertEquals(((0 until 100 step 3) + (0 until 100 step 30) + (0 until 100 step 6)).toSet().size, order.size)
     }
+
+    /** Behind the generating screen on a quicker choice the grid sweeps come first, the window around the start after. */
+    @Test fun gridFirstPutsTheSweepsBeforeTheLocalWindow() {
+        val strides = listOf(30, 6, 3, 1)
+        val plain = SeekGrid.latticeOrder(720, strides, 0, 60, 120)
+        assertEquals(listOf(0, 1, 2), plain.take(3))
+        val gridFirst = SeekGrid.latticeOrder(720, strides, 0, 60, 120, gridFirst = 6)
+        assertEquals((0 until 720 step 30).toList(), gridFirst.take(24))
+        assertTrue(gridFirst.take(120).all { it % 6 == 0 })
+        assertEquals(1, gridFirst[120])
+        assertEquals(720, gridFirst.size)
+        assertEquals(plain.toSet(), gridFirst.toSet())
+    }
 }

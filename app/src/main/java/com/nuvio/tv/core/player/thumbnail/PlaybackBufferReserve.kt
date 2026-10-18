@@ -32,4 +32,7 @@ interface PlaybackBufferReserve {
 
     /** Generating screen: true while it is up (renewed, see [PlaybackYield]), false lets playback load again at once. */
     fun yieldLoading(on: Boolean)
+
+    /** True while the generating screen holds playback's loading (start buffer in, not set to play). */
+    val yieldHolding: Boolean
 }

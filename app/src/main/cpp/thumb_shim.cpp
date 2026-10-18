@@ -1,6 +1,6 @@
 /*
- * JNI side of the thumbnail keyframe decoder. Picks one FFmpeg backend per process (thumb_backend.h).
- * `setprop debug.nuvio.thumb.backend ff60` (or `mpv`) before app start forces the choice.
+ * JNI side of the thumbnail keyframe decoder. Picks one FFmpeg backend per process (thumb_backend.h); when none
+ * loads, the next nativeInit tries again. `setprop debug.nuvio.thumb.backend ff60` (or `mpv`) forces the choice.
  *
  * One handle = one decoder context, used from one thread at a time (the Kotlin side serialises).
  */
@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <sys/system_properties.h>
 #include <cerrno>
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 
@@ -23,19 +24,26 @@
 namespace {
 
 const thumb::Backend *g_backend = nullptr;
-bool g_chosen = false;
 pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
+char g_error[512] = "";
+pthread_mutex_t g_error_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void clear_failures() {
+    pthread_mutex_lock(&g_error_lock);
+    g_error[0] = '\0';
+    pthread_mutex_unlock(&g_error_lock);
+}
 
 const thumb::Backend *backend() {
     pthread_mutex_lock(&g_lock);
-    if (!g_chosen) {
-        g_chosen = true;
+    if (!g_backend) {
+        clear_failures();
         char forced[PROP_VALUE_MAX] = "";
         __system_property_get("debug.nuvio.thumb.backend", forced);
         if (strcmp(forced, "ff60") != 0) g_backend = thumb::backend_mpv();
         if (!g_backend && strcmp(forced, "mpv") != 0) g_backend = thumb::backend_ff60();
         if (g_backend) LOGI("backend=%s %s%s", g_backend->name, g_backend->version, forced[0] ? " (forced)" : "");
-        else LOGW("no FFmpeg backend available");
+        else thumb::note_failure("no FFmpeg backend available%s", forced[0] ? " (forced)" : "");
     }
     const thumb::Backend *b = g_backend;
     pthread_mutex_unlock(&g_lock);
@@ -49,11 +57,38 @@ struct JHandle {
 
 }  // namespace
 
+void thumb::note_failure(const char *fmt, ...) {
+    char line[256];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(line, sizeof line, fmt, ap);
+    va_end(ap);
+    LOGW("%s", line);
+    pthread_mutex_lock(&g_error_lock);
+    size_t used = strlen(g_error);
+    if (used > 0 && used + 2 < sizeof g_error) {
+        strcat(g_error, "; ");
+        used += 2;
+    }
+    if (used < sizeof g_error) snprintf(g_error + used, sizeof g_error - used, "%s", line);
+    pthread_mutex_unlock(&g_error_lock);
+}
+
 extern "C" {
 
 JNIEXPORT jboolean JNICALL
 Java_com_nuvio_tv_core_player_thumbnail_ThumbNative_nativeInit(JNIEnv *, jclass) {
     return backend() ? JNI_TRUE : JNI_FALSE;
+}
+
+/** What failed while loading the backends at the last attempt; "" when nothing did. */
+JNIEXPORT jstring JNICALL
+Java_com_nuvio_tv_core_player_thumbnail_ThumbNative_nativeLastError(JNIEnv *env, jclass) {
+    char s[sizeof g_error];
+    pthread_mutex_lock(&g_error_lock);
+    snprintf(s, sizeof s, "%s", g_error);
+    pthread_mutex_unlock(&g_error_lock);
+    return env->NewStringUTF(s);
 }
 
 /** "<name> <version>", "" when none. */

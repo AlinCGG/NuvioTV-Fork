@@ -131,7 +131,8 @@ private fun croppedPainter(shown: SeekThumbnails.Shown?): BitmapPainter? {
 
 /**
  * Thumbnails above the seek bar while a seek key is held: a strip once the title's coverage is stored, a single
- * picture until then. A tap shows nothing. The centre picture follows the glide's published position (a few
+ * picture until then. While paused, the picture of the last tap stays up, so the viewer can step back and forth
+ * and look. A tap during playback shows nothing. The centre picture follows the glide's published position (a few
  * times a second); the strip slides with the cursor every frame.
  */
 @Composable
@@ -143,8 +144,13 @@ fun SeekThumbnailOverlayHost(
     val timeline by viewModel.playbackTimeline.collectAsState()
     val tick by SeekThumbnails.tick
     val gliding = ScrubGlide.active
-    val seekPositionMs = uiState.previewThumbPositionMs
-        ?.takeIf { gliding && uiState.pendingPreviewSeekPosition != null }
+    val seekPositionMs = PauseOnTimeline.thumbnailPositionMs(
+        thumbPositionMs = uiState.previewThumbPositionMs,
+        pendingPositionMs = uiState.pendingPreviewSeekPosition,
+        gliding = gliding,
+        playing = uiState.isPlaying,
+        barShown = uiState.showControls || uiState.showSeekOverlay
+    )
     val durationMs = timeline.duration
     val restingMs = seekPositionMs ?: timeline.currentPosition
     val fraction by animateFloatAsState(
@@ -155,7 +161,7 @@ fun SeekThumbnailOverlayHost(
     if (seekPositionMs == null || durationMs <= 0L) return
 
     val stripSpacing = remember(tick) { SeekThumbnails.stripSpacingMs() }
-    if (stripSpacing != null) {
+    if (stripSpacing != null && gliding) {
         val aspect = SeekThumbnails.frameAspect() ?: (16f / 9f)
         // Re-spaced only when the speed crosses a step, and never back down while the glide stands still.
         val lastMultiple = remember { longArrayOf(1L) }
@@ -275,11 +281,20 @@ private fun SeekThumbnailStrip(
     }
 }
 
+/** True while a side panel, menu or the details overlay covers the screen the progress hint would sit on. */
+internal fun seekThumbnailHintCovered(state: PlayerUiState): Boolean =
+    state.showPauseOverlay || state.showSourcesPanel || state.showEpisodesPanel ||
+        state.showAudioOverlay || state.showSubtitleOverlay || state.showSubtitleStylePanel ||
+        state.showSubtitleTimingDialog || state.showSubtitleDelayOverlay || state.showSpeedDialog ||
+        state.showMoreDialog || state.showStreamInfoOverlay || state.showPartyPanel ||
+        state.postPlayMode != null
+
 /** While paused on a small box, shows how far a 4K title's thumbnails are. */
 @Composable
 fun SeekThumbnailProgressHint(
     uiState: PlayerUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    covered: Boolean = false
 ) {
     val tick by SeekThumbnails.tick
     val paused = !uiState.isPlaying && !uiState.isBuffering && uiState.pendingPreviewSeekPosition == null &&
@@ -300,6 +315,7 @@ fun SeekThumbnailProgressHint(
             onDispose { view.keepScreenOn = before }
         }
     }
+    if (covered || seekThumbnailHintCovered(uiState)) return
     val shape = RoundedCornerShape(NuvioTheme.radii.sm)
     AboveSeekBar(modifier, anchored = uiState.showControls, contentAlignment = Alignment.BottomEnd) {
         Box(

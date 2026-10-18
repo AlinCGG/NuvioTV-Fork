@@ -499,11 +499,14 @@ internal class CopyPass(
                             throw failure
                         }
                         val au = got.getOrNull() ?: continue@work
-                        // Fetched next to others: playback, memory and the other decoder are asked again before decoding.
-                        if (f.shared && !awaitReady(decoder, host)) {
+                        // Fetched next to others, or swap ran low meanwhile: playback, memory and the other decoder
+                        // are asked again before decoding.
+                        val swapLow = !MemoryGovernor.swapAllows(funded = false).allowed
+                        if ((f.shared || swapLow) && !awaitReady(decoder, host)) {
                             out = if (isRejected()) Outcome.REJECTED else Outcome.STOP
                             break@work
                         }
+                        if (swapLow && !MemoryGovernor.swapAllows(funded = false).allowed) continue@work
                         val kf = f.kf
                         val playing = lastPlaying
                         val frame = paced(playing) { atBackground { decoder.decode(au, idx.video, threads = 1) } }
@@ -661,7 +664,7 @@ internal class CopyPass(
                 }
                 if (newStall) quietUntil = at + QUIET_AFTER_STALL_MS
             }
-            val playback429 = ParallelRangeDataSource.hudClampLatched ||
+            val playback429 = ThumbRateLimit.playbackClampedNow() ||
                 (ParallelRangeDataSource.hudClampLastHitAtMs > 0 &&
                     SystemClock.uptimeMillis() - ParallelRangeDataSource.hudClampLastHitAtMs < PLAYBACK_429_QUIET_MS)
             var memory = false

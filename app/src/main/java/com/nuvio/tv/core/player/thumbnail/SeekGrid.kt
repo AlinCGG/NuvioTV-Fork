@@ -46,13 +46,24 @@ internal object SeekGrid {
 
     /**
      * Coverage-pass order: first the finest-stride slots around [anchorSlot] (the playback position), nearest first
-     * and ahead before behind, then the whole title coarse to fine ([strides]).
+     * and ahead before behind, then the whole title coarse to fine ([strides]). With [gridFirst] above 0 the sweeps
+     * down to that stride come before the slots around the anchor: the generating screen's grid first, the fine
+     * detail near the start once playback runs.
      */
-    fun latticeOrder(slotCount: Int, strides: List<Int>, anchorSlot: Int, beforeSlots: Int, afterSlots: Int): List<Int> {
+    fun latticeOrder(
+        slotCount: Int, strides: List<Int>, anchorSlot: Int, beforeSlots: Int, afterSlots: Int, gridFirst: Int = 0,
+    ): List<Int> {
         if (slotCount <= 0 || strides.isEmpty()) return emptyList()
         val fine = strides.last().coerceAtLeast(1)
         val seen = HashSet<Int>()
         val out = ArrayList<Int>()
+        fun sweep(stride: Int) {
+            var s = 0
+            while (s < slotCount) {
+                if (seen.add(s)) out += s
+                s += stride
+            }
+        }
         val anchor = anchorSlot.coerceIn(0, slotCount - 1)
         val first = maxOf(0, anchor - beforeSlots)
         val last = minOf(slotCount - 1, anchor + afterSlots)
@@ -63,14 +74,9 @@ internal object SeekGrid {
             sl += fine
         }
         local.sortWith(compareBy<Int> { kotlin.math.abs(it - anchor) }.thenBy { if (it >= anchor) 0 else 1 })
+        if (gridFirst > 0) for (stride in strides) if (stride >= gridFirst) sweep(stride)
         for (s in local) if (seen.add(s)) out += s
-        for (stride in strides) {
-            var s = 0
-            while (s < slotCount) {
-                if (seen.add(s)) out += s
-                s += stride
-            }
-        }
+        for (stride in strides) sweep(stride)
         return out
     }
 }

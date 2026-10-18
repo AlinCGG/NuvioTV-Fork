@@ -22,7 +22,6 @@ extern "C" {
 }
 #include "thumb_backend.h"
 
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, "ThumbDecode", __VA_ARGS__)
 #define BACKEND_NAME "ff60"
 
 static_assert(LIBAVCODEC_VERSION_MAJOR == 60, "ff60 backend must build against the n6.0 headers");
@@ -34,7 +33,7 @@ bool load_symbols(Api &api, char *version, size_t n) {
     // Soname lookup: returns the instance already loaded by MediaInfoBuilder, if any.
     void *h = dlopen("libmediainfo.so", RTLD_NOW | RTLD_LOCAL);
     if (!h) {
-        LOGW("ff60: dlopen libmediainfo.so failed: %s", dlerror());
+        thumb::note_failure("ff60: dlopen libmediainfo.so failed: %s", dlerror());
         return false;
     }
     if (!resolve_all(api, &h, 1)) return false;

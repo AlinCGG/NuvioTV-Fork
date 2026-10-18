@@ -27,7 +27,7 @@ class SeekThumbnailSkipTest {
         every { player.videoFormat } returns Format.Builder().setWidth(1280).setHeight(720).build()
         every { player.duration } returns 8_000L
         mockkObject(ThumbNative, MemoryGovernor)
-        every { ThumbNative.available } returns true
+        every { ThumbNative.load() } returns true
         every { MemoryGovernor.initForSession(any()) } just runs
     }
 
@@ -49,7 +49,7 @@ class SeekThumbnailSkipTest {
 
         assertEquals(1, asked)
         verify(exactly = 0) { MemoryGovernor.tierFor(any(), any()) }
-        verify(exactly = 0) { ThumbNative.available }
+        verify(exactly = 0) { ThumbNative.load() }
         verify(exactly = 0) { MemoryGovernor.initForSession(any()) }
         assertFalse(SeekThumbnails.pausesPlaybackWhileScrubbing())
     }

@@ -52,12 +52,23 @@ class ConnectionLedgerTest {
         }
     }
 
+    @Test fun inFlightNoteCountsPlaybackAndThumbnailsApart() {
+        val l = ledger()
+        assertEquals("in use playback 0, thumbnails 0", l.inFlightNote(jelly))
+        val p = l.playback(jelly)
+        val t = l.acquire(jelly, maxWaitMs = 0)
+        assertEquals("in use playback 1, thumbnails 1", l.inFlightNote(jelly))
+        t.close()
+        p?.close()
+        assertEquals("in use playback 0, thumbnails 0", l.inFlightNote(jelly))
+        assertEquals("not counted", l.inFlightNote(null))
+    }
+
     @Test fun torboxHostsShareOneKey() {
         assertEquals(LedgerKey.TORBOX, LedgerKey.of(tb))
         assertEquals(LedgerKey.TORBOX, LedgerKey.of(tb2))
         assertEquals(LedgerKey.TORBOX, LedgerKey.of("https://api.torbox.app/v1/api/torrents/requestdl?x=1"))
         assertEquals(LedgerKey.TORBOX, LedgerKey.of("https://torrentio.strem.fun/resolve/torbox/key/hash/1/file.mkv"))
-        assertEquals(4, LedgerKey.knownTotal(LedgerKey.TORBOX))
     }
 
     @Test fun otherServersAreKeyedByHostAndPort() {
@@ -66,7 +77,6 @@ class ConnectionLedgerTest {
         assertEquals("stremthru.example.xyz", LedgerKey.of("https://stremthru.example.xyz/v0/store/link/x"))
         assertEquals("notb-cdn.example.com", LedgerKey.of("https://notb-cdn.example.com/dl/abc"))
         assertEquals("cdn.example.com", LedgerKey.of("https://user:pw@CDN.Example.com/a?b#c"))
-        assertNull(LedgerKey.knownTotal("cdn.example.com"))
         assertNull(LedgerKey.of(null))
         assertNull(LedgerKey.of("not a url"))
     }
@@ -79,29 +89,62 @@ class ConnectionLedgerTest {
         assertEquals(0, l.inFlight(tb))
     }
 
-    @Test fun torboxThumbnailsGetWhatPlaybackLeavesOfFour() {
+    @Test fun torboxStartsOneAbovePlaybackAcrossAllItsHosts() {
         val l = ledger()
         l.notePlaybackConnections(2)
+        assertEquals(3, l.thumbnailCap(tb))
         val p1 = l.playback(tb)
         val p2 = l.playback(tb2)
-        val t1 = l.acquire(tb, maxWaitMs = 0)
-        val t2 = l.acquire(tb2, maxWaitMs = 0)
+        val t1 = l.acquire(tb2, maxWaitMs = 0)
         assertTrue(noSlot(l, tb))
+        assertEquals(3, l.inFlight(tb))
         p1?.close()
+        val t2 = l.acquire(tb, maxWaitMs = 0)
+        listOf(t1, t2).forEach { it.close() }
         p2?.close()
-        val t3 = l.acquire(tb, maxWaitMs = 0)
-        val t4 = l.acquire(tb, maxWaitMs = 0)
-        assertEquals(4, l.inFlight(tb))
-        listOf(t1, t2, t3, t4).forEach { it.close() }
     }
 
-    @Test fun torboxFullOfPlaybackStillLetsOneThroughWhilePaused() {
+    @Test fun torboxIsNotHeldToFourConnections() {
         val l = ledger()
-        l.notePlaybackConnections(4)
-        repeat(4) { l.playback(tb) }
+        l.notePlaybackConnections(6)
+        val playback = (1..6).map { l.playback(tb) }
+        val t = l.acquire(tb2, maxWaitMs = 0)
+        assertEquals(7, l.inFlight(tb))
         assertTrue(noSlot(l, tb))
-        l.notePlaybackState(healthy = true, quiet = true)
-        assertFalse(noSlot(l, tb))
+        t.close()
+        playback.forEach { it?.close() }
+    }
+
+    @Test fun torboxLearnsItsAllowanceFromCleanFetches() {
+        val l = ledger()
+        l.notePlaybackConnections(1)
+        l.notePlaybackState(healthy = true, quiet = false)
+        cleanFetches(l, tb)
+        assertEquals(3, l.thumbnailCap(tb2))
+    }
+
+    @Test fun torboxStepsBackWhenItSaysTooMany() {
+        val memory = FakeMemory()
+        val l = ledger()
+        l.attach(memory)
+        l.notePlaybackConnections(1)
+        l.notePlaybackState(healthy = true, quiet = false)
+        cleanFetches(l, tb)
+        assertEquals(3, l.thumbnailCap(tb))
+        val s = l.acquire(tb2, maxWaitMs = 0)
+        now += 100
+        s.failed(RateLimitedException(null))
+        s.close()
+        assertEquals(2, l.thumbnailCap(tb))
+        assertEquals(ConnectionBudget.Remembered(1, true, wallNow),
+            ConnectionMemory.decode(memory.saved[LedgerKey.TORBOX], wallNow))
+    }
+
+    @Test fun anOldTorBoxLevelOfNoneAboveStillGetsOne() {
+        val l = ledger()
+        l.attach(FakeMemory(mapOf(LedgerKey.TORBOX to "0,1,$wallNow")))
+        l.notePlaybackConnections(4)
+        assertEquals(5, l.thumbnailCap(tb))
     }
 
     @Test fun anUnknownServerStartsOneAbovePlayback() {
@@ -167,6 +210,7 @@ class ConnectionLedgerTest {
         val l = ledger()
         l.notePlaybackConnections(4)
         repeat(4) { l.playback(tb) }
+        l.acquire(tb, maxWaitMs = 0)
         try {
             l.acquire(tb, maxWaitMs = 60_000L) { true }
             fail("should not wait")
@@ -180,6 +224,7 @@ class ConnectionLedgerTest {
         val l = ConnectionLedger()
         l.notePlaybackConnections(4)
         val playback = (1..4).map { l.playback(tb) }
+        l.acquire(tb, maxWaitMs = 0)
         val got = AtomicReference<ConnectionLedger.Slot?>()
         val started = CountDownLatch(1)
         val done = CountDownLatch(1)
@@ -195,7 +240,7 @@ class ConnectionLedgerTest {
         playback[0]?.close()
         assertTrue(done.await(5, TimeUnit.SECONDS))
         assertNotNull(got.get())
-        assertEquals(4, l.inFlight(tb))
+        assertEquals(5, l.inFlight(tb))
     }
 
     @Test fun busyCleanFetchesWhilePlaybackIsHealthyStepUp() {
@@ -277,12 +322,13 @@ class ConnectionLedgerTest {
         cleanFetches(l, jelly)
         cleanFetches(l, tb)
         l.notePlayingUrl(tb)
-        val tbCap = l.thumbnailCap(tb)
+        assertEquals(3, l.thumbnailCap(tb))
         l.playbackTrouble(now + 1_000)
         assertEquals(3, l.thumbnailCap(jelly))
+        assertEquals(2, l.thumbnailCap(tb))
         l.playbackTrouble(now + 1_000, jelly)
         assertEquals(2, l.thumbnailCap(jelly))
-        assertEquals(tbCap, l.thumbnailCap(tb))
+        assertEquals(2, l.thumbnailCap(tb))
     }
 
     @Test fun troubleRightAfterTheYieldEndsIsIgnored() {
@@ -301,7 +347,7 @@ class ConnectionLedgerTest {
         assertEquals(2, l.thumbnailCap(jelly))
     }
 
-    @Test fun anIdleStreamDoesNotCountWhileYieldingExceptOnTorBox() {
+    @Test fun anIdleStreamDoesNotCountWhileYielding() {
         val l = ledger()
         l.notePlaybackConnections(1)
         val stream = l.playback(jelly, stream = true)
@@ -317,7 +363,7 @@ class ConnectionLedgerTest {
         l.notePlaybackConnections(3)
         val tbStream = l.playback(tb, stream = true)
         l.noteYield(true)
-        val held = (1..3).map { l.acquire(tb, maxWaitMs = 0) }
+        val held = (1..5).map { l.acquire(tb, maxWaitMs = 0) }
         assertTrue(noSlot(l, tb))
         held.forEach { it.close() }
         tbStream?.close()

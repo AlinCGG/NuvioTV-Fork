@@ -142,4 +142,88 @@ class ThumbMemoryStopTest {
         assertFalse(stop.check(50_000L) { "short" })
         assertTrue(stop.check(55_000L) { "short" })
     }
+
+    private fun decode(availMb: Long, swapFreeMb: Long, chargeMb: Long = 80, funded: Boolean = false,
+                       swapTotalMb: Long = 512, lowRam: Boolean = true) =
+        MemoryGovernor.decodeVerdict(MemoryGovernor.Meminfo(availMb, swapTotalMb, swapFreeMb), chargeMb, funded, lowRam)
+
+    @Test
+    fun fundedDecodesStopWhenSwapIsNearlyGone() {
+        assertFalse(decode(availMb = 300, swapFreeMb = 0, funded = true).allowed)
+        assertFalse(decode(availMb = 300, swapFreeMb = 47, chargeMb = 0, funded = true).allowed)
+        assertTrue(decode(availMb = 300, swapFreeMb = 48, funded = true).allowed)
+        assertTrue(decode(availMb = 300, swapFreeMb = 48, funded = true).reason.endsWith("funded"))
+    }
+
+    @Test
+    fun unfundedDecodesKeepTheirSwapFloor() {
+        assertFalse(decode(availMb = 400, swapFreeMb = 63).allowed)
+        assertTrue(decode(availMb = 400, swapFreeMb = 64).allowed)
+    }
+
+    @Test
+    fun aBoxWithoutSwapIsNotHeldBackBySwap() {
+        assertTrue(decode(availMb = 300, swapFreeMb = 0, swapTotalMb = 0, funded = true).allowed)
+        assertTrue(decode(availMb = 300, swapFreeMb = 0, swapTotalMb = 0).allowed)
+    }
+
+    @Test
+    fun memoryFloorsAreUnchanged() {
+        assertTrue(decode(availMb = 180, swapFreeMb = 140, funded = true).allowed)
+        assertFalse(decode(availMb = 179, swapFreeMb = 140, funded = true).allowed)
+        assertTrue(decode(availMb = 280, swapFreeMb = 140).allowed)
+        assertFalse(decode(availMb = 279, swapFreeMb = 140).allowed)
+        assertTrue(decode(availMb = 230, swapFreeMb = 140, funded = true, lowRam = false).allowed)
+        assertFalse(decode(availMb = 379, swapFreeMb = 140, lowRam = false).allowed)
+    }
+
+    @Test
+    fun aRoomyBoxDecodesAsBefore() {
+        assertTrue(decode(availMb = 1_500, swapFreeMb = 1_200, lowRam = false).allowed)
+        assertTrue(decode(availMb = 1_500, swapFreeMb = 1_200, funded = true, lowRam = false).allowed)
+    }
+
+    private fun funded(tier: DecodeTier = DecodeTier.SW_UP_TO_1080P, screenHolds: Boolean = false,
+                       lowRam: Boolean = false, busy: Int = 0, reserve: Boolean = false, natural: Boolean = false) =
+        MemoryGovernor.fundedDecode(busy, tier, reserve, natural, screenHolds, lowRam)
+
+    @Test
+    fun hdOnTheGeneratingScreenUsesTheFundedFloor() {
+        assertTrue(funded(screenHolds = true))
+        // 3 GB box with a full buffer: 1080p decode, cold decoder.
+        assertFalse(decode(availMb = 320, swapFreeMb = 140, chargeMb = 35, lowRam = false).allowed)
+        assertTrue(decode(availMb = 320, swapFreeMb = 140, chargeMb = 35, funded = funded(screenHolds = true),
+            lowRam = false).allowed)
+        val f = funded(screenHolds = true)
+        assertTrue(decode(availMb = 185, swapFreeMb = 140, chargeMb = 35, funded = f, lowRam = false).allowed)
+        assertFalse(decode(availMb = 184, swapFreeMb = 140, chargeMb = 35, funded = f, lowRam = false).allowed)
+    }
+
+    @Test
+    fun hdOnTheGeneratingScreenStillStopsWhenSwapIsNearlyGone() {
+        val f = funded(screenHolds = true)
+        assertFalse(decode(availMb = 600, swapFreeMb = 47, chargeMb = 35, funded = f, lowRam = false).allowed)
+        assertTrue(decode(availMb = 600, swapFreeMb = 48, chargeMb = 35, funded = f, lowRam = false).allowed)
+    }
+
+    @Test
+    fun hdDuringPlaybackIsNotFunded() {
+        assertFalse(funded(screenHolds = false))
+        assertFalse(decode(availMb = 334, swapFreeMb = 140, chargeMb = 35, funded = funded(), lowRam = false).allowed)
+    }
+
+    @Test
+    fun onlyTheFirstLaneIsFundedOnTheGeneratingScreen() {
+        assertFalse(funded(screenHolds = true, busy = 1))
+    }
+
+    @Test
+    fun lowRamBoxesAndFourKAreUnchangedOnTheGeneratingScreen() {
+        assertFalse(funded(screenHolds = true, lowRam = true))
+        assertFalse(funded(tier = DecodeTier.SW_4K, screenHolds = true))
+        assertFalse(funded(tier = DecodeTier.SW_4K, screenHolds = true, lowRam = true))
+        assertTrue(funded(tier = DecodeTier.SW_4K, reserve = true, lowRam = true))
+        assertTrue(funded(tier = DecodeTier.SW_4K, natural = true))
+        assertFalse(funded(tier = DecodeTier.SW_4K, reserve = true, busy = 1))
+    }
 }
