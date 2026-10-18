@@ -51,4 +51,44 @@ class ArtworkMemoryCacheTest {
         assertEquals(0L, cache.size)
         assertTrue(cache.keys.isEmpty())
     }
+    @Test fun artFromOtherHostsLeavesMemoryAfterTheLimitSoTheNextLoadChecksAgain() {
+        var now = 0L
+        val cache = ArtworkMemoryCache(16L * 1024 * 1024, undatedLimitMs = 1_000, now = { now })
+        val addon = MemoryCache.Key("https://top-today.example/p/tt1.jpg_300x450_v0")
+        val tmdb = MemoryCache.Key("https://image.tmdb.org/t/p/w342/a.jpg_300x450_v0")
+        val local = MemoryCache.Key("profile-background-sunset-v1")
+        listOf(addon, tmdb, local).forEach { cache[it] = image(200_000) }
+        now = 999
+        assertNotNull(cache[addon])
+        now = 1_000
+        assertNull(cache[addon])
+        assertFalse(addon in cache.keys)
+        assertNotNull(cache[tmdb])
+        assertNotNull(cache[local])
+        cache[addon] = image(200_000)
+        now = 1_500
+        assertNotNull(cache[addon])
+        val hero = MemoryCache.Key("home-hero:https://top-today.example/b.jpg:1920x1080")
+        cache[hero] = image(1920L * 1080 * 4)
+        now = 2_499
+        assertNotNull(cache[hero])
+        now = 2_500
+        assertNull(cache[hero])
+    }
+
+    @Test fun localPicturesStayInMemory() {
+        var now = 0L
+        val cache = ArtworkMemoryCache(16L * 1024 * 1024, undatedLimitMs = 1_000, now = { now })
+        val key = MemoryCache.Key("content://media/external/images/7")
+        cache[key] = image(200_000)
+        now = 10_000
+        assertNotNull(cache[key])
+    }
+
+    @Test fun storedTimeKeepsCoilExtras() {
+        val cache = ArtworkMemoryCache(16L * 1024 * 1024, now = { 0L })
+        val key = MemoryCache.Key("https://addon.example/p.jpg")
+        cache[key] = MemoryCache.Value(image(1_000).image, mapOf("coil#is_sampled" to true))
+        assertEquals(true, cache[key]!!.extras["coil#is_sampled"])
+    }
 }

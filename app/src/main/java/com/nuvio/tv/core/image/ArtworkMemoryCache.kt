@@ -5,7 +5,11 @@ import coil3.memory.MemoryCache
 /** Keep full-size heroes from evicting hundreds of small posters during a long browse.
  * Both LRUs share the existing total budget; no extra bitmap references are retained here.
  */
-class ArtworkMemoryCache(bytes: Long) : MemoryCache {
+class ArtworkMemoryCache(
+    bytes: Long,
+    private val undatedLimitMs: Long = MIN_IMAGE_FRESHNESS_MS,
+    private val now: () -> Long = { android.os.SystemClock.elapsedRealtime() },
+) : MemoryCache {
     private val lock = Any()
     private val small = MemoryCache.Builder().maxSizeBytes(bytes - largeBudget(bytes)).build()
     private val large = MemoryCache.Builder().maxSizeBytes(largeBudget(bytes)).build()
@@ -21,16 +25,30 @@ class ArtworkMemoryCache(bytes: Long) : MemoryCache {
     override val size: Long get() = synchronized(lock) { small.size + large.size }
     override val keys: Set<MemoryCache.Key> get() = synchronized(lock) { small.keys + large.keys }
     override fun get(key: MemoryCache.Key): MemoryCache.Value? = synchronized(lock) {
-        small[key] ?: large[key]
+        val value = small[key] ?: large[key] ?: return@synchronized null
+        val storedAt = value.extras[STORED_AT] as? Long
+        if (storedAt != null && now() - storedAt >= undatedLimitMs) {
+            small.remove(key)
+            large.remove(key)
+            null
+        } else {
+            value
+        }
     }
     override fun set(key: MemoryCache.Key, value: MemoryCache.Value) = synchronized(lock) {
+        // Art from hosts that may change it under the same address goes back to the disk rules after a while.
+        val entry = if (imageHost(key.key) != null && !isImmutableArtworkUrl(key.key)) {
+            MemoryCache.Value(value.image, value.extras + (STORED_AT to now()))
+        } else {
+            value
+        }
         // Remove the other variant if Coil upgrades the image behind a common URL key.
-        if (value.image.size <= 1024 * 1024) {
+        if (entry.image.size <= 1024 * 1024) {
             large.remove(key)
-            small[key] = value
+            small[key] = entry
         } else {
             small.remove(key)
-            large[key] = value
+            large[key] = entry
         }
     }
     override fun remove(key: MemoryCache.Key): Boolean = synchronized(lock) {
@@ -45,6 +63,7 @@ class ArtworkMemoryCache(bytes: Long) : MemoryCache {
     override fun clear() = synchronized(lock) { small.clear(); large.clear() }
 
     private companion object {
+        const val STORED_AT = "nuvio#stored_at"
         // Retain one 1080p hero on smaller heaps without taking more than half
         // their budget. Larger heaps reserve three quarters for small artwork.
         fun largeBudget(total: Long) = maxOf(total / 4, minOf(8L * 1024 * 1024, total / 2))

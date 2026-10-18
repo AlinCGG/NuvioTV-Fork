@@ -5,6 +5,7 @@ import coil3.annotation.InternalCoilApi
 import coil3.disk.DiskCache
 import coil3.network.CacheNetworkResponse
 import coil3.network.CacheStrategy
+import coil3.network.NetworkHeaders
 import coil3.network.NetworkRequest
 import coil3.network.NetworkResponse
 import coil3.network.cachecontrol.CacheControlCacheStrategy
@@ -12,6 +13,61 @@ import coil3.request.Options
 import okio.FileSystem
 
 const val IMAGE_FRESHNESS_FLOOR_MS = 7L * 24 * 60 * 60 * 1000
+
+/** How long a picture from a host that sends no caching rule is shown without asking the server again. */
+const val UNDATED_IMAGE_FRESHNESS_MS = 12L * 60 * 60 * 1000
+
+/** Shortest time a saved picture is shown without asking the server, whatever the server's own rule says. */
+const val MIN_IMAGE_FRESHNESS_MS = 6L * 60 * 60 * 1000
+
+/** Artwork hosts trusted for a week without online checks. Subdomains count too. */
+internal val IMMUTABLE_ARTWORK_HOSTS = listOf(
+    "image.tmdb.org",
+    "metahub.space",
+    "assets.fanart.tv",
+    "artworks.thetvdb.com",
+    "m.media-amazon.com",
+)
+
+/** Host of a web address, or of a cache key that contains one. */
+internal fun imageHost(value: String): String? {
+    val scheme = value.indexOf("://").takeIf { it > 0 } ?: return null
+    if (!value.regionMatches(scheme - 4, "http", 0, 4, ignoreCase = true) &&
+        !value.regionMatches(scheme - 5, "https", 0, 5, ignoreCase = true)
+    ) return null
+    val start = scheme + 3
+    val authority = value.substring(start).takeWhile { it != '/' && it != '?' && it != '#' }
+    val host = authority.substringAfterLast('@').substringBefore(':').lowercase()
+    return host.takeIf { it.isNotEmpty() }
+}
+
+internal fun isImmutableArtworkUrl(url: String): Boolean {
+    val host = imageHost(url) ?: return false
+    return IMMUTABLE_ARTWORK_HOSTS.any { host == it || host.endsWith(".$it") }
+}
+
+/** True when the saved response carries its own freshness rule (max-age, no-cache, no-store or Expires). */
+internal fun serverSetsFreshness(headers: NetworkHeaders): Boolean {
+    val cacheControl = headers.getAll("Cache-Control").joinToString(",").lowercase()
+    return "max-age" in cacheControl || "no-cache" in cacheControl || "no-store" in cacheControl ||
+        headers["Expires"] != null
+}
+
+/**
+ * The guaranteed fresh time of a saved picture: a week for [IMMUTABLE_ARTWORK_HOSTS], [UNDATED_IMAGE_FRESHNESS_MS]
+ * for other hosts that send no caching rule, and [MIN_IMAGE_FRESHNESS_MS] for hosts whose own rule decides after that.
+ */
+internal fun freshnessFloorFor(
+    url: String,
+    saved: NetworkHeaders,
+    artworkFloorMs: Long,
+    undatedFloorMs: Long,
+    minimumFloorMs: Long,
+): Long = when {
+    isImmutableArtworkUrl(url) -> artworkFloorMs
+    !serverSetsFreshness(saved) -> undatedFloorMs
+    else -> minimumFloorMs
+}
 
 /** A saved copy younger than [floorMs] needs no online check; a server rule allowing longer still applies. */
 internal fun withinFreshnessFloor(responseMillis: Long, nowMillis: Long, floorMs: Long = IMAGE_FRESHNESS_FLOOR_MS): Boolean =
@@ -22,11 +78,13 @@ private fun revalidationRequested(cacheControl: String?): Boolean {
     return "no-cache" in value || "max-age=0" in value
 }
 
-/** Artwork changes arrive under a new URL, so a short server max-age only costs a round trip per poster. */
+/** Artwork hosts get a week without online checks; other hosts follow their own caching rules. */
 @OptIn(ExperimentalCoilApi::class)
 class FreshnessFloorCacheStrategy(
     private val delegate: CacheStrategy = CacheControlCacheStrategy(),
     private val floorMs: Long = IMAGE_FRESHNESS_FLOOR_MS,
+    private val undatedFloorMs: Long = UNDATED_IMAGE_FRESHNESS_MS,
+    private val minimumFloorMs: Long = MIN_IMAGE_FRESHNESS_MS,
     private val now: () -> Long = System::currentTimeMillis,
 ) : CacheStrategy {
     override suspend fun read(
@@ -34,7 +92,8 @@ class FreshnessFloorCacheStrategy(
         networkRequest: NetworkRequest,
         options: Options,
     ): CacheStrategy.ReadResult {
-        if (withinFreshnessFloor(cacheResponse.responseMillis, now(), floorMs) &&
+        val floor = freshnessFloorFor(networkRequest.url, cacheResponse.headers, floorMs, undatedFloorMs, minimumFloorMs)
+        if (withinFreshnessFloor(cacheResponse.responseMillis, now(), floor) &&
             !revalidationRequested(networkRequest.headers["Cache-Control"])
         ) {
             return CacheStrategy.ReadResult(cacheResponse)
