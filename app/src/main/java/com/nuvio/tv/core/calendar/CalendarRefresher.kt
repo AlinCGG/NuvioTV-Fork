@@ -2,12 +2,16 @@ package com.nuvio.tv.core.calendar
 
 import android.content.res.Resources
 import android.util.Log
+import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.player.ScreensaverController
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.tracking.TrackingProviderId
 import com.nuvio.tv.core.tracking.TrackingProviderRegistry
+import com.nuvio.tv.domain.repository.MetaRepository
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -21,6 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,12 +38,16 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class CalendarClock
 
-enum class CalendarRefreshReason { HOME_SETTLED, CALENDAR_OPENED, SETTINGS_CHANGED }
+enum class CalendarRefreshReason { HOME_SETTLED, CALENDAR_OPENED, SETTINGS_CHANGED, SOURCES_PENDING }
+
+/** Waits before a refresh is run again because a source was not ready; one per refresh that stays incomplete. */
+val CALENDAR_SOURCE_RETRIES: List<Duration> = listOf(Duration.ofSeconds(30), Duration.ofSeconds(60), Duration.ofSeconds(120))
 
 data class CalendarState(
     val profileId: Int? = null,
@@ -53,10 +62,17 @@ data class CalendarState(
     val watched: CalendarWatchedIndex? = null
 )
 
+/** Whether the app is on screen; the activity sets it. */
+@Singleton
+class CalendarAppVisibility @Inject constructor() {
+    val visible = MutableStateFlow(true)
+}
+
 /** What the refresher reads from the rest of the app. */
 interface CalendarRefreshInputs {
     val activeProfileId: StateFlow<Int>
     val playbackActive: StateFlow<Boolean>
+    val appVisible: StateFlow<Boolean>
     val settings: StateFlow<CalendarSettings?>
     suspend fun settings(profileId: Int): CalendarSettings
     suspend fun followed(profileId: Int): CalendarFollowedSnapshot
@@ -64,6 +80,10 @@ interface CalendarRefreshInputs {
     suspend fun traktCalendar(today: LocalDate): List<TraktCalendarItem>?
     suspend fun refreshConcurrency(): Int
     fun region(): String
+    fun zone(): ZoneId = ZoneId.systemDefault()
+
+    /** A title's backdrop and logo from its details; null when they could not be read. */
+    suspend fun fetchArt(type: String, ids: List<String>): CalendarArt? = null
 }
 
 @Singleton
@@ -73,27 +93,54 @@ class DefaultCalendarRefreshInputs @Inject constructor(
     private val traktCalendarClient: TraktCalendarClient,
     private val trackingProviders: TrackingProviderRegistry,
     private val deviceTier: CalendarDeviceTier,
+    private val zoneProvider: CalendarZoneProvider,
+    private val metaRepository: MetaRepository,
     profileManager: ProfileManager,
-    screensaverController: ScreensaverController
+    screensaverController: ScreensaverController,
+    appVisibility: CalendarAppVisibility
 ) : CalendarRefreshInputs {
     override val activeProfileId = profileManager.activeProfileId
     override val playbackActive = screensaverController.playbackActive
+    override val appVisible: StateFlow<Boolean> = appVisibility.visible
     override val settings = settingsStore.settings
     override suspend fun settings(profileId: Int) = settingsStore.current(profileId)
     override suspend fun followed(profileId: Int) = sourceReader.read(profileId)
     override fun traktSignedIn() = trackingProviders.isAuthenticated(TrackingProviderId.TRAKT)
     override suspend fun traktCalendar(today: LocalDate) = traktCalendarClient.myShows(today)
     override suspend fun refreshConcurrency() = deviceTier.refreshConcurrency()
+    override fun zone(): ZoneId = zoneProvider.zone()
+
+    override suspend fun fetchArt(type: String, ids: List<String>): CalendarArt? {
+        for (id in ids) {
+            val result = try {
+                withTimeoutOrNull(ART_FETCH_MS) {
+                    metaRepository.getMetaFromAllAddons(type, id).first { it !is NetworkResult.Loading }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
+            if (result is NetworkResult.Success) return CalendarArt(result.data.background, result.data.logo)
+        }
+        return null
+    }
 
     /** The box's own region, not the app language, for film release dates. */
     override fun region(): String =
         Resources.getSystem().configuration.locales[0]?.country?.takeIf { it.length == 2 } ?: "US"
+
+    private companion object {
+        const val ART_FETCH_MS = 6_000L
+    }
 }
 
 /**
  * Keeps the Calendar of the active profile. A refresh reads the followed titles from what the app already has, asks
  * the Trakt calendar when signed in, then refreshes only the titles that are due, 2 or 4 at a time, waiting while
  * something plays. Every finished title is kept, so a cancelled refresh carries on where it stopped next time.
+ * A request while a refresh runs is kept and runs once after it. When a source was not ready, the titles it gave last
+ * time are kept and the refresh runs again after [sourceRetries], at most that many times in a row.
  * Nothing is read before the first call.
  */
 @Singleton
@@ -102,7 +149,8 @@ class CalendarRefresher internal constructor(
     private val inputs: CalendarRefreshInputs,
     private val remote: CalendarRemoteSources,
     private val clock: Clock,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val sourceRetries: List<Duration> = CALENDAR_SOURCE_RETRIES
 ) {
     @Inject
     constructor(
@@ -119,7 +167,10 @@ class CalendarRefresher internal constructor(
     private val dataMutex = Mutex()
     private val jobLock = Any()
     private var job: Job? = null
+    private var jobTakesRequests = false
     private var runAgain: CalendarRefreshReason? = null
+    private var retry: Job? = null
+    private var retriesUsed = 0
 
     private var data = CalendarSnapshot()
     private var owner: Owner? = null
@@ -132,18 +183,51 @@ class CalendarRefresher internal constructor(
         ensureStarted()
         synchronized(jobLock) {
             val previous = job
-            if (previous?.isActive == true) {
-                if (reason == CalendarRefreshReason.SETTINGS_CHANGED) runAgain = reason
+            if (previous?.isActive == true && jobTakesRequests) {
+                if (runAgain == null || reason == CalendarRefreshReason.SETTINGS_CHANGED) runAgain = reason
                 return
             }
+            retry?.cancel()
+            retry = null
+            jobTakesRequests = true
             job = scope.launch(start = CoroutineStart.LAZY) {
                 previous?.join()
+                val me = currentCoroutineContext()[Job]
                 var next: CalendarRefreshReason? = reason
                 while (next != null) {
-                    runRefresh(next)
-                    next = synchronized(jobLock) { runAgain.also { runAgain = null } }
+                    val complete = runRefresh(next)
+                    next = synchronized(jobLock) {
+                        if (job !== me) return@synchronized null
+                        if (complete) retriesUsed = 0
+                        runAgain?.also { runAgain = null } ?: run {
+                            finishLocked(complete)
+                            null
+                        }
+                    }
                 }
             }.also { it.start() }
+        }
+    }
+
+    private fun finishLocked(complete: Boolean) {
+        jobTakesRequests = false
+        if (complete) return
+        val wait = sourceRetries.getOrNull(retriesUsed)
+        if (wait == null) {
+            Log.w(TAG, "sources still not ready after ${sourceRetries.size} tries; next refresh when the Calendar opens")
+            return
+        }
+        retriesUsed++
+        Log.i(TAG, "refresh again in ${wait.seconds} s ($retriesUsed of ${sourceRetries.size})")
+        retry = scope.launch {
+            delay(wait.toMillis())
+            combine(inputs.appVisible, inputs.playbackActive) { visible, playing -> visible && !playing }.first { it }
+            val self = currentCoroutineContext()[Job]
+            synchronized(jobLock) {
+                if (retry !== self) return@launch
+                retry = null
+                requestRefresh(CalendarRefreshReason.SOURCES_PENDING)
+            }
         }
     }
 
@@ -154,6 +238,9 @@ class CalendarRefresher internal constructor(
         synchronized(jobLock) {
             runAgain = null
             job?.cancel()
+            retry?.cancel()
+            retry = null
+            retriesUsed = 0
         }
     }
 
@@ -194,10 +281,12 @@ class CalendarRefresher internal constructor(
         }
     }
 
-    private suspend fun runRefresh(reason: CalendarRefreshReason) {
+    /** False when a source was not ready, so the refresh should run again once it may be. */
+    private suspend fun runRefresh(reason: CalendarRefreshReason): Boolean {
         val me = currentCoroutineContext()[Job]
         val current = ensureLoaded(inputs.activeProfileId.value)
         setRefreshing(current, me, refreshing = true, remaining = 0)
+        var complete = true
         try {
             val profileId = current.profileId
             val settings = inputs.settings(profileId)
@@ -206,12 +295,13 @@ class CalendarRefresher internal constructor(
             withOwner(current) {
                 watched = sources.watched
                 publishLocked()
-            } ?: return
+            } ?: return true
+            complete = sources.complete
 
             val traktSignedIn = inputs.traktSignedIn()
             val snapshot = dataMutex.withLock { data }
             val traktDue = now.toEpochMilli() - snapshot.traktCalendarFetchedAtMs >= CALENDAR_TRAKT_REFRESH.toMillis()
-            val traktItems = if (traktSignedIn && traktDue) {
+            val traktItems = if (traktSignedIn && traktDue && sources.traktWatchedLoaded) {
                 awaitNoPlayback()
                 inputs.traktCalendar(now.atZone(ZoneOffset.UTC).toLocalDate())
             } else {
@@ -230,11 +320,14 @@ class CalendarRefresher internal constructor(
                 bellOn = settings.bellOn,
                 removedFromContinueWatching = sources.removedFromContinueWatching
             )
-            val followed = buildCalendarFollowedTitles(sources.candidates + traktCandidates, rules, now)
-                .withCachedPosters(sources.cachedPosters)
+            val unread = if (traktItems != null) sources.unreadOrigins - CalendarOrigin.TRAKT_CALENDAR else sources.unreadOrigins
+            val carried = carriedCalendarCandidates(snapshot.titles, unread)
+            val result = followCalendarTitles(sources.candidates + traktCandidates + carried, rules, now)
+            val followed = result.titles.withCachedPosters(sources.cachedPosters)
 
             val due = withOwner(current) {
                 var records = applyAddonEntries(reconcileCalendarRecords(followed, data.titles), sources.addonEntries, now)
+                    .withCachedArt(sources.cachedArt)
                 records = when {
                     !traktSignedIn -> records.map { it.withoutSources(CalendarSource.TRAKT, CalendarSource.TRAKT_NEXT) }
                     traktItems != null -> applyTraktCalendar(records, traktItems, now)
@@ -251,35 +344,50 @@ class CalendarRefresher internal constructor(
                 publishLocked()
                 records.filter { it.isDue(now) }
                     .sortedWith(compareByDescending<CalendarTitleRecord> { CalendarOrigin.BELL in it.origins }.thenBy { it.nextRefreshAtMs })
-            } ?: return
+            } ?: return true
             save(current, force = true)
             Log.i(TAG, "refresh reason=$reason titles=${followed.size} due=${due.size} trakt=${traktItems?.size ?: "-"}")
-            if (due.isEmpty()) return
-
-            setRefreshing(current, me, refreshing = true, remaining = due.size)
-            val fetcher = CalendarTitleFetcher(remote, inputs.region())
-            val queue = ArrayDeque(due.map { it.key })
-            supervisorScope {
-                repeat(inputs.refreshConcurrency().coerceAtLeast(1)) {
-                    launch {
-                        while (true) {
-                            awaitNoPlayback()
-                            val key = synchronized(queue) { queue.removeFirstOrNull() } ?: break
-                            refreshOne(current, key, fetcher)
+            calendarLeftOutSummary(result.leftOut).forEach { Log.i(TAG, it) }
+            if (!complete) {
+                val notReady = sources.notReady.entries.joinToString(", ") { (name, why) -> "$name $why" }
+                val kept = snapshot.titles.count { record -> record.origins.any { it in unread } }
+                Log.w(TAG, "sources not ready: $notReady; kept $kept titles they gave last time")
+            }
+            if (due.isNotEmpty()) {
+                setRefreshing(current, me, refreshing = true, remaining = due.size)
+                val fetcher = CalendarTitleFetcher(remote, inputs.region())
+                val queue = ArrayDeque(due.map { it.key })
+                supervisorScope {
+                    repeat(inputs.refreshConcurrency().coerceAtLeast(1)) {
+                        launch {
+                            while (true) {
+                                awaitNoPlayback()
+                                val key = synchronized(queue) { queue.removeFirstOrNull() } ?: break
+                                refreshOne(current, key, fetcher)
+                            }
                         }
                     }
                 }
+            }
+            try {
+                fetchComingUpArt(current, settings)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w(TAG, "Backdrops skipped: ${error.message}")
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
             Log.w(TAG, "Calendar refresh stopped: ${error.message}")
+            complete = true
         } finally {
             withContext(NonCancellable) {
                 save(current, force = true)
                 setRefreshing(current, me, refreshing = false, remaining = 0)
             }
         }
+        return complete
     }
 
     private suspend fun refreshOne(current: Owner, key: String, fetcher: CalendarTitleFetcher) {
@@ -302,6 +410,30 @@ class CalendarRefresher internal constructor(
             )
             publishLocked(remaining = (_state.value.remaining - 1).coerceAtLeast(0))
         }
+        save(current, force = false)
+    }
+
+    /**
+     * One details read at a time for the Coming up titles that still have no backdrop. The new backdrops are
+     * published together at the end, so the row is rebuilt once instead of once per title.
+     */
+    private suspend fun fetchComingUpArt(current: Owner, settings: CalendarSettings) {
+        val now = clock.instant()
+        val zone = inputs.zone()
+        val wanted = withOwner(current) { calendarBackdropsWanted(data.titles.visible(settings), watched, now, zone) } ?: return
+        if (wanted.isEmpty()) return
+        var found = 0
+        for (title in wanted) {
+            awaitNoPlayback()
+            val type = if (title.type == CalendarTitleType.MOVIE) "movie" else "series"
+            val art = inputs.fetchArt(type, calendarContentIds(title))
+            if (!art?.backdrop.isNullOrBlank()) found++
+            withOwner(current) {
+                data = data.copy(titles = data.titles.map { if (it.key == title.key) it.withFetchedArt(art, now) else it })
+            } ?: return
+        }
+        withOwner(current) { publishLocked() } ?: return
+        Log.i(TAG, "backdrops asked=${wanted.size} found=$found")
         save(current, force = false)
     }
 

@@ -111,6 +111,27 @@ class CalendarStorageTest {
         assertTrue(storage.save(1, CalendarSnapshot(), storage.generation(), force = true))
     }
 
+    @Test fun aFileFromBeforeBackdropsStillLoads() = runBlocking {
+        storage.file(1).parentFile!!.mkdirs()
+        storage.file(1).writeText(
+            """{"version":1,"titles":[{"key":"series:imdb:tt1","type":"SERIES","ids":{"imdb":"tt1","tmdb":1},""" +
+                """"name":"Old show","contentId":"tt1","poster":"poster.jpg","posterCheckedAtMs":5}],"updatedAtMs":9}"""
+        )
+        val title = storage.load(1).titles.single()
+        assertEquals("Old show", title.name)
+        assertEquals("poster.jpg", title.poster)
+        assertEquals(null, title.backdrop)
+        assertEquals(null, title.logo)
+        assertEquals(0L, title.backdropCheckedAtMs)
+    }
+
+    @Test fun backdropsAreSavedAndLeftOutWhenThereAreNone() = runBlocking {
+        val withArt = record(1).copy(backdrop = "backdrop.jpg", logo = "logo.png", backdropCheckedAtMs = 3L)
+        assertTrue(storage.save(1, CalendarSnapshot(titles = listOf(withArt, record(2))), storage.generation(), force = true))
+        assertEquals(listOf(withArt, record(2)), storage.load(1).titles)
+        assertEquals(1, Regex("\"backdrop\":").findAll(storage.file(1).readText()).count())
+    }
+
     @Test fun anUnreadableFileStartsEmpty() = runBlocking {
         storage.file(1).parentFile!!.mkdirs()
         storage.file(1).writeText("{ not json")

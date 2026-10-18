@@ -82,6 +82,21 @@ class CalendarComingUpCardTest {
         assertEquals("art-movie-tmdb:9", card.info.backdrop)
     }
 
+    @Test fun theCardUsesTheSavedBackdropWhenNothingIsInMemory() {
+        val saved = harbour.copy(backdrop = "saved.jpg", logo = "saved.png")
+        val item = CalendarComingUpItem(saved, CalendarEntry(season = 2, episode = 6), CalendarComingUpWhen.WEEKDAY, thursday, null)
+        val fromSaved = calendarComingUpCard(item, text, formats)!!.info
+        assertEquals("saved.jpg", fromSaved.backdrop)
+        assertEquals("saved.png", fromSaved.logo)
+        assertEquals("poster.jpg", fromSaved.poster)
+        val fromMemory = calendarComingUpCard(item, text, formats, art = { _, _ -> "memory.jpg" to null })!!.info
+        assertEquals("memory.jpg", fromMemory.backdrop)
+        assertEquals("saved.png", fromMemory.logo)
+        val none = calendarComingUpCard(item.copy(title = harbour), text, formats)!!.info
+        assertNull(none.backdrop)
+        assertEquals("poster.jpg", none.poster)
+    }
+
     @Test fun aTitleWithoutIdsHasNoCard() {
         val unknown = harbour.copy(ids = CalendarIds(), contentId = null)
         val entry = CalendarEntry(season = 1, episode = 1)

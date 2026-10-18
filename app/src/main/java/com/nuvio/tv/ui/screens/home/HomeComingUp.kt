@@ -4,23 +4,34 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.nuvio.tv.R
 import com.nuvio.tv.core.calendar.CalendarClock
+import com.nuvio.tv.core.calendar.CALENDAR_COMING_UP_MAX
 import com.nuvio.tv.core.calendar.CalendarComingUpItem
 import com.nuvio.tv.core.calendar.CalendarComingUpWhen
+import com.nuvio.tv.core.calendar.CalendarEntry
 import com.nuvio.tv.core.calendar.CalendarEntryKind
+import com.nuvio.tv.core.calendar.CalendarIds
 import com.nuvio.tv.core.calendar.CalendarRefresher
 import com.nuvio.tv.core.calendar.CalendarSettingsDataStore
+import com.nuvio.tv.core.calendar.CalendarSource
+import com.nuvio.tv.core.calendar.CalendarTitleRecord
 import com.nuvio.tv.core.calendar.CalendarTitleType
 import com.nuvio.tv.core.calendar.CalendarZoneProvider
 import com.nuvio.tv.core.calendar.buildCalendarComingUp
 import com.nuvio.tv.core.calendar.calendarContentIds
 import com.nuvio.tv.core.calendar.calendarContinueWatchingKeys
 import com.nuvio.tv.core.calendar.calendarEntryInKeys
+import com.nuvio.tv.core.calendar.calendarKeyMatches
+import com.nuvio.tv.core.calendar.calendarTitleKey
+import com.nuvio.tv.core.calendar.plainReleaseDate
+import com.nuvio.tv.core.util.parseEpisodeReleaseLocalDate
 import com.nuvio.tv.core.util.withAppLocale
 import com.nuvio.tv.domain.repository.MetaRepository
 import com.nuvio.tv.ui.screens.calendar.CalendarFormats
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +89,10 @@ fun calendarComingUpLabel(item: CalendarComingUpItem, text: CalendarComingUpText
         CalendarComingUpWhen.DATE -> formats.shortDate(item.date)
     }
 
-/** A Coming up card in the Continue Watching card's shape; null for a title the app cannot open. */
+/**
+ * A Coming up card in the Continue Watching card's shape; null for a title the app cannot open. The backdrop in memory
+ * comes first, then the one the Calendar saved.
+ */
 fun calendarComingUpCard(
     item: CalendarComingUpItem,
     text: CalendarComingUpText,
@@ -91,7 +105,9 @@ fun calendarComingUpCard(
     val film = title.type == CalendarTitleType.MOVIE
     val type = if (film) "movie" else "series"
     val entry = item.entry
-    val (backdrop, logo) = art(type, ids)
+    val (cachedBackdrop, cachedLogo) = art(type, ids)
+    val backdrop = cachedBackdrop?.takeIf(String::isNotBlank) ?: title.backdrop?.takeIf(String::isNotBlank)
+    val logo = cachedLogo?.takeIf(String::isNotBlank) ?: title.logo?.takeIf(String::isNotBlank)
     return ContinueWatchingItem.NextUp(
         NextUpInfo(
             contentId = contentId,
@@ -125,6 +141,103 @@ val NextUpInfo.showsEpisodeCode: Boolean
 val ContinueWatchingItem.isComingUp: Boolean
     get() = this is ContinueWatchingItem.NextUp && info.badgeLabel != null
 
+/**
+ * While the Coming up row is on, the episodes of the Upcoming row are shown there instead. One without a release date
+ * cannot be placed there and stays in the Upcoming row.
+ */
+val HomeUiState.shownUpcomingItems: List<ContinueWatchingItem>
+    get() = if (upcomingInComingUp) upcomingItems.filter { upcomingAirDate(it, ZoneId.systemDefault()) == null } else upcomingItems
+
+/** The day an Upcoming episode airs, read the way the Calendar reads add-on dates. Null for films and undated items. */
+fun upcomingAirDate(item: ContinueWatchingItem, zone: ZoneId): LocalDate? {
+    val info = (item as? ContinueWatchingItem.NextUp)?.info ?: return null
+    if (info.contentType.equals("movie", ignoreCase = true) || info.episode <= 0) return null
+    return info.released?.let(::plainReleaseDate)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        ?: parseEpisodeReleaseLocalDate(info.released, zone)
+        ?: info.releaseTimestamp?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
+}
+
+/**
+ * Adds the Upcoming row's episodes to the Calendar's titles. A show the Calendar follows keeps its own dates and art
+ * and only gains an episode it does not list; a show hidden in the Calendar stays out; any other show gets a title of
+ * its own.
+ */
+fun calendarTitlesWithUpcoming(
+    titles: List<CalendarTitleRecord>,
+    upcoming: List<ContinueWatchingItem>,
+    zone: ZoneId,
+    hiddenTitleKeys: Set<String> = emptySet()
+): List<CalendarTitleRecord> {
+    if (upcoming.isEmpty()) return titles
+    val result = titles.toMutableList()
+    upcoming.forEach { item ->
+        val date = upcomingAirDate(item, zone) ?: return@forEach
+        val info = (item as ContinueWatchingItem.NextUp).info
+        val ids = CalendarIds.fromContentId(info.contentId)
+        if (!ids.isEmpty && hiddenTitleKeys.any { calendarKeyMatches(it, CalendarTitleType.SERIES, ids) }) return@forEach
+        val entry = CalendarEntry(
+            season = info.season,
+            episode = info.episode,
+            title = info.episodeTitle,
+            airDate = date.toString(),
+            source = CalendarSource.ADDON
+        )
+        val index = result.indexOfFirst {
+            it.contentId == info.contentId || (!ids.isEmpty && it.type == CalendarTitleType.SERIES && it.ids.sharesIdWith(ids))
+        }
+        if (index >= 0) {
+            val title = result[index]
+            val listed = title.entries.any { it.slot == entry.slot }
+            result[index] = title.copy(
+                poster = title.poster?.takeIf(String::isNotBlank) ?: info.poster,
+                backdrop = title.backdrop?.takeIf(String::isNotBlank) ?: info.backdrop,
+                logo = title.logo?.takeIf(String::isNotBlank) ?: info.logo,
+                sources = if (listed) {
+                    title.sources
+                } else {
+                    title.sources + (CalendarSource.ADDON to title.sources[CalendarSource.ADDON].orEmpty() + entry)
+                }
+            )
+        } else {
+            result += CalendarTitleRecord(
+                key = calendarTitleKey(CalendarTitleType.SERIES, ids) ?: "series:${info.contentId}",
+                type = CalendarTitleType.SERIES,
+                ids = ids,
+                name = info.name,
+                contentId = info.contentId,
+                poster = info.poster,
+                backdrop = info.backdrop,
+                logo = info.logo,
+                sources = mapOf(CalendarSource.ADDON to listOf(entry))
+            )
+        }
+    }
+    return result
+}
+
+private data class UpcomingCardSource(
+    val contentId: String,
+    val contentType: String,
+    val name: String,
+    val season: Int,
+    val episode: Int,
+    val episodeTitle: String?,
+    val released: String?,
+    val releaseTimestamp: Long?,
+    val poster: String?,
+    val backdrop: String?,
+    val logo: String?
+)
+
+private fun upcomingCardSources(items: List<ContinueWatchingItem>): List<UpcomingCardSource?> = items.map { item ->
+    (item as? ContinueWatchingItem.NextUp)?.info?.let {
+        UpcomingCardSource(
+            it.contentId, it.contentType, it.name, it.season, it.episode, it.episodeTitle, it.released,
+            it.releaseTimestamp, it.poster, it.backdrop, it.logo
+        )
+    }
+}
+
 /** Builds the row from the Calendar's saved data only; it never asks the network for anything. */
 @Singleton
 @OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
@@ -139,11 +252,13 @@ class CalendarComingUpSource @Inject constructor(
     private var localized: Pair<String, Context>? = null
 
     /**
-     * [continueWatching] is what the Continue Watching rows show and [active] is true while Home is in front.
-     * Nothing shows until the Calendar knows what has been watched.
+     * [continueWatching] is what the Continue Watching row shows, [upcoming] what the Upcoming row would show, and
+     * [active] is true while Home is in front. Until the Calendar knows what has been watched only the Upcoming
+     * episodes show.
      */
     fun items(
         continueWatching: Flow<List<ContinueWatchingItem>>,
+        upcoming: Flow<List<ContinueWatchingItem>>,
         active: Flow<Boolean>
     ): Flow<List<ContinueWatchingItem>> =
         settingsStore.settings
@@ -158,19 +273,28 @@ class CalendarComingUpSource @Inject constructor(
                     )
                 }.distinctUntilChanged()
                 val minutes = active.distinctUntilChanged().flatMapLatest { if (it) minutes() else emptyFlow() }
-                combine(calendar.state, zoneProvider.zones, shownKeys, minutes) { state, zone, shown, now ->
-                    if (!state.loaded || state.watched == null) return@combine emptyList()
+                val upcomingCards = upcoming.distinctUntilChanged { old, new -> upcomingCardSources(old) == upcomingCardSources(new) }
+                val withUpcoming = combine(shownKeys, upcomingCards) { shown, items -> shown to items }
+                combine(calendar.state, zoneProvider.zones, withUpcoming, minutes) { state, zone, (shown, upcomingItems), now ->
+                    val ready = state.loaded && state.watched != null
+                    if (!ready && upcomingItems.isEmpty()) return@combine emptyList()
+                    val hidden = settingsStore.settings.value?.hiddenTitleKeys.orEmpty()
+                    val titles = calendarTitlesWithUpcoming(if (ready) state.titles else emptyList(), upcomingItems, zone, hidden)
                     val localContext = localizedContext()
                     val locale = localContext.resources.configuration.locales[0] ?: java.util.Locale.getDefault()
                     val formats = CalendarFormats.forDevice(localContext, locale)
                     val text = CalendarComingUpText.from(localContext)
-                    buildCalendarComingUp(state.titles, state.watched, now, zone, { title, entry ->
+                    buildCalendarComingUp(titles, state.watched, now, zone, { title, entry ->
                         calendarEntryInKeys(shown, title, entry)
-                    }).mapNotNull { calendarComingUpCard(it, text, formats, ::cachedArt) }
+                    }, CALENDAR_COMING_UP_MAX + upcomingItems.size)
+                        .mapNotNull { calendarComingUpCard(it, text, formats, ::cachedArt) }
+                        .distinctBy { Triple(it.info.contentId, it.info.season, it.info.episode) }
                 }.onStart { if (calendar.state.value.watched == null) calendar.reloadWatched() }
             }
             .distinctUntilChanged()
             .flowOn(Dispatchers.Default)
+
+    val rowOn: Flow<Boolean> = settingsStore.settings.map { it?.comingUpRow == true }.distinctUntilChanged()
 
     /** Something was watched: a "New" card for it should go. */
     suspend fun reloadWatched() {
@@ -201,17 +325,25 @@ class CalendarComingUpSource @Inject constructor(
 internal fun HomeViewModel.observeComingUpRow() {
     val source = calendarComingUp ?: return
     viewModelScope.launch {
+        source.rowOn.collect { on ->
+            _uiState.update { state -> if (state.upcomingInComingUp == on) state else state.copy(upcomingInComingUp = on) }
+        }
+    }
+    viewModelScope.launch {
         withTimeoutOrNull(COMING_UP_WAIT_MS) { _initialCwResolved.first { it } }
         delay(COMING_UP_START_DELAY_MS)
         val shown = uiState.map { state ->
-            if (state.continueWatchingEnabled) state.continueWatchingItems + state.upcomingItems else emptyList()
+            if (state.continueWatchingEnabled) state.continueWatchingItems else emptyList()
+        }.distinctUntilChanged()
+        val upcoming = uiState.map { state ->
+            if (state.continueWatchingEnabled) state.upcomingItems else emptyList()
         }.distinctUntilChanged()
         val watchProgress = merge(
             watchProgressRepository.allProgress.map { },
             watchProgressRepository.watchedItems.map { }
         ).debounce(WATCH_PROGRESS_SETTLE_MS)
         launch { watchProgress.collect { source.reloadWatched() } }
-        source.items(shown, comingUpActive)
+        source.items(shown, upcoming, comingUpActive)
             .collect { items ->
                 _uiState.update { state -> if (state.comingUpItems == items) state else state.copy(comingUpItems = items) }
             }

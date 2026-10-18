@@ -24,7 +24,6 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -36,8 +35,16 @@ data class CalendarFollowedSnapshot(
     /** False while Trakt is signed in but its watched shows are not loaded yet: their 12-month check cannot be made. */
     val traktWatchedLoaded: Boolean = true,
     /** Posters the app already holds for titles their sources left without one, by id alias. */
-    val cachedPosters: Map<String, String> = emptyMap()
-)
+    val cachedPosters: Map<String, String> = emptyMap(),
+    /** Sources that could not be read in full this time, with why: "timed out", "failed" or "not loaded yet". */
+    val notReady: Map<String, String> = emptyMap(),
+    /** Origins those sources would have given; titles the Calendar holds from them are kept until they can be read. */
+    val unreadOrigins: Set<CalendarOrigin> = emptySet(),
+    /** Backdrops the app already holds, by id alias. */
+    val cachedArt: Map<String, CalendarArt> = emptyMap()
+) {
+    val complete: Boolean get() = notReady.isEmpty()
+}
 
 class CalendarWatchedIndex(private val keys: Set<String> = emptySet()) {
     fun isWatched(ids: CalendarIds, season: Int?, episode: Int?): Boolean {
@@ -82,9 +89,10 @@ class CalendarFollowedSourceReader @Inject constructor(
     suspend fun read(profileId: Int): CalendarFollowedSnapshot {
         val candidates = mutableListOf<CalendarTitleCandidate>()
         val watched = CalendarWatchedIndex.Builder()
+        val unread = CalendarSourceParts()
 
-        part("library") {
-            libraryPreferences.libraryItems.firstOrEmpty().forEach { item ->
+        unread.part("library", CalendarOrigin.LIBRARY) {
+            libraryPreferences.libraryItems.first().forEach { item ->
                 val type = calendarTitleType(item.type) ?: return@forEach
                 candidates += CalendarTitleCandidate(
                     CalendarIds.fromContentId(item.id), type, CalendarOrigin.LIBRARY,
@@ -92,8 +100,8 @@ class CalendarFollowedSourceReader @Inject constructor(
                 )
             }
         }
-        part("progress") {
-            watchProgressPreferences.observeAllProgress(profileId).firstOrEmpty()
+        unread.part("progress", CalendarOrigin.PROGRESS) {
+            watchProgressPreferences.observeAllProgress(profileId).first()
                 .filter { calendarTitleType(it.contentType) == CalendarTitleType.SERIES }
                 .forEach { progress ->
                     candidates += CalendarTitleCandidate(
@@ -103,8 +111,8 @@ class CalendarFollowedSourceReader @Inject constructor(
                     if (progress.isCompleted()) watched.add(progress.contentId, progress.season, progress.episode)
                 }
         }
-        part("watched") {
-            watchedItemsPreferences.allItems.firstOrEmpty()
+        unread.part("watched", CalendarOrigin.WATCHED) {
+            watchedItemsPreferences.allItems.first()
                 .filter { it.season != null || calendarTitleType(it.contentType) == CalendarTitleType.SERIES }
                 .groupBy { it.contentId }
                 .forEach { (contentId, items) ->
@@ -115,10 +123,13 @@ class CalendarFollowedSourceReader @Inject constructor(
                     )
                 }
         }
-        var traktWatchedLoaded = true
-        if (trackingProviders.isAuthenticated(TrackingProviderId.TRAKT)) part("trakt") {
+        var traktWatchedLoaded = !trackingProviders.isAuthenticated(TrackingProviderId.TRAKT)
+        if (trackingProviders.isAuthenticated(TrackingProviderId.TRAKT)) unread.part("trakt", *TRAKT_ORIGINS) {
             val seeds = traktProgressService.currentWatchedShowSeeds()
             traktWatchedLoaded = seeds != null
+            if (seeds == null) unread.notLoaded("trakt", CalendarOrigin.TRAKT_WATCHED, CalendarOrigin.TRAKT_CALENDAR)
+            val listed = traktLibraryService.currentItemsOrNull()
+            if (listed == null) unread.notLoaded("trakt lists", CalendarOrigin.TRAKT_WATCHLIST, CalendarOrigin.TRAKT_LIST)
             traktProgressService.currentDroppedShowIds().forEach { contentId ->
                 candidates += CalendarTitleCandidate(CalendarIds.fromContentId(contentId), CalendarTitleType.SERIES, CalendarOrigin.DROPPED)
             }
@@ -130,7 +141,7 @@ class CalendarFollowedSourceReader @Inject constructor(
                 )
             }
             watched.addAll(traktProgressService.getWatchedShowEpisodes())
-            traktLibraryService.currentItems().forEach { entry ->
+            listed.orEmpty().forEach { entry ->
                 val type = calendarTitleType(entry.type) ?: return@forEach
                 val ids = CalendarIds.fromContentId(entry.id).merged(
                     CalendarIds(imdb = entry.imdbId, tmdb = entry.tmdbId?.toLong(), trakt = entry.traktId?.toLong())
@@ -146,7 +157,7 @@ class CalendarFollowedSourceReader @Inject constructor(
                 }
             }
         }
-        if (trackingProviders.isAuthenticated(TrackingProviderId.SIMKL)) part("simkl") {
+        if (trackingProviders.isAuthenticated(TrackingProviderId.SIMKL)) unread.part("simkl", *SIMKL_ORIGINS) {
             simklSyncRepository.ensureLoaded()
             simklSyncRepository.state.value.snapshot.entries.forEach { entry ->
                 val media = entry.media ?: return@forEach
@@ -170,8 +181,9 @@ class CalendarFollowedSourceReader @Inject constructor(
             }
             watched.addAll(simklSyncRepository.projection.value.watchedShowEpisodes)
         }
-        if (trackingProviders.isAuthenticated(TrackingProviderId.MDBLIST)) part("mdblist") {
-            val snapshot = mdbListSyncRepository.currentSnapshot() ?: return@part
+        if (trackingProviders.isAuthenticated(TrackingProviderId.MDBLIST)) unread.part("mdblist", *MDBLIST_ORIGINS) {
+            val snapshot = mdbListSyncRepository.currentSnapshot()
+                ?: return@part unread.notLoaded("mdblist", *MDBLIST_ORIGINS)
             fun add(ids: MdbListIds, type: MdbListItemType, origin: CalendarOrigin, at: Instant?, name: String?, poster: String? = null) {
                 val calendarIds = ids.toCalendarIds()
                 candidates += CalendarTitleCandidate(
@@ -200,9 +212,9 @@ class CalendarFollowedSourceReader @Inject constructor(
             watched.addAll(mdbListSyncRepository.currentProjection().watchedShowEpisodes)
         }
 
-        val removed = runPart("hidden") { traktSettingsDataStore.dismissedNextUpKeys.first() }.orEmpty()
-        val nextUp = runPart("next up") { enrichmentCache.getNextUpSnapshot(profileId) }.orEmpty()
-        val addon = runPart("next up dates") {
+        val removed = unread.runPart("hidden") { traktSettingsDataStore.dismissedNextUpKeys.first() }.orEmpty()
+        val nextUp = unread.runPart("next up", counts = false) { enrichmentCache.getNextUpSnapshot(profileId) }.orEmpty()
+        val addon = unread.runPart("next up dates", counts = false) {
             nextUp.mapNotNull { item ->
                 if (item.hasAired) return@mapNotNull null
                 val date = item.released?.let(::plainReleaseDate) ?: return@mapNotNull null
@@ -217,35 +229,85 @@ class CalendarFollowedSourceReader @Inject constructor(
             }
         }.orEmpty()
         val usable = candidates.filterNot { it.ids.isEmpty }
-        val posters = runPart("posters") {
+        val posters = unread.runPart("posters", counts = false) {
             calendarCachedPosters(
                 usable,
                 metaPoster = { type, id -> metaRepository.getCachedMeta(type, id)?.poster },
                 nextUpPosters = nextUp.map { it.contentId to it.poster }
             )
         }.orEmpty()
-        return CalendarFollowedSnapshot(usable, removed, addon, watched.build(), traktWatchedLoaded, posters)
+        val art = unread.runPart("backdrops", counts = false) {
+            val inProgress = try {
+                enrichmentCache.getInProgressSnapshot(profileId)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                emptyList()
+            }
+            calendarCachedArt(
+                usable,
+                metaArt = { type, id -> metaRepository.getCachedMeta(type, id)?.let { CalendarArt(it.background, it.logo) } },
+                continueWatchingArt = nextUp.map { it.contentId to CalendarArt(it.backdrop, it.logo) } +
+                    inProgress.map { it.contentId to CalendarArt(it.backdrop, it.logo) }
+            )
+        }.orEmpty()
+        return CalendarFollowedSnapshot(
+            usable, removed, addon, watched.build(), traktWatchedLoaded, posters, unread.reasons, unread.origins,
+            cachedArt = art
+        )
     }
 
-    private suspend fun part(name: String, block: suspend () -> Unit) {
-        runPart(name, block)
+    private companion object {
+        val TRAKT_ORIGINS = arrayOf(
+            CalendarOrigin.TRAKT_WATCHED, CalendarOrigin.TRAKT_WATCHLIST, CalendarOrigin.TRAKT_LIST, CalendarOrigin.TRAKT_CALENDAR
+        )
+        val SIMKL_ORIGINS = arrayOf(
+            CalendarOrigin.SIMKL_WATCHING, CalendarOrigin.SIMKL_COMPLETED, CalendarOrigin.SIMKL_ON_HOLD,
+            CalendarOrigin.SIMKL_PLAN_TO_WATCH
+        )
+        val MDBLIST_ORIGINS = arrayOf(
+            CalendarOrigin.MDBLIST_WATCHED, CalendarOrigin.MDBLIST_PLAYBACK, CalendarOrigin.MDBLIST_WATCHLIST,
+            CalendarOrigin.MDBLIST_LIST
+        )
+    }
+}
+
+/**
+ * Runs each part of a read with a time limit and notes what could not be read: [reasons] by part, and the origins those
+ * parts would have given. A part with `counts = false` is only logged; reading it again would keep nothing.
+ */
+internal class CalendarSourceParts(private val timeoutMs: Long = 5_000L) {
+    val reasons = linkedMapOf<String, String>()
+    val origins = mutableSetOf<CalendarOrigin>()
+
+    fun notLoaded(name: String, vararg from: CalendarOrigin) {
+        reasons.putIfAbsent(name, "not loaded yet")
+        origins += from
     }
 
-    private suspend fun <T> runPart(name: String, block: suspend () -> T): T? = try {
-        withTimeoutOrNull(PART_TIMEOUT_MS) { block() }
-    } catch (cancelled: CancellationException) {
-        throw cancelled
-    } catch (error: Exception) {
-        Log.w(TAG, "Skipped $name: ${error.message}")
-        null
+    suspend fun part(name: String, vararg from: CalendarOrigin, block: suspend () -> Unit) {
+        if (runPart(name, block = block) == null) origins += from
     }
 
-    private suspend fun <T> Flow<List<T>>.firstOrEmpty(): List<T> =
-        withTimeoutOrNull(PART_TIMEOUT_MS) { first() }.orEmpty()
+    suspend fun <T> runPart(name: String, counts: Boolean = true, block: suspend () -> T): T? {
+        var finished = false
+        return try {
+            withTimeoutOrNull(timeoutMs) { block().also { finished = true } }.also {
+                if (!finished) {
+                    if (counts) reasons[name] = "timed out" else Log.w(TAG, "Skipped $name: timed out")
+                }
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.w(TAG, "Skipped $name: ${error.message}")
+            if (counts) reasons[name] = "failed"
+            null
+        }
+    }
 
     private companion object {
         const val TAG = "CalendarSources"
-        const val PART_TIMEOUT_MS = 5_000L
     }
 }
 

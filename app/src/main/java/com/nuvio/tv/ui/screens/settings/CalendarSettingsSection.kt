@@ -94,6 +94,12 @@ class CalendarSettingsViewModel @Inject constructor(
         }
 }
 
+@Composable
+internal fun calendarComingUpRowOn(viewModel: CalendarSettingsViewModel = hiltViewModel()): Boolean {
+    val settings by viewModel.settings.collectAsState()
+    return settings?.comingUpRow == true
+}
+
 /** Lives in Layout > Home content with the other Home rows. */
 @Composable
 internal fun CalendarComingUpRowSetting(viewModel: CalendarSettingsViewModel = hiltViewModel()) {

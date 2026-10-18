@@ -138,12 +138,9 @@ fun CalendarScreen(
     LaunchedEffect(Unit) { viewModel.onScreenShown() }
 
     val backdrop = focus?.details?.backdrop
-    LaunchedEffect(backdrop, performance, v2 != null) {
+    LaunchedEffect(backdrop, v2 != null) {
         if (v2 == null) return@LaunchedEffect
-        HeroBackdropState.selectPageArtwork(
-            ownerKey = backdrop?.let { "calendar" },
-            url = backdrop.takeUnless { performance }
-        )
+        HeroBackdropState.selectPageArtwork(ownerKey = backdrop?.let { "calendar" }, url = backdrop)
     }
 
     val open: (CalendarRow) -> Unit = { row ->
