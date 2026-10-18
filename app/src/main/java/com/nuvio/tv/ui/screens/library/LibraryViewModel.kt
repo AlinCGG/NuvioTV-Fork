@@ -175,6 +175,7 @@ class LibraryViewModel @Inject constructor(
     private val profileManager: com.nuvio.tv.core.profile.ProfileManager,
     val posterOptions: com.nuvio.tv.ui.components.posteroptions.PosterOptionsController,
     private val libraryGenreFill: com.nuvio.tv.data.repository.LibraryGenreFill,
+    private val partyRuntime: com.nuvio.tv.core.party.PartyRuntime,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -493,7 +494,10 @@ class LibraryViewModel @Inject constructor(
     }
 
     suspend fun getPlayerPreference(): PlayerPreference =
-        playerSettingsDataStore.playerSettings.first().playerPreference
+        com.nuvio.tv.core.party.PartyPlayerRule.preferenceFor(
+            playerSettingsDataStore.playerSettings.first().playerPreference,
+            partyRuntime.state.value.isActive
+        )
 
     fun onRefresh() {
         if (_uiState.value.isSyncing) return

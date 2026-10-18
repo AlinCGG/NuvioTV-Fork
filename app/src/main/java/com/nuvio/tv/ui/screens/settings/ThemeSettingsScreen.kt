@@ -3,6 +3,7 @@
 package com.nuvio.tv.ui.screens.settings
 
 import com.nuvio.tv.ui.v2.appearance.LocalV2Appearance
+import com.nuvio.tv.ui.screens.ambient.AMBIENT_BEFORE_OLED_DIM
 import com.nuvio.tv.ui.theme.NuvioTheme
 
 import android.app.Activity
@@ -80,7 +81,7 @@ import androidx.tv.material3.Text
 import com.nuvio.tv.LocaleCache
 import com.nuvio.tv.R
 import com.nuvio.tv.ui.support.SupportNuvioDialog
-import com.nuvio.tv.domain.model.AppIconOption
+import com.nuvio.tv.domain.model.AppIconChoice
 import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.domain.model.CustomThemeColors
 import com.nuvio.tv.domain.model.SettingsUiStyle
@@ -121,7 +122,8 @@ fun ThemeSettingsContent(
     var showAppIconDialog by remember { mutableStateOf(false) }
     var showCustomThemeDialog by remember(uiState.customThemeGradientEnabled) { mutableStateOf(false) }
     var restoreCustomThemeFocus by remember { mutableStateOf(false) }
-    var appIconConfirmation by remember { mutableStateOf<AppIconOption?>(null) }
+    var appIconConfirmation by remember { mutableStateOf<AppIconChoice?>(null) }
+    var appIconLastPicked by remember { mutableStateOf<AppIconChoice?>(null) }
     var showSupportDialog by remember { mutableStateOf(false) }
     var refocusThemes by remember { mutableStateOf(false) }
     var pendingLanguageRestart by remember { mutableStateOf(false) }
@@ -301,17 +303,22 @@ fun ThemeSettingsContent(
                 title = stringResource(R.string.appearance_screensaver_group_title),
                 subtitle = stringResource(R.string.appearance_screensaver_group_subtitle)
             ) {
+                val ambientViewModel: AmbientModeSettingsViewModel = hiltViewModel()
+                val ambientEnabled = ambientViewModel.uiState.collectAsStateWithLifecycle().value.settings.enabled
+                val dimRuns = !(ambientEnabled && AMBIENT_BEFORE_OLED_DIM)
+                AmbientModeSettingsRows(ambientViewModel)
                 var showScreensaverTimeoutDialog by remember { mutableStateOf(false) }
                 var showScreensaverDimDialog by remember { mutableStateOf(false) }
                 SettingsToggleRow(
                     title = stringResource(R.string.appearance_screensaver_enabled),
                     subtitle = stringResource(R.string.appearance_screensaver_enabled_subtitle),
                     checked = uiState.screensaverEnabled,
+                    enabled = dimRuns,
                     onToggle = {
                         viewModel.onEvent(ThemeSettingsEvent.ToggleScreensaver(!uiState.screensaverEnabled))
                     }
                 )
-                if (uiState.screensaverEnabled) {
+                if (uiState.screensaverEnabled && dimRuns) {
                     SettingsActionRow(
                         title = stringResource(R.string.appearance_screensaver_timeout),
                         subtitle = stringResource(R.string.appearance_screensaver_timeout_subtitle),
@@ -415,8 +422,6 @@ fun ThemeSettingsContent(
                 )
             }
 
-            AmbientModeSettingsCard()
-
             SettingsGroupCard(
                 modifier = Modifier.fillMaxWidth(),
                 title = stringResource(R.string.appearance_font_and_language),
@@ -516,14 +521,17 @@ fun ThemeSettingsContent(
     if (showAppIconDialog && appIconConfirmation == null) {
         AppIconPickerDialog(
             state = appIconState,
+            initial = appIconLastPicked ?: appIconState.selected,
             onSelected = { option ->
                 viewModel.onEvent(ThemeSettingsEvent.DismissAppIconFailure)
+                appIconLastPicked = option
                 if (option != appIconState.selected) {
                     appIconConfirmation = option
                 }
             },
             onDismiss = {
                 viewModel.onEvent(ThemeSettingsEvent.DismissAppIconFailure)
+                appIconLastPicked = null
                 showAppIconDialog = false
             }
         )
@@ -531,7 +539,7 @@ fun ThemeSettingsContent(
 
     appIconConfirmation?.let { option ->
         AppIconChangeConfirmationDialog(
-            option = option,
+            choice = option,
             onConfirm = {
                 appIconConfirmation = null
                 if (viewModel.selectAppIcon(option)) {
@@ -541,6 +549,8 @@ fun ThemeSettingsContent(
                     val reopened = restart != null && runCatching { context.startActivity(restart) }.isSuccess
                     context.findActivity()?.finishAffinity()
                     if (!reopened) Process.killProcess(Process.myPid())
+                } else {
+                    appIconLastPicked = null
                 }
             },
             onDismiss = { appIconConfirmation = null }

@@ -7,12 +7,12 @@ import com.nuvio.tv.data.local.SupportNuvioDataStore
 import com.nuvio.tv.data.local.ThemeDataStore
 import com.nuvio.tv.data.repository.MemberAccessRepository
 import com.nuvio.tv.domain.model.AppFont
-import com.nuvio.tv.domain.model.AppIconOption
+import com.nuvio.tv.domain.model.AppIconChoice
 import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.domain.model.CosmeticEntitlements
 import com.nuvio.tv.domain.model.CustomThemeColors
 import com.nuvio.tv.domain.model.SettingsUiStyle
-import com.nuvio.tv.domain.model.availableAppIcons
+import com.nuvio.tv.domain.model.canUseAppIcon
 import com.nuvio.tv.domain.model.availableAppThemes
 import com.nuvio.tv.domain.model.lockedSupporterThemes
 import com.nuvio.tv.domain.model.resolveAppTheme
@@ -208,10 +208,10 @@ class ThemeSettingsViewModel @Inject constructor(
         }
     }
 
-    fun selectAppIcon(option: AppIconOption): Boolean {
+    fun selectAppIcon(choice: AppIconChoice): Boolean {
         val entitlements = memberAccessRepository.access.value.entitlements
-        if (option !in availableAppIcons(entitlements, appIconManager.state.value.selected)) return false
-        return appIconManager.select(option)
+        if (!canUseAppIcon(entitlements, choice, appIconManager.state.value.selected)) return false
+        return appIconManager.select(choice)
     }
 
     private fun selectTheme(theme: AppTheme) {

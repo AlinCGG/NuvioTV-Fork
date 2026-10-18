@@ -86,6 +86,7 @@ import com.nuvio.tv.ui.components.GridContentCard
 import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.components.PosterCardDefaults
 import com.nuvio.tv.ui.components.PosterCardStyle
+import com.nuvio.tv.ui.components.rememberScaledPosterCardStyle
 import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -190,8 +191,8 @@ private fun TmdbEntityBrowseContent(
         }
     }
 
-    val posterCardStyle = PosterCardDefaults.Style.copy(
-        cornerRadius = posterCardCornerRadiusDp.dp
+    val posterCardStyle = rememberScaledPosterCardStyle(
+        PosterCardDefaults.Style.copy(cornerRadius = posterCardCornerRadiusDp.dp)
     )
     val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
     val localDensity = LocalDensity.current

@@ -57,6 +57,10 @@ internal class PlayerCustomFocusState {
         pendingReturn = null
         requestGeneration++
     }
+    fun controlsHidden(panelOpen: Boolean) {
+        lastFocused = null
+        if (!panelOpen) pendingReturn = null
+    }
 }
 
 @Composable
@@ -181,7 +185,7 @@ internal fun PlayerCustomControls(
         focus.requestGeneration = 0
     }
     // Capture before removing the focused target can clear the group's focus state.
-    val needsRecovery = !state.showMoreDialog && focus.buttonFocused && focus.lastFocused !in order
+    val needsRecovery = state.showControls && !state.showMoreDialog && focus.buttonFocused && focus.lastFocused !in order
     SideEffect { if (needsRecovery && !panelVisible && focus.requestGeneration == 0) {
         if (PlayerControlAction.MORE in order) focus.pendingReturn = PlayerControlAction.MORE
         focus.restore(layout, deckAvailable)
@@ -218,7 +222,7 @@ internal fun PlayerCustomControls(
                 PlayerControlsProgressBarHost(viewModel, progressFocus,
                     upFocusRequester = progressUpFocus,
                     downFocusRequester = fallback?.let(focus::target),
-                    onUpKey = actions.hide, onFocused = actions.interaction)
+                    onUpKey = actions.hide, onFocused = actions.interaction, onClick = actions.playPause)
             }
             }, time = {
             if (hasSeekTimeline) PlayerControlsTimeTextHost(viewModel)

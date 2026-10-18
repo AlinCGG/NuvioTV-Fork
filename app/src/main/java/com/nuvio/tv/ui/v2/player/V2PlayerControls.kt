@@ -127,7 +127,7 @@ fun V2PlayerControls(
                 }) {
                     PlayerControlsProgressBarHost(viewModel, progressFocus,
                         upFocusRequester = progressUpFocus ?: FocusRequester.Cancel,
-                        downFocusRequester = playFocus, onFocused = actions.interaction)
+                        downFocusRequester = playFocus, onFocused = actions.interaction, onClick = actions.playPause)
                 }
                 PlayerControlsTimeTextHost(viewModel)
                 Spacer(Modifier.height(if (deck) 8.dp else 16.dp))

@@ -15,14 +15,12 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
-import androidx.tv.material3.Card
-import androidx.tv.material3.CardBorder
-import androidx.tv.material3.CardDefaults
-import androidx.tv.material3.CardGlow
+import androidx.tv.material3.Border
+import androidx.tv.material3.Glow
 
 /**
- * A TV Card, or with [light] a plain focusable column with the same clip, colour and select key click,
- * for looks without the card's border, glow and zoom: it skips the listeners and animations each TV Card starts.
+ * A [LightweightCard] with [focusedBorder] and [focusedGlow], or with [light] a plain focusable column with
+ * the same clip, colour and select key click, for looks without the card's border, glow and zoom.
  */
 @Composable
 fun NuvioCard(
@@ -31,19 +29,18 @@ fun NuvioCard(
     light: Boolean,
     modifier: Modifier = Modifier,
     containerColor: Color = Color.Transparent,
-    border: CardBorder = CardDefaults.border(),
-    glow: CardGlow = CardDefaults.glow(),
+    focusedBorder: Border = Border.None,
+    focusedGlow: Glow = Glow.None,
     content: @Composable ColumnScope.() -> Unit
 ) {
     if (!light) {
-        Card(
+        LightweightCard(
             onClick = onClick,
+            shape = shape,
+            containerColor = containerColor,
             modifier = modifier,
-            shape = CardDefaults.shape(shape),
-            colors = CardDefaults.colors(containerColor = containerColor, focusedContainerColor = containerColor),
-            border = border,
-            scale = CardDefaults.scale(focusedScale = 1f),
-            glow = glow,
+            focusedBorder = focusedBorder,
+            focusedGlow = focusedGlow,
             content = content
         )
         return

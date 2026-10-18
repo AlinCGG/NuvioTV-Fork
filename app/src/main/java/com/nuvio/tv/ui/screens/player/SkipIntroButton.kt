@@ -5,8 +5,6 @@ package com.nuvio.tv.ui.screens.player
 import com.nuvio.tv.ui.theme.NuvioTheme
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,6 +26,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,20 +84,20 @@ fun SkipIntroButton(
     val internalFocusRequester = remember { FocusRequester() }
     val activeFocusRequester = focusRequester ?: internalFocusRequester
     var isFocused by remember { mutableStateOf(false) }
-    val progress = remember { Animatable(1f) }
+    var progress by remember { mutableFloatStateOf(0f) }
 
     // Reset auto-hide and progress when interval changes
     LaunchedEffect(interval?.startTime, interval?.type) {
         autoHidden = false
         manuallyDismissed = false
-        progress.snapTo(0f)
+        progress = 0f
     }
 
     LaunchedEffect(dismissed) {
         if (!dismissed) {
             if (!manuallyDismissed) {
                 autoHidden = false
-                progress.snapTo(0f)
+                progress = 0f
             }
         } else {
             manuallyDismissed = true
@@ -108,10 +107,7 @@ fun SkipIntroButton(
     // Auto-hide after 10 seconds — pause countdown while controls are visible
     LaunchedEffect(shouldShow, autoHidden, controlsVisible) {
         if (shouldShow && !autoHidden && !controlsVisible) {
-            progress.animateTo(1f, animationSpec = tween(
-                durationMillis = skipIntroAutoHideRemainingMs(progress.value),
-                easing = LinearEasing
-            ))
+            runSkipIntroAutoHide(progress) { progress = it }
             autoHidden = true
         }
     }
@@ -227,7 +223,7 @@ fun SkipIntroButton(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(progress.value)
+                            .fillMaxWidth(progress)
                             .height(NuvioTheme.spacing.xs)
                             .background(Color(0xFF1E1E1E).copy(alpha = if (controlsVisible || autoHidden || dismissed) 0f else 0.85f))
                     )

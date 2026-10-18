@@ -18,6 +18,12 @@ internal fun PlaybackPlayerSection(
     val usesExternalPlayer = settings.playerPreference == PlayerPreference.EXTERNAL
 
     SettingsActionRow(
+        title = stringResource(R.string.playback_default_player),
+        subtitle = null,
+        value = playerPreferenceLabel(settings.playerPreference),
+        onClick = { onOpenDialog(PlaybackDialog.PLAYER_PREFERENCE) }
+    )
+    SettingsActionRow(
         title = stringResource(R.string.playback_internal_player_engine),
         subtitle = null,
         value = internalEngineLabel(settings.internalPlayerEngine),
@@ -169,6 +175,13 @@ internal fun PlaybackPlayerInterfaceSection(
         onToggle = { onUpdate { setParentalGuideEnabled(!settings.parentalGuideEnabled) } },
         enabled = internalPlayer
     )
+}
+
+@Composable
+private fun playerPreferenceLabel(preference: PlayerPreference): String = when (preference) {
+    PlayerPreference.INTERNAL -> stringResource(R.string.playback_player_internal)
+    PlayerPreference.EXTERNAL -> stringResource(R.string.playback_player_external)
+    PlayerPreference.ASK_EVERY_TIME -> stringResource(R.string.playback_player_ask)
 }
 
 @Composable

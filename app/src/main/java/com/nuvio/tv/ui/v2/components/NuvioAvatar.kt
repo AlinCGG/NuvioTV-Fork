@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,14 +31,16 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.nuvio.tv.ui.components.avatarShowsPlaceholder
 import com.nuvio.tv.ui.theme.NuvioTheme
 
 @Immutable
 data class AvatarModel(val id: String, val name: String, val colorHex: String, val imageUrl: String? = null)
 
-/** Immediate initials underneath a bounded cached image; failed downloads never remove identity. */
+/** Initials or the portrait placeholder until the bounded cached image loads; failed downloads never remove identity. */
 @Composable
 fun NuvioAvatar(
     avatar: AvatarModel,
@@ -61,6 +66,7 @@ fun NuvioAvatar(
             ImageRequest.Builder(context).data(it).size(pixels, pixels).crossfade(120).build()
         }
     }
+    var imageLoaded by remember(request) { mutableStateOf(false) }
     Box(
         modifier.size(size).nuvioV2Focus(focused, CircleShape, if (portraitPlaceholder) NuvioTheme.colors.Secondary else null).clip(CircleShape)
             .background(if (portraitPlaceholder) Color(0xFF0C1A29) else color, CircleShape)
@@ -69,13 +75,16 @@ fun NuvioAvatar(
             .semantics { description?.let { contentDescription = it }; this.selected = selected },
         contentAlignment = Alignment.Center
     ) {
-        if (portraitPlaceholder) {
-            androidx.tv.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Person, null,
-                Modifier.size(size * .46f), tint = Color(0xFFB9D4FF))
-        } else Text(avatar.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-            color = Color.White, fontSize = (size.value * 0.38f).sp, fontWeight = FontWeight.SemiBold)
+        if (avatarShowsPlaceholder(avatar.imageUrl, imageLoaded)) {
+            if (portraitPlaceholder) {
+                androidx.tv.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Person, null,
+                    Modifier.size(size * .46f), tint = Color(0xFFB9D4FF))
+            } else Text(avatar.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                color = Color.White, fontSize = (size.value * 0.38f).sp, fontWeight = FontWeight.SemiBold)
+        }
         if (request != null) {
-            AsyncImage(request, contentDescription = null, modifier = Modifier.size(size), contentScale = ContentScale.Crop)
+            AsyncImage(request, contentDescription = null, modifier = Modifier.size(size),
+                onState = { imageLoaded = it is AsyncImagePainter.State.Success }, contentScale = ContentScale.Crop)
         }
     }
 }

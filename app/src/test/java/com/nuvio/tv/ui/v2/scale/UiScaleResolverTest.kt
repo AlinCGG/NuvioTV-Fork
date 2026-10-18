@@ -29,6 +29,19 @@ class UiScaleResolverTest {
     }
 
     @Test
+    fun `calibration is the canvas part of an automatic scale and 100 otherwise`() {
+        assertEquals(75, resolver.resolve(canvas, DeviceUiPreferences()).calibrationPercent)
+        val tuned = resolver.resolve(canvas, DeviceUiPreferences(autoScaleFineTunePercent = 10))
+        assertEquals(75, tuned.calibrationPercent)
+        assertEquals(75, resolver.resolve(canvas, DeviceUiPreferences(autoScaleFineTunePercent = -10)).calibrationPercent)
+        assertEquals(100, resolver.resolve(canvas.copy(baseDensity = 1.5f), DeviceUiPreferences()).calibrationPercent)
+        assertEquals(115, resolver.resolve(canvas.copy(baseDensity = 0.5f), DeviceUiPreferences()).calibrationPercent)
+        assertEquals(100, resolver.resolve(canvas.copy(windowHeightPx = 0), DeviceUiPreferences()).calibrationPercent)
+        val manual = DeviceUiPreferences(uiScaleMode = UiScaleMode.MANUAL, manualUiScalePercent = 75)
+        assertEquals(100, resolver.resolve(canvas, manual).calibrationPercent)
+    }
+
+    @Test
     fun `manual scale ignores canvas and automatic fine adjustment`() {
         val preferences = DeviceUiPreferences(uiScaleMode = UiScaleMode.MANUAL, manualUiScalePercent = 90, autoScaleFineTunePercent = 10)
         assertEquals(90, resolver.resolve(canvas.copy(windowWidthPx = 0), preferences).percent)

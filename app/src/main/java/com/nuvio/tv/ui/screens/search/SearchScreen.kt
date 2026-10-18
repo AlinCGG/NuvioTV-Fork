@@ -117,6 +117,7 @@ import com.nuvio.tv.ui.components.ErrorState
 import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.components.PosterCardDefaults
 import com.nuvio.tv.ui.components.PosterCardStyle
+import com.nuvio.tv.ui.components.rememberScaledPosterCardStyle
 import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.model.stableKey
 import android.view.inputmethod.CompletionInfo
@@ -314,13 +315,13 @@ fun SearchScreen(
         }
     }
 
-    val posterCardStyle = remember(uiState.posterCardCornerRadiusDp) {
+    val posterCardStyle = rememberScaledPosterCardStyle(
         PosterCardStyle(
             cornerRadius = uiState.posterCardCornerRadiusDp.dp,
             focusedBorderWidth = PosterCardDefaults.Style.focusedBorderWidth,
             focusedScale = PosterCardDefaults.Style.focusedScale
         )
-    }
+    )
 
     val trimmedQuery = remember(uiState.query) { uiState.query.trim() }
     val trimmedSubmittedQuery = remember(uiState.submittedQuery) { uiState.submittedQuery.trim() }

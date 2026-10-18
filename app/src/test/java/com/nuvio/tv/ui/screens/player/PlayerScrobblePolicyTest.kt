@@ -95,4 +95,208 @@ class PlayerScrobblePolicyTest {
         assertTrue(isErrorCardPlayback(placeholderRejected = true, filmOrEpisode = false, playerDurationMs = 0L))
         assertTrue(isErrorCardPlayback(placeholderRejected = true, filmOrEpisode = true, playerDurationMs = 7_080_000L))
     }
+
+    private val knivesOutMs = 7_813_888L
+    private val minute = 60_000L
+
+    @Test
+    fun `a retry that lands on a 2 minute clip of a film is a placeholder`() {
+        assertTrue(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 120_000L,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = null
+            )
+        )
+    }
+
+    @Test
+    fun `a clip a little over 2 minutes is still caught against the real file or the runtime`() {
+        assertTrue(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 150_000L,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = null
+            )
+        )
+        assertTrue(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 150_000L,
+                longestDurationMs = 150_000L,
+                expectedRuntimeMs = 130 * minute
+            )
+        )
+    }
+
+    @Test
+    fun `the real file keeps its progress`() {
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = knivesOutMs,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = 130 * minute
+            )
+        )
+    }
+
+    @Test
+    fun `short real episodes and shorts are not placeholders`() {
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 11 * minute,
+                longestDurationMs = 11 * minute,
+                expectedRuntimeMs = 11 * minute
+            )
+        )
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 4 * minute,
+                longestDurationMs = 4 * minute,
+                expectedRuntimeMs = 45 * minute
+            )
+        )
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 150_000L,
+                longestDurationMs = 150_000L,
+                expectedRuntimeMs = null
+            )
+        )
+    }
+
+    @Test
+    fun `trailers and other short content are not judged`() {
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = false,
+                playerDurationMs = 90_000L,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = 130 * minute
+            )
+        )
+    }
+
+    @Test
+    fun `an unknown length is not a placeholder`() {
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = -9_223_372_036_854_775_807L,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = 130 * minute
+            )
+        )
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 0L,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = 130 * minute
+            )
+        )
+    }
+
+    @Test
+    fun `a rejected stream is a placeholder whatever its length`() {
+        assertTrue(
+            isPlaceholderPlayback(
+                placeholderRejected = true,
+                filmOrEpisode = false,
+                playerDurationMs = knivesOutMs,
+                longestDurationMs = knivesOutMs,
+                expectedRuntimeMs = null
+            )
+        )
+    }
+
+    @Test
+    fun `a film whose length was first reported far too long keeps its progress`() {
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 120 * minute,
+                longestDurationMs = 26 * 60 * minute,
+                expectedRuntimeMs = null
+            )
+        )
+    }
+
+    @Test
+    fun `a runtime under 20 minutes is not used to judge`() {
+        assertFalse(
+            isPlaceholderPlayback(
+                placeholderRejected = false,
+                filmOrEpisode = true,
+                playerDurationMs = 150_000L,
+                longestDurationMs = 150_000L,
+                expectedRuntimeMs = 15 * minute
+            )
+        )
+    }
+
+    @Test
+    fun `an ended placeholder film opens the sources list once`() {
+        assertTrue(
+            shouldOfferSourcesWhenPlaceholderEnds(
+                placeholderPlayback = true,
+                alreadyHandled = false,
+                hasError = false,
+                filmOrEpisode = true
+            )
+        )
+        assertFalse(
+            shouldOfferSourcesWhenPlaceholderEnds(
+                placeholderPlayback = true,
+                alreadyHandled = true,
+                hasError = false,
+                filmOrEpisode = true
+            )
+        )
+    }
+
+    @Test
+    fun `a real ending, an error or other content does not open the sources list`() {
+        assertFalse(
+            shouldOfferSourcesWhenPlaceholderEnds(
+                placeholderPlayback = false,
+                alreadyHandled = false,
+                hasError = false,
+                filmOrEpisode = true
+            )
+        )
+        assertFalse(
+            shouldOfferSourcesWhenPlaceholderEnds(
+                placeholderPlayback = true,
+                alreadyHandled = false,
+                hasError = true,
+                filmOrEpisode = true
+            )
+        )
+        assertFalse(
+            shouldOfferSourcesWhenPlaceholderEnds(
+                placeholderPlayback = true,
+                alreadyHandled = false,
+                hasError = false,
+                filmOrEpisode = false
+            )
+        )
+    }
 }

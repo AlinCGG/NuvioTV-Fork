@@ -144,9 +144,34 @@ internal fun LayoutContinueWatchingSection(
             checked = uiState.showUnairedNextUp,
             onToggle = { onEvent(LayoutSettingsEvent.SetShowUnairedNextUp(!uiState.showUnairedNextUp)) }
         )
+        val sortSubtitle = stringResource(R.string.layout_cw_sort_mode_sub)
+        val comingUpNote = stringResource(R.string.calendar_coming_up_takes_upcoming)
+        val showComingUpNote = uiState.continueWatchingSortMode == ContinueWatchingSortMode.SPLIT_UPCOMING &&
+            calendarComingUpRowOn()
         SettingsActionRow(
             title = stringResource(R.string.layout_cw_sort_mode),
-            subtitle = stringResource(R.string.layout_cw_sort_mode_sub),
+            subtitle = sortSubtitle,
+            subtitleContent = if (showComingUpNote) {
+                { _, alpha ->
+                    Text(
+                        text = sortSubtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = NuvioTheme.colors.TextSecondary.copy(alpha = alpha),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.xxs))
+                    Text(
+                        text = comingUpNote,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = NuvioTheme.colors.Secondary.copy(alpha = alpha),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            } else {
+                null
+            },
             value = when (uiState.continueWatchingSortMode) {
                 ContinueWatchingSortMode.DEFAULT -> stringResource(R.string.layout_cw_sort_default)
                 ContinueWatchingSortMode.STREAMING_STYLE -> stringResource(R.string.layout_cw_sort_streaming)
@@ -506,7 +531,8 @@ private fun ContinueWatchingSortModeDialog(
         SettingsPickerOption(
             ContinueWatchingSortMode.SPLIT_UPCOMING,
             stringResource(R.string.layout_cw_sort_split_upcoming),
-            stringResource(R.string.layout_cw_sort_split_upcoming_desc)
+            stringResource(R.string.layout_cw_sort_split_upcoming_desc),
+            note = stringResource(R.string.calendar_coming_up_takes_upcoming)
         )
     )
 

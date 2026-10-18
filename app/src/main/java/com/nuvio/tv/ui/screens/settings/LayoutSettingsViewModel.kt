@@ -74,6 +74,7 @@ data class LayoutSettingsUiState(
     val blurUnwatchedEpisodes: Boolean = false,
     val randomEpisodeEnabled: Boolean = false,
     val episodeOptionsOverlayStyle: EpisodeOptionsOverlayStyle = EpisodeOptionsOverlayStyle.BLUR,
+    val episodeSynopsisUnderRow: Boolean = true,
     val homeImdbRatingsVisibility: HomeImdbRatingsVisibility = HomeImdbRatingsVisibility.SHOW_ALL,
     val detailImdbRatingsVisibility: DetailImdbRatingsVisibility = DetailImdbRatingsVisibility.SHOW_ALL,
     val blurContinueWatchingNextUp: Boolean = false,
@@ -84,7 +85,6 @@ data class LayoutSettingsUiState(
     val imdbTrailersEnabled: Boolean = false,
     val detailPageTrailerPlayInBackground: Boolean = false,
     val detailPageTrailerPauseOnScroll: Boolean = true,
-    val trailer4kEnabled: Boolean = true,
     val preferExternalMetaAddonDetail: Boolean = false,
     val hideUnreleasedContent: Boolean = false,
     val watchedTitlesMode: WatchedTitlesMode = WatchedTitlesMode.SHOW,
@@ -143,6 +143,7 @@ sealed class LayoutSettingsEvent {
     data class SetBlurUnwatchedEpisodes(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetRandomEpisodeEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetEpisodeOptionsOverlayStyle(val style: EpisodeOptionsOverlayStyle) : LayoutSettingsEvent()
+    data class SetEpisodeSynopsisUnderRow(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetHomeImdbRatingsVisibility(val visibility: HomeImdbRatingsVisibility) : LayoutSettingsEvent()
     data class SetDetailImdbRatingsVisibility(val visibility: DetailImdbRatingsVisibility) : LayoutSettingsEvent()
     data class SetBlurContinueWatchingNextUp(val enabled: Boolean) : LayoutSettingsEvent()
@@ -153,7 +154,6 @@ sealed class LayoutSettingsEvent {
     data class SetImdbTrailersEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetDetailPageTrailerPlayInBackground(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetDetailPageTrailerPauseOnScroll(val enabled: Boolean) : LayoutSettingsEvent()
-    data class SetTrailer4kEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetPreferExternalMetaAddonDetail(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetHideUnreleasedContent(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetWatchedTitlesMode(val mode: WatchedTitlesMode) : LayoutSettingsEvent()
@@ -351,6 +351,11 @@ class LayoutSettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            layoutPreferenceDataStore.episodeSynopsisUnderRow.distinctUntilChanged().collectLatest { enabled ->
+                updateUiStateIfChanged { it.copy(episodeSynopsisUnderRow = enabled) }
+            }
+        }
+        viewModelScope.launch {
             layoutPreferenceDataStore.homeImdbRatingsVisibility.distinctUntilChanged().collectLatest { visibility ->
                 updateUiStateIfChanged { it.copy(homeImdbRatingsVisibility = visibility) }
             }
@@ -383,8 +388,7 @@ class LayoutSettingsViewModel @Inject constructor(
                         detailPageTrailerAutoplayDelaySeconds = settings.delaySeconds,
                         imdbTrailersEnabled = settings.source == TrailerSource.IMDB,
                         detailPageTrailerPlayInBackground = settings.playInBackground,
-                        detailPageTrailerPauseOnScroll = settings.pauseOnScroll,
-                        trailer4kEnabled = settings.allow4k
+                        detailPageTrailerPauseOnScroll = settings.pauseOnScroll
                     )
                 }
             }
@@ -498,6 +502,7 @@ class LayoutSettingsViewModel @Inject constructor(
             is LayoutSettingsEvent.SetBlurUnwatchedEpisodes -> setBlurUnwatchedEpisodes(event.enabled)
             is LayoutSettingsEvent.SetRandomEpisodeEnabled -> setRandomEpisodeEnabled(event.enabled)
             is LayoutSettingsEvent.SetEpisodeOptionsOverlayStyle -> setEpisodeOptionsOverlayStyle(event.style)
+            is LayoutSettingsEvent.SetEpisodeSynopsisUnderRow -> setEpisodeSynopsisUnderRow(event.enabled)
             is LayoutSettingsEvent.SetHomeImdbRatingsVisibility -> setHomeImdbRatingsVisibility(event.visibility)
             is LayoutSettingsEvent.SetDetailImdbRatingsVisibility -> setDetailImdbRatingsVisibility(event.visibility)
             is LayoutSettingsEvent.SetBlurContinueWatchingNextUp -> setBlurContinueWatchingNextUp(event.enabled)
@@ -508,7 +513,6 @@ class LayoutSettingsViewModel @Inject constructor(
             is LayoutSettingsEvent.SetImdbTrailersEnabled -> setImdbTrailersEnabled(event.enabled)
             is LayoutSettingsEvent.SetDetailPageTrailerPlayInBackground -> setDetailPageTrailerPlayInBackground(event.enabled)
             is LayoutSettingsEvent.SetDetailPageTrailerPauseOnScroll -> setDetailPageTrailerPauseOnScroll(event.enabled)
-            is LayoutSettingsEvent.SetTrailer4kEnabled -> setTrailer4kEnabled(event.enabled)
             is LayoutSettingsEvent.SetPreferExternalMetaAddonDetail -> setPreferExternalMetaAddonDetail(event.enabled)
             is LayoutSettingsEvent.SetHideUnreleasedContent -> setHideUnreleasedContent(event.enabled)
             is LayoutSettingsEvent.SetWatchedTitlesMode -> setWatchedTitlesMode(event.mode)
@@ -825,13 +829,6 @@ class LayoutSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun setTrailer4kEnabled(enabled: Boolean) {
-        if (_uiState.value.trailer4kEnabled == enabled) return
-        viewModelScope.launch {
-            trailerSettingsDataStore.setAllow4k(enabled)
-        }
-    }
-
     private fun setBlurUnwatchedEpisodes(enabled: Boolean) {
         if (_uiState.value.blurUnwatchedEpisodes == enabled) return
         viewModelScope.launch {
@@ -843,6 +840,13 @@ class LayoutSettingsViewModel @Inject constructor(
         if (_uiState.value.episodeOptionsOverlayStyle == style) return
         viewModelScope.launch {
             layoutPreferenceDataStore.setEpisodeOptionsOverlayStyle(style)
+        }
+    }
+
+    private fun setEpisodeSynopsisUnderRow(enabled: Boolean) {
+        if (_uiState.value.episodeSynopsisUnderRow == enabled) return
+        viewModelScope.launch {
+            layoutPreferenceDataStore.setEpisodeSynopsisUnderRow(enabled)
         }
     }
 

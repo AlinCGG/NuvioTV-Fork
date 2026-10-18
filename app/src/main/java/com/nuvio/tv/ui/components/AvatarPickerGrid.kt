@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -117,7 +118,7 @@ fun AvatarPickerGrid(
 
     val filteredAvatars = remember(avatars, selectedCategory) {
         when (selectedCategory) {
-            "all" -> avatars.filterNot { it.category == LocalProfileAvatars.CATEGORY }
+            "all" -> avatars
             "supporter" -> avatars.filter { it.memberOnly }
             else -> avatars.filter {
                 !it.memberOnly && it.category.equals(selectedCategory, ignoreCase = true)
@@ -175,7 +176,9 @@ fun AvatarPickerGrid(
                 contentPadding = PaddingValues(horizontal = NuvioTheme.spacing.sm, vertical = NuvioTheme.spacing.xs),
                 horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
                 verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusGroup()
             ) {
                 itemsIndexed(filteredAvatars, key = { _, avatar -> avatar.id }) { index, avatar ->
                     AvatarGridItem(

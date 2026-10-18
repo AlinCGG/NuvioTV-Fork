@@ -205,6 +205,21 @@ internal fun PlaybackStreamSelectionSection(
         checked = settings.speculativeStreamSearchEnabled,
         onToggle = { onUpdate { setSpeculativeStreamSearchEnabled(!settings.speculativeStreamSearchEnabled) } }
     )
+
+    if (settings.speculativeStreamSearchEnabled) {
+        SettingsToggleRow(
+            title = stringResource(R.string.playback_source_line_badges),
+            subtitle = stringResource(R.string.playback_source_line_badges_sub),
+            checked = settings.showSourceLineBadges,
+            onToggle = { onUpdate { setShowSourceLineBadges(!settings.showSourceLineBadges) } }
+        )
+        SettingsToggleRow(
+            title = stringResource(R.string.playback_source_line_release_group),
+            subtitle = stringResource(R.string.playback_source_line_release_group_sub),
+            checked = settings.showSourceLineReleaseGroup,
+            onToggle = { onUpdate { setShowSourceLineReleaseGroup(!settings.showSourceLineReleaseGroup) } }
+        )
+    }
 }
 
 @Composable

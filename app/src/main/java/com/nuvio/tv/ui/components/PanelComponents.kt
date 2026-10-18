@@ -173,6 +173,8 @@ internal fun PlayerPanelRow(
     onLongClick: (() -> Unit)? = null,
     subtitle: String? = null,
     titleEnd: String? = null,
+    titleMaxLines: Int = 1,
+    subtitleMaxLines: Int = 1,
     focusRequester: FocusRequester? = null,
     onFocused: (() -> Unit)? = null,
     trailing: (@Composable (focused: Boolean) -> Unit)? = null
@@ -231,9 +233,9 @@ internal fun PlayerPanelRow(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = title.contentTextDirection()),
                     color = titleColor,
-                    maxLines = 1,
+                    maxLines = titleMaxLines,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).then(if (titleMaxLines > 1) Modifier.alignByBaseline() else Modifier)
                 )
                 if (!titleEnd.isNullOrBlank()) {
                     Spacer(modifier = Modifier.width(8.dp))
@@ -241,7 +243,8 @@ internal fun PlayerPanelRow(
                         text = titleEnd,
                         style = MaterialTheme.typography.bodySmall.copy(textDirection = titleEnd.contentTextDirection()),
                         color = subtitleColor,
-                        maxLines = 1
+                        maxLines = 1,
+                        modifier = if (titleMaxLines > 1) Modifier.alignByBaseline() else Modifier
                     )
                 }
             }
@@ -252,7 +255,7 @@ internal fun PlayerPanelRow(
                     modifier = Modifier.align(subtitle.contentTextDirection().toAbsoluteAlignment()),
                     style = MaterialTheme.typography.bodySmall.copy(textDirection = subtitle.contentTextDirection()),
                     color = subtitleColor,
-                    maxLines = 1,
+                    maxLines = subtitleMaxLines,
                     overflow = TextOverflow.Ellipsis
                 )
             }

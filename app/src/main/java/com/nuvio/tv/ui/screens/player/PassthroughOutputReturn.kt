@@ -73,6 +73,11 @@ internal object PassthroughOutputReturn {
     fun outputReadyForRetry(live: Set<Int>, routeIsHdmi: Boolean): Boolean =
         live.isNotEmpty() || routeIsHdmi
 
+    fun outputReadyNow(context: Context): Boolean = outputReadyForRetry(
+        live = liveEncodings(context),
+        routeIsHdmi = isHdmiRoute(runCatching { AudioOutputRouteDetector.detect(context)?.key }.getOrNull())
+    )
+
     fun retryMayProceed(outputReady: Boolean, waitedMs: Long): Boolean =
         outputReady || waitedMs >= MAX_RETRY_WAIT_MS
 

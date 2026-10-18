@@ -496,6 +496,11 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setParallelNetworkEnabled(enabled)
     }
 
+    suspend fun setAutoSpeedupEnabled(enabled: Boolean) {
+        com.nuvio.tv.core.network.PlaybackSocketFactory.windowEnabled = enabled
+        playerSettingsDataStore.setAutoSpeedupEnabled(enabled)
+    }
+
     suspend fun setAllowLargeTargetBuffer(enabled: Boolean) {
         playerSettingsDataStore.setAllowLargeTargetBuffer(enabled)
     }
@@ -622,6 +627,14 @@ class PlaybackSettingsViewModel @Inject constructor(
 
     suspend fun setSpeculativeStreamSearchEnabled(enabled: Boolean) {
         playerSettingsDataStore.setSpeculativeStreamSearchEnabled(enabled)
+    }
+
+    suspend fun setShowSourceLineBadges(enabled: Boolean) {
+        playerSettingsDataStore.setShowSourceLineBadges(enabled)
+    }
+
+    suspend fun setShowSourceLineReleaseGroup(enabled: Boolean) {
+        playerSettingsDataStore.setShowSourceLineReleaseGroup(enabled)
     }
 
     suspend fun setStreamAutoPlayEagerReadyEnabled(enabled: Boolean) {

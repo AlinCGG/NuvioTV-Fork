@@ -106,6 +106,7 @@
     <string name="calendar_setting_coming_up">Coming up row</string>
     <string name="calendar_setting_coming_up_sub">A row after Continue Watching with new and upcoming episodes and films from your Calendar</string>
     <string name="calendar_coming_up_title">Coming up</string>
+    <string name="calendar_coming_up_takes_upcoming">While the Calendar\'s Coming up row is on, these episodes are shown in Coming up instead.</string>
     <string name="calendar_coming_up_new">New</string>
     <string name="calendar_coming_up_today_at">Today %1$s</string>
     <string name="calendar_coming_up_tonight_at">Tonight %1$s</string>

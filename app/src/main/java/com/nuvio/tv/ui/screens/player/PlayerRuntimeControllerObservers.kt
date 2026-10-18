@@ -453,7 +453,7 @@ internal fun PlayerRuntimeController.observeSubtitleSettings() {
             }
 
             if (!settings.pauseOverlayEnabled) {
-                cancelPauseOverlay()
+                if (!pauseDetails.holdsOverlay(_uiState.value.showPauseOverlay)) cancelPauseOverlay()
             } else if (!_uiState.value.isPlaying &&
                 !_uiState.value.showPauseOverlay && pauseOverlayJob == null &&
                 userPausedManually && hasRenderedFirstFrame
@@ -586,7 +586,7 @@ internal fun PlayerRuntimeController.loadSavedProgressFor(season: Int?, episode:
 
     scope.launch {
         pendingResumeProgress = null
-        val local = if (isCloudLibraryPlayback) {
+        val progress = if (isCloudLibraryPlayback) {
             loadCloudLibraryResumeProgress()
         } else if (season != null && episode != null) {
             watchProgressRepository.getEpisodeProgress(
@@ -598,7 +598,6 @@ internal fun PlayerRuntimeController.loadSavedProgressFor(season: Int?, episode:
         } else {
             watchProgressRepository.getProgress(progressContentId!!, profileId).firstOrNull()
         }
-        val progress = newerServerProgress(local)
 
         progress?.let { saved ->
 
@@ -636,7 +635,7 @@ internal suspend fun PlayerRuntimeController.loadSavedProgressSuspend(season: In
     if (!isCloudLibraryPlayback && progressContentId == null) return
 
     pendingResumeProgress = null
-    val local = if (isCloudLibraryPlayback) {
+    val progress = if (isCloudLibraryPlayback) {
         loadCloudLibraryResumeProgress()
     } else savedOrServerProgress {
         if (season != null && episode != null) {
@@ -650,7 +649,6 @@ internal suspend fun PlayerRuntimeController.loadSavedProgressSuspend(season: In
             watchProgressRepository.getProgress(progressContentId!!, profileId).firstOrNull()
         }
     }
-    val progress = newerServerProgress(local)
 
     progress?.let { saved ->
         if (saved.isInProgress()) {

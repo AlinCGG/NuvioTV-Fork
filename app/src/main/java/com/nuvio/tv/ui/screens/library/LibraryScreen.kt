@@ -109,7 +109,7 @@ import com.nuvio.tv.ui.screens.home.HeroBackdropState
 import com.nuvio.tv.ui.screens.stream.PlayerChoiceDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.nuvio.tv.ui.components.PosterCardDefaults
+import com.nuvio.tv.ui.components.rememberPosterCardStyle
 import com.nuvio.tv.domain.model.localizedTitle
 import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.components.NuvioDialog
@@ -205,11 +205,7 @@ fun LibraryScreen(
             keys.firstOrNull() // First in logical order = leftmost in LTR
         }
     }
-    val posterCardStyle = PosterCardDefaults.Style.copy(
-        width = uiState.posterCardWidthDp.dp,
-        height = (uiState.posterCardWidthDp * 3 / 2).dp,
-        cornerRadius = uiState.posterCardCornerRadiusDp.dp
-    )
+    val posterCardStyle = rememberPosterCardStyle(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp)
 
     val routeCloudPlayback: (CloudLibraryPlaybackInfo) -> Unit = { info ->
         scope.launch {

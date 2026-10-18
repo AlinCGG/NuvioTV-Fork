@@ -82,6 +82,8 @@ data class PlayerUiState(
     val showSeekOverlay: Boolean = false,
     val pendingPreviewSeekPosition: Long? = null,
     val previewThumbPositionMs: Long? = null,
+    // Counts the pauses made at the remote; each one puts focus on the timeline.
+    val pauseFocusRequest: Int = 0,
     val playbackSpeed: Float = 1f,
     val loadingOverlayEnabled: Boolean = true,
     val showPlayerLoadingStatus: Boolean = false,
@@ -164,9 +166,6 @@ data class PlayerUiState(
     val episodeStreamsSeason: Int? = null,
     val episodeStreamsEpisode: Int? = null,
     val episodeStreamsTitle: String? = null,
-    val showPartyPanel: Boolean = false,
-    val partyBehind: Boolean = false,
-    val partyBehindMs: Long? = null,
     // Stream sources side panel (for switching streams during playback)
     val showSourcesPanel: Boolean = false,
     val isLoadingSourceStreams: Boolean = false,
@@ -286,8 +285,13 @@ data class TrackInfo(
     val channelCount: Int? = null,
     val isForced: Boolean = false,
     val isSelected: Boolean = false,
-    val sampleRate: Int? = null
+    val sampleRate: Int? = null,
+    /** The track's own name from the file, as written there. */
+    val title: String? = null,
+    val role: TrackRole? = null
 )
+
+enum class TrackRole { COMMENTARY, AUDIO_DESCRIPTION, HEARING_IMPAIRED, ORIGINAL }
 
 data class NextEpisodeInfo(
     val videoId: String,
@@ -356,8 +360,6 @@ sealed class PlayerEvent {
     data class OnEpisodeStreamSelected(val stream: Stream) : PlayerEvent()
     data object OnShowSourcesPanel : PlayerEvent()
     data object OnDismissSourcesPanel : PlayerEvent()
-    data object OnShowPartyPanel : PlayerEvent()
-    data object OnDismissPartyPanel : PlayerEvent()
     data object OnReloadSourceStreams : PlayerEvent()
     data class OnSourceAddonFilterSelected(val addonName: String?) : PlayerEvent()
     data class OnSourceStreamSelected(val stream: Stream) : PlayerEvent()
@@ -368,6 +370,8 @@ sealed class PlayerEvent {
     data class OnShowDisplayModeInfo(val info: DisplayModeInfo) : PlayerEvent()
     data object OnHideDisplayModeInfo : PlayerEvent()
     data object OnDismissPauseOverlay : PlayerEvent()
+    data object OnToggleDetails : PlayerEvent()
+    data object OnCloseDetails : PlayerEvent()
     data object OnSkipIntro : PlayerEvent()
     data object OnDismissSkipIntro : PlayerEvent()
     data object OnPlayNextEpisode : PlayerEvent()

@@ -89,6 +89,7 @@ import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.PersonDetail
 import com.nuvio.tv.ui.components.GridContentCard
 import com.nuvio.tv.ui.components.PosterCardStyle
+import com.nuvio.tv.ui.components.rememberScaledPosterCardStyle
 import com.nuvio.tv.ui.components.PosterCardDefaults
 import com.nuvio.tv.ui.components.LocalLandscapePosterMode
 import com.nuvio.tv.ui.components.rememberShimmerBrush
@@ -189,7 +190,7 @@ private fun CastDetailContent(
     }
 
     val globalLandscape = LocalLandscapePosterMode.current
-    val filmographyPosterStyle = remember(posterCardCornerRadiusDp, globalLandscape) {
+    val filmographyPosterStyle = rememberScaledPosterCardStyle(remember(posterCardCornerRadiusDp, globalLandscape) {
         if (globalLandscape) {
             PosterCardStyle(
                 width = 112.dp,
@@ -207,7 +208,7 @@ private fun CastDetailContent(
                 focusedScale = PosterCardDefaults.Style.focusedScale
             )
         }
-    }
+    })
 
     val firstPosterFocusRequester = remember { FocusRequester() }
     var isBiographyTruncated by rememberSaveable(person.tmdbId) { mutableStateOf(false) }
@@ -656,6 +657,7 @@ private fun CastDetailSkeleton(personName: String) {
     val backgroundColor = NuvioTheme.colors.Background
     val accentColor = NuvioTheme.colors.Secondary
     val shimmerBrush = rememberShimmerBrush()
+    val skeletonPoster = rememberScaledPosterCardStyle(PosterCardStyle(width = 112.dp, height = 168.dp))
 
     Box(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
         val accentGradient = remember(accentColor, backgroundColor) {
@@ -758,11 +760,11 @@ private fun CastDetailSkeleton(personName: String) {
                 horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
             ) {
                 repeat(7) {
-                    Column(modifier = Modifier.width(112.dp)) {
+                    Column(modifier = Modifier.width(skeletonPoster.width)) {
                         Box(
                             modifier = Modifier
-                                .width(112.dp)
-                                .height(168.dp)
+                                .width(skeletonPoster.width)
+                                .height(skeletonPoster.height)
                                 .clip(RoundedCornerShape(PosterCardDefaults.Style.cornerRadius))
                                 .background(shimmerBrush)
                         )

@@ -584,6 +584,7 @@ internal fun ServerFailure.siloMessage(): String = when (this) {
     ServerFailure.FORBIDDEN -> stringResource(R.string.servers_error_forbidden)
     ServerFailure.CERTIFICATE -> stringResource(R.string.servers_certificate_unavailable)
     ServerFailure.UNSUPPORTED -> stringResource(R.string.servers_error_unsupported_server)
+    ServerFailure.STREAM_LIMIT,
     ServerFailure.INCOMPLETE,
     ServerFailure.FAILED -> stringResource(R.string.servers_error_failed)
 }

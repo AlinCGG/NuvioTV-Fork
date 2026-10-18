@@ -30,6 +30,7 @@ import com.nuvio.tv.core.player.thumbnail.SeekThumbMode
 import com.nuvio.tv.core.player.thumbnail.SeekThumbnailPreferences
 import com.nuvio.tv.core.player.thumbnail.SeekThumbnails
 import com.nuvio.tv.core.player.thumbnail.ThumbPrepareMode
+import com.nuvio.tv.core.player.thumbnail.ThumbsBeforePlay
 import com.nuvio.tv.core.player.thumbnail.ThumbnailCache
 import com.nuvio.tv.data.local.PlayerPreference
 import com.nuvio.tv.data.local.PlayerSettings
@@ -170,8 +171,12 @@ private fun PlaybackThumbnailRows(
     val context = LocalContext.current
     val internalPlayer = settings.playerPreference != PlayerPreference.EXTERNAL
     val seekThumbMode by SeekThumbnailPreferences.modeFlow(context).collectAsState(initial = SeekThumbMode.OFF)
-    val seekThumbPrepare by SeekThumbnailPreferences.prepareModeFlow(context)
-        .collectAsState(initial = ThumbPrepareMode.OFF)
+    // Null until the store has answered: the row below is not greyed out for that first frame.
+    val seekThumbPrepareRead by SeekThumbnailPreferences.prepareModeFlow(context)
+        .collectAsState<ThumbPrepareMode, ThumbPrepareMode?>(initial = null)
+    val seekThumbPrepare = seekThumbPrepareRead ?: ThumbPrepareMode.OFF
+    val seekThumbBeforePlay by SeekThumbnailPreferences.beforePlayFlow(context)
+        .collectAsState(initial = ThumbsBeforePlay.FASTER)
     val seekThumbFromCopy by SeekThumbnailPreferences.copyFlow(context).collectAsState(initial = false)
     var seekThumbStoredBytes by remember { mutableStateOf(-1L) }
     val seekThumbScope = rememberCoroutineScope()
@@ -193,6 +198,13 @@ private fun PlaybackThumbnailRows(
         value = stringResource(seekThumbPrepare.label),
         enabled = internalPlayer,
         onClick = { onOpenDialog(PlaybackDialog.SEEK_THUMBNAIL_PREPARE) }
+    )
+    SettingsActionRow(
+        title = stringResource(R.string.seek_thumbnails_before_play_title),
+        subtitle = null,
+        value = stringResource(seekThumbBeforePlay.label),
+        enabled = internalPlayer && seekThumbPrepareRead != ThumbPrepareMode.OFF,
+        onClick = { onOpenDialog(PlaybackDialog.SEEK_THUMBNAILS_BEFORE_PLAY) }
     )
     SettingsToggleRow(
         title = stringResource(R.string.seek_thumbnails_from_copy_title),
@@ -300,6 +312,7 @@ internal fun PlaybackSettingsDialogs(
         )
         PlaybackDialog.SEEK_THUMBNAILS -> SeekThumbnailModeDialog(onUpdate = onUpdate, onDismiss = onDismiss)
         PlaybackDialog.SEEK_THUMBNAIL_PREPARE -> SeekThumbnailPrepareDialog(onUpdate = onUpdate, onDismiss = onDismiss)
+        PlaybackDialog.SEEK_THUMBNAILS_BEFORE_PLAY -> SeekThumbnailBeforePlayDialog(onUpdate = onUpdate, onDismiss = onDismiss)
         else -> {
             AutoPlaySettingsDialogs(dialog, settings, installedAddonNames, enabledPluginNames, onUpdate, onDismiss)
             AudioSettingsDialogs(dialog, settings, onUpdate, onDismiss)
@@ -342,6 +355,25 @@ private fun SeekThumbnailPrepareDialog(onUpdate: PlaybackSettingsUpdate, onDismi
         selectedValue = prepare,
         onOptionSelected = { chosen ->
             onUpdate { SeekThumbnailPreferences.setPrepareMode(context, chosen) }
+            onDismiss()
+        },
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun SeekThumbnailBeforePlayDialog(onUpdate: PlaybackSettingsUpdate, onDismiss: () -> Unit) {
+    val context = LocalContext.current.applicationContext
+    val choice by SeekThumbnailPreferences.beforePlayFlow(context).collectAsState(initial = ThumbsBeforePlay.FASTER)
+    SettingsSingleChoiceDialog(
+        title = stringResource(R.string.seek_thumbnails_before_play_title),
+        subtitle = stringResource(R.string.seek_thumbnails_before_play_subtitle),
+        options = ThumbsBeforePlay.entries.map {
+            SettingsPickerOption(it, stringResource(it.label), stringResource(it.description))
+        },
+        selectedValue = choice,
+        onOptionSelected = { chosen ->
+            onUpdate { SeekThumbnailPreferences.setBeforePlay(context, chosen) }
             onDismiss()
         },
         onDismiss = onDismiss

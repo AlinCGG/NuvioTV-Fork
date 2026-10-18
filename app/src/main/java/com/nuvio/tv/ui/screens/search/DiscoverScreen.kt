@@ -29,7 +29,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -38,10 +37,8 @@ import androidx.compose.ui.res.stringResource
 import com.nuvio.tv.R
 import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.ui.components.EmptyScreenState
-import com.nuvio.tv.ui.components.PosterCardDefaults
-import com.nuvio.tv.ui.components.PosterCardStyle
+import com.nuvio.tv.ui.components.rememberPosterCardStyle
 import com.nuvio.tv.ui.theme.NuvioColors
-import kotlin.math.roundToInt
 
 @Composable
 fun DiscoverScreen(
@@ -58,16 +55,7 @@ fun DiscoverScreen(
     var restoreDiscoverFocus by rememberSaveable { mutableStateOf(false) }
     var pendingDiscoverRestoreOnResume by rememberSaveable { mutableStateOf(false) }
 
-    val posterCardStyle = remember(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp) {
-        val computedHeightDp = (uiState.posterCardWidthDp * 1.5f).roundToInt()
-        PosterCardStyle(
-            width = uiState.posterCardWidthDp.dp,
-            height = computedHeightDp.dp,
-            cornerRadius = uiState.posterCardCornerRadiusDp.dp,
-            focusedBorderWidth = PosterCardDefaults.Style.focusedBorderWidth,
-            focusedScale = PosterCardDefaults.Style.focusedScale
-        )
-    }
+    val posterCardStyle = rememberPosterCardStyle(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp)
 
     LaunchedEffect(uiState.discoverLocation) {
         if (uiState.discoverLocation != DiscoverLocation.OFF) {

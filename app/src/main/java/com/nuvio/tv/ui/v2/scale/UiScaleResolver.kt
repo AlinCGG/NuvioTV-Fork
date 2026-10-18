@@ -5,7 +5,14 @@ import com.nuvio.tv.domain.model.UiScaleMode
 import com.nuvio.tv.ui.v2.diagnostics.UiCanvasSnapshot
 import kotlin.math.roundToInt
 
-data class UiScaleDecision(val percent: Int, val reason: String)
+/** [calibrationPercent] is the canvas part of an automatic scale, 100 for a manual one. */
+data class UiScaleDecision(val percent: Int, val reason: String, val calibrationPercent: Int = 100)
+
+/** Poster size factor: the automatic calibration never shrinks posters below the Original look. */
+fun UiScaleDecision.posterSizeFactor(): Float =
+    if (calibrationPercent in 1 until 100) 100f / calibrationPercent else 1f
+
+fun UiScaleDecision.posterSizeDp(presetDp: Int): Float = presetDp * posterSizeFactor()
 
 /** Scales the UI against a reference canvas, so geometry matches across boxes. */
 class UiScaleResolver(
@@ -29,7 +36,8 @@ class UiScaleResolver(
         val fineTune = 1f + preferences.autoScaleFineTunePercent.coerceIn(-10, 10) / 100f
         return UiScaleDecision(
             (raw * fineTune * 100).roundToInt().coerceIn(72, 120),
-            "Logical canvas (${referenceWidthDp.toInt()} x ${referenceHeightDp.toInt()} dp reference)"
+            "Logical canvas (${referenceWidthDp.toInt()} x ${referenceHeightDp.toInt()} dp reference)",
+            calibrationPercent = (raw * 100).roundToInt()
         )
     }
 }

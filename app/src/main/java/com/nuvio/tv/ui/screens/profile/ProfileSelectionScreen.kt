@@ -67,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -76,6 +77,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
@@ -324,6 +326,8 @@ fun ProfileSelectionScreen(
             posterSnapshotVersion = profiles.hashCode() * 31 + posterPreviewPinStates.hashCode()
         )
 
+        val mainContentInteractive = !showCreateProfile && profileToEdit == null && longPressedProfile == null &&
+            profileToDelete == null && settingsCopyTarget == null
         AnimatedContent(
             targetState = pinOverlayState,
             transitionSpec = {
@@ -341,7 +345,12 @@ fun ProfileSelectionScreen(
                 )
                 entering togetherWith exiting
             },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .focusGroup()
+                .focusProperties {
+                    onEnter = { if (!mainContentInteractive) cancelFocusChange() }
+                },
             label = "profilePinTransition"
         ) { activePinOverlay ->
             if (activePinOverlay == null) {
@@ -380,8 +389,7 @@ fun ProfileSelectionScreen(
                         if (screenMode == ProfileSelectionMode.Management) onBackPress?.invoke()
                         else v2Management = !v2Management
                     },
-                    interactive = !showCreateProfile && profileToEdit == null && longPressedProfile == null &&
-                        profileToDelete == null && settingsCopyTarget == null
+                    interactive = mainContentInteractive
                 )
             } else {
                 ProfilePinOverlay(

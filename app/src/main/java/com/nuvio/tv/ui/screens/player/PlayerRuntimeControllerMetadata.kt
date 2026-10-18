@@ -492,7 +492,7 @@ internal fun PlayerRuntimeController.evaluatePostPlayOverlayVisibility(positionM
     // Short debrid/error clips must never arm next-episode auto-play (see #2819).
     // Prefer the largest known duration; the per-poll value can drop transiently.
     val effectiveDurationEarly = maxOf(durationMs, lastKnownDuration)
-    if (isShortPlaceholderDuration(effectiveDurationEarly)) return
+    if (isShortPlaceholderDuration(effectiveDurationEarly) || isPlaceholderPlayback()) return
     // Act only after this stream has reported a position away from its end.
     if (!endDetectionArmed) {
         if (!PlayerNextEpisodeRules.isAwayFromEnd(
@@ -624,8 +624,7 @@ internal fun PlayerRuntimeController.updateActiveSkipInterval(positionMs: Long) 
         if (
             segmentType != null &&
             segmentType in autoSkipSegmentTypes &&
-            activeKey !in autoSkippedIntervalKeys &&
-            !isPartyControlLocked
+            activeKey !in autoSkippedIntervalKeys
         ) {
             autoSkippedIntervalKeys.add(activeKey)
             skipInterval(active)

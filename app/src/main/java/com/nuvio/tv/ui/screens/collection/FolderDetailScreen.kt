@@ -81,6 +81,7 @@ import com.nuvio.tv.R
 import androidx.compose.ui.res.stringResource
 import com.nuvio.tv.ui.components.PosterCardDefaults
 import com.nuvio.tv.ui.components.PosterCardStyle
+import com.nuvio.tv.ui.components.rememberPosterCardStyle
 import com.nuvio.tv.ui.components.LocalCardDepthStyle
 import com.nuvio.tv.ui.components.LocalLandscapePosterMode
 import com.nuvio.tv.ui.components.nuvioCardDepth
@@ -396,11 +397,7 @@ private fun TabbedGridContent(
         }
         currentTab.catalogRow != null -> {
             val items = currentTab.catalogRow.items
-            val posterCardStyle = PosterCardStyle(
-                width = uiState.posterCardWidthDp.dp,
-                height = (uiState.posterCardWidthDp * 1.5f).dp,
-                cornerRadius = uiState.posterCardCornerRadiusDp.dp
-            )
+            val posterCardStyle = rememberPosterCardStyle(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp)
             val itemFocusRequesters = remember(uiState.selectedTabIndex) { mutableMapOf<String, FocusRequester>() }
             var lastFocusedItemKey by remember(
                 uiState.selectedTabIndex,
@@ -910,13 +907,7 @@ private fun FollowLayoutContent(
         return
     }
 
-    val posterCardStyle = remember {
-        PosterCardStyle(
-            width = homeState.posterCardWidthDp.dp,
-            height = homeState.posterCardHeightDp.dp,
-            cornerRadius = homeState.posterCardCornerRadiusDp.dp
-        )
-    }
+    val posterCardStyle = rememberPosterCardStyle(homeState.posterCardWidthDp, homeState.posterCardCornerRadiusDp)
     val noOpCwClick: (ContinueWatchingItem) -> Unit = remember { { } }
     val noOpRemoveCw: (String, Int?, Int?, Boolean) -> Unit = remember { { _, _, _, _ -> } }
     val noOpFolderDetail: (String, String) -> Unit = remember { { _, _ -> } }
