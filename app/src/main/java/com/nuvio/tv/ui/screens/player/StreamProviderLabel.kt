@@ -79,6 +79,15 @@ private val AIOSTREAMS_LABEL = Regex("""\[AIO\S*]\s*(\S+)""")
 private fun aiostreamsIndexer(label: String): String? =
     AIOSTREAMS_LABEL.find(label)?.groupValues?.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }
 
+/** The debrid store named in the stream's label: full name first (unambiguous), then delimited code. */
+fun debridStoreOf(streamName: String?, streamDescription: String?): String? {
+    val label = listOfNotNull(streamName, streamDescription).joinToString("\n")
+    val lower = label.lowercase()
+    val upper = label.uppercase()
+    return DEBRID_STORES.firstOrNull { store -> store.fullNames.any { lower.contains(it) } }?.display
+        ?: DEBRID_STORES.firstOrNull { containsDebridCode(upper, it.code) }?.display
+}
+
 /**
  * @return the provider label, or null when nothing is known (the row is then omitted).
  */
@@ -90,13 +99,9 @@ fun resolveStreamProvider(
 ): String? {
     val label = listOfNotNull(streamName, streamDescription).joinToString("\n")
     val lower = label.lowercase()
-    val upper = label.uppercase()
 
-    // 1. Debrid store: full name first (unambiguous), then delimited code.
-    DEBRID_STORES.firstOrNull { store -> store.fullNames.any { lower.contains(it) } }
-        ?.let { return it.display }
-    DEBRID_STORES.firstOrNull { containsDebridCode(upper, it.code) }
-        ?.let { return it.display }
+    // 1. Debrid store.
+    debridStoreOf(streamName, streamDescription)?.let { return it }
 
     // 2. Library back-end, from the label or the add-on name.
     val libHaystack = lower + "\n" + (addonName ?: "").lowercase()

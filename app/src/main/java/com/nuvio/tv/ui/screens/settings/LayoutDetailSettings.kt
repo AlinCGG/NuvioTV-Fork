@@ -30,6 +30,12 @@ internal fun LayoutDetailPageSection(
         onClick = { showOverlayStyleDialog = true }
     )
     SettingsToggleRow(
+        title = stringResource(R.string.layout_episode_synopsis_under_row),
+        subtitle = stringResource(R.string.layout_episode_synopsis_under_row_sub),
+        checked = uiState.episodeSynopsisUnderRow,
+        onToggle = { onEvent(LayoutSettingsEvent.SetEpisodeSynopsisUnderRow(!uiState.episodeSynopsisUnderRow)) }
+    )
+    SettingsToggleRow(
         title = stringResource(R.string.random_episode_title),
         subtitle = stringResource(R.string.layout_random_episode_sub),
         checked = uiState.randomEpisodeEnabled,
@@ -89,12 +95,6 @@ internal fun LayoutDetailPageSection(
                 }
             )
         }
-        SettingsToggleRow(
-            title = stringResource(R.string.layout_trailer_4k),
-            subtitle = stringResource(R.string.layout_trailer_4k_sub),
-            checked = uiState.trailer4kEnabled,
-            onToggle = { onEvent(LayoutSettingsEvent.SetTrailer4kEnabled(!uiState.trailer4kEnabled)) }
-        )
     }
     SettingsToggleRow(
         title = stringResource(R.string.layout_trailer_button),

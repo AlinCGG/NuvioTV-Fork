@@ -77,26 +77,27 @@ internal fun StreamItem(
     onFocusChanged: ((Boolean) -> Unit)? = null,
     onUpKey: (() -> Unit)? = null
 ) {
-    // Title: "addon - release group" (release group dropped when underivable, worst
-    // case addon name alone). Everything else reads off a single facts line derived
-    // from the classifier (factsFor), which regexes the raw name and so stays populated
-    // even when a debrid source's structured resolver parse is empty.
     val releaseGroup = remember(stream) {
         DirectDebridStreamFilter.releaseGroupOf(stream)
     }
-    val rowTitle = listOfNotNull(
-        stream.addonName,
+    val unknownStreamLabel = stringResource(R.string.stream_unknown)
+    val fallbackTitle = listOfNotNull(
+        stream.addonName.takeIf { it.isNotBlank() },
         releaseGroup.takeIf { it.isNotBlank() }
-    ).joinToString(" - ")
+    ).joinToString(" - ").ifBlank { unknownStreamLabel }
 
-    // Classify once per stream. factsFor's classification fields are
-    // preference-independent (only its *Rank fields read preferences), so default
-    // preferences give correct facts. Cheap enough to do on the composition thread for
-    // the bounded set of visible rows; remember caches per stream.
+    // factsFor's classification fields do not depend on preferences, so defaults give correct facts.
     val facts = remember(stream) {
         DirectDebridStreamFilter.factsFor(stream, DebridStreamPreferences())
     }
-    val factsLine = remember(facts) { streamFactsLine(facts) }
+    val rowText = remember(stream, facts, fallbackTitle) {
+        streamRowText(
+            displayName = stream.getDisplayNameOrNull(),
+            displayDescription = stream.getDisplayDescription(),
+            factsLine = streamFactsLine(facts),
+            fallbackTitle = fallbackTitle
+        )
+    }
     val sizeLabel = if (showFileSizeBadges) remember(facts.size) {
         facts.size?.let { bytes ->
             if (bytes >= 1_073_741_824L) "%.1f GB".format(bytes / 1_073_741_824.0)
@@ -105,9 +106,11 @@ internal fun StreamItem(
     } else null
 
     PlayerPanelRow(
-        title = rowTitle,
+        title = rowText.title,
         titleEnd = sizeLabel,
-        subtitle = factsLine.ifBlank { null },
+        subtitle = rowText.subtitle,
+        titleMaxLines = STREAM_ROW_TITLE_MAX_LINES,
+        subtitleMaxLines = STREAM_ROW_SUBTITLE_MAX_LINES,
         selected = isCurrentStream,
         onClick = onClick,
         focusRequester = if (requestInitialFocus) focusRequester else null,
@@ -123,6 +126,29 @@ internal fun StreamItem(
                 } else false
             } else Modifier),
         trailing = null
+    )
+}
+
+private const val STREAM_ROW_TITLE_MAX_LINES = 3
+private const val STREAM_ROW_SUBTITLE_MAX_LINES = 8
+
+internal data class StreamRowText(val title: String, val subtitle: String?)
+
+/**
+ * Text for a source row in the player: the addon's own name and description, as on the
+ * Sources page. The facts line stands in only when the addon gives no description.
+ */
+internal fun streamRowText(
+    displayName: String?,
+    displayDescription: String?,
+    factsLine: String,
+    fallbackTitle: String
+): StreamRowText {
+    val title = displayName?.trim()?.takeIf { it.isNotEmpty() } ?: fallbackTitle
+    val description = displayDescription?.trim()?.takeIf { it.isNotEmpty() && it != title }
+    return StreamRowText(
+        title = title,
+        subtitle = description ?: factsLine.takeIf { it.isNotBlank() }
     )
 }
 

@@ -440,7 +440,9 @@ fun EpisodesRow(
     scrollToEpisodeId: String? = null,
     onScrollToEpisodeHandled: () -> Unit = {},
     anchorEpisodeId: String? = null,
-    windowResetKey: String? = null
+    windowResetKey: String? = null,
+    showFocusedSynopsis: Boolean = false,
+    onSynopsisBlockHeightChanged: (Int) -> Unit = {}
 ) {
     val dedupedEpisodes = remember(episodes) { episodes.distinctBy { it.id } }
     var optionsEpisode by remember { mutableStateOf<Video?>(null) }
@@ -451,6 +453,12 @@ fun EpisodesRow(
         if (compactEpisodes) originalMetrics.copy(cardWidth = 220.dp, cardHeight = 124.dp,
             cornerRadius = 8.dp, itemSpacing = 16.dp, rowVerticalPadding = 12.dp) else originalMetrics
     }
+    val synopsisUnderRow = showEpisodeSynopsisUnderRow(
+        settingOn = showFocusedSynopsis,
+        compactLook = compactEpisodes,
+        rowHasSynopsis = remember(dedupedEpisodes) { rowHasEpisodeSynopsis(dedupedEpisodes) }
+    )
+    val focusedSynopsisEpisodeId = remember { mutableStateOf<String?>(null) }
     val density = LocalDensity.current
     val rowPrefetchStrategy = remember { LazyListPrefetchStrategy(nestedPrefetchItemCount = 2) }
     val initialEpisodeIndex = remember(dedupedEpisodes, restoreEpisodeId, scrollToEpisodeId, anchorEpisodeId) {
@@ -534,70 +542,84 @@ fun EpisodesRow(
         anchorPlaced = true
     }
 
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onPreviewKeyEvent { event ->
-                val native = event.nativeKeyEvent
-                val isHorizontalKey = native.keyCode == AndroidKeyEvent.KEYCODE_DPAD_LEFT ||
-                    native.keyCode == AndroidKeyEvent.KEYCODE_DPAD_RIGHT
-                if (
-                    isHorizontalKey &&
-                    native.action == AndroidKeyEvent.ACTION_DOWN &&
-                    native.repeatCount > 0
-                ) {
-                    val now = System.currentTimeMillis()
-                    if (now - lastHorizontalKeyRepeatTime < EPISODE_SCROLL_REPEAT_THROTTLE_MS) {
-                        return@onPreviewKeyEvent true
+    Column {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onPreviewKeyEvent { event ->
+                    val native = event.nativeKeyEvent
+                    val isHorizontalKey = native.keyCode == AndroidKeyEvent.KEYCODE_DPAD_LEFT ||
+                        native.keyCode == AndroidKeyEvent.KEYCODE_DPAD_RIGHT
+                    if (
+                        isHorizontalKey &&
+                        native.action == AndroidKeyEvent.ACTION_DOWN &&
+                        native.repeatCount > 0
+                    ) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastHorizontalKeyRepeatTime < EPISODE_SCROLL_REPEAT_THROTTLE_MS) {
+                            return@onPreviewKeyEvent true
+                        }
+                        lastHorizontalKeyRepeatTime = now
                     }
-                    lastHorizontalKeyRepeatTime = now
+                    false
+                },
+            state = lazyListState,
+            contentPadding = PaddingValues(
+                start = if (com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null) detailStartInset else cardMetrics.rowHorizontalPadding,
+                end = cardMetrics.rowHorizontalPadding,
+                top = cardMetrics.rowVerticalPadding,
+                bottom = cardMetrics.rowVerticalPadding
+            ),
+            horizontalArrangement = Arrangement.spacedBy(cardMetrics.itemSpacing)
+        ) {
+            items(
+                items = dedupedEpisodes,
+                key = { it.id },
+                contentType = { EPISODE_CARD_CONTENT_TYPE }
+            ) { episode ->
+                val seasonEp = remember(episode.season, episode.episode) { episode.season?.let { s -> episode.episode?.let { e -> s to e } } }
+                val progress = remember(seasonEp, episodeProgressMap) { seasonEp?.let { episodeProgressMap[it] } }
+                val imdbRating = remember(seasonEp, episodeRatings) { seasonEp?.let { episodeRatings[it] } }
+                val isMarkedWatched = remember(seasonEp, watchedEpisodes) { seasonEp?.let { watchedEpisodes.contains(it) } ?: false }
+                val episodeFocusRequester = remember(episode.id) { episodeFocusRequesters.getOrPut(episode.id) { FocusRequester() } }
+                val episodeOnClick = remember(episode, onEpisodeClick) { { onEpisodeClick(episode) } }
+                val episodeOnLongPress = remember(episode.id) { { optionsEpisode = episode } }
+                val episodeOnFocused = remember(episode.id) { {
+                    focusedSynopsisEpisodeId.value = episode.id
+                    onEpisodeFocused(episode)
+                } }
+                val isRestoreTarget = episode.id == restoreEpisodeId
+                val episodeOnFocusRestored = remember(isRestoreTarget, onRestoreFocusHandled) {
+                    if (isRestoreTarget) onRestoreFocusHandled else null
                 }
-                false
-            },
-        state = lazyListState,
-        contentPadding = PaddingValues(
-            start = if (com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null) detailStartInset else cardMetrics.rowHorizontalPadding,
-            end = cardMetrics.rowHorizontalPadding,
-            top = cardMetrics.rowVerticalPadding,
-            bottom = cardMetrics.rowVerticalPadding
-        ),
-        horizontalArrangement = Arrangement.spacedBy(cardMetrics.itemSpacing)
-    ) {
-        items(
-            items = dedupedEpisodes,
-            key = { it.id },
-            contentType = { EPISODE_CARD_CONTENT_TYPE }
-        ) { episode ->
-            val seasonEp = remember(episode.season, episode.episode) { episode.season?.let { s -> episode.episode?.let { e -> s to e } } }
-            val progress = remember(seasonEp, episodeProgressMap) { seasonEp?.let { episodeProgressMap[it] } }
-            val imdbRating = remember(seasonEp, episodeRatings) { seasonEp?.let { episodeRatings[it] } }
-            val isMarkedWatched = remember(seasonEp, watchedEpisodes) { seasonEp?.let { watchedEpisodes.contains(it) } ?: false }
-            val episodeFocusRequester = remember(episode.id) { episodeFocusRequesters.getOrPut(episode.id) { FocusRequester() } }
-            val episodeOnClick = remember(episode, onEpisodeClick) { { onEpisodeClick(episode) } }
-            val episodeOnLongPress = remember(episode.id) { { optionsEpisode = episode } }
-            val episodeOnFocused = remember(episode.id) { {
-                onEpisodeFocused(episode)
-            } }
-            val isRestoreTarget = episode.id == restoreEpisodeId
-            val episodeOnFocusRestored = remember(isRestoreTarget, onRestoreFocusHandled) {
-                if (isRestoreTarget) onRestoreFocusHandled else null
+                EpisodeCard(
+                    episode = episode,
+                    watchProgress = progress,
+                    imdbRating = imdbRating,
+                    isMarkedWatched = isMarkedWatched,
+                    blurUnwatched = blurUnwatchedEpisodes,
+                    suppressMarquee = isOverlayOpen,
+                    cardMetrics = cardMetrics,
+                    onClick = episodeOnClick,
+                    onLongPress = episodeOnLongPress,
+                    upFocusRequester = upFocusRequester,
+                    downFocusRequester = downFocusRequester,
+                    focusRequester = episodeFocusRequester,
+                    isFocusEnabled = restoreEpisodeId.isNullOrBlank() || isRestoreTarget,
+                    onFocused = episodeOnFocused,
+                    onFocusRestored = episodeOnFocusRestored
+                )
             }
-            EpisodeCard(
-                episode = episode,
-                watchProgress = progress,
-                imdbRating = imdbRating,
-                isMarkedWatched = isMarkedWatched,
-                blurUnwatched = blurUnwatchedEpisodes,
-                suppressMarquee = isOverlayOpen,
-                cardMetrics = cardMetrics,
-                onClick = episodeOnClick,
-                onLongPress = episodeOnLongPress,
-                upFocusRequester = upFocusRequester,
-                downFocusRequester = downFocusRequester,
-                focusRequester = episodeFocusRequester,
-                isFocusEnabled = restoreEpisodeId.isNullOrBlank() || isRestoreTarget,
-                onFocused = episodeOnFocused,
-                onFocusRestored = episodeOnFocusRestored
+        }
+        if (synopsisUnderRow) {
+            val restingId = remember(dedupedEpisodes, anchorEpisodeId, restoreEpisodeId, scrollToEpisodeId) {
+                restingEpisodeSynopsisId(dedupedEpisodes, anchorEpisodeId, restoreEpisodeId, scrollToEpisodeId)
+            }
+            EpisodeSynopsisUnderRow(
+                episodes = dedupedEpisodes,
+                focusedEpisodeId = focusedSynopsisEpisodeId,
+                restingEpisodeId = restingId,
+                onHeightChanged = onSynopsisBlockHeightChanged
             )
         }
     }

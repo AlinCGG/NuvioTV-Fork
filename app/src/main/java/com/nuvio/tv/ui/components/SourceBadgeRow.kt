@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
@@ -34,6 +35,7 @@ import com.nuvio.tv.R
 import com.nuvio.tv.core.debrid.DirectDebridStreamFilter
 import com.nuvio.tv.core.stream.SourcePrefetchPhase
 import com.nuvio.tv.core.stream.SourcePrefetchSignal
+import com.nuvio.tv.core.stream.showsReadyTick
 import com.nuvio.tv.domain.model.DebridStreamAudioChannel
 import com.nuvio.tv.domain.model.DebridStreamAudioTag
 import com.nuvio.tv.domain.model.DebridStreamQuality
@@ -43,7 +45,8 @@ import com.nuvio.tv.domain.model.DebridStreamVisualTag
 /**
  * The details-page source line (fork feature): parsed badges for the
  * locally ranked auto-play winner, a spinner while searching,
- * and a green tick once the link is usable. Renders nothing when [signal] is
+ * and a green tick once the link is usable, or once the source is picked with
+ * the badges hidden. Renders nothing when [signal] is
  * null (MANUAL mode, or no target).
  *
  * Badge order per the signed row rules: resolution, source, one video-tech
@@ -65,21 +68,27 @@ fun SourceBadgeRow(
             SourcePrefetchPhase.SEARCHING -> {
                 SourceLineSpinner()
                 Text(
-                    text = "Finding best source",
+                    text = stringResource(R.string.details_source_line_searching),
                     fontSize = 13.sp,
                     color = Color.White.copy(alpha = 0.55f)
                 )
             }
-            SourcePrefetchPhase.RANKED -> {
-                SourceBadges(signal.facts, signal.badges, badgeHeight, signal.fileSizeBytes)
-            }
-            SourcePrefetchPhase.READY -> {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = Color(0xFF4CAF7D),
-                    modifier = Modifier.size(18.dp)
-                )
+            SourcePrefetchPhase.RANKED, SourcePrefetchPhase.READY -> {
+                if (signal.showsReadyTick) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF7D),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    if (signal.badgesHidden) {
+                        Text(
+                            text = stringResource(R.string.details_source_line_ready),
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.55f)
+                        )
+                    }
+                }
                 SourceBadges(signal.facts, signal.badges, badgeHeight, signal.fileSizeBytes)
             }
         }
