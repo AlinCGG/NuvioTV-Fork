@@ -233,7 +233,7 @@ fun WatchProgress.withCustomPosterArt(pattern: String): WatchProgress {
 
     val ids = CustomPosterUrlResolver.extractIds(contentId)
     val type = if (contentType.equals("movie", ignoreCase = true)) "movie" else "series"
-    val supportsShape = "{shape}" in pattern
+    val supportsShape = CustomPosterUrlResolver.supportsShape(pattern)
 
     val resolvedPoster = CustomPosterUrlResolver.resolve(
         pattern = pattern,
