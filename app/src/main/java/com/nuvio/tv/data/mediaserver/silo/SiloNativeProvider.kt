@@ -35,6 +35,7 @@ import com.nuvio.tv.data.mediaserver.ServerSignInIssue
 import com.nuvio.tv.data.mediaserver.ServerTitle
 import com.nuvio.tv.data.mediaserver.ServerTitleQuery
 import com.nuvio.tv.data.mediaserver.ServerUserState
+import com.nuvio.tv.data.mediaserver.searchEach
 import com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserClient
 import com.nuvio.tv.data.mediaserver.mediabrowser.ServerClientIdentity
 import com.nuvio.tv.data.mediaserver.mediabrowser.dropsEncryption
@@ -324,21 +325,25 @@ class SiloNativeProvider internal constructor(
 
     override suspend fun search(
         session: ServerSession,
-        library: ServerLibrary,
+        kind: ServerMediaKind,
+        libraries: List<ServerLibrary>,
         query: String,
         limit: Int
     ): List<ServerTitle> {
-        val reply = get(
-            session.address,
-            CATALOG_PATH,
-            CatalogPageWire.serializer(),
-            authHeaders(session),
-            libraryQuery(library, sort = null, imageSize = "medium") + mapOf(
-                "q" to query.trim(),
-                "limit" to limit.coerceIn(1, SEARCH_MAX).toString()
-            )
-        )
-        return reply.items.mapNotNull(mapper(session)::title)
+        val mapper = mapper(session)
+        val items = searchEach(libraries) { library ->
+            get(
+                session.address,
+                CATALOG_PATH,
+                CatalogPageWire.serializer(),
+                authHeaders(session),
+                libraryQuery(library, sort = null, imageSize = "medium") + mapOf(
+                    "q" to query.trim(),
+                    "limit" to limit.coerceIn(1, SEARCH_MAX).toString()
+                )
+            ).items
+        }
+        return items.mapNotNull(mapper::title).distinctBy { it.preview.id }.take(limit)
     }
 
     override suspend fun details(session: ServerSession, itemId: String): ServerItemDetails {
@@ -539,7 +544,7 @@ class SiloNativeProvider internal constructor(
     private fun libraryQuery(library: ServerLibrary, sort: String?, imageSize: String): Map<String, String?> = mapOf(
         "source" to "query",
         "library_id" to library.id.substringBefore(PART),
-        "type" to library.kind.takeIf { it != ServerMediaKind.COLLECTION }?.contentType,
+        "type" to library.kind.takeIf { it == ServerMediaKind.MOVIE || it == ServerMediaKind.SERIES }?.contentType,
         "sort" to sort,
         "image_size" to imageSize
     )
@@ -636,7 +641,8 @@ class SiloNativeProvider internal constructor(
         val startedSession = decision.sessionId
         if (decision.outcome != "playable" || started == null || startedSession.isNullOrBlank() || started.stream.url.isBlank()) {
             if (installationIdChanged(decision)) installations.remove(cacheKey(session))
-            throw ServerException(ServerFailure.UNSUPPORTED, decision.terminal?.message, detail = decision.terminal?.message)
+            val failure = if (decision.terminal?.reason == CAPACITY_UNAVAILABLE) ServerFailure.STREAM_LIMIT else ServerFailure.UNSUPPORTED
+            throw ServerException(failure, decision.terminal?.message, detail = decision.terminal?.message, code = decision.terminal?.reason)
         }
         val (sessionId, plan) = seekablePlan(session, body, startedSession, started)
         val effectiveFile = plan.effectiveMediaFileId?.takeIf { it.isNotBlank() } ?: fileId
@@ -1154,6 +1160,7 @@ class SiloNativeProvider internal constructor(
         const val PROFILE_ID = "X-Profile-Id"
         const val PROFILE_TOKEN = "X-Profile-Token"
         const val PROFILE_VERIFICATION = "profile_verification_required"
+        const val CAPACITY_UNAVAILABLE = "capacity_unavailable"
         const val DEVICE_NAME_MAX = 120
         const val RENEW_BEFORE_MS = 60_000L
 

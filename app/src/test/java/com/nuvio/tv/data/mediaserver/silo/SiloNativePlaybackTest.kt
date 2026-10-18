@@ -311,6 +311,22 @@ class SiloNativePlaybackTest {
     }
 
     @Test
+    fun noStreamLeftForTheAccountIsAStreamLimit() = runTest {
+        val (provider, _) = silo(
+            start = """{"protocol_version":3,"server_features":[],"outcome":"adaptation_unavailable",
+                "terminal":{"reason":"capacity_unavailable","message":"Playback capacity is currently unavailable.","retryable":true}}"""
+        )
+
+        try {
+            provider.preparePlayback(session(), request())
+            fail("expected a refusal")
+        } catch (error: ServerException) {
+            assertEquals(ServerFailure.STREAM_LIMIT, error.failure)
+            assertEquals("capacity_unavailable", error.code)
+        }
+    }
+
+    @Test
     fun playbackIsOffWhenSilosPlaybackIsNotSetUp() = runTest {
         val (provider, http) = silo { request ->
             if (request.url.encodedPath == "/api/v2/playback/capabilities") {

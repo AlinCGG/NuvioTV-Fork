@@ -315,6 +315,22 @@ class SiloNativeBrowseTest {
     }
 
     @Test
+    fun aSearchAsksEachLibraryOfItsKindOnce() = runTest {
+        val films4k = ServerLibrary("3", "4K", ServerMediaKind.MOVIE)
+        val (provider, http) = silo { request ->
+            if (request.url.encodedPath != "/api/v2/catalog") return@silo null
+            Reply(200, """{"items":[${card("movie-tmdb-603", "The Matrix")}],"page":{"has_more":false}}""")
+        }
+
+        val found = provider.search(session(listOf(movies, films4k, shows)), ServerMediaKind.MOVIE, listOf(movies, films4k), "matrix", 30)
+
+        assertEquals(listOf("The Matrix"), found.map { it.preview.name })
+        val searches = http.requests.filter { it.url.encodedPath == "/api/v2/catalog" }
+        assertEquals(setOf("1", "3"), searches.map { it.url.queryParameter("library_id") }.toSet())
+        assertTrue(searches.all { it.url.queryParameter("q") == "matrix" && it.url.queryParameter("type") == "movie" })
+    }
+
+    @Test
     fun watchedMarksGoToSilosWatchedList() = runTest {
         val (provider, http) = silo { request -> if (request.url.encodedPath.startsWith("/api/v2/watched/")) Reply(204, "") else null }
 

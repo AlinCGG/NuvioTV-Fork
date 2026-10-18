@@ -321,7 +321,7 @@ internal fun contentIdCandidates(kind: ServerMediaKind, ids: TrackingExternalIds
     return when (kind) {
         ServerMediaKind.MOVIE -> listOfNotNull(tmdb, imdb, tvdb).map { "movie-$it" }
         ServerMediaKind.SERIES -> listOfNotNull(tvdb, tmdb, imdb).map { "series-$it" }
-        ServerMediaKind.COLLECTION -> emptyList()
+        ServerMediaKind.COLLECTION, ServerMediaKind.MIXED -> emptyList()
     }
 }
 

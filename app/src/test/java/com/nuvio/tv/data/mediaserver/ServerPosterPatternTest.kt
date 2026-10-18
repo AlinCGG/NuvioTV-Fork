@@ -65,7 +65,7 @@ class ServerPosterPatternTest {
         val (catalog, _, connection) = catalog(provider)
 
         val search = catalog.catalog(
-            ServerCatalog.baseUrl(connection.id), ServerCatalog.addonId(connection.id), "Box", FakeServerProvider.MOVIE_LIBRARY.id,
+            ServerCatalog.baseUrl(connection.id), ServerCatalog.addonId(connection.id), "Box", "search.movie",
             "Movies", "movie", 0, mapOf("search" to "item"), IMDB_PATTERN
         )
         assertEquals("https://posters.example/tt0068646.jpg", search.items.single().poster)
