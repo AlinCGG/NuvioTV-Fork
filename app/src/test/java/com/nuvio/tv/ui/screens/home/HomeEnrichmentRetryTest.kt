@@ -141,6 +141,7 @@ class HomeEnrichmentRetryTest {
         }
         val tmdbMetadataService = mockk<TmdbMetadataService>(relaxed = true) {
             coEvery { fetchEnrichment(any(), any(), any()) } returns mockk<TmdbEnrichment>(relaxed = true)
+            coEvery { fetchHomeHero(any(), any(), any()) } returns mockk<TmdbEnrichment>(relaxed = true)
         }
         val viewModel = newViewModel(repository, tmdbService, tmdbMetadataService)
         viewModel.currentTmdbSettings = TmdbSettings(enabled = true, modernHomeEnabled = true)
@@ -165,7 +166,7 @@ class HomeEnrichmentRetryTest {
             "the external retry resolved, so it should now be cached too",
             itemId in viewModel.prefetchedExternalMetaIds
         )
-        coVerify(exactly = 1) { tmdbMetadataService.fetchEnrichment(eq("1399"), any(), any()) }
+        coVerify(exactly = 1) { tmdbMetadataService.fetchHomeHero(eq("1399"), any(), any()) }
     }
 
     /**
@@ -257,6 +258,7 @@ class HomeEnrichmentRetryTest {
         }
         val tmdbMetadataService = mockk<TmdbMetadataService>(relaxed = true) {
             coEvery { fetchEnrichment(any(), any(), any()) } returns mockk<TmdbEnrichment>(relaxed = true)
+            coEvery { fetchHomeHero(any(), any(), any()) } returns mockk<TmdbEnrichment>(relaxed = true)
         }
         val viewModel = newViewModel(repository, tmdbService, tmdbMetadataService)
         viewModel.currentTmdbSettings = TmdbSettings(enabled = true, modernHomeEnabled = true)
@@ -266,7 +268,7 @@ class HomeEnrichmentRetryTest {
         focusAndSettle(viewModel, item(itemId))
 
         assertEquals("external already resolved, so it is not fetched again", 0, calls.get())
-        coVerify(exactly = 0) { tmdbMetadataService.fetchEnrichment(any(), any(), any()) }
+        coVerify(exactly = 0) { tmdbMetadataService.fetchHomeHero(any(), any(), any()) }
     }
 
     @Test

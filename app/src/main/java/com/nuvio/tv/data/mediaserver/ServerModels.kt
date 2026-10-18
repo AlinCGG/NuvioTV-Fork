@@ -13,7 +13,8 @@ import kotlinx.serialization.Serializable
 enum class ServerMediaKind(val contentType: String) {
     MOVIE("movie"),
     SERIES("series"),
-    COLLECTION("collection");
+    COLLECTION("collection"),
+    MIXED("mixed");
 
     companion object {
         fun fromContentType(type: String?): ServerMediaKind? = when (type?.trim()?.lowercase()) {
@@ -27,7 +28,8 @@ enum class ServerMediaKind(val contentType: String) {
 fun ServerMediaKind.domainType(): ContentType = when (this) {
     ServerMediaKind.MOVIE -> ContentType.MOVIE
     ServerMediaKind.SERIES -> ContentType.SERIES
-    ServerMediaKind.COLLECTION -> ContentType.UNKNOWN
+    ServerMediaKind.COLLECTION,
+    ServerMediaKind.MIXED -> ContentType.UNKNOWN
 }
 
 @Serializable
@@ -36,7 +38,10 @@ data class ServerLibrary(
     val name: String,
     val kind: ServerMediaKind,
     val selected: Boolean = true
-)
+) {
+    fun holds(kind: ServerMediaKind): Boolean =
+        this.kind == kind || (this.kind == ServerMediaKind.MIXED && (kind == ServerMediaKind.MOVIE || kind == ServerMediaKind.SERIES))
+}
 
 /** A row from the server's own home page, shown on Nuvio Home next to the libraries. */
 @Serializable
@@ -66,7 +71,9 @@ data class ServerConnection(
     /** Null: never renamed. Empty: renamed and reset, so other devices drop their name too. */
     val displayName: String? = null,
     val homeRows: List<ServerHomeRow> = emptyList(),
-    val showHomeRows: Boolean = true
+    val showHomeRows: Boolean = true,
+    /** The account's import_watch_state for this server as other apps set it, sent back unchanged. */
+    val syncedImportWatchState: Boolean? = null
 ) {
     val shownName: String
         get() = displayName?.takeIf { it.isNotBlank() } ?: name
@@ -77,8 +84,9 @@ data class ServerConnection(
     val selectedLibraries: List<ServerLibrary>
         get() = libraries.filter { it.selected }
 
+    /** Selected libraries that hold [kind]; a library of movies and shows comes back narrowed to [kind]. */
     fun selectedLibraries(kind: ServerMediaKind): List<ServerLibrary> =
-        selectedLibraries.filter { it.kind == kind }
+        selectedLibraries.filter { it.holds(kind) }.map { if (it.kind == kind) it else it.copy(kind = kind) }
 }
 
 const val SERVER_DISPLAY_NAME_MAX_LENGTH = 30
@@ -279,6 +287,7 @@ enum class ServerFailure {
     FORBIDDEN,
     UNREACHABLE,
     UNSUPPORTED,
+    STREAM_LIMIT,
     NOT_FOUND,
     INCOMPLETE,
     CERTIFICATE,

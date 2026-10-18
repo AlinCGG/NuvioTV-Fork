@@ -142,6 +142,14 @@ else if (isV2Settings()) NuvioTheme.colors.Secondary.copy(alpha = .20f) else Nuv
 
 @Composable
 @androidx.compose.runtime.ReadOnlyComposable
+internal fun settingsHeaderInset(): Dp = when (NuvioTheme.settingsUiStyle) {
+    SettingsUiStyle.CLASSIC -> 0.dp
+    SettingsUiStyle.ZEN -> NuvioTheme.spacing.md
+    SettingsUiStyle.HORIZON -> NuvioTheme.spacing.xs
+}
+
+@Composable
+@androidx.compose.runtime.ReadOnlyComposable
 internal fun settingsRowShape(): RoundedCornerShape = if (isV2Settings()) settingsItemShape() else when (NuvioTheme.settingsUiStyle) {
     SettingsUiStyle.CLASSIC -> RoundedCornerShape(SettingsPillRadius)
     SettingsUiStyle.ZEN -> SettingsZenRowShape
@@ -209,7 +217,8 @@ internal data class SettingsPickerOption<T>(
     val description: String? = null,
     val trailing: String? = null,
     val titleFontFamily: FontFamily? = null,
-    val warning: String? = null
+    val warning: String? = null,
+    val note: String? = null
 )
 
 @Composable
@@ -603,7 +612,7 @@ internal fun SettingsDetailHeader(
         SettingsUiStyle.ZEN -> Column(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(start = NuvioTheme.spacing.md, bottom = NuvioTheme.spacing.sm),
+                .padding(start = settingsHeaderInset(), bottom = NuvioTheme.spacing.sm),
             verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
         ) {
             Text(
@@ -627,7 +636,7 @@ internal fun SettingsDetailHeader(
         SettingsUiStyle.HORIZON -> Column(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(start = NuvioTheme.spacing.xs, bottom = NuvioTheme.spacing.sm),
+                .padding(start = settingsHeaderInset(), bottom = NuvioTheme.spacing.sm),
             verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)
         ) {
             Text(
@@ -1066,6 +1075,14 @@ internal fun <T> SettingsSingleChoiceDialog(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
+                                if (!option.note.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.xxs))
+                                    Text(
+                                        text = option.note,
+                                        color = NuvioTheme.colors.Secondary,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                             if (!option.trailing.isNullOrBlank()) {
                                 Spacer(modifier = Modifier.width(NuvioTheme.spacing.md))
@@ -1101,7 +1118,8 @@ internal fun <T> SettingsMultiChoiceDialog(
     onDismiss: () -> Unit,
     subtitle: String? = null,
     width: Dp = 520.dp,
-    maxHeight: Dp = 420.dp
+    maxHeight: Dp = 420.dp,
+    maxSelections: Int? = null
 ) {
     val focusRequester = remember { FocusRequester() }
     val selected = remember(selectedValues) { mutableStateListOf<T>().also { it.addAll(selectedValues) } }
@@ -1145,7 +1163,7 @@ internal fun <T> SettingsMultiChoiceDialog(
                             onClick = {
                                 if (isSelected) {
                                     selected.remove(option.value)
-                                } else {
+                                } else if (maxSelections == null || selected.size < maxSelections) {
                                     selected.add(option.value)
                                 }
                             },

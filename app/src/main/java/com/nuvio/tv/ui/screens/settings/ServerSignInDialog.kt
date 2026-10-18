@@ -363,6 +363,7 @@ private fun ServerFailure.signInMessage(provider: ServerProvider): String = when
     }
     ServerFailure.FORBIDDEN -> stringResource(R.string.servers_error_forbidden)
     ServerFailure.CERTIFICATE -> stringResource(R.string.servers_certificate_unavailable)
+    ServerFailure.STREAM_LIMIT,
     ServerFailure.INCOMPLETE,
     ServerFailure.FAILED -> stringResource(R.string.servers_error_failed)
 }

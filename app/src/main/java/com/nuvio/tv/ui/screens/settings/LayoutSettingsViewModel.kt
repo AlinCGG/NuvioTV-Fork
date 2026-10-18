@@ -84,6 +84,7 @@ data class LayoutSettingsUiState(
     val imdbTrailersEnabled: Boolean = false,
     val detailPageTrailerPlayInBackground: Boolean = false,
     val detailPageTrailerPauseOnScroll: Boolean = true,
+    val trailer4kEnabled: Boolean = true,
     val preferExternalMetaAddonDetail: Boolean = false,
     val hideUnreleasedContent: Boolean = false,
     val watchedTitlesMode: WatchedTitlesMode = WatchedTitlesMode.SHOW,
@@ -152,6 +153,7 @@ sealed class LayoutSettingsEvent {
     data class SetImdbTrailersEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetDetailPageTrailerPlayInBackground(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetDetailPageTrailerPauseOnScroll(val enabled: Boolean) : LayoutSettingsEvent()
+    data class SetTrailer4kEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetPreferExternalMetaAddonDetail(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetHideUnreleasedContent(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetWatchedTitlesMode(val mode: WatchedTitlesMode) : LayoutSettingsEvent()
@@ -381,7 +383,8 @@ class LayoutSettingsViewModel @Inject constructor(
                         detailPageTrailerAutoplayDelaySeconds = settings.delaySeconds,
                         imdbTrailersEnabled = settings.source == TrailerSource.IMDB,
                         detailPageTrailerPlayInBackground = settings.playInBackground,
-                        detailPageTrailerPauseOnScroll = settings.pauseOnScroll
+                        detailPageTrailerPauseOnScroll = settings.pauseOnScroll,
+                        trailer4kEnabled = settings.allow4k
                     )
                 }
             }
@@ -505,6 +508,7 @@ class LayoutSettingsViewModel @Inject constructor(
             is LayoutSettingsEvent.SetImdbTrailersEnabled -> setImdbTrailersEnabled(event.enabled)
             is LayoutSettingsEvent.SetDetailPageTrailerPlayInBackground -> setDetailPageTrailerPlayInBackground(event.enabled)
             is LayoutSettingsEvent.SetDetailPageTrailerPauseOnScroll -> setDetailPageTrailerPauseOnScroll(event.enabled)
+            is LayoutSettingsEvent.SetTrailer4kEnabled -> setTrailer4kEnabled(event.enabled)
             is LayoutSettingsEvent.SetPreferExternalMetaAddonDetail -> setPreferExternalMetaAddonDetail(event.enabled)
             is LayoutSettingsEvent.SetHideUnreleasedContent -> setHideUnreleasedContent(event.enabled)
             is LayoutSettingsEvent.SetWatchedTitlesMode -> setWatchedTitlesMode(event.mode)
@@ -818,6 +822,13 @@ class LayoutSettingsViewModel @Inject constructor(
         if (_uiState.value.detailPageTrailerPauseOnScroll == enabled) return
         viewModelScope.launch {
             trailerSettingsDataStore.setPauseOnScroll(enabled)
+        }
+    }
+
+    private fun setTrailer4kEnabled(enabled: Boolean) {
+        if (_uiState.value.trailer4kEnabled == enabled) return
+        viewModelScope.launch {
+            trailerSettingsDataStore.setAllow4k(enabled)
         }
     }
 

@@ -138,6 +138,19 @@ class MediaBrowserPlaybackTest {
         assertEquals(ServerFailure.UNSUPPORTED, unsupported.failure)
     }
 
+    @Test
+    fun tellsAStreamLimitApartFromOtherRefusals() {
+        fun refusal(provider: MediaBrowserProvider, code: String) = assertThrows(ServerException::class.java) {
+            provider.playbackSession(session, request, json.decodeFromString(PlaybackInfoResult.serializer(), """{"ErrorCode": "$code"}"""), "d1")
+        }.failure
+
+        for (provider in listOf(jellyfin, emby)) {
+            assertEquals(ServerFailure.STREAM_LIMIT, refusal(provider, "RateLimitExceeded"))
+            assertEquals(ServerFailure.UNSUPPORTED, refusal(provider, "NoCompatibleStream"))
+            assertEquals(ServerFailure.FORBIDDEN, refusal(provider, "NotAllowed"))
+        }
+    }
+
     private val embySession = ServerSession(
         connection = session.connection.copy(providerId = "emby", address = "https://media.example.com"),
         token = "secret"

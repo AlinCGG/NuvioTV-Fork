@@ -332,6 +332,8 @@ data class PlayerSettings(
      */
     val streamAutoPlayEagerReadyEnabled: Boolean = true,
     val speculativeStreamSearchEnabled: Boolean = false,
+    val showSourceLineBadges: Boolean = true,
+    val showSourceLineReleaseGroup: Boolean = true,
     val preloadNextEpisodeSources: Boolean = false,
     val stillWatchingEnabled: Boolean = false,
     val stillWatchingEpisodeThreshold: Int = DEFAULT_STILL_WATCHING_EPISODE_THRESHOLD,
@@ -348,6 +350,7 @@ data class PlayerSettings(
     // Networking
     val bufferEngineEnabled: Boolean = false,
     val parallelNetworkEnabled: Boolean = false,
+    val autoSpeedupEnabled: Boolean = true,
     /** When true the device memory budget caps the buffer; when false Target Buffer Size drives it. */
     val bufferBudgetManaged: Boolean = DEFAULT_BUFFER_BUDGET_MANAGED,
     /** When true, target buffer slider max is raised to 2GB regardless of device memory. */
@@ -440,9 +443,13 @@ data class PlayerSettings(
         const val DEFAULT_PARALLEL_CONNECTION_COUNT = 2
         const val DEFAULT_PARALLEL_CHUNK_SIZE_KB = 16 * 1024
         const val MIN_PARALLEL_CONNECTION_COUNT = 2
-        const val MAX_PARALLEL_CONNECTION_COUNT = 4
+        const val MAX_PARALLEL_CONNECTION_COUNT = 8
+        const val MAX_PARALLEL_CONNECTION_COUNT_NATIVE_MEMORY = 16
         const val MIN_PARALLEL_CHUNK_SIZE_KB = 256
-        const val MAX_PARALLEL_CHUNK_SIZE_KB = 32 * 1024
+        const val MAX_PARALLEL_CHUNK_SIZE_KB = 128 * 1024
+
+        fun maxParallelConnectionCount(nativeMemory: Boolean): Int =
+            if (nativeMemory) MAX_PARALLEL_CONNECTION_COUNT_NATIVE_MEMORY else MAX_PARALLEL_CONNECTION_COUNT
         const val DEFAULT_ENABLE_HTTP2 = false
         const val DEFAULT_NUVIO_PERFORMANCE_MODE_ENABLED = false
     }
@@ -718,6 +725,8 @@ class PlayerSettingsDataStore @Inject constructor(
     private val streamAutoPlayReuseBingeGroupKey = booleanPreferencesKey("stream_auto_play_reuse_binge_group")
     private val streamAutoPlayTimeoutSecondsKey = intPreferencesKey("stream_auto_play_timeout_seconds")
     private val speculativeStreamSearchEnabledKey = booleanPreferencesKey("speculative_stream_search_enabled")
+    private val showSourceLineBadgesKey = booleanPreferencesKey("show_source_line_badges")
+    private val showSourceLineReleaseGroupKey = booleanPreferencesKey("show_source_line_release_group")
     private val streamAutoPlayEagerReadyEnabledKey = booleanPreferencesKey("stream_auto_play_eager_ready_enabled")
     private val preloadNextEpisodeSourcesKey = booleanPreferencesKey("preload_next_episode_sources")
     private val stillWatchingEnabledKey = booleanPreferencesKey("still_watching_enabled")
@@ -741,6 +750,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val useParallelConnectionsKey = booleanPreferencesKey("use_parallel_connections")
     private val bufferEngineEnabledKey = booleanPreferencesKey("buffer_engine_enabled")
     private val parallelNetworkEnabledKey = booleanPreferencesKey("parallel_network_enabled")
+    private val autoSpeedupEnabledKey = booleanPreferencesKey("auto_speedup_enabled")
     private val allowLargeTargetBufferKey = booleanPreferencesKey("allow_large_target_buffer")
     private val bufferBudgetManagedKey = booleanPreferencesKey("buffer_budget_managed")
     private val parallelConnectionCountKey = intPreferencesKey("parallel_connection_count")
@@ -1221,6 +1231,8 @@ class PlayerSettingsDataStore @Inject constructor(
                     prefs[streamAutoPlayTimeoutSecondsKey]
                 ),
                 speculativeStreamSearchEnabled = prefs[speculativeStreamSearchEnabledKey] ?: false,
+                showSourceLineBadges = prefs[showSourceLineBadgesKey] ?: true,
+                showSourceLineReleaseGroup = prefs[showSourceLineReleaseGroupKey] ?: true,
                 streamAutoPlayEagerReadyEnabled = prefs[streamAutoPlayEagerReadyEnabledKey] ?: true,
                 preloadNextEpisodeSources = prefs[preloadNextEpisodeSourcesKey] ?: false,
                 stillWatchingEnabled = prefs[stillWatchingEnabledKey] ?: false,
@@ -1261,6 +1273,7 @@ class PlayerSettingsDataStore @Inject constructor(
                 useParallelConnections = prefs[useParallelConnectionsKey] ?: PlayerSettings.DEFAULT_USE_PARALLEL_CONNECTIONS,
                 bufferEngineEnabled = prefs[bufferEngineEnabledKey] ?: false,
                 parallelNetworkEnabled = prefs[parallelNetworkEnabledKey] ?: false,
+                autoSpeedupEnabled = prefs[autoSpeedupEnabledKey] ?: true,
                 allowLargeTargetBuffer = prefs[allowLargeTargetBufferKey] ?: PlayerSettings.DEFAULT_ALLOW_LARGE_TARGET_BUFFER,
                 bufferBudgetManaged = prefs[bufferBudgetManagedKey] ?: PlayerSettings.DEFAULT_BUFFER_BUDGET_MANAGED,
                 parallelConnectionCount = run {
@@ -1270,7 +1283,7 @@ class PlayerSettingsDataStore @Inject constructor(
                         isNativeMemory,
                         PlayerSettings.DEFAULT_PARALLEL_CONNECTION_COUNT
                     )
-                    val maxConnectionCount = PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT
+                    val maxConnectionCount = PlayerSettings.maxParallelConnectionCount(isNativeMemory)
                     (prefs[parallelConnectionCountKey] ?: defaultConnectionCount).coerceIn(PlayerSettings.MIN_PARALLEL_CONNECTION_COUNT, maxConnectionCount)
                 },
                 parallelChunkSizeKb = run {
@@ -1853,6 +1866,18 @@ class PlayerSettingsDataStore @Inject constructor(
         store(pid).edit { it[speculativeStreamSearchEnabledKey] = enabled }
     }
 
+    suspend fun setShowSourceLineBadges(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[showSourceLineBadgesKey] = enabled
+        }
+    }
+
+    suspend fun setShowSourceLineReleaseGroup(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[showSourceLineReleaseGroupKey] = enabled
+        }
+    }
+
     suspend fun setStreamAutoPlayEagerReadyEnabled(enabled: Boolean) {
         store().edit { prefs ->
             prefs[streamAutoPlayEagerReadyEnabledKey] = enabled
@@ -2328,13 +2353,6 @@ class PlayerSettingsDataStore @Inject constructor(
         }
     }
 
-    suspend fun setEnableHttp2(enabled: Boolean) = setEnableHttp2(enabled, profileManager.activeProfileId.value)
-
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    internal suspend fun setEnableHttp2(enabled: Boolean, profileId: Int) {
-        store(profileId).edit { it[enableHttp2Key] = enabled }
-    }
-
     suspend fun setVodCacheEnabled(enabled: Boolean) = setVodCacheEnabled(enabled, profileManager.activeProfileId.value)
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -2360,6 +2378,10 @@ class PlayerSettingsDataStore @Inject constructor(
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     internal suspend fun setParallelNetworkEnabled(enabled: Boolean, profileId: Int) {
         store(profileId).edit { it[parallelNetworkEnabledKey] = enabled }
+    }
+
+    suspend fun setAutoSpeedupEnabled(enabled: Boolean) {
+        store().edit { it[autoSpeedupEnabledKey] = enabled }
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -2411,7 +2433,10 @@ class PlayerSettingsDataStore @Inject constructor(
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     internal suspend fun setParallelConnectionCount(count: Int, profileId: Int) {
         store(profileId).edit { prefs ->
-            prefs[parallelConnectionCountKey] = count.coerceIn(PlayerSettings.MIN_PARALLEL_CONNECTION_COUNT, PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT)
+            prefs[parallelConnectionCountKey] = count.coerceIn(
+                PlayerSettings.MIN_PARALLEL_CONNECTION_COUNT,
+                PlayerSettings.maxParallelConnectionCount(isNativeMemoryActive(prefs))
+            )
         }
     }
     suspend fun setParallelChunkSizeKb(kb: Int) = setParallelChunkSizeKb(kb, profileManager.activeProfileId.value)
@@ -2429,7 +2454,10 @@ class PlayerSettingsDataStore @Inject constructor(
             targetBufferSizeMb?.let { prefs[targetBufferSizeMbKey] = it.coerceAtLeast(0) }
             useParallelConnections?.let { prefs[useParallelConnectionsKey] = it }
             parallelConnectionCount?.let {
-                prefs[parallelConnectionCountKey] = it.coerceIn(PlayerSettings.MIN_PARALLEL_CONNECTION_COUNT, PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT)
+                prefs[parallelConnectionCountKey] = it.coerceIn(
+                    PlayerSettings.MIN_PARALLEL_CONNECTION_COUNT,
+                    PlayerSettings.maxParallelConnectionCount(isNativeMemoryActive(prefs))
+                )
             }
             parallelChunkSizeKb?.let {
                 prefs[parallelChunkSizeKbKey] = it.coerceIn(PlayerSettings.MIN_PARALLEL_CHUNK_SIZE_KB, PlayerSettings.MAX_PARALLEL_CHUNK_SIZE_KB)

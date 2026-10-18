@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.nuvio.tv.LocaleCache
 import com.nuvio.tv.core.build.AppFeaturePolicy
 import com.nuvio.tv.core.network.NetworkResult
+import com.nuvio.tv.core.poster.CustomPosterScreen
+import com.nuvio.tv.core.poster.patternForScreen
 import com.nuvio.tv.core.poster.withCustomPosterUrls
 import com.nuvio.tv.core.tmdb.TmdbEnrichment
 import com.nuvio.tv.data.mediaserver.ServerItemRef
@@ -19,6 +21,7 @@ import com.nuvio.tv.data.trailer.trailerPreviewMissTimestamp
 import com.nuvio.tv.data.trailer.trailerPreviewYtIds
 import com.nuvio.tv.domain.model.FocusedPosterTrailerPlaybackTarget
 import com.nuvio.tv.domain.model.HomeImdbRatingsVisibility
+import com.nuvio.tv.domain.model.DetailImdbRatingsVisibility
 import com.nuvio.tv.domain.model.HomeLayout
 import com.nuvio.tv.domain.model.Meta
 import com.nuvio.tv.domain.model.MetaPreview
@@ -79,6 +82,7 @@ private data class LayoutUiPrefs(
     val alwaysShowLandscapeClearlogo: Boolean = false,
     val modernHeroFullScreenBackdropEnabled: Boolean,
     val homeImdbRatingsVisibility: HomeImdbRatingsVisibility,
+    val detailImdbRatingsVisibility: DetailImdbRatingsVisibility = DetailImdbRatingsVisibility.SHOW_ALL,
     val focusedBackdropExpandEnabled: Boolean,
     val focusedBackdropExpandDelaySeconds: Int,
     val focusedBackdropTrailerEnabled: Boolean,
@@ -94,6 +98,7 @@ private data class ModernLayoutPrefs(
     val fullScreenBackdrop: Boolean,
     val homeImdbRatingsVisibility: HomeImdbRatingsVisibility,
     val alwaysShowLandscapeClearlogo: Boolean,
+    val detailImdbRatingsVisibility: DetailImdbRatingsVisibility = DetailImdbRatingsVisibility.SHOW_ALL,
 )
 
 @OptIn(FlowPreview::class)
@@ -151,13 +156,15 @@ internal fun HomeViewModel.observeLayoutPreferencesPipeline() {
         layoutPreferenceDataStore.modernLandscapePostersEnabled,
         layoutPreferenceDataStore.modernHeroFullScreenBackdropEnabled,
         layoutPreferenceDataStore.homeImdbRatingsVisibility,
-        layoutPreferenceDataStore.alwaysShowLandscapeClearlogo
-    ) { landscapePosters, fullScreenBackdrop, homeImdbRatingsVisibility, alwaysShowLandscapeClearlogo ->
+        layoutPreferenceDataStore.alwaysShowLandscapeClearlogo,
+        layoutPreferenceDataStore.detailImdbRatingsVisibility
+    ) { landscapePosters, fullScreenBackdrop, homeImdbRatingsVisibility, alwaysShowLandscapeClearlogo, detailImdbRatingsVisibility ->
         ModernLayoutPrefs(
             landscapePosters = landscapePosters,
             fullScreenBackdrop = fullScreenBackdrop,
             homeImdbRatingsVisibility = homeImdbRatingsVisibility,
             alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
+            detailImdbRatingsVisibility = detailImdbRatingsVisibility,
         )
     }
 
@@ -203,6 +210,7 @@ internal fun HomeViewModel.observeLayoutPreferencesPipeline() {
                 modernHeroFullScreenBackdropEnabled = modernPrefs.fullScreenBackdrop,
                 homeImdbRatingsVisibility = modernPrefs.homeImdbRatingsVisibility,
                 alwaysShowLandscapeClearlogo = modernPrefs.alwaysShowLandscapeClearlogo,
+                detailImdbRatingsVisibility = modernPrefs.detailImdbRatingsVisibility,
             )
         }
             .distinctUntilChanged()
@@ -249,6 +257,7 @@ internal fun HomeViewModel.observeLayoutPreferencesPipeline() {
                         alwaysShowLandscapeClearlogo = prefs.alwaysShowLandscapeClearlogo,
                         modernHeroFullScreenBackdropEnabled = prefs.modernHeroFullScreenBackdropEnabled,
                         homeImdbRatingsVisibility = prefs.homeImdbRatingsVisibility,
+                        detailImdbRatingsVisibility = prefs.detailImdbRatingsVisibility,
                         focusedPosterBackdropExpandEnabled = prefs.focusedBackdropExpandEnabled,
                         focusedPosterBackdropExpandDelaySeconds = prefs.focusedBackdropExpandDelaySeconds,
                         focusedPosterBackdropTrailerEnabled = prefs.focusedBackdropTrailerEnabled,
@@ -278,28 +287,65 @@ internal fun HomeViewModel.observeLayoutPreferencesPipeline() {
     }
 }
 
+private data class ContinueWatchingPosterInput(
+    val enabled: Boolean,
+    val pattern: String,
+    val screens: Set<CustomPosterScreen>,
+    val continueWatchingItems: List<ContinueWatchingItem>,
+    val upcomingItems: List<ContinueWatchingItem>,
+)
+
+private data class ContinueWatchingPosterOverlay(
+    val continueWatchingItems: List<ContinueWatchingItem>,
+    val upcomingItems: List<ContinueWatchingItem>,
+)
+
 @OptIn(FlowPreview::class)
 internal fun HomeViewModel.observeModernHomePresentationPipeline() {
     viewModelScope.launch {
-        combine(uiState, _currentLocaleTag) { state, localeTag ->
+        // Poster URLs are resolved only when the list or the pattern changes.
+        // uiState also emits on focus and catalog updates; resolving there
+        // reran placeholder replacement for every row on each scroll step.
+        val posterOverlay = uiState
+            .map { state ->
+                ContinueWatchingPosterInput(
+                    enabled = state.continueWatchingEnabled,
+                    pattern = state.customPosterUrlPattern,
+                    screens = state.customPosterEnabledScreens,
+                    continueWatchingItems = state.continueWatchingItems,
+                    upcomingItems = state.shownUpcomingItems,
+                )
+            }
+            .distinctUntilChanged()
+            .map { input ->
+                if (!input.enabled) {
+                    ContinueWatchingPosterOverlay(emptyList(), emptyList())
+                } else {
+                    val pattern = patternForScreen(
+                        input.pattern,
+                        CustomPosterScreen.CONTINUE_WATCHING,
+                        input.screens,
+                    )
+                    ContinueWatchingPosterOverlay(
+                        continueWatchingItems = input.continueWatchingItems.withCustomPosterUrls(pattern),
+                        upcomingItems = input.upcomingItems.withCustomPosterUrls(pattern),
+                    )
+                }
+            }
+            .distinctUntilChanged()
+
+        combine(uiState, _currentLocaleTag, posterOverlay) { state, localeTag, overlay ->
                 ModernHomePresentationInput(
                     homeRows = state.homeRows,
                     catalogRows = state.catalogRows,
-                    continueWatchingItems = if (state.continueWatchingEnabled)
-                        state.continueWatchingItems.withCustomPosterUrls(
-                            com.nuvio.tv.core.poster.patternForScreen(state.customPosterUrlPattern, com.nuvio.tv.core.poster.CustomPosterScreen.CONTINUE_WATCHING, state.customPosterEnabledScreens)
-                        )
-                    else emptyList(),
-                    upcomingItems = if (state.continueWatchingEnabled)
-                        state.upcomingItems.withCustomPosterUrls(
-                            com.nuvio.tv.core.poster.patternForScreen(state.customPosterUrlPattern, com.nuvio.tv.core.poster.CustomPosterScreen.CONTINUE_WATCHING, state.customPosterEnabledScreens)
-                        )
-                    else emptyList(),
+                    continueWatchingItems = overlay.continueWatchingItems,
+                    upcomingItems = overlay.upcomingItems,
                     comingUpItems = state.comingUpItems,
                     useLandscapePosters = state.modernLandscapePostersEnabled,
                     showCatalogTypeSuffix = state.catalogTypeSuffixEnabled,
                     showFullReleaseDate = state.showFullReleaseDate,
                     showImdbRatings = state.homeImdbRatingsVisibility.showRatings,
+                    detailImdbRatingsVisibility = state.detailImdbRatingsVisibility,
                     localeTag = localeTag
                 )
             }
@@ -502,8 +548,12 @@ internal fun HomeViewModel.requestTrailerPreviewPipeline(
 
             withContext(Dispatchers.Main) {
                 if (trailerSource == null) {
-                    trailerPreviewNegativeCache[itemId] =
-                        trailerPreviewMissTimestamp(lookup.rememberMiss, System.currentTimeMillis())
+                    // A miss during a YouTube rate-limit pause is not remembered, so the trailer
+                    // comes back on a later focus once the pause is over.
+                    if (!trailerService.isRateLimited()) {
+                        trailerPreviewNegativeCache[itemId] =
+                            trailerPreviewMissTimestamp(lookup.rememberMiss, System.currentTimeMillis())
+                    }
                     trailerPreviewUrlsState.remove(itemId)
                     trailerPreviewAudioUrlsState.remove(itemId)
                 } else {
@@ -620,7 +670,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
                 pendingTmdbEnrichItemId = item.id
                 tmdbEnrichFocusJob = viewModelScope.launch(Dispatchers.IO) {
                     delay(HomeViewModel.EXTERNAL_META_PREFETCH_FOCUS_DEBOUNCE_MS)
-                    prefetchDetailsMeta(item)
+                    prefetchFocusedDetails(item)
                 }
             }
             return
@@ -640,7 +690,8 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
     pendingTmdbEnrichItemId = item.id
     tmdbEnrichFocusJob?.cancel()
     tmdbEnrichFocusJob = viewModelScope.launch(Dispatchers.IO) {
-        delay(HomeViewModel.EXTERNAL_META_PREFETCH_FOCUS_DEBOUNCE_MS)
+        if (_uiState.value.homeLayout != HomeLayout.MODERN)
+                    delay(HomeViewModel.EXTERNAL_META_PREFETCH_FOCUS_DEBOUNCE_MS)
         if (pendingTmdbEnrichItemId != item.id) {
             if (_enrichingItemId.value == item.id) setEnrichingItemId(null)
             return@launch
@@ -653,7 +704,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
             if (!externalEnrichmentOutstanding(item.id)) {
                 if (_enrichingItemId.value == item.id) setEnrichingItemId(null)
                 // Still prefetch full meta in background for instant detail screen.
-                prefetchDetailsMeta(item)
+                prefetchFocusedDetails(item)
                 return@launch
             }
         }
@@ -663,17 +714,27 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
             // Which sources are used depends on settings:
             // - tmdbEnabledForCurrentLayout: controls TMDB enrichment
             // - externalMetaPrefetchEnabled: controls external meta addon fetch
+            val earlyTmdb = java.util.concurrent.atomic.AtomicReference<TmdbEnrichment?>(null)
             val tmdbDeferred = if (tmdbEnabledForCurrentLayout && item.id !in prefetchedTmdbIds) {
                 async {
                     val tmdbId = runCatching { tmdbService.ensureTmdbId(item.id, item.apiType) }.getOrNull()
                         ?: return@async null
                     runCatching {
-                        tmdbMetadataService.fetchEnrichment(
+                        fetchFocusedHeroMetadata(
                             tmdbId = tmdbId,
                             contentType = item.type,
                             language = currentTmdbSettings.language
                         )
-                    }.getOrNull()
+                    }.getOrNull()?.also { core ->
+                        // Publish the preferred provider as soon as its core is ready, even if
+                        // an external addon is still pending. Final merge below keeps precedence.
+                        if (_uiState.value.homeLayout == HomeLayout.MODERN) {
+                            HeroSceneTrace.event("tmdb-core-ready", item.id)
+                            earlyTmdb.set(core)
+                            updateCatalogItemWithTmdb(item.id, core)
+                            if (_enrichingItemId.value == item.id) setEnrichingItemId(null)
+                        }
+                    }
                 }
             } else null
 
@@ -687,7 +748,16 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
                 // the debounce cancels this job before the body runs, and a body that never runs
                 // never reaches its own finally, which would strand the id in the in-flight set
                 // and block every later fetch for that item.
-                async { fetchExternalMetaOutcome(item) }
+                async {
+                    fetchExternalMetaOutcome(item).also { outcome ->
+                        if (_uiState.value.homeLayout == HomeLayout.MODERN && outcome is ExternalMetaOutcome.Resolved) {
+                            HeroSceneTrace.event("external-core-ready", item.id)
+                            updateCatalogItemWithMeta(item.id, outcome.meta)
+                            earlyTmdb.get()?.let { updateCatalogItemWithTmdb(item.id, it) }
+                            if (tmdbDeferred == null && _enrichingItemId.value == item.id) setEnrichingItemId(null)
+                        }
+                    }
+                }
                     .also { d -> d.invokeOnCompletion { externalMetaPrefetchInFlightIds.remove(item.id) } }
             } else null
 
@@ -731,7 +801,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
             }
 
             // Always prefetch full meta in background for instant detail screen loading.
-            prefetchDetailsMeta(item)
+            prefetchFocusedDetails(item)
 
             // Warm up watch progress pipeline so detail screen reads are fast.
             viewModelScope.launch {
@@ -781,7 +851,7 @@ internal fun HomeViewModel.preloadAdjacentItemPipeline(item: MetaPreview) {
                 val tmdbId = runCatching { tmdbService.ensureTmdbId(item.id, item.apiType) }.getOrNull()
                     ?: return@async null
                 runCatching {
-                    tmdbMetadataService.fetchEnrichment(
+                    fetchFocusedHeroMetadata(
                         tmdbId = tmdbId,
                         contentType = item.type,
                         language = currentTmdbSettings.language
@@ -825,7 +895,7 @@ internal fun HomeViewModel.preloadAdjacentItemPipeline(item: MetaPreview) {
 
         val preview = _enrichedPreviews.value[item.id] ?: findCatalogItemById(item.id) ?: item
         artworkWarmup.await()
-        if (preview.backdropUrl != initialPreview.backdropUrl) prefetchHeroArtwork(preview)
+        if (preview.backdropUrl != initialPreview.backdropUrl || preview.logo != initialPreview.logo) prefetchHeroArtwork(preview)
 
         // Background prefetch for detail screen cache.
         prefetchDetailsMeta(item)
@@ -837,6 +907,26 @@ internal fun HomeViewModel.preloadAdjacentItemPipeline(item: MetaPreview) {
  * reuse; a session-long attempted-id marker must not suppress retries or expired data.
  * Runs in the caller's bounded focus/neighbour job, not a detached ViewModel job.
  */
+private suspend fun HomeViewModel.prefetchFocusedDetails(item: MetaPreview) {
+    try {
+    if (_uiState.value.homeLayout == HomeLayout.MODERN && currentTmdbSettings.enabled &&
+        currentTmdbSettings.modernHomeEnabled && currentTmdbSettings.useDetails &&
+        (_enrichedPreviews.value[item.id] ?: item).ageRating.isNullOrBlank()) {
+        val id = tmdbService.ensureTmdbId(item.id, item.apiType)
+        if (id != null) {
+            val rating = tmdbMetadataService.fetchHomeAgeRating(id, item.type, currentTmdbSettings.language)
+            if (rating != null) {
+                updateIndexedCatalogItem(item.id) { it.copy(ageRating = rating) }
+                val preview = findCatalogItemById(item.id) ?: _enrichedPreviews.value[item.id]
+                preview?.let { addEnrichedPreview(item.id, it.copy(ageRating = rating)) }
+            }
+        }
+    }
+    } catch (e: CancellationException) { throw e }
+    catch (e: Exception) { Log.w(HomeViewModel.TAG, "Optional Home age rating unavailable: ${e.javaClass.simpleName}") }
+    prefetchDetailsMeta(item)
+}
+
 internal suspend fun HomeViewModel.prefetchDetailsMeta(item: MetaPreview) {
     val source = item.sourceAddonBaseUrl?.takeIf(String::isNotBlank)
     val preferred = if (!externalMetaPrefetchEnabled && source != null) {
@@ -848,16 +938,32 @@ internal suspend fun HomeViewModel.prefetchDetailsMeta(item: MetaPreview) {
     if (result is NetworkResult.Success) backgroundMetaPrefetchedIds.add(item.id)
 }
 
+private suspend fun HomeViewModel.fetchFocusedHeroMetadata(
+    tmdbId: String, contentType: com.nuvio.tv.domain.model.ContentType, language: String
+): TmdbEnrichment? = if (_uiState.value.homeLayout == HomeLayout.MODERN) {
+    tmdbMetadataService.fetchHomeHero(tmdbId, contentType, language)
+} else tmdbMetadataService.fetchEnrichment(tmdbId, contentType, language)
+
 private suspend fun HomeViewModel.prefetchHeroArtwork(preview: MetaPreview) {
-    val url = preview.backdropUrl?.takeIf { it.isNotBlank() } ?: return
-    val metrics = appContext.resources.displayMetrics
-    appContext.imageLoader.execute(coil3.request.ImageRequest.Builder(appContext)
-        .data(url).size(metrics.widthPixels, metrics.heightPixels)
-        // Neighbours may never be displayed. Warm their existing encoded URL,
-        // without evicting visible posters with full-screen decoded bitmaps.
-        .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
+    val candidates = landscapeHeroArtwork(preview.id, preview.poster, preview.background, preview.landscapePoster)
+    val url = candidates.urls.firstOrNull() ?: return
+    val width = HeroImageRequests.width
+    val height = HeroImageRequests.height
+    if (width <= 0 || height <= 0) return
+    val manager = appContext.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+    val info = android.app.ActivityManager.MemoryInfo().also(manager::getMemoryInfo)
+    val cache = appContext.imageLoader.memoryCache
+    val decode = !info.lowMemory && canWarmDecodedHero(manager.isLowRamDevice, info.totalMem, cache?.maxSize ?: 0, width, height)
+    val request = HeroImageRequests.backdrop(appContext, url, width, height)
+    if (!decode) request.memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
         .decoderFactory(coil3.decode.BlackholeDecoder.Factory())
-        .scale(coil3.size.Scale.FILL).build())
+    appContext.imageLoader.execute(request.build())
+    preview.logo?.takeIf(String::isNotBlank)?.let { logo ->
+        val logoRequest = HeroImageRequests.logo(appContext, logo)
+        if (!decode) logoRequest.memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
+            .decoderFactory(coil3.decode.BlackholeDecoder.Factory())
+        appContext.imageLoader.execute(logoRequest.build())
+    }
 }
 
 /**

@@ -357,6 +357,7 @@ class ServerRepository(
             enabled = true,
             useCatalogMetadata = existing?.useCatalogMetadata ?: true,
             importContinueWatching = existing?.importContinueWatching ?: true,
+            syncedImportWatchState = existing?.syncedImportWatchState,
             alternateAddress = existing?.alternateAddress,
             tlsPins = existing?.tlsPins.orEmpty() + listOfNotNull(acceptedCertificate),
             displayName = existing?.displayName?.let { serverDisplayName(it, signIn.serverName) ?: "" }

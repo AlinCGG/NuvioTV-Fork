@@ -24,6 +24,8 @@ internal data class ModernHomePresentationInput(
     val showCatalogTypeSuffix: Boolean,
     val showFullReleaseDate: Boolean,
     val showImdbRatings: Boolean,
+    val detailImdbRatingsVisibility: com.nuvio.tv.domain.model.DetailImdbRatingsVisibility =
+        com.nuvio.tv.domain.model.DetailImdbRatingsVisibility.SHOW_ALL,
     val localeTag: String
 )
 
@@ -68,6 +70,7 @@ internal fun buildModernHomePresentation(
                             item = item,
                             useLandscapePosters = input.useLandscapePosters,
                             showImdbRatings = input.showImdbRatings,
+                            detailImdbRatingsVisibility = input.detailImdbRatingsVisibility,
                             airsDateTemplate = strAirsDate,
                             upcomingLabel = strUpcoming,
                             context = localizedContext
@@ -109,6 +112,7 @@ internal fun buildModernHomePresentation(
                             item = item,
                             useLandscapePosters = input.useLandscapePosters,
                             showImdbRatings = input.showImdbRatings,
+                            detailImdbRatingsVisibility = input.detailImdbRatingsVisibility,
                             airsDateTemplate = strAirsDate,
                             upcomingLabel = strUpcoming,
                             context = localizedContext

@@ -64,6 +64,7 @@ internal class PartyPlayerBridge(
         partyPaused = false
         controller.scrubHoldPaused = false
         controller.userPausedManually = false
+        controller.dropPausedThumbnail()
         controller.cancelPauseOverlay()
         if (controller.isUsingMpvEngine()) {
             controller.setPlaybackPaused(false)
@@ -79,6 +80,7 @@ internal class PartyPlayerBridge(
     override fun pause() {
         partyPaused = true
         controller.userPausedManually = true
+        controller.dropPausedThumbnail()
         if (controller.isUsingMpvEngine()) {
             controller.setPlaybackPaused(true)
             controller.stopProgressUpdates()

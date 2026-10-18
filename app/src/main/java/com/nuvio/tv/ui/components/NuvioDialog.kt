@@ -43,6 +43,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.nuvio.tv.ui.screens.ambient.AmbientDialogEffect
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -87,6 +88,7 @@ fun NuvioDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = usePlatformDefaultWidth && !v2)
     ) {
+        AmbientDialogEffect(onDismiss)
         // Dialog creates a new Android window and resets LocalDensity. Keep V2 geometry
         // consistent with the activity; Original retains its existing dialog behavior.
         CompositionLocalProvider(

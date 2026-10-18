@@ -77,7 +77,9 @@ internal fun PlayerRuntimeController.skipInterval(interval: SkipInterval): Boole
     val seekParameters = if (postCredits != null || interval.type == "movie-credits") {
         SeekParameters.EXACT
     } else SeekParameters.NEXT_SYNC
-    seekPlaybackTo(seekMs.coerceAtMost(duration), seekParameters)
+    val requested = seekMs.coerceAtMost(duration)
+    val target = requested
+    seekPlaybackTo(target, seekParameters)
     scheduleProgressSyncAfterSeek()
     _uiState.update { it.copy(activeSkipInterval = null, skipIntervalDismissed = true) }
     return true
@@ -155,11 +157,10 @@ internal fun PlayerRuntimeController.resetPostPlayStateAfterPlaybackEnded() {
     // If auto-play is enabled and the user dismissed the card earlier,
     // still auto-play the next episode when playback ends naturally.
     val state = _uiState.value
-    if (state.postPlayDismissedForCurrentEpisode &&
-        streamAutoPlayNextEpisodeEnabledSetting &&
+    val autoPlayEligible = streamAutoPlayNextEpisodeEnabledSetting &&
         state.nextEpisode?.hasAired == true &&
         nextEpisodeVideo != null
-    ) {
+    if (autoPlayEligible && (state.postPlayDismissedForCurrentEpisode || state.postPlayMode == null)) {
         playNextEpisode()
         return
     }
@@ -278,7 +279,7 @@ internal fun PlayerRuntimeController.startProgressUpdates() {
                         hasRenderedFirstFrame = firstFrameReady,
                         hasFatalError = !_uiState.value.error.isNullOrBlank(),
                         durationMs = effectiveDuration
-                    )
+                    ) && !isPlaceholderPlayback()
                     val wasEnded = _uiState.value.playbackEnded
                     _uiState.update { state ->
                         state.copy(
@@ -291,13 +292,18 @@ internal fun PlayerRuntimeController.startProgressUpdates() {
                             playbackEnded = naturalEnded
                         )
                     }
-                    updateMpvAvailableTracks()
+                    updateMpvTracksOnTick()
                     updateActiveSkipInterval(pos)
                     if (!_playbackTimeline.value.isLive) {
                         evaluatePostPlayOverlayVisibility(
                             positionMs = pos,
                             durationMs = playerDuration
                         )
+                    }
+                    if (!naturalEnded && firstFrameReady && mpvEofReached && !view.isLiveStreamNow() &&
+                        isPlaceholderPlayback()
+                    ) {
+                        offerSourcesAfterPlaceholderEnded()
                     }
                     if (naturalEnded && !wasEnded) {
                         // Short placeholders never set naturalEnded, so they cannot mark
@@ -377,6 +383,7 @@ internal fun PlayerRuntimeController.startProgressUpdates() {
                         )
                     }
                 }
+                sampleAutoSpeedup(player, pos)
                 updateActiveSkipInterval(pos)
                 if (!_playbackTimeline.value.isLive) {
                     evaluatePostPlayOverlayVisibility(
@@ -626,7 +633,7 @@ private fun PlayerRuntimeController.buildPlaybackIssuePlaybackSettingsInput(): P
         vodCacheSizeMb = settings.vodCacheSizeMb,
         useParallelConnections = settings.useParallelConnections,
         parallelConnectionCount = settings.parallelConnectionCount,
-        parallelChunkSizeKb = settings.parallelChunkSizeKb,
+        parallelChunkSizeKb = com.nuvio.tv.ui.screens.settings.MemoryBudget.customChunkKb(context, settings),
         enableHttp2 = false,
         nuvioPerformanceModeEnabled = settings.nuvioPerformanceModeEnabled,
         streamAutoPlayMode = settings.streamAutoPlayMode.name,
@@ -673,7 +680,7 @@ internal fun PlayerRuntimeController.saveWatchProgressIfNeeded() {
     // Don't save progress for very short streams (< 2:01) — these are
     // typically error/warning messages or "stream not ready" placeholders that
     // would incorrectly mark content as watched when the user exits.
-    if (isShortPlaceholderDuration(duration)) return
+    if (isShortPlaceholderDuration(duration) || isPlaceholderPlayback()) return
 
     if (kotlin.math.abs(currentPosition - lastSavedPosition) >= saveThresholdMs) {
         lastSavedPosition = currentPosition
@@ -685,7 +692,7 @@ internal fun PlayerRuntimeController.saveWatchProgress() {
     if (!hasRenderedFirstFrame) return
     val currentPosition = currentPlaybackPositionMs() ?: return
     val duration = getEffectiveDuration(currentPosition)
-    if (isShortPlaceholderDuration(duration)) return
+    if (isShortPlaceholderDuration(duration) || isPlaceholderPlayback()) return
     saveWatchProgressInternal(currentPosition, duration)
 }
 
@@ -704,8 +711,15 @@ internal fun PlayerRuntimeController.getEffectiveDuration(position: Long): Long 
     return effectiveDuration
 }
 
-private fun PlayerRuntimeController.isShortPlaceholderStream(): Boolean {
-    if (isErrorCardPlayback()) return true
+internal fun PlayerRuntimeController.isPlaceholderPlayback(): Boolean {
+    if (isPlaceholderPlayback(
+            placeholderRejected = placeholderRejectedForCurrentStream,
+            filmOrEpisode = isFilmOrEpisode(contentType, currentSeason, currentEpisode),
+            playerDurationMs = currentPlaybackDurationMs(),
+            longestDurationMs = lastKnownDuration,
+            expectedRuntimeMs = expectedRuntimeMinutes?.let { it * 60_000L }
+        )
+    ) return true
     val position = currentPlaybackPositionMs() ?: return false
     return isShortPlaceholderDuration(getEffectiveDuration(position))
 }
@@ -726,7 +740,8 @@ internal fun PlayerRuntimeController.handleNaturalPlaybackEnded() {
     val position = currentPlaybackPositionMs() ?: 0L
     val duration = getEffectiveDuration(position)
     val hasFatalError = !_uiState.value.error.isNullOrBlank()
-    if (!shouldTreatAsNaturalPlaybackCompletion(
+    val placeholder = isPlaceholderPlayback()
+    if (placeholder || !shouldTreatAsNaturalPlaybackCompletion(
             hasRenderedFirstFrame = hasRenderedFirstFrame,
             hasFatalError = hasFatalError,
             durationMs = duration
@@ -735,12 +750,13 @@ internal fun PlayerRuntimeController.handleNaturalPlaybackEnded() {
         Log.i(
             PlayerRuntimeController.TAG,
             "Ignoring non-natural ENDED: firstFrame=$hasRenderedFirstFrame " +
-                "error=$hasFatalError durationMs=$duration positionMs=$position"
+                "error=$hasFatalError placeholder=$placeholder durationMs=$duration positionMs=$position"
         )
         // Prevent PlayerScreen from dispatching onPlaybackEnded / next-episode navigation.
         _uiState.update { it.copy(playbackEnded = false) }
         nextEpisodeAutoPlayJob?.cancel()
         nextEpisodeAutoPlayJob = null
+        if (placeholder && hasRenderedFirstFrame) offerSourcesAfterPlaceholderEnded()
         return
     }
 
@@ -765,6 +781,28 @@ internal fun PlayerRuntimeController.cancelNextEpisodeAutoPlayOnFatalError() {
     stillWatchingPromptJob = null
 }
 
+internal fun PlayerRuntimeController.currentWatchProgress(
+    parentContentId: String,
+    parentContentType: String,
+    position: Long,
+    duration: Long,
+    lastWatched: Long
+) = WatchProgress(
+    contentId = parentContentId,
+    contentType = parentContentType,
+    name = contentName ?: title,
+    poster = poster,
+    backdrop = backdrop,
+    logo = logo,
+    videoId = currentVideoId ?: parentContentId,
+    season = currentSeason,
+    episode = currentEpisode,
+    episodeTitle = currentEpisodeTitle,
+    position = position,
+    duration = duration,
+    lastWatched = lastWatched
+)
+
 internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, duration: Long, syncRemote: Boolean = true) {
     if (contentType.equals("cloud", ignoreCase = true)) {
         saveCloudLibraryProgress(position, duration, completed = false)
@@ -777,22 +815,8 @@ internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, d
 
     val fallbackPercent = if (duration <= 0L) 5f else null
 
-    val progress = WatchProgress(
-        contentId = parentContentId,
-        contentType = parentContentType,
-        name = contentName ?: title,
-        poster = poster,
-        backdrop = backdrop,
-        logo = logo,
-        videoId = currentVideoId ?: parentContentId,
-        season = currentSeason,
-        episode = currentEpisode,
-        episodeTitle = currentEpisodeTitle,
-        position = position,
-        duration = duration,
-        lastWatched = System.currentTimeMillis(),
-        progressPercent = fallbackPercent
-    )
+    val progress = currentWatchProgress(parentContentId, parentContentType, position, duration, System.currentTimeMillis())
+        .copy(progressPercent = fallbackPercent)
 
     scope.launch(kotlinx.coroutines.NonCancellable) {
         val effectiveContentId = watchProgressRepository.normalizeParentContentId(
@@ -887,7 +911,7 @@ internal fun PlayerRuntimeController.buildScrobbleItem(): TrackingMediaReference
 
 internal fun PlayerRuntimeController.emitScrobbleStart() {
     logScrobbleDiagnostic("start_evaluated")
-    if (isShortPlaceholderStream()) {
+    if (isPlaceholderPlayback()) {
         logScrobbleDiagnostic("start_skipped", "reason=short_placeholder")
         return
     }
@@ -947,7 +971,7 @@ internal fun PlayerRuntimeController.emitScrobbleStart() {
 
 internal fun PlayerRuntimeController.emitScrobbleStop(progressPercent: Float? = null) {
     logScrobbleDiagnostic("stop_evaluated", "providedProgress=${progressPercent ?: "none"}")
-    if (isShortPlaceholderStream()) {
+    if (isPlaceholderPlayback()) {
         logScrobbleDiagnostic("stop_skipped", "reason=short_placeholder")
         return
     }
@@ -986,7 +1010,7 @@ internal fun PlayerRuntimeController.emitScrobbleStop(progressPercent: Float? = 
 
 internal fun PlayerRuntimeController.emitScrobblePause(progressPercent: Float? = null) {
     logScrobbleDiagnostic("pause_evaluated", "providedProgress=${progressPercent ?: "none"}")
-    if (isShortPlaceholderStream()) {
+    if (isPlaceholderPlayback()) {
         logScrobbleDiagnostic("pause_skipped", "reason=short_placeholder")
         return
     }
@@ -1048,7 +1072,7 @@ internal fun PlayerRuntimeController.emitPauseScrobbleForCurrentProgress() {
 
 internal fun PlayerRuntimeController.emitSeekScrobbleRestart(progressPercent: Float) {
     if (progressPercent < 1f || progressPercent >= 80f) return
-    if (isShortPlaceholderStream()) return
+    if (isPlaceholderPlayback()) return
     val item = currentScrobbleItem ?: return
     if (!hasRequestedScrobbleStartForCurrentItem) return
     val skipped = serverScrobbledProviders
@@ -1197,6 +1221,7 @@ internal fun PlayerRuntimeController.scheduleHideSubtitleDelayOverlay() {
 }
 
 internal fun PlayerRuntimeController.schedulePauseOverlay() {
+    if (pauseDetails.holdsOverlay(_uiState.value.showPauseOverlay)) return
     pauseOverlayJob?.cancel()
 
     if (!_uiState.value.pauseOverlayEnabled || !hasRenderedFirstFrame || !userPausedManually ||
@@ -1248,7 +1273,42 @@ internal fun PlayerRuntimeController.pauseForSeekThumbnails(): Boolean? {
 internal fun PlayerRuntimeController.cancelPauseOverlay() {
     pauseOverlayJob?.cancel()
     pauseOverlayJob = null
+    pauseDetails.clear()
     _uiState.update { it.copy(showPauseOverlay = false) }
+}
+
+/** Opens the pause overlay at once, pausing first, whatever the Pause overlay setting says. */
+internal fun PlayerRuntimeController.toggleDetails() {
+    val state = _uiState.value
+    if (state.showPauseOverlay) {
+        closeDetails()
+        return
+    }
+    if (!hasRenderedFirstFrame || state.error != null || state.showLoadingOverlay || state.playbackEnded) return
+    val playing = hasActivePlayIntent()
+    if (playing) {
+        if (isPlaybackCurrentlyPlaying()) {
+            onEvent(PlayerEvent.OnPlayPause)
+        } else {
+            userPausedManually = true
+            dropPausedThumbnail()
+            _exoPlayer?.pause()
+            schedulePausedOutputCheck()
+            emitPauseScrobbleForCurrentProgress()
+            saveWatchProgress()
+        }
+    }
+    pauseOverlayJob?.cancel()
+    pauseOverlayJob = null
+    pauseDetails.open(resumeOnClose = playing)
+    _uiState.update { it.copy(showPauseOverlay = true, showControls = false) }
+}
+
+/** Closes the pause overlay; the video plays again when the overlay was opened over a playing video. */
+internal fun PlayerRuntimeController.closeDetails() {
+    val resume = pauseDetails.close()
+    cancelPauseOverlay()
+    if (resume && !hasActivePlayIntent()) onEvent(PlayerEvent.OnPlayPause) else showControlsTemporarily()
 }
 
 fun PlayerRuntimeController.onUserInteraction() {
@@ -1267,17 +1327,22 @@ fun PlayerRuntimeController.hideControls() {
 
 fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
     if (partyBridge?.onPlayerEvent(event) == true) return
-    if (event != PlayerEvent.OnParentalGuideHide) {
+    if (event != PlayerEvent.OnParentalGuideHide && event != PlayerEvent.OnToggleDetails &&
+        event != PlayerEvent.OnCloseDetails
+    ) {
         onUserInteraction()
     }
     when (event) {
         PlayerEvent.OnPlayPause -> {
             // A play/pause press during a held scrub is the user's own choice from here on.
             scrubHoldPaused = false
+            dropPausedThumbnail()
+            var pausedNow = false
             if (isUsingMpvEngine()) {
                 val playing = isPlaybackCurrentlyPlaying()
                 if (playing) {
                     userPausedManually = true
+                    pausedNow = true
                     setPlaybackPaused(true)
                     stopProgressUpdates()
                     stopWatchProgressSaving()
@@ -1296,6 +1361,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
                 _exoPlayer?.let { player ->
                     if (player.isPlaying) {
                         userPausedManually = true
+                        pausedNow = true
                         player.pause()
                         schedulePauseOverlay()
                         schedulePausedOutputCheck()
@@ -1310,6 +1376,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
                     }
                 }
             }
+            if (pausedNow) _uiState.update { it.copy(pauseFocusRequest = it.pauseFocusRequest + 1) }
             showControlsTemporarily()
         }
         PlayerEvent.OnSeekForward -> {
@@ -1328,9 +1395,10 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }
             val current = currentPlaybackPositionMs() ?: 0L
             val maxDuration = currentPlaybackDurationMs().takeIf { it >= 0 } ?: Long.MAX_VALUE
-            val target = (current + event.deltaMs)
+            val requested = (current + event.deltaMs)
                 .coerceAtLeast(0L)
                 .coerceAtMost(maxDuration)
+            val target = requested
             val seekParameters = if (event.deltaMs < 0L) {
                 SeekParameters.PREVIOUS_SYNC
             } else {
@@ -1362,12 +1430,15 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             scrubTapFrom = pendingPreviewSeekPosition
             val maxDuration = currentPlaybackDurationMs().takeIf { it >= 0 } ?: Long.MAX_VALUE
             val basePosition = pendingPreviewSeekPosition ?: currentPlaybackPositionMs()?.coerceAtLeast(0L) ?: 0L
+            if (scrubTapBase == null) scrubTapBase = basePosition
             // With thumbnails on, every step lands on the 10 s thumbnail grid.
             val target = (SeekThumbnails.gridStep(basePosition, event.deltaMs) ?: (basePosition + event.deltaMs))
                 .coerceAtLeast(0L)
                 .coerceAtMost(maxDuration)
             pendingPreviewSeekPosition = target
             _uiState.update { it.copy(pendingPreviewSeekPosition = target, previewThumbPositionMs = target) }
+            // Paused, the tapped spot is decoded first.
+            if (userPausedManually) SeekThumbnails.notePriority(target)
             schedulePendingPreviewSeekExpiry()
             updatePlaybackTimeline(
                 currentPosition = previewDisplayPosition() ?: target,
@@ -1384,15 +1455,24 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             stopScrubGlide()
             scrubHoldClock.release(android.os.SystemClock.uptimeMillis())
             val target = pendingPreviewSeekPosition
+            val tapBase = scrubTapBase
+            scrubTapBase = null
             if (target != null) {
                 pendingPreviewSeekExpiryJob?.cancel()
-                // Land on the keyframe whose thumbnail was shown.
-                val landing = SeekThumbnails.landingFor(target) ?: target
-                seekPlaybackTo(landing, SeekParameters.CLOSEST_SYNC)
+                // Land on the keyframe whose thumbnail was shown; a tap without one steps past the one playing.
+                val landing = SeekLanding.of(
+                    targetMs = target,
+                    keyframeMs = SeekThumbnails.landingFor(target),
+                    tapDeltaMs = tapBase?.let { target - it },
+                    durationMs = currentPlaybackDurationMs()
+                )
+                seekPlaybackTo(landing.positionMs, landing.parameters)
                 releaseScrubHold()
-                updatePlaybackTimeline(currentPosition = landing)
+                updatePlaybackTimeline(currentPosition = landing.positionMs)
                 pendingPreviewSeekPosition = null
-                _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = target) }
+                // Paused, the thumbnail of the landing stays up; playing on, nothing is left to show.
+                val shownAfter = if (userPausedManually) target else null
+                _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = shownAfter) }
                 scheduleProgressSyncAfterSeek()
                 if (_uiState.value.showControls) {
                     showControlsTemporarily()
@@ -1834,6 +1914,8 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         PlayerEvent.OnDismissPauseOverlay -> {
             cancelPauseOverlay()
         }
+        PlayerEvent.OnToggleDetails -> toggleDetails()
+        PlayerEvent.OnCloseDetails -> closeDetails()
         PlayerEvent.OnSkipIntro -> {
             skipActiveInterval()
         }
@@ -2113,6 +2195,12 @@ internal fun PlayerRuntimeController.holdPlaybackForScrub() {
     android.util.Log.d("ThumbWorker", "scrub: playback held while seeking")
 }
 
+/** Drops the thumbnail kept from a paused tap; a seek still in progress keeps its own. */
+internal fun PlayerRuntimeController.dropPausedThumbnail() {
+    if (pendingPreviewSeekPosition != null || _uiState.value.previewThumbPositionMs == null) return
+    _uiState.update { it.copy(previewThumbPositionMs = null) }
+}
+
 /** Ends a [holdPlaybackForScrub] pause unless the user paused meanwhile. */
 internal fun PlayerRuntimeController.releaseScrubHold() {
     if (!scrubHoldPaused) return
@@ -2128,6 +2216,7 @@ internal fun PlayerRuntimeController.releaseScrubHold() {
  */
 internal fun PlayerRuntimeController.startScrubGlide(forward: Boolean, holdStart: Long) {
     stopScrubGlide()
+    scrubTapBase = null
     val end = (currentPlaybackDurationMs().takeIf { it > 0L } ?: Long.MAX_VALUE / 4).toDouble()
     holdPlaybackForScrub()
     var cursor = (pendingPreviewSeekPosition ?: currentPlaybackPositionMs()?.coerceAtLeast(0L) ?: 0L)
@@ -2219,3 +2308,61 @@ private fun PlayerRuntimeController.showPlaybackSpeedUnavailable() {
         _uiState.update { it.copy(showAspectRatioIndicator = false) }
     }
 }
+
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs: Long) {
+    val keeper = autoSpeedupKeeper()
+    if (!AutoSpeedup.active) {
+        if (keeper != null && keeper.lentBytes > 0L) keeper.setLentBytes(0L)
+        return
+    }
+    val control = keeper?.control
+    val bufferFull = control != null && control.allocatorTargetBytes() > 0 &&
+        control.bufferAllocator.totalBytesAllocated >= control.allocatorTargetBytes() - FULL_MARGIN_BYTES
+    val nowMs = android.os.SystemClock.elapsedRealtime()
+    val free = if (bufferMemoryKeeper == null) {
+        com.nuvio.tv.core.player.BufferSizing.read(context.applicationContext)
+    } else {
+        null
+    }
+    val memoryShort = bufferMemoryKeeper?.let { it.pressureLevel > 0 } ?: (free?.lowMemory == true)
+    val before = AutoSpeedup.downloads
+    val changed = AutoSpeedup.onPlayerSample(
+        AutoSpeedupPolicy.Sample(
+            nowMs = nowMs,
+            aheadMs = (player.bufferedPosition - positionMs).coerceAtLeast(0L),
+            loading = player.isLoading,
+            rebuffers = rebufferCount,
+            bytes = 0L,
+            memoryShort = memoryShort,
+            playing = player.isPlaying,
+            bufferFull = bufferFull,
+            roomBytes = AutoSpeedup.roomBytes(nowMs) {
+                free ?: com.nuvio.tv.core.player.BufferSizing.read(context.applicationContext)
+            },
+            swapLow = AutoSpeedup.swapLow(nowMs) { com.nuvio.tv.core.player.thumbnail.MemoryGovernor.readMeminfo() }
+        )
+    )
+    if (!changed) return
+    if (AutoSpeedup.downloads > before) {
+        keeper?.setLentBytes(AutoSpeedup.lentBytes())
+    } else {
+        // Give the buffer its memory back only once the pieces above the new count are gone.
+        val keep = AutoSpeedup.downloads
+        scope.launch(Dispatchers.IO) {
+            ParallelRangeDataSource.trimRetainedSession(keepAhead = keep)
+            keeper?.setLentBytes(AutoSpeedup.lentBytes())
+        }
+    }
+}
+
+/** The buffer keeper, or on stock buffers (which have none) one used only to lend memory to the extra downloads. */
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+private fun PlayerRuntimeController.autoSpeedupKeeper(): com.nuvio.tv.core.player.BufferMemoryKeeper? {
+    bufferMemoryKeeper?.let { return it }
+    val control = _loadControl as? com.nuvio.tv.core.player.BufferBudgetControl ?: return null
+    autoSpeedupLender?.takeIf { it.control === control }?.let { return it }
+    return com.nuvio.tv.core.player.BufferMemoryKeeper(control, { null }).also { autoSpeedupLender = it }
+}
+
+private const val FULL_MARGIN_BYTES = 2 * 1024 * 1024

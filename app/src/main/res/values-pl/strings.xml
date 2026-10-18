@@ -1795,6 +1795,21 @@
     <string name="appearance_app_icon_rose_gold">Rose Gold</string>
     <string name="appearance_launcher_artwork">Grafika launchera</string>
     <string name="appearance_launcher_artwork_subtitle">Wybierz jak Nuvio Arc wygląda na ekranie głównym TV</string>
+    <string name="ambient_mode_title">Tryb Ambient</string>
+    <string name="ambient_mode_enabled_subtitle">Wypełnij ekran tłami po okresie bez użycia pilota</string>
+    <string name="ambient_mode_timeout">Uruchom po</string>
+    <string name="ambient_mode_timeout_subtitle">Czas oczekiwania przed uruchomieniem trybu Ambient</string>
+    <plurals name="ambient_mode_timeout_minutes">
+        <item quantity="one">%1$d minuta</item>
+        <item quantity="few">%1$d minuty</item>
+        <item quantity="many">%1$d minut</item>
+        <item quantity="other">%1$d minut</item>
+    </plurals>
+    <string name="ambient_mode_catalogs">Katalogi</string>
+    <string name="ambient_mode_catalogs_subtitle">Wybierz do 3 katalogów jako źródło grafik</string>
+    <string name="ambient_mode_catalogs_dialog_subtitle">Wybierz do 3 katalogów</string>
+    <string name="ambient_mode_catalogs_default">Takie same jak hero</string>
+    <string name="ambient_mode_catalogs_count">%1$d z %2$d</string>
     <string name="theme_color_crimson">Karmazyn</string>
     <string name="theme_color_ocean">Ocean</string>
     <string name="theme_color_violet">Fiolet</string>
@@ -3037,8 +3052,6 @@
 
     <!-- Playback network -->
     <string name="playback_net_device_memory_info">Pamięć urządzenia: %1$s | Zalecany bezpieczny limit: %2$d MB</string>
-    <string name="playback_net_http2">Włącz HTTP/2</string>
-    <string name="playback_net_http2_sub">Włącz protokół HTTP/2 dla połączeń sieciowych, umożliwiając multipleksowanie żądań i szybsze uzgadnianie.</string>
     <string name="playback_net_nuvio_performance_mode">Pamięć natywna ExoPlayer</string>
     <string name="playback_net_nuvio_performance_mode_not_supported">Ta funkcja nie jest obsługiwana przez Twoje urządzenie.</string>
     <string name="playback_net_nuvio_performance_mode_sub">Włącz natywny alokator pamięci poza stertą i optymalizacje przewijania.</string>
@@ -3427,6 +3440,7 @@
     <string name="autosync_toast_failed_unsupported">Synchronizacja nie powiodła się: ten format napisów nie jest obsługiwany.</string>
     <string name="autosync_label_synced">Zsynchronizowane automatycznie</string>
 
+
     <string name="layout_detail_group_episodes">Odcinki</string>
     <string name="layout_detail_group_metadata">Metadane</string>
     <string name="layout_detail_group_trailers">Zwiastuny</string>
@@ -3449,8 +3463,8 @@
     <string name="detail_trailer_error_age_restricted">Ten zwiastun ma ograniczenie wiekowe w YouTube i nie można go tu odtworzyć.</string>
     <string name="detail_trailer_error_unavailable">Ten zwiastun nie jest dostępny w YouTube.</string>
     <string name="detail_trailer_error_sign_in">YouTube wymaga zalogowania, aby odtworzyć ten zwiastun.</string>
-    <string name="appearance_screensaver_group_title">Ochrona ekranu OLED</string>
-    <string name="appearance_screensaver_group_subtitle">Przyciemnij ekran w bezczynności, aby ograniczyć zużycie panelu</string>
+    <string name="appearance_screensaver_group_title">Wygaszacz ekranu</string>
+    <string name="appearance_screensaver_group_subtitle">Co pokazuje ekran po pewnym czasie bez użycia pilota</string>
     <string name="appearance_screensaver_enabled">Przyciemniaj w bezczynności</string>
     <string name="appearance_screensaver_enabled_subtitle">Po okresie bezczynności ekran przykrywa ciemna nakładka. Naciśnięcie dowolnego przycisku wybudza ekran.</string>
     <string name="appearance_screensaver_timeout">Czas bezczynności</string>
@@ -3462,6 +3476,12 @@
     <string name="appearance_screensaver_dim_gentle">Ekran pozostaje dobrze widoczny</string>
     <string name="appearance_screensaver_dim_balanced">Ciemno, ale czytelnie</string>
     <string name="appearance_screensaver_dim_strong">Ledwo widoczny</string>
+    <string name="appearance_app_icon_look_classic">Klasyczny</string>
+    <string name="appearance_app_icon_look_card">Karta</string>
+    <string name="appearance_app_icon_look_card_lettering">Karta z napisem</string>
+    <string name="appearance_app_icon_choice_transparent">%1$s, przezroczyste tło</string>
+    <string name="appearance_app_icon_transparent_background">Przezroczyste tło</string>
+    <string name="appearance_app_icon_transparent_hint">Dla launcherów rysujących własną kartę, np. Projectivy</string>
     <string name="appearance_app_icon_mint">Miętowy</string>
     <string name="licenses_attributions_avatars_title">Awatary wspólnego oglądania</string>
     <string name="licenses_attributions_avatars_body">Utworzono za pomocą DiceBear, z przetworzeniem tych projektów: \"Fun Emoji\" (Davis Uche) i \"Adventurer\" (Lisa Wischofsky), na licencji CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" (Lisa Wischofsky), \"Notionists\" (Zoish), \"Pixel Art\" i \"Thumbs\" (DiceBear), CC0 1.0. \"Bottts\" (Pablo Stanley), bezpłatne do użytku osobistego i komercyjnego. Pyszczki zwierząt z Twemoji, autorstwa Twitter, Inc. i innych współtwórców, na licencji CC BY 4.0.</string>
@@ -3601,6 +3621,7 @@
     <string name="layout_watched_titles_hide_desc">Obejrzane filmy i w całości obejrzane seriale nie pojawiają się w wierszach strony głównej ani w banerze. Nie dotyczy to sekcji Kontynuuj oglądanie.</string>
     <string name="layout_trailer_logo">Logo na zwiastunie w karcie</string>
     <string name="layout_trailer_logo_sub">Pokazuj logo tytułu na zwiastunie odtwarzanym w karcie.</string>
+    <string name="layout_custom_poster_screen_tv_recommendations">Rekomendacje TV</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Twoja nazwa użytkownika MDBList. Wybierz, aby odświeżyć.</string>
     <string name="mdblist_plan_title">Plan</string>
@@ -3649,6 +3670,7 @@
     <string name="player_error_startup_timeout">Odtwarzanie nie ruszyło - dekoder wideo może nie odpowiadać. Zwykle pomaga ponowne uruchomienie urządzenia. Naciśnij Wstecz, aby wrócić i spróbować ponownie, albo wybierz inny strumień.</string>
     <string name="player_error_startup_video_track_unsupported">Odtwarzanie nie ruszyło - to urządzenie nie odtwarza formatu wideo tego strumienia. Naciśnij Wstecz i wybierz inny strumień.</string>
     <string name="player_error_startup_no_stream_data">Odtwarzanie nie ruszyło - strumień nie dostarczył danych na czas. Źródło może być wolne lub niedostępne. Naciśnij Wstecz, aby spróbować ponownie, albo wybierz inny strumień.</string>
+    <string name="search_row_updating">Aktualizowanie</string>
     <string name="network_error_addon_timeout">Upłynął limit czasu zapytania do dodatku</string>
     <string name="debrid_picker_preferred_release_groups_title">Preferowane grupy release</string>
     <string name="debrid_picker_preferred_release_groups_subtitle">Sortuj wybrane grupy release na początku, w podanej kolejności.</string>
@@ -3663,11 +3685,16 @@
     <string name="playback_buffer_seconds_hint">Przy %1$d MB to około %2$d s remuxu 4K (80 Mbit/s). Dłuższe ustawienia nic nie zmieniają.</string>
     <string name="playback_buffer_back_fitted">Mieści się w docelowym rozmiarze bufora. Przy %1$d MB aplikacja trzyma do około %2$d s (%3$d MB przy 80 Mbit/s), więc co najmniej 5 s zostaje do przodu.</string>
     <string name="playback_buffer_back_fitted_none">Mieści się w docelowym rozmiarze bufora. Przy %1$d MB brak na niego miejsca, więc aplikacja trzyma zamiast tego 5 s do przodu.</string>
-    <string name="playback_buffer_managed_desc">Ustala bufor według pamięci wolnej na starcie odtwarzania i zmniejsza go, gdy pamięci brakuje. Wyłącz, aby samemu wybrać docelowy rozmiar bufora; na słabszych urządzeniach większy rozmiar może powodować zacinanie.</string>
-    <string name="playback_buffer_target_size_sub">Pamięć używana do buforowania wideo w przód. Limit zależy od całkowitej pamięci tego urządzenia. Gdy Zarządzany budżet pamięci jest włączony, aplikacja ustala rozmiar na podstawie wolnej pamięci przy starcie odtwarzania. Bufor maleje, gdy urządzeniu brakuje pamięci.</string>
+    <string name="playback_buffer_managed_desc">Ustala bufor według pamięci wolnej na starcie odtwarzania i zmniejsza go, gdy pamięci brakuje. Wyłącz, aby samemu wybrać docelowy rozmiar bufora: aplikacja zachowa wtedy twój rozmiar, gdy pamięci zacznie brakować, a jeśli urządzeniu naprawdę zabraknie pamięci, Android może zamknąć odtwarzacz. Na słabszych urządzeniach większy rozmiar może powodować zacinanie.</string>
+    <string name="playback_buffer_target_size_sub">Pamięć używana do buforowania wideo w przód. Limit zależy od całkowitej pamięci tego urządzenia. Gdy Zarządzany budżet pamięci jest włączony, aplikacja ustala rozmiar na podstawie wolnej pamięci przy starcie odtwarzania i zmniejsza bufor, gdy urządzeniu brakuje pamięci.</string>
     <string name="playback_buffer_target_stutter_warning">To urządzenie ma %1$s pamięci. Powyżej %2$d MB odtwarzanie może się zacinać.</string>
     <string name="playback_buffer_allow_large_desc">Pozwala ustawić docelowy rozmiar bufora do 2 GB. Tylko dla urządzeń z co najmniej 4 GB pamięci; na mniejszych duże rozmiary powodują zacinanie lub awarie.</string>
+    <string name="playback_net_custom_desc">Połączenia ustawiane ręcznie. Gdy wyłączone, aplikacja używa jednego połączenia, a na urządzeniach z wystarczającą ilością pamięci Automatyczne przyspieszenie dodaje kolejne, gdy film ich potrzebuje.</string>
+    <string name="playback_net_auto_speedup">Automatyczne przyspieszenie</string>
+    <string name="playback_net_auto_speedup_sub">Pomaga filmom, które z odległych serwerów często się buforują. Aplikacja prosi urządzenie o większe okno pobierania, a na urządzeniach z wystarczającą ilością pamięci dodaje kolejne pobierania, gdy film nadal nie nadąża. Wyłączone: jedno zwykłe pobieranie.</string>
+    <string name="playback_net_auto_speedup_custom_note">Niestandardowa sieć jest włączona, więc używane są połączenia ustawione ręcznie. Działa tylko większe okno pobierania.</string>
     <string name="playback_net_connection_count_small_box">To urządzenie ma %1$s pamięci. Przy więcej niż 2 połączeniach odtwarzanie może się zacinać.</string>
+    <string name="playback_net_chunk_size_small_note">Fragmenty mniejsze niż 8 MB są wolne w Real-Debrid i TorBox może je odrzucić.</string>
     <string name="diag_label_serving_host">Host serwujący</string>
     <string name="diag_label_file">Plik</string>
     <string name="diag_label_dv_applied">Zastosowane DV</string>
@@ -3872,10 +3899,16 @@
     <string name="about_fork_updates_subtitle">Aktualizacje z wydań Nuvio Arc na GitHubie.</string>
     <string name="playback_speculative_stream_search">Szukaj źródeł przed Odtwórz</string>
     <string name="playback_speculative_stream_search_sub">Przeszukuje dodatki podczas przeglądania, aby przyspieszyć wybór źródła. Niektóre dodatki mogą przy wyszukiwaniu dodawać lub pobierać treści. Wyłączone czeka do naciśnięcia Odtwórz. Linki do mediów i rozwiązywanie u dostawcy czekają na wybór źródła, z wyjątkiem końcówki odcinka, gdy miniatury przewijania przygotowują następny.</string>
+    <string name="playback_source_line_badges">Znaczniki źródła na stronie szczegółów</string>
+    <string name="playback_source_line_badges_sub">Pokazuj pod tytułem znaczniki źródła znalezionego przed Odtwórz: rozdzielczość, Dolby Vision lub HDR, format dźwięku i rozmiar. Wyłączone ukrywa znaczniki, ale zostawia znak wyszukiwania i ptaszek gotowości.</string>
+    <string name="playback_source_line_release_group">Grupa release na stronie szczegółów</string>
+    <string name="playback_source_line_release_group_sub">Pokazuj nazwę grupy release obok znaczników źródła. Wyłączone zostawia znaczniki i ukrywa nazwę.</string>
+    <string name="details_source_line_searching">Szukanie najlepszego źródła</string>
+    <string name="details_source_line_ready">Gotowe</string>
     <string name="debrid_cached_playback_links">Używaj zapisanych linków odtwarzania</string>
     <string name="debrid_cached_playback_links_description">Używa ponownie linków rozwiązanych już podczas odtwarzania. Nowe linki są rozwiązywane dopiero po wyborze źródła albo tuż przed końcem odcinka, gdy miniatury przewijania przygotowują następny.</string>
     <string name="dv7_mode_native_fel">Natywne DV7 FEL/MEL (Amlogic)</string>
-    <string name="dv7_mode_native_fel_desc">Odtwarzanie Profile 7 FEL i MEL na zgodnym sprzęcie, z automatycznym trybem zastępczym na nieobsługiwanych urządzeniach.</string>
+    <string name="dv7_mode_native_fel_desc">Wymaga Ugoos AM9 Pro z niestandardowym jądrem FEL, które nie jest jeszcze dostępne. Na każdym innym urządzeniu działa jak Auto.</string>
     <string name="stream_test_parallel_scope">Zmierzono %1$.1f MiB / %2$.2f s · łącznie %3$.1f MiB danych</string>
     <string name="stream_test_parallel_scope_detail">Bez rozgrzewki. Tylko dane odpowiedzi; łączny ruch sieciowy może być większy. Maksymalnie 72 MiB lub 20 sekund na komórkę. Bardzo krótkie próbki są niedostępne.</string>
     <string name="diagnostic_run_timed_out">Porównanie osiągnęło limit dwóch minut. Wyniki są niepełne; nie przygotowano zaleceń.</string>
@@ -3957,6 +3990,14 @@
     <string name="seek_thumbnails_prepare_off_desc">Odtwarzanie rusza od razu; miniatury powstają podczas pauzy i po zakończeniu oglądania.</string>
     <string name="seek_thumbnails_prepare_on">Włączone</string>
     <string name="seek_thumbnails_prepare_on_desc">Przygotuj miniatury przewijania tytułu przed startem. \"Zacznij oglądać teraz\" lub Wstecz uruchamia odtwarzanie w dowolnej chwili.</string>
+    <string name="seek_thumbnails_before_play_title">Miniatury przed odtwarzaniem</string>
+    <string name="seek_thumbnails_before_play_subtitle">Ile miniatur powstaje, zanim tytuł zacznie się odtwarzać. Reszta powstaje podczas oglądania, aż do zwykłej szczegółowości.</string>
+    <string name="seek_thumbnails_before_play_full">Pełne</string>
+    <string name="seek_thumbnails_before_play_full_desc">Cały tytuł gęsto pokryty przed startem. Najdłuższe oczekiwanie.</string>
+    <string name="seek_thumbnails_before_play_faster">Szybciej</string>
+    <string name="seek_thumbnails_before_play_faster_desc">O połowę mniej miniatur przed startem, rozłożonych na cały tytuł.</string>
+    <string name="seek_thumbnails_before_play_fastest">Najszybciej</string>
+    <string name="seek_thumbnails_before_play_fastest_desc">Jedna czwarta miniatur przed startem. Najkrótsze oczekiwanie.</string>
     <string name="seek_thumbnails_from_copy_title">Miniatury z kopii</string>
     <string name="seek_thumbnails_from_copy_subtitle">Szybsze miniatury dla tytułów 4K z kopii 1080p lub 720p, a dla tytułów z sieci Usenet z kopii spoza tej sieci. Kopia z pamięci podręcznej TorBox może zostać na kilka minut dodana do Twojej listy.</string>
     <string name="seek_thumbnails_clear_title">Wyczyść zapisane miniatury</string>
@@ -4110,5 +4151,9 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Kciuki</string>
     <string name="party_invite_leaves_current">Dołączenie oznacza opuszczenie obecnego seansu.</string>
-    <string name="search_row_updating">Aktualizowanie</string>
+    <string name="layout_episode_synopsis_under_row">Opis odcinka pod wierszem</string>
+    <string name="layout_episode_synopsis_under_row_sub">Pokaż opis zaznaczonego odcinka pod wierszem odcinków w stylu Nuvio V2.</string>
+    <string name="detail_episode_synopsis_none">Ten odcinek nie ma jeszcze opisu.</string>
+    <string name="player_track_role_commentary">Komentarz</string>
+    <string name="player_track_role_audio_description">Audiodeskrypcja</string>
 </resources>

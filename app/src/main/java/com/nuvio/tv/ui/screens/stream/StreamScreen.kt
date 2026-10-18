@@ -113,6 +113,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay as coroutineDelay
 import kotlinx.coroutines.launch as coroutineLaunch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -202,11 +204,15 @@ fun StreamScreen(
         onStreamSelected(playbackInfo)
     }
 
-    fun routePlayback(playbackInfo: StreamPlaybackInfo) {
+    suspend fun routePlayback(playbackInfo: StreamPlaybackInfo) {
         if (openExternalInBrowser(playbackInfo)) {
             return
         }
-        val preference = if (playbackInfo.isServerStream) PlayerPreference.INTERNAL else playerPreference ?: return
+        val preference = if (playbackInfo.isServerStream) {
+            PlayerPreference.INTERNAL
+        } else {
+            awaitPlayerPreference(playerPreference, viewModel.playerPreference)
+        }
         if (playbackInfo.isTorrent && !p2pEnabled) {
             pendingTorrentPlaybackInfo = playbackInfo
             showP2pConsentDialog = true
@@ -228,7 +234,7 @@ fun StreamScreen(
         }
     }
 
-    fun routeAutoPlay(playbackInfo: StreamPlaybackInfo) {
+    suspend fun routeAutoPlay(playbackInfo: StreamPlaybackInfo) {
         if (openExternalInBrowser(playbackInfo)) {
             viewModel.onEvent(StreamScreenEvent.OnAutoPlayConsumed)
             return
@@ -239,7 +245,11 @@ fun StreamScreen(
             showP2pConsentDialog = true
             return
         }
-        val preference = if (playbackInfo.isServerStream) PlayerPreference.INTERNAL else playerPreference ?: return
+        val preference = if (playbackInfo.isServerStream) {
+            PlayerPreference.INTERNAL
+        } else {
+            awaitPlayerPreference(playerPreference, viewModel.playerPreference)
+        }
         if (uiState.isDirectAutoPlayFlow) {
             // Respect player preference even in direct autoplay flow
             when (preference) {
@@ -340,7 +350,7 @@ fun StreamScreen(
                 return@LaunchedEffect
             }
             // Respect player preference for cached links too
-            when (playerPreference ?: return@LaunchedEffect) {
+            when (awaitPlayerPreference(playerPreference, viewModel.playerPreference)) {
                 PlayerPreference.EXTERNAL -> {
                     val url = playbackInfo.url ?: if (playbackInfo.isTorrent) "torrent://${playbackInfo.infoHash}" else null
                     url?.let { urlString ->
@@ -481,6 +491,7 @@ fun StreamScreen(
                         streamSelectJob = scope.coroutineLaunch {
                             val playbackInfo = viewModel.resolveStreamForPlayback(stream)
                             if (playbackInfo != null) {
+                                viewModel.persistBingeGroupForStream(stream)
                                 // Warm the connection while the player is built.
                                 viewModel.prewarmSelectedPlayback(playbackInfo)
                                 pendingRestoreOnResume = true
@@ -540,7 +551,7 @@ fun StreamScreen(
                     showP2pConsentDialog = false
                     val info = pendingTorrentPlaybackInfo!!
                     pendingTorrentPlaybackInfo = null
-                    routePlayback(info)
+                    scope.coroutineLaunch { routePlayback(info) }
                 },
                 onDismiss = {
                     showP2pConsentDialog = false
@@ -553,6 +564,11 @@ fun StreamScreen(
 
     }
 }
+
+internal suspend fun awaitPlayerPreference(
+    current: PlayerPreference?,
+    source: Flow<PlayerPreference>
+): PlayerPreference = current ?: source.first()
 
 @Composable
 private fun StreamBackdrop(
@@ -774,6 +790,7 @@ private fun RightStreamSection(
     var enter by remember { mutableStateOf(false) }
     var firstStreamFocusRequestId by remember { mutableStateOf(0) }
     var listHasFocus by remember { mutableStateOf(false) }
+    var focusedStreamKeyInList by remember { mutableStateOf<String?>(null) }
     var userMovedFromFirstResult by remember { mutableStateOf(shouldRestoreFocusedStream) }
     var firstResultFocusAssigned by remember { mutableStateOf(shouldRestoreFocusedStream) }
     val scope = rememberCoroutineScope()
@@ -835,9 +852,11 @@ private fun RightStreamSection(
             trackedFirstStreamKey = firstStreamKey
             return@LaunchedEffect
         }
+        val focusWasOnFirst = trackedFirstStreamKey != null &&
+            focusedStreamKeyInList == trackedFirstStreamKey
         if (firstStreamKey != null && trackedFirstStreamKey != null &&
             firstStreamKey != trackedFirstStreamKey &&
-            listHasFocus && !userMovedFromFirstResult
+            listHasFocus && focusWasOnFirst
         ) {
             firstStreamFocusRequestId += 1
         }
@@ -956,6 +975,7 @@ private fun RightStreamSection(
                             onUserNavigatedFromFirstResult = {
                                 userMovedFromFirstResult = true
                             },
+                            onFocusedStreamKeyChanged = { focusedStreamKeyInList = it },
                             onFocusChanged = { listHasFocus = it },
                             onExpandStreams = onExpandStreams
                         )
@@ -1080,6 +1100,7 @@ private fun StreamsList(
     orderedAddonNames: List<String> = emptyList(),
     onRequestChipFocus: (Int) -> Unit = {},
     onUserNavigatedFromFirstResult: () -> Unit = {},
+    onFocusedStreamKeyChanged: (String?) -> Unit = {},
     onFocusChanged: (Boolean) -> Unit = {},
     onExpandStreams: () -> Unit = {}
 ) {
@@ -1114,7 +1135,7 @@ private fun StreamsList(
         if (key != null && prevKeys !== streamKeys) {
             val oldIndex = prevKeys.indexOf(key)
             val newIndex = streamKeys.indexOf(key)
-            if (oldIndex >= 0 && newIndex >= 0 && oldIndex != newIndex) {
+            if (oldIndex >= 0 && newIndex >= 0 && oldIndex != newIndex && oldIndex > 0) {
                 val shift = newIndex - oldIndex
                 val correctedFirst = (streamListState.firstVisibleItemIndex + shift)
                     .coerceIn(0, (streamKeys.size - 1).coerceAtLeast(0))
@@ -1236,6 +1257,7 @@ private fun StreamsList(
                     onFocusChanged = { focused ->
                         if (focused) {
                             focusedStreamKey = streamKeys.getOrNull(index)
+                            onFocusedStreamKeyChanged(focusedStreamKey)
                         }
                         if (index == 0) {
                             firstCardHasFocus = focused

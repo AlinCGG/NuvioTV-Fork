@@ -7,6 +7,7 @@
     <string name="type_series_plural">סדרות</string>
     <string name="type_unknown">לא ידוע</string>
 
+    <!-- NOTE: web_* strings are shown on the web page, which does not support RTL UI yet, so their word order and punctuation (e.g. leading ".", leading "URL") are intentionally in visual order. Do not "fix" them until the web UI supports RTL. -->
     <string name="web_manage_addons_title">ניהול תוספים</string>
     <string name="web_manage_addons_subtitle">ניהול תוספים, קטלוגים ואוספים</string>
     <string name="web_manage_addons_only_subtitle">התקנת או הסרת תוספים</string>
@@ -373,6 +374,20 @@
     <string name="appearance_settings_style_subtitle">בחירת האופן שבו יוצגו מסכי ההגדרות</string>
     <string name="appearance_launcher_artwork">עיצוב מסך הבית</string>
     <string name="appearance_launcher_artwork_subtitle">בחירת האופן שבו Nuvio Arc מופיע במסך הבית של הטלוויזיה</string>
+    <string name="ambient_mode_title">מצב אווירה</string>
+    <string name="ambient_mode_enabled_subtitle">מילוי המסך בתמונות רקע לאחר פרק זמן שלא היה קלט מהשלט</string>
+    <string name="ambient_mode_timeout">התחלה לאחר</string>
+    <string name="ambient_mode_timeout_subtitle">כמה זמן להמתין לפני שמצב אווירה מתחיל</string>
+    <plurals name="ambient_mode_timeout_minutes">
+        <item quantity="one">%1$d דקה</item>
+        <item quantity="two">%1$d דקות</item>
+        <item quantity="other">%1$d דקות</item>
+    </plurals>
+    <string name="ambient_mode_catalogs">קטלוגים</string>
+    <string name="ambient_mode_catalogs_subtitle">ניתן לבחור עד 3 קטלוגים שמהם יילקחו התמונות</string>
+    <string name="ambient_mode_catalogs_dialog_subtitle">ניתן לבחור עד 3 קטלוגים</string>
+    <string name="ambient_mode_catalogs_default">כמו בתמונה הראשית</string>
+    <string name="ambient_mode_catalogs_count">%1$d מתוך %2$d</string>
     <string name="appearance_app_icon_and_banner">סמל אפליקציה ובאנר</string>
     <string name="appearance_app_icon_and_banner_subtitle">שינוי סמל האפליקציה והבאנר</string>
     <string name="appearance_app_icon_picker_title">בחירת סמל אפליקציה ובאנר</string>
@@ -1167,6 +1182,7 @@
     <string name="layout_custom_poster_screen_library">ספרייה</string>
     <string name="layout_custom_poster_screen_search">חיפוש</string>
     <string name="layout_custom_poster_screen_details">מסך פרטי הכותרת</string>
+    <string name="layout_custom_poster_screen_tv_recommendations">המלצות הטלוויזיה</string>
 
     <!-- Custom Poster Web Page -->
     <string name="layout_always_show_landscape_clearlogo">תמיד רקע עם לוגו עבור פוסטרים לרוחב</string>
@@ -2308,7 +2324,7 @@
     <string name="plugin_updated_format">עודכן: %1$s</string>
     <string name="plugin_test_btn">בדיקה</string>
     <string name="plugin_test_results">תוצאות בדיקה (%1$d מקורות)</string>
-    <string name="plugin_and_more">… ועוד %1$d</string>
+    <string name="plugin_and_more">ועוד %1$d…</string>
     <string name="plugin_providers_count">%1$d ספקים</string>
     <string name="plugin_enabled">מופעל</string>
     <string name="plugin_disabled">מושבת</string>
@@ -2605,7 +2621,7 @@
     <string name="collections_editor_cover_none">ללא</string>
     <string name="collections_editor_cover_emoji">אימוג׳י</string>
     <string name="collections_editor_cover_image_url">כתובת URL לתמונה</string>
-    <string name="collections_editor_focus_gif">GIF פוקוס</string>
+    <string name="collections_editor_focus_gif">GIF בפוקוס</string>
     <string name="collections_editor_play_gif">הפעלת GIF בפוקוס</string>
     <string name="collections_editor_tile_shape">צורת אריח</string>
     <string name="collections_editor_hide_title">הסתרת כותרת</string>
@@ -2837,9 +2853,9 @@
     <string name="collections_editor_emoji_category_flags">דגלים</string>
     <string name="collections_editor_emoji_category_symbols">סמלים</string>
     <!-- Collection editor: TMDB picker placeholders + genres -->
-    <string name="collections_editor_tmdb_network_placeholder_example">213 for Netflix, 49 for HBO, 2739 for Disney+</string>
-    <string name="collections_editor_tmdb_collection_placeholder_example">10 for Star Wars Collection</string>
-    <string name="collections_editor_tmdb_company_placeholder_example">Marvel Studios, 420, or company URL</string>
+    <string name="collections_editor_tmdb_network_placeholder_example">213 עבור Netflix, 49 עבור HBO, 2739 עבור Disney+</string>
+    <string name="collections_editor_tmdb_collection_placeholder_example">10 עבור Star Wars Collection</string>
+    <string name="collections_editor_tmdb_company_placeholder_example">Marvel Studios, 420, או כתובת URL של חברה</string>
     <string name="collections_editor_tmdb_genre_action">אקשן</string>
     <string name="collections_editor_tmdb_genre_adventure">הרפתקאות</string>
     <string name="collections_editor_tmdb_genre_animation">אנימציה</string>
@@ -3241,8 +3257,6 @@
     <string name="playback_reset_to_default">איפוס לברירת מחדל</string>
     <string name="playback_net_custom">הורדה מהירה יותר (מתקדם)</string>
     <string name="playback_net_custom_sub">פתיחת כמה חיבורי אינטרנט במקביל כדי להוריד מהר יותר. כשהאפשרות כבויה, נעשה שימוש בחיבור יחיד.</string>
-    <string name="playback_net_http2">הפעלת HTTP/2</string>
-    <string name="playback_net_http2_sub">הפעלת פרוטוקול HTTP/2 עבור חיבורי רשת, המאפשר ריבוב בקשות וזמני handshake מהירים יותר.</string>
     <string name="playback_net_parallel">חיבורים מקבילים</string>
     <string name="playback_net_parallel_sub">שימוש במספר חיבורים במקביל למשיכת תוכן. אפשר להפעיל אם הסרטון נתקע למרות שמהירות האינטרנט מספיקה - זה יכול לעזור.</string>
     <string name="playback_net_connection_count">מספר חיבורים</string>
@@ -3378,8 +3392,8 @@
     <string name="detail_trailer_error_age_restricted">הטריילר מוגבל לפי גיל ב-YouTube ולא ניתן להפעיל אותו כאן.</string>
     <string name="detail_trailer_error_unavailable">הטריילר אינו זמין ב-YouTube.</string>
     <string name="detail_trailer_error_sign_in">YouTube דורש התחברות כדי להפעיל את הטריילר.</string>
-    <string name="appearance_screensaver_group_title">הגנת מסך OLED</string>
-    <string name="appearance_screensaver_group_subtitle">עמעום המסך בזמן חוסר פעילות להפחתת שחיקת הפאנל</string>
+    <string name="appearance_screensaver_group_title">שומר מסך</string>
+    <string name="appearance_screensaver_group_subtitle">מה המסך מציג לאחר זמן ללא קלט מהשלט</string>
     <string name="appearance_screensaver_enabled">עמעום בחוסר פעילות</string>
     <string name="appearance_screensaver_enabled_subtitle">מעבר לשכבה כהה לאחר פרק זמן ללא פעילות. לחיצה על כל כפתור מעירה את המסך.</string>
     <string name="appearance_screensaver_timeout">זמן המתנה</string>
@@ -3391,6 +3405,12 @@
     <string name="appearance_screensaver_dim_gentle">המסך נשאר נראה בבירור</string>
     <string name="appearance_screensaver_dim_balanced">כהה אך קריא</string>
     <string name="appearance_screensaver_dim_strong">כמעט לא נראה</string>
+    <string name="appearance_app_icon_look_classic">קלאסי</string>
+    <string name="appearance_app_icon_look_card">כרטיס</string>
+    <string name="appearance_app_icon_look_card_lettering">כרטיס עם כיתוב</string>
+    <string name="appearance_app_icon_choice_transparent">%1$s, שקוף</string>
+    <string name="appearance_app_icon_transparent_background">רקע שקוף</string>
+    <string name="appearance_app_icon_transparent_hint">למסכי בית שמציירים כרטיס משלהם, כמו Projectivy</string>
     <string name="appearance_app_icon_mint">מנטה</string>
     <string name="licenses_attributions_avatars_title">אווטארים של מסיבת צפייה</string>
     <string name="licenses_attributions_avatars_body">נוצרו עם DiceBear, בעיבוד של העיצובים הבאים: \"Fun Emoji\" מאת Davis Uche ו-\"Adventurer\" מאת Lisa Wischofsky, ברישיון CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" מאת Lisa Wischofsky, \"Notionists\" מאת Zoish, \"Pixel Art\" ו-\"Thumbs\" מאת DiceBear, CC0 1.0. \"Bottts\" מאת Pablo Stanley, חופשי לשימוש אישי ומסחרי. פרצופי חיות מתוך Twemoji מאת Twitter, Inc. ותורמים נוספים, ברישיון CC BY 4.0.</string>
@@ -3578,6 +3598,7 @@
     <string name="player_error_startup_timeout">ההפעלה לא התחילה - ייתכן שמפענח הווידאו אינו מגיב. הפעלה מחדש של המכשיר בדרך כלל פותרת זאת. יש ללחוץ חזרה ולנסות שוב, או לבחור סטרים אחר.</string>
     <string name="player_error_startup_video_track_unsupported">ההפעלה לא התחילה - המכשיר אינו יכול לנגן את פורמט הווידאו של הסטרים הזה. יש ללחוץ חזרה ולבחור סטרים אחר.</string>
     <string name="player_error_startup_no_stream_data">ההפעלה לא התחילה - הסטרים לא סיפק נתונים בזמן. ייתכן שהמקור איטי או לא זמין. יש ללחוץ חזרה ולנסות שוב, או לבחור סטרים אחר.</string>
+    <string name="search_row_updating">מתעדכן</string>
     <string name="network_error_addon_timeout">הבקשה לתוסף חרגה מהזמן</string>
     <string name="debrid_picker_preferred_release_groups_title">קבוצות שחרור מועדפות</string>
     <string name="debrid_picker_preferred_release_groups_subtitle">מיון קבוצות השחרור שנבחרו ראשונות, לפי סדר הרשימה.</string>
@@ -3592,11 +3613,16 @@
     <string name="playback_buffer_seconds_hint">ב-%1$d MB זה מחזיק כ-%2$d שניות של remux ב-4K (80 Mbit/s). ערכים ארוכים יותר לא משנים דבר.</string>
     <string name="playback_buffer_back_fitted">נשמר בתוך כמות הזיכרון לטעינה מראש. ב-%1$d MB האפליקציה שומרת עד כ-%2$d שניות ממנה (%3$d MB ב-80 Mbit/s), כך שלפחות 5 שניות נשארות טעונות מראש.</string>
     <string name="playback_buffer_back_fitted_none">נשמר בתוך כמות הזיכרון לטעינה מראש. ב-%1$d MB אין לזה מקום, ולכן האפליקציה שומרת במקום זאת 5 שניות טעונות מראש.</string>
-    <string name="playback_buffer_managed_desc">קובע את המאגר לפי הזיכרון הפנוי במכשיר בתחילת ההפעלה, ומקטין אותו כשחסר זיכרון. יש לכבות כדי לבחור ידנית את כמות הזיכרון לטעינה מראש; במכשירים קטנים כמות גדולה יותר עלולה לגרום להפעלה לגמגם.</string>
-    <string name="playback_buffer_target_size_sub">זיכרון לטעינת וידאו מראש. המגבלה נקבעת לפי הזיכרון הכולל של המכשיר. כשניהול זיכרון אוטומטי מופעל, האפליקציה קובעת את הכמות לפי הזיכרון הפנוי בתחילת ההפעלה. הכמות מצטמצמת כל עוד חסר למכשיר זיכרון.</string>
+    <string name="playback_buffer_managed_desc">קובע את המאגר לפי הזיכרון הפנוי במכשיר בתחילת ההפעלה, ומקטין אותו כשחסר זיכרון. יש לכבות כדי לבחור ידנית את כמות הזיכרון לטעינה מראש: האפליקציה תשמור אז על הכמות שבחרת כשהזיכרון נמוך, ואם הזיכרון במכשיר באמת נגמר, Android עלול לסגור את הנגן. במכשירים קטנים כמות גדולה יותר עלולה לגרום להפעלה לגמגם.</string>
+    <string name="playback_buffer_target_size_sub">זיכרון לטעינת וידאו מראש. המגבלה נקבעת לפי הזיכרון הכולל של המכשיר. כשניהול זיכרון אוטומטי מופעל, האפליקציה קובעת את הכמות לפי הזיכרון הפנוי בתחילת ההפעלה ומקטינה אותה כל עוד חסר למכשיר זיכרון.</string>
     <string name="playback_buffer_target_stutter_warning">במכשיר הזה יש %1$s זיכרון. מעל %2$d MB ההפעלה עלולה לגמגם.</string>
     <string name="playback_buffer_allow_large_desc">מאפשר לכמות הזיכרון לטעינה מראש להגיע עד 2 GB. רק למכשירים עם 4 GB זיכרון או יותר; במכשירים קטנים יותר כמויות גדולות מגמגמות או קורסות.</string>
+    <string name="playback_net_custom_desc">החיבורים מוגדרים ידנית. כשכבוי, האפליקציה משתמשת בחיבור אחד, ובמכשירים עם מספיק זיכרון האצה אוטומטית מוסיפה עוד כשסרט צריך.</string>
+    <string name="playback_net_auto_speedup">האצה אוטומטית</string>
+    <string name="playback_net_auto_speedup_sub">עוזרת לסרטים שנתקעים לטעינה משרתים רחוקים. האפליקציה מבקשת מהמכשיר חלון הורדה גדול יותר, ובמכשירים עם מספיק זיכרון מוסיפה הורדות נוספות אם הסרט עדיין מפגר. כבוי: הורדה רגילה אחת.</string>
+    <string name="playback_net_auto_speedup_custom_note">הורדה מהירה יותר (מתקדם) פעילה, לכן נעשה שימוש בחיבורים שהוגדרו ידנית. רק חלון ההורדה הגדול יותר עדיין חל.</string>
     <string name="playback_net_connection_count_small_box">במכשיר הזה יש %1$s זיכרון. יותר מ-2 חיבורים עלולים לגרום להפעלה לגמגם.</string>
+    <string name="playback_net_chunk_size_small_note">מקטעים קטנים מ-8 MB איטיים ב-Real-Debrid ו-TorBox עלול לדחות אותם.</string>
     <string name="diag_label_serving_host">שרת מגיש</string>
     <string name="diag_label_file">קובץ</string>
     <string name="diag_label_dv_applied">DV שהוחל</string>
@@ -3801,10 +3827,16 @@
     <string name="about_fork_updates_subtitle">עדכונים מהגרסאות של Nuvio Arc ב-GitHub.</string>
     <string name="playback_speculative_stream_search">חיפוש מקורות לפני הפעלה</string>
     <string name="playback_speculative_stream_search_sub">חיפוש בתוספים בזמן הגלישה כדי לזרז את בחירת המקור. תוספים מסוימים עשויים להוסיף או להוריד תוכן במהלך החיפוש. כבוי ממתין עד להפעלה. קישורי מדיה ופענוח אצל הספק ממתינים לבחירת ההפעלה, פרט לסוף פרק, כשהתמונות הממוזערות לדילוג מכינות את הפרק הבא.</string>
+    <string name="playback_source_line_badges">תגי מקור בדף הפרטים</string>
+    <string name="playback_source_line_badges_sub">הצגת תגי המקור שנמצא לפני הפעלה מתחת לכותרת: רזולוציה, Dolby Vision או HDR, פורמט שמע וגודל. כבוי מסתיר את התגים אך משאיר את סימן החיפוש ואת סימן ה-וי של מוכן.</string>
+    <string name="playback_source_line_release_group">קבוצת שחרור בדף הפרטים</string>
+    <string name="playback_source_line_release_group_sub">הצגת שם קבוצת השחרור ליד תגי המקור. כבוי משאיר את התגים ומסתיר את השם.</string>
+    <string name="details_source_line_searching">מחפש את המקור הטוב ביותר</string>
+    <string name="details_source_line_ready">מוכן</string>
     <string name="debrid_cached_playback_links">שימוש חוזר בקישורי הפעלה שמורים</string>
     <string name="debrid_cached_playback_links_description">שימוש חוזר בקישורים שכבר פוענחו במהלך ההפעלה. קישורים חדשים מפוענחים רק אחרי בחירת מקור, או זמן קצר לפני סוף פרק, כשהתמונות הממוזערות לדילוג מכינות את הפרק הבא.</string>
     <string name="dv7_mode_native_fel">DV7 FEL/MEL טבעי (Amlogic)</string>
-    <string name="dv7_mode_native_fel_desc">הפעלת Profile 7 FEL ו-MEL בחומרה תואמת, עם מעבר אוטומטי לחלופה במכשירים שאינם נתמכים.</string>
+    <string name="dv7_mode_native_fel_desc">דורש Ugoos AM9 Pro עם ליבת FEL מותאמת אישית, שעדיין אינה זמינה. בכל מכשיר אחר זה פועל כמו אוטומטי.</string>
     <string name="stream_test_parallel_scope">נמדדו %1$.1f MiB / %2$.2f s · %3$.1f MiB מטען כולל</string>
     <string name="stream_test_parallel_scope_detail">ללא חימום. מטען התגובה בלבד; תעבורת הרשת הכוללת עשויה להיות גבוהה יותר. עד 72 MiB או 20 שניות לכל תא. דגימות קצרות מאוד אינן זמינות.</string>
     <string name="diagnostic_run_timed_out">ההשוואה הגיעה למגבלת שתי הדקות. התוצאות חלקיות; לא הופקו המלצות.</string>
@@ -3886,6 +3918,14 @@
     <string name="seek_thumbnails_prepare_off_desc">ההפעלה מתחילה מיד; התמונות הממוזערות נוצרות בהשהיה ואחרי שמפסיקים לצפות.</string>
     <string name="seek_thumbnails_prepare_on">פועל</string>
     <string name="seek_thumbnails_prepare_on_desc">יצירת התמונות הממוזערות של הכותר לפני שהוא מתחיל. \"להתחיל לצפות עכשיו\" או חזרה מתחילים את ההפעלה בכל רגע.</string>
+    <string name="seek_thumbnails_before_play_title">תמונות ממוזערות לפני ההפעלה</string>
+    <string name="seek_thumbnails_before_play_subtitle">כמה תמונות ממוזערות נוצרות לפני שכותר מתחיל להתנגן. השאר נוצרות בזמן הצפייה, עד לרמת הפירוט הרגילה.</string>
+    <string name="seek_thumbnails_before_play_full">מלא</string>
+    <string name="seek_thumbnails_before_play_full_desc">כל הכותר מכוסה בצפיפות לפני שהוא מתחיל. ההמתנה הארוכה ביותר.</string>
+    <string name="seek_thumbnails_before_play_faster">מהיר יותר</string>
+    <string name="seek_thumbnails_before_play_faster_desc">חצי מהתמונות הממוזערות לפני שהוא מתחיל, פרוסות על פני כל הכותר.</string>
+    <string name="seek_thumbnails_before_play_fastest">המהיר ביותר</string>
+    <string name="seek_thumbnails_before_play_fastest_desc">רבע מהכמות לפני שהוא מתחיל. ההמתנה הקצרה ביותר.</string>
     <string name="seek_thumbnails_from_copy_title">תמונות ממוזערות מעותק</string>
     <string name="seek_thumbnails_from_copy_subtitle">תמונות ממוזערות מהירות יותר לכותרים ב-4K מעותק 1080p או 720p, ולכותרים מ-Usenet מעותק שאינו ב-Usenet. עותק השמור במטמון של TorBox עשוי להתווסף לרשימה שלך לכמה דקות.</string>
     <string name="seek_thumbnails_clear_title">ניקוי תמונות ממוזערות שמורות</string>
@@ -4039,5 +4079,9 @@
     <string name="party_avatar_set_pixel_art">פיקסל ארט</string>
     <string name="party_avatar_set_thumbs">אגודלים</string>
     <string name="party_invite_leaves_current">הצטרפות מוציאה אתכם מהמסיבה הנוכחית.</string>
-    <string name="search_row_updating">מתעדכן</string>
+    <string name="layout_episode_synopsis_under_row">תקציר הפרק מתחת לשורה</string>
+    <string name="layout_episode_synopsis_under_row_sub">הצגת תקציר הפרק הממוקד מתחת לשורת הפרקים במראה Nuvio V2.</string>
+    <string name="detail_episode_synopsis_none">אין עדיין תקציר לפרק הזה.</string>
+    <string name="player_track_role_commentary">פרשנות</string>
+    <string name="player_track_role_audio_description">תיאור קולי</string>
 </resources>

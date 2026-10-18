@@ -371,6 +371,19 @@
     <string name="appearance_settings_style_subtitle">Chọn cách hiển thị các màn hình Cài đặt</string>
     <string name="appearance_launcher_artwork">Ảnh hiển thị Trình khởi chạy</string>
     <string name="appearance_launcher_artwork_subtitle">Chọn cách Nuvio Arc hiển thị trên màn hình chính TV của bạn</string>
+    <string name="ambient_mode_title">Chế độ môi trường xung quanh</string>
+    <string name="ambient_mode_enabled_subtitle">Lấp đầy màn hình bằng phông nền sau một khoảng thời gian không nhận thao tác từ điều khiển</string>
+    <string name="ambient_mode_timeout">Bắt đầu sau</string>
+    <string name="ambient_mode_timeout_subtitle">Thời gian chờ trước khi Chế độ môi trường xung quanh bắt đầu</string>
+    <plurals name="ambient_mode_timeout_minutes">
+        <item quantity="one">%1$d phút</item>
+        <item quantity="other">%1$d phút</item>
+    </plurals>
+    <string name="ambient_mode_catalogs">Danh mục</string>
+    <string name="ambient_mode_catalogs_subtitle">Chọn tối đa 3 danh mục để lấy ảnh hiển thị</string>
+    <string name="ambient_mode_catalogs_dialog_subtitle">Chọn tối đa 3 danh mục</string>
+    <string name="ambient_mode_catalogs_default">Giống khu vực nổi bật</string>
+    <string name="ambient_mode_catalogs_count">%1$d trong số %2$d</string>
     <string name="appearance_app_icon_and_banner">Biểu tượng ứng dụng &amp; Ảnh biểu ngữ</string>
     <string name="appearance_app_icon_and_banner_subtitle">Thay đổi biểu tượng ứng dụng và ảnh biểu ngữ</string>
     <string name="appearance_app_icon_picker_title">Chọn Biểu tượng ứng dụng &amp; Ảnh biểu ngữ</string>
@@ -508,7 +521,7 @@
     <string name="stream_auto_play_smart_match">Ghép thông minh</string>
     <string name="essential_subtitle_language">Ngôn ngữ phụ đề</string>
     <string name="essential_audio_language">Ngôn ngữ âm thanh</string>
-    <string name="audio_lang_media_default">Mặc định phương tiện</string>
+    <string name="audio_lang_media_default">Phương tiện mặc định</string>
     <string name="essential_playback_header_title">Phát lại</string>
     <string name="essential_playback_header_subtitle">Tùy chọn cơ bản về phát lại, phụ đề, âm thanh và P2P.</string>
     <string name="essential_stream_selection_subtitle">Chọn thủ công hoặc tự động phát luồng đầu tiên có sẵn.</string>
@@ -1165,6 +1178,7 @@
     <string name="layout_custom_poster_screen_library">Thư viện</string>
     <string name="layout_custom_poster_screen_search">Tìm kiếm</string>
     <string name="layout_custom_poster_screen_details">Màn hình chi tiết</string>
+    <string name="layout_custom_poster_screen_tv_recommendations">Đề xuất TV</string>
 
     <!-- Custom Poster Web Page -->
     <string name="layout_always_show_landscape_clearlogo">Luôn dùng phông nền kèm logo cho poster ngang</string>
@@ -3238,8 +3252,6 @@
     <string name="playback_reset_to_default">Đặt lại</string>
     <string name="playback_net_custom">Mạng tùy chỉnh</string>
     <string name="playback_net_custom_sub">Sử dụng nhiều kết nối đồng thời để tải các luồng tiến dần. Khi tắt, chỉ sử dụng một kết nối.</string>
-    <string name="playback_net_http2">Bật HTTP/2</string>
-    <string name="playback_net_http2_sub">Bật giao thức HTTP/2 cho các kết nối mạng, cho phép dồn nhiều yêu cầu và rút ngắn thời gian bắt tay.</string>
     <string name="playback_net_parallel">Kết nối đồng thời</string>
     <string name="playback_net_parallel_sub">Sử dụng nhiều kết nối đồng thời để tải luồng phát. Bật tùy chọn này khi bạn vẫn gặp tình trạng đệm dù tốc độ tải xuống chắc chắn đủ nhanh.</string>
     <string name="playback_net_connection_count">Số lượng kết nối</string>
@@ -3375,8 +3387,8 @@
     <string name="detail_trailer_error_age_restricted">Trailer này bị giới hạn độ tuổi trên YouTube và không thể phát tại đây.</string>
     <string name="detail_trailer_error_unavailable">Trailer này không có trên YouTube.</string>
     <string name="detail_trailer_error_sign_in">YouTube yêu cầu đăng nhập để phát trailer này.</string>
-    <string name="appearance_screensaver_group_title">Bảo vệ màn hình OLED</string>
-    <string name="appearance_screensaver_group_subtitle">Làm tối màn hình khi không hoạt động để giảm hao mòn tấm nền</string>
+    <string name="appearance_screensaver_group_title">Trình bảo vệ màn hình</string>
+    <string name="appearance_screensaver_group_subtitle">Nội dung màn hình hiển thị sau một thời gian không nhận thao tác từ điều khiển</string>
     <string name="appearance_screensaver_enabled">Làm tối khi không hoạt động</string>
     <string name="appearance_screensaver_enabled_subtitle">Chuyển dần sang lớp phủ tối sau một thời gian không hoạt động. Nhấn nút bất kỳ để đánh thức màn hình.</string>
     <string name="appearance_screensaver_timeout">Thời gian chờ</string>
@@ -3388,6 +3400,12 @@
     <string name="appearance_screensaver_dim_gentle">Màn hình vẫn thấy rõ</string>
     <string name="appearance_screensaver_dim_balanced">Tối nhưng vẫn đọc được</string>
     <string name="appearance_screensaver_dim_strong">Gần như không thấy</string>
+    <string name="appearance_app_icon_look_classic">Cổ điển</string>
+    <string name="appearance_app_icon_look_card">Thẻ</string>
+    <string name="appearance_app_icon_look_card_lettering">Thẻ có chữ</string>
+    <string name="appearance_app_icon_choice_transparent">%1$s, trong suốt</string>
+    <string name="appearance_app_icon_transparent_background">Nền trong suốt</string>
+    <string name="appearance_app_icon_transparent_hint">Dành cho trình khởi chạy tự vẽ thẻ riêng, như Projectivy</string>
     <string name="appearance_app_icon_mint">Bạc hà</string>
     <string name="licenses_attributions_avatars_title">Ảnh đại diện xem chung</string>
     <string name="licenses_attributions_avatars_body">Tạo bằng DiceBear, phối lại từ các thiết kế sau: \"Fun Emoji\" của Davis Uche và \"Adventurer\" của Lisa Wischofsky, theo giấy phép CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" của Lisa Wischofsky, \"Notionists\" của Zoish, \"Pixel Art\" và \"Thumbs\" của DiceBear, CC0 1.0. \"Bottts\" của Pablo Stanley, miễn phí cho mục đích cá nhân và thương mại. Mặt động vật lấy từ Twemoji của Twitter, Inc. và những người đóng góp khác, theo giấy phép CC BY 4.0.</string>
@@ -3575,6 +3593,7 @@
     <string name="player_error_startup_timeout">Không bắt đầu phát được - bộ giải mã video có thể không phản hồi. Khởi động lại thiết bị thường khắc phục được. Nhấn quay lại để thử lại, hoặc chọn luồng khác.</string>
     <string name="player_error_startup_video_track_unsupported">Không bắt đầu phát được - thiết bị này không phát được định dạng video của luồng này. Nhấn quay lại và chọn luồng khác.</string>
     <string name="player_error_startup_no_stream_data">Không bắt đầu phát được - luồng không gửi dữ liệu kịp thời. Nguồn có thể chậm hoặc không khả dụng. Nhấn quay lại để thử lại, hoặc chọn luồng khác.</string>
+    <string name="search_row_updating">Đang cập nhật</string>
     <string name="network_error_addon_timeout">Yêu cầu của tiện ích đã hết thời gian chờ</string>
     <string name="debrid_picker_preferred_release_groups_title">Nhóm phát hành ưu tiên</string>
     <string name="debrid_picker_preferred_release_groups_subtitle">Xếp các nhóm phát hành đã chọn lên trước, theo thứ tự trong danh sách.</string>
@@ -3589,11 +3608,16 @@
     <string name="playback_buffer_seconds_hint">Với %1$d MB, bộ đệm chứa khoảng %2$d giây của một bản remux 4K (80 Mbit/s). Đặt dài hơn cũng không khác gì.</string>
     <string name="playback_buffer_back_fitted">Nằm trong Dung lượng bộ đệm mục tiêu. Với %1$d MB, ứng dụng giữ tối đa khoảng %2$d giây (%3$d MB ở 80 Mbit/s), để luôn còn ít nhất 5 giây đệm phía trước.</string>
     <string name="playback_buffer_back_fitted_none">Nằm trong Dung lượng bộ đệm mục tiêu. Với %1$d MB không còn chỗ cho nó, nên ứng dụng giữ 5 giây đệm phía trước thay thế.</string>
-    <string name="playback_buffer_managed_desc">Đặt bộ đệm theo bộ nhớ trống của thiết bị lúc bắt đầu phát, và thu nhỏ khi thiết bị thiếu bộ nhớ. Tắt để tự chọn Dung lượng bộ đệm mục tiêu; trên thiết bị nhỏ, dung lượng lớn hơn có thể làm video bị giật.</string>
-    <string name="playback_buffer_target_size_sub">Bộ nhớ dùng để đệm trước video. Giới hạn phụ thuộc vào tổng bộ nhớ của thiết bị này. Khi bật Quản lý ngân sách bộ nhớ, ứng dụng tự chọn kích thước theo bộ nhớ trống lúc bắt đầu phát. Bộ đệm sẽ thu nhỏ khi thiết bị thiếu bộ nhớ.</string>
+    <string name="playback_buffer_managed_desc">Đặt bộ đệm theo bộ nhớ trống của thiết bị lúc bắt đầu phát, và thu nhỏ khi thiết bị thiếu bộ nhớ. Tắt để tự chọn Dung lượng bộ đệm mục tiêu: khi đó ứng dụng giữ nguyên dung lượng bạn chọn lúc bộ nhớ xuống thấp, và nếu thiết bị thật sự hết bộ nhớ, Android có thể đóng trình phát. Trên thiết bị nhỏ, dung lượng lớn hơn có thể làm video bị giật.</string>
+    <string name="playback_buffer_target_size_sub">Bộ nhớ dùng để đệm trước video. Giới hạn phụ thuộc vào tổng bộ nhớ của thiết bị này. Khi bật Quản lý ngân sách bộ nhớ, ứng dụng tự chọn kích thước theo bộ nhớ trống lúc bắt đầu phát và thu nhỏ bộ đệm khi thiết bị thiếu bộ nhớ.</string>
     <string name="playback_buffer_target_stutter_warning">Thiết bị này có %1$s bộ nhớ. Trên %2$d MB, video có thể bị giật.</string>
     <string name="playback_buffer_allow_large_desc">Cho phép Dung lượng bộ đệm mục tiêu lên đến 2 GB. Chỉ dành cho thiết bị có từ 4 GB bộ nhớ; trên thiết bị nhỏ hơn, dung lượng lớn sẽ bị giật hoặc lỗi.</string>
+    <string name="playback_net_custom_desc">Kết nối được đặt thủ công. Khi tắt, ứng dụng dùng một kết nối và, trên thiết bị có đủ bộ nhớ, Tăng tốc tự động thêm kết nối khi phim cần.</string>
+    <string name="playback_net_auto_speedup">Tăng tốc tự động</string>
+    <string name="playback_net_auto_speedup_sub">Giúp các phim hay bị tải đệm khi phát từ máy chủ ở xa. Ứng dụng yêu cầu thiết bị một cửa sổ tải lớn hơn và, trên thiết bị có đủ bộ nhớ, thêm các lượt tải phụ nếu phim vẫn bị chậm. Tắt: một lượt tải thông thường.</string>
+    <string name="playback_net_auto_speedup_custom_note">Mạng tùy chỉnh đang bật nên các kết nối đặt thủ công được dùng. Chỉ cửa sổ tải lớn hơn vẫn được áp dụng.</string>
     <string name="playback_net_connection_count_small_box">Thiết bị này có %1$s bộ nhớ. Hơn 2 kết nối có thể làm video bị giật.</string>
+    <string name="playback_net_chunk_size_small_note">Phân đoạn nhỏ hơn 8 MB sẽ chậm trên Real-Debrid và có thể bị TorBox từ chối.</string>
     <string name="diag_label_serving_host">Máy chủ phục vụ</string>
     <string name="diag_label_file">Tệp</string>
     <string name="diag_label_dv_applied">DV đã áp dụng</string>
@@ -3798,10 +3822,16 @@
     <string name="about_fork_updates_subtitle">Cập nhật từ các bản phát hành Nuvio Arc trên GitHub.</string>
     <string name="playback_speculative_stream_search">Tìm nguồn trước khi nhấn Phát</string>
     <string name="playback_speculative_stream_search_sub">Tìm trong các tiện ích khi đang duyệt để chọn nguồn nhanh hơn. Một số tiện ích có thể thêm hoặc tải nội dung trong lúc tìm. Khi tắt sẽ chờ đến khi nhấn Phát. Liên kết phương tiện và việc phân giải của nhà cung cấp chờ đến khi chọn phát, trừ lúc gần hết tập khi ảnh thu nhỏ khi tua chuẩn bị cho tập tiếp theo.</string>
+    <string name="playback_source_line_badges">Nhãn nguồn trên trang chi tiết</string>
+    <string name="playback_source_line_badges_sub">Hiển thị dưới tiêu đề các nhãn của nguồn đã tìm thấy trước khi nhấn Phát: độ phân giải, Dolby Vision hoặc HDR, định dạng âm thanh và dung lượng. Khi tắt sẽ ẩn các nhãn nhưng vẫn giữ biểu tượng đang tìm và dấu tích sẵn sàng.</string>
+    <string name="playback_source_line_release_group">Nhóm phát hành trên trang chi tiết</string>
+    <string name="playback_source_line_release_group_sub">Hiển thị tên nhóm phát hành bên cạnh nhãn nguồn. Khi tắt vẫn giữ nhãn và ẩn tên.</string>
+    <string name="details_source_line_searching">Đang tìm nguồn tốt nhất</string>
+    <string name="details_source_line_ready">Sẵn sàng</string>
     <string name="debrid_cached_playback_links">Dùng lại liên kết phát đã lưu</string>
     <string name="debrid_cached_playback_links_description">Dùng lại các liên kết đã phân giải trong khi phát. Liên kết mới chỉ được phân giải sau khi chọn nguồn, hoặc ngay trước khi hết tập khi ảnh thu nhỏ khi tua chuẩn bị cho tập tiếp theo.</string>
     <string name="dv7_mode_native_fel">DV7 FEL/MEL gốc (Amlogic)</string>
-    <string name="dv7_mode_native_fel_desc">Phát Profile 7 FEL và MEL trên phần cứng tương thích, tự động dự phòng cho thiết bị không hỗ trợ.</string>
+    <string name="dv7_mode_native_fel_desc">Cần Ugoos AM9 Pro chạy nhân FEL tùy chỉnh, hiện chưa có. Trên mọi thiết bị khác, tùy chọn này hoạt động như Tự động.</string>
     <string name="stream_test_parallel_scope">Đã đo %1$.1f MiB / %2$.2f s · tổng tải %3$.1f MiB</string>
     <string name="stream_test_parallel_scope_detail">Không tính khởi động. Chỉ tính dữ liệu phản hồi; tổng lưu lượng mạng có thể cao hơn. Tối đa 72 MiB hoặc 20 giây mỗi ô. Mẫu quá ngắn sẽ không dùng được.</string>
     <string name="diagnostic_run_timed_out">Lượt so sánh đã chạm giới hạn hai phút. Kết quả chưa đầy đủ; không có khuyến nghị nào.</string>
@@ -3883,6 +3913,14 @@
     <string name="seek_thumbnails_prepare_off_desc">Phát ngay; ảnh thu nhỏ được tạo khi tạm dừng và sau khi bạn ngừng xem.</string>
     <string name="seek_thumbnails_prepare_on">Bật</string>
     <string name="seek_thumbnails_prepare_on_desc">Tạo ảnh thu nhỏ khi tua của nội dung trước khi bắt đầu. \"Xem ngay\" hoặc Quay lại sẽ bắt đầu phát bất cứ lúc nào.</string>
+    <string name="seek_thumbnails_before_play_title">Ảnh thu nhỏ trước khi phát</string>
+    <string name="seek_thumbnails_before_play_subtitle">Số ảnh thu nhỏ được tạo trước khi nội dung bắt đầu phát. Phần còn lại được tạo tiếp khi bạn xem, đến mức chi tiết như thường lệ.</string>
+    <string name="seek_thumbnails_before_play_full">Đầy đủ</string>
+    <string name="seek_thumbnails_before_play_full_desc">Toàn bộ nội dung được phủ dày trước khi bắt đầu. Chờ lâu nhất.</string>
+    <string name="seek_thumbnails_before_play_faster">Nhanh hơn</string>
+    <string name="seek_thumbnails_before_play_faster_desc">Một nửa số ảnh thu nhỏ trước khi bắt đầu, trải đều trên toàn bộ nội dung.</string>
+    <string name="seek_thumbnails_before_play_fastest">Nhanh nhất</string>
+    <string name="seek_thumbnails_before_play_fastest_desc">Một phần tư số đó trước khi bắt đầu. Chờ ngắn nhất.</string>
     <string name="seek_thumbnails_from_copy_title">Ảnh thu nhỏ từ một bản khác</string>
     <string name="seek_thumbnails_from_copy_subtitle">Ảnh thu nhỏ nhanh hơn cho nội dung 4K từ bản 1080p hoặc 720p, và cho nội dung Usenet từ một bản không nằm trên Usenet. Một bản đã lưu sẵn trên TorBox có thể được thêm vào danh sách của bạn trong vài phút.</string>
     <string name="seek_thumbnails_clear_title">Xóa ảnh thu nhỏ đã lưu</string>
@@ -4036,5 +4074,9 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Ngón cái</string>
     <string name="party_invite_leaves_current">Tham gia sẽ rời khỏi phòng bạn đang ở.</string>
-    <string name="search_row_updating">Đang cập nhật</string>
+    <string name="layout_episode_synopsis_under_row">Tóm tắt tập phim dưới hàng</string>
+    <string name="layout_episode_synopsis_under_row_sub">Hiển thị tóm tắt của tập phim đang chọn dưới hàng tập phim trong giao diện Nuvio V2.</string>
+    <string name="detail_episode_synopsis_none">Tập phim này chưa có tóm tắt.</string>
+    <string name="player_track_role_commentary">Bình luận</string>
+    <string name="player_track_role_audio_description">Mô tả âm thanh</string>
 </resources>

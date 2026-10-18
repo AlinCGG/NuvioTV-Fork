@@ -24,6 +24,15 @@ object DirectDebridStreamFilter {
     const val FALLBACK_SOURCE_NAME = "Direct Debrid"
 
     private val tokenRegexCache = ConcurrentHashMap<String, Regex>()
+    private val RESOLUTION_TOKENS = listOf(
+        resolutionRegex("2160p?", "4k", "uhd") to DebridStreamResolution.P2160,
+        resolutionRegex("1440p?", "2k") to DebridStreamResolution.P1440,
+        resolutionRegex("1080p?", "fhd") to DebridStreamResolution.P1080,
+        resolutionRegex("720p?", "hd") to DebridStreamResolution.P720,
+        resolutionRegex("576p?") to DebridStreamResolution.P576,
+        resolutionRegex("480p?", "sd") to DebridStreamResolution.P480,
+        resolutionRegex("360p?") to DebridStreamResolution.P360
+    )
     private val DV_TEXT_REGEX = Regex("(^|[^a-z0-9])(dv|dovi|dolby[ ._-]?vision)([^a-z0-9]|$)")
     private val HDR_TEXT_REGEX = Regex("(^|[^a-z0-9])(hdr|hdr10|hdr10plus|hdr10\\+|hlg)([^a-z0-9]|$)")
     private val CONTAINER_EXTENSION_REGEX = Regex("\\.(mkv|mp4|m4v|avi|ts|m2ts|webm|mov)$", RegexOption.IGNORE_CASE)
@@ -84,11 +93,20 @@ object DirectDebridStreamFilter {
     fun applyPreferences(streams: List<Stream>, settings: DebridSettings): List<Stream> =
         presentWithCopies(streams, settings).shown
 
+    /** Same as [applyPreferences], but keeps each stream's facts so callers don't recompute them. */
+    fun applyPreferencesWithFacts(
+        streams: List<Stream>,
+        settings: DebridSettings
+    ): List<Pair<Stream, StreamFacts>> = presentWithCopies(streams, settings).shownWithFacts
+
     class Presented(
-        val shown: List<Stream>,
+        val shownWithFacts: List<Pair<Stream, StreamFacts>>,
         /** Left out by the resolution rules only: offered as thumbnail copies, never listed or played. */
-        val thumbnailCopies: List<Stream>
-    )
+        val thumbnailCopiesWithFacts: List<Pair<Stream, StreamFacts>>
+    ) {
+        val shown: List<Stream> get() = shownWithFacts.map { it.first }
+        val thumbnailCopies: List<Stream> get() = thumbnailCopiesWithFacts.map { it.first }
+    }
 
     fun presentWithCopies(streams: List<Stream>, settings: DebridSettings): Presented {
         val preferences = effectivePreferences(settings)
@@ -101,15 +119,15 @@ object DirectDebridStreamFilter {
             unmatched.filter { (_, facts) -> facts.matchesFilters(anyResolution) }
         }
         return Presented(
-            shown = orderAndLimit(matched, preferences),
-            thumbnailCopies = orderAndLimit(copies, preferences)
+            shownWithFacts = orderAndLimit(matched, preferences),
+            thumbnailCopiesWithFacts = orderAndLimit(copies, preferences)
         )
     }
 
     private fun orderAndLimit(
         matchedStreams: List<Pair<Stream, StreamFacts>>,
         preferences: DebridStreamPreferences
-    ): List<Stream> {
+    ): List<Pair<Stream, StreamFacts>> {
         // Cached streams always sort above CHECKING/UNKNOWN entries; the sort
         // is stable, so relative order within each cache bucket is preserved.
         val orderedStreams = if (preferences.sortCriteria.isEmpty()) {
@@ -123,7 +141,6 @@ object DirectDebridStreamFilter {
         }
 
         return applyLimits(orderedStreams, preferences)
-            .map { it.first }
     }
 
     fun facts(stream: Stream, settings: DebridSettings): StreamFacts =
@@ -275,16 +292,7 @@ object DirectDebridStreamFilter {
 
     private fun resolutionValue(value: String?): DebridStreamResolution? {
         val normalized = value?.lowercase().orEmpty()
-        return when {
-            normalized.hasResolutionToken("2160p?", "4k", "uhd") -> DebridStreamResolution.P2160
-            normalized.hasResolutionToken("1440p?", "2k") -> DebridStreamResolution.P1440
-            normalized.hasResolutionToken("1080p?", "fhd") -> DebridStreamResolution.P1080
-            normalized.hasResolutionToken("720p?", "hd") -> DebridStreamResolution.P720
-            normalized.hasResolutionToken("576p?") -> DebridStreamResolution.P576
-            normalized.hasResolutionToken("480p?", "sd") -> DebridStreamResolution.P480
-            normalized.hasResolutionToken("360p?") -> DebridStreamResolution.P360
-            else -> null
-        }
+        return RESOLUTION_TOKENS.firstOrNull { (regex, _) -> regex.containsMatchIn(normalized) }?.second
     }
 
     private fun streamQuality(parsedQuality: String?, searchText: String): DebridStreamQuality {
@@ -451,10 +459,8 @@ object DirectDebridStreamFilter {
         return values.minOfOrNull { rank(it, preferred) } ?: Int.MAX_VALUE
     }
 
-    private fun String.hasResolutionToken(vararg tokens: String): Boolean {
-        val pattern = "(^|[^a-z0-9])(${tokens.joinToString("|")})([^a-z0-9]|\$)"
-        return tokenRegexCache.getOrPut(pattern) { Regex(pattern) }.containsMatchIn(this)
-    }
+    private fun resolutionRegex(vararg tokens: String): Regex =
+        Regex("(^|[^a-z0-9])(${tokens.joinToString("|")})([^a-z0-9]|\$)")
 
     private fun String.hasToken(token: String): Boolean {
         val pattern = "(^|[^a-z0-9])${Regex.escape(token.lowercase())}([^a-z0-9]|\$)"

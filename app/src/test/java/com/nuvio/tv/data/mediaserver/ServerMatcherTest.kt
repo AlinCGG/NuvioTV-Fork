@@ -26,8 +26,11 @@ class ServerMatcherTest {
         every { getCachedMeta(any(), any()) } returns null
     }
 
-    private fun matcher(provider: FakeServerProvider = FakeServerProvider()): Triple<ServerMatcher, ServerRepository, ServerConnection> {
-        val (repository, connection) = fakeServerRepository(provider)
+    private fun matcher(
+        provider: FakeServerProvider = FakeServerProvider(),
+        libraries: List<ServerLibrary> = listOf(FakeServerProvider.MOVIE_LIBRARY, FakeServerProvider.SERIES_LIBRARY)
+    ): Triple<ServerMatcher, ServerRepository, ServerConnection> {
+        val (repository, connection) = fakeServerRepository(provider, libraries = libraries)
         return Triple(ServerMatcher(repository, tmdbService, metaRepository), repository, connection)
     }
 
@@ -98,6 +101,27 @@ class ServerMatcherTest {
 
         assertTrue(matcher.supports(connection, ServerMediaKind.MOVIE))
         assertEquals(listOf(ServerItemRef(connection.id, "42")), matcher.match(connection, request, forceRefresh = false))
+    }
+
+    @Test
+    fun aLibraryOfMoviesAndShowsMatchesEachKindOnItsOwn() = runBlocking {
+        val provider = FakeServerProvider().apply {
+            indexedIds["42"] = TrackingExternalIds(tmdb = 100)
+            indexedIds[FakeServerProvider.SHOW_ID] = TrackingExternalIds(tmdb = 100)
+            episodes[1 to 1] = ServerEpisode(FakeServerProvider.EPISODE_ID, "2011-04-17")
+        }
+        val mixed = ServerLibrary("90", "Everything", ServerMediaKind.MIXED)
+        val (matcher, _, connection) = matcher(provider, libraries = listOf(mixed))
+
+        assertTrue(matcher.supports(connection, ServerMediaKind.MOVIE))
+        assertTrue(matcher.supports(connection, ServerMediaKind.SERIES))
+        val movie = matcher.request("movie", "tmdb:100", null, null)!!
+        assertEquals(listOf(ServerItemRef(connection.id, "42")), matcher.match(connection, movie, forceRefresh = false))
+        val episode = matcher.request("series", "tmdb:100:1:1", 1, 1)!!
+        assertEquals(
+            listOf(ServerItemRef(connection.id, FakeServerProvider.EPISODE_ID)),
+            matcher.match(connection, episode, forceRefresh = false)
+        )
     }
 
     @Test

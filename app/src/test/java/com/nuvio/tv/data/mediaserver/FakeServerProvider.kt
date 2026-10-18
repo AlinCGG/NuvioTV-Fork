@@ -53,6 +53,11 @@ internal class FakeServerProvider(
     }
 
     val downAddresses = mutableSetOf<String>()
+    var streamLimit: Int? = null
+    var streamsElsewhere = 0
+    var playbackFailure: ServerFailure? = null
+    var stopReportDelayMs = 0L
+    val playing = mutableSetOf<String>()
     val failingWithStatus = mutableSetOf<String>()
     val locations = mutableMapOf<String, ServerLocation>()
     val libraryCallAddresses = mutableListOf<String>()
@@ -101,13 +106,17 @@ internal class FakeServerProvider(
     private val searchesRunning = java.util.concurrent.atomic.AtomicInteger()
     private val mostSearches = java.util.concurrent.atomic.AtomicInteger()
     val mostSearchesAtOnce: Int get() = mostSearches.get()
+    val searches: MutableList<Pair<ServerMediaKind, List<Pair<String, ServerMediaKind>>>> =
+        java.util.Collections.synchronizedList(mutableListOf())
 
     override suspend fun search(
         session: ServerSession,
-        library: ServerLibrary,
+        kind: ServerMediaKind,
+        libraries: List<ServerLibrary>,
         query: String,
         limit: Int
     ): List<ServerTitle> {
+        searches += kind to libraries.map { it.id to it.kind }
         searchQueries += query
         searchEvents += "start $query"
         mostSearches.accumulateAndGet(searchesRunning.incrementAndGet(), ::maxOf)
@@ -194,6 +203,10 @@ internal class FakeServerProvider(
         playbackRequests += request
         playbackAddresses += session.address
         if (session.address in downAddresses) throw ServerException(ServerFailure.UNREACHABLE, network = true)
+        playbackFailure?.let { throw ServerException(it) }
+        streamLimit?.let { limit ->
+            if (synchronized(playing) { playing.size } + streamsElsewhere >= limit) throw ServerException(ServerFailure.STREAM_LIMIT)
+        }
         if (transcodes) {
             val audio = request.audioStreamIndex ?: 1
             val subtitle = request.subtitleStreamIndex
@@ -246,10 +259,18 @@ internal class FakeServerProvider(
     }
 
     override suspend fun report(session: ServerSession, playback: ServerPlaybackSession, event: ServerPlaybackEvent) {
+        if (event.type == ServerPlaybackEventType.STOP && stopReportDelayMs > 0L) kotlinx.coroutines.delay(stopReportDelayMs)
         synchronized(reported) {
             reported += event.type
             reportedPositions += event.positionMs
             reportAddresses += session.address
+        }
+        synchronized(playing) {
+            when (event.type) {
+                ServerPlaybackEventType.START -> playing += playback.url
+                ServerPlaybackEventType.STOP -> playing -= playback.url
+                else -> Unit
+            }
         }
     }
 

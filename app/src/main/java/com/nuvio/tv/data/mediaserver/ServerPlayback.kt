@@ -34,8 +34,37 @@ class ServerPlayback internal constructor(
     private val active = mutableMapOf<String, ActivePlayback>()
     private val segmentCache = LinkedHashMap<String, List<ServerSegment>>()
     private val scrobbledByUrl = LinkedHashMap<String, Set<String>>()
+    private val stopped = LinkedHashMap<String, ActivePlayback>()
 
-    suspend fun prepare(target: ServerPlaybackTarget): ServerPlaybackSession {
+    /**
+     * Opens a playback session for [target]. When the server allows no more streams and [replacing] is a session on
+     * the same server, that session is closed first and the server is asked once more.
+     */
+    suspend fun prepare(target: ServerPlaybackTarget, replacing: String? = null): ServerPlaybackSession = try {
+        open(target)
+    } catch (error: ServerException) {
+        if (error.failure != ServerFailure.STREAM_LIMIT || !closeForReplacement(replacing, target)) throw error
+        Log.i(TAG, "Stream limit reached: closed the current session and asking again")
+        open(target)
+    }
+
+    /** Closes the session behind [url] on [target]'s server, or waits for its stop report if it has just ended. */
+    private suspend fun closeForReplacement(url: String?, target: ServerPlaybackTarget): Boolean {
+        val current = url?.let { key ->
+            synchronized(lock) {
+                (active[key] ?: stopped[key])
+                    ?.takeIf { it.playback.target.item.connectionId == target.item.connectionId }
+                    ?.also {
+                        active.remove(key)
+                        stopped.remove(key)
+                    }
+            }
+        } ?: return false
+        current.stopAndWait()
+        return true
+    }
+
+    private suspend fun open(target: ServerPlaybackTarget): ServerPlaybackSession {
         val (provider, session, playback) = repository.call(target.item.connectionId) { provider, session ->
             Triple(provider, session, provider.preparePlayback(session, ServerPlaybackRequest(target, ServerPlayerCapabilities())))
         }
@@ -203,7 +232,14 @@ class ServerPlayback internal constructor(
     }
 
     fun stop(url: String?) {
-        val playback = url?.let { synchronized(lock) { active.remove(it) } } ?: return
+        val playback = url?.let { key ->
+            synchronized(lock) {
+                active.remove(key)?.also {
+                    stopped[key] = it
+                    if (stopped.size > STOPPED_MEMORY) stopped.remove(stopped.keys.first())
+                }
+            }
+        } ?: return
         playback.stop()
     }
 
@@ -253,19 +289,18 @@ class ServerPlayback internal constructor(
 
         var scrobbleCheck: kotlinx.coroutines.Deferred<Set<String>?>? = null
         private var paused = false
+        private var stopSent = false
         private var lastReportPositionMs = 0L
         private var lastReportAtMs = 0L
 
-        init {
-            scope.launch {
-                for (event in events) {
-                    try {
-                        withTimeoutOrNull(REPORT_TIMEOUT_MS) { provider.report(liveSession(), playback, event) }
-                    } catch (error: CancellationException) {
-                        throw error
-                    } catch (error: Exception) {
-                        Log.w(TAG, "Playback report ${event.type} failed: ${error.serverFailure()}")
-                    }
+        private val reporter = scope.launch {
+            for (event in events) {
+                try {
+                    withTimeoutOrNull(REPORT_TIMEOUT_MS) { provider.report(liveSession(), playback, event) }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Log.w(TAG, "Playback report ${event.type} failed: ${error.serverFailure()}")
                 }
             }
         }
@@ -299,8 +334,15 @@ class ServerPlayback internal constructor(
 
         /** A session that never started sends nothing: a stop at 0 would replace the server's resume point. */
         fun stop() = synchronized(lock) {
-            if (started) send(ServerPlaybackEventType.STOP, lastPositionMs, isPaused = true)
+            if (started && !stopSent) send(ServerPlaybackEventType.STOP, lastPositionMs, isPaused = true)
+            stopSent = true
             events.close()
+        }
+
+        /** Stops and waits until the server has been told, so it no longer counts this stream. */
+        suspend fun stopAndWait() {
+            stop()
+            withTimeoutOrNull(REPORT_TIMEOUT_MS) { reporter.join() }
         }
 
         private fun send(type: ServerPlaybackEventType, positionMs: Long, isPaused: Boolean) {
@@ -321,6 +363,7 @@ class ServerPlayback internal constructor(
         const val RESUME_TIMEOUT_MS = 1_500L
         const val SCROBBLE_CHECK_TIMEOUT_MS = 3_000L
         const val SCROBBLED_MEMORY = 8
+        const val STOPPED_MEMORY = 4
     }
 }
 

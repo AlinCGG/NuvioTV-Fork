@@ -10,6 +10,7 @@ import androidx.media3.common.NuvioEngineConfig
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DataSink
 import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheDataSink
 import androidx.media3.datasource.cache.CacheDataSource
@@ -37,6 +38,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import com.nuvio.tv.core.network.IPv4FirstDns
+import com.nuvio.tv.core.network.NoDelaySocketFactory
 import com.nuvio.tv.core.player.VodCacheSizing
 import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.VodCacheSizeMode
@@ -68,10 +70,14 @@ internal class PlayerMediaSourceFactory(
     private var customExtractorsFactory: ExtractorsFactory? = null
     private var customSubtitleParserFactory: SubtitleParser.Factory? = null
     private val loadErrorHandlingPolicy = PlayerLoadErrorHandlingPolicy()
+    private val playbackStart = NewPlaybackGate()
 
     @Volatile private var currentVodCacheUrl: String? = null
     @Volatile private var currentVodCacheResolvedUrl: String? = null
     @Volatile private var currentVodCacheActive: Boolean = false
+
+    // Called on a loader thread with the url a progressive stream opened at after a redirect.
+    @Volatile var onStreamRedirected: ((requestedUrl: String, resolvedUrl: String) -> Unit)? = null
 
     // Takes the caller's context because this factory only holds the application one, which ignores the in-app language.
     fun vodCacheStateLabel(context: Context): String = when {
@@ -111,6 +117,8 @@ internal class PlayerMediaSourceFactory(
     }
 
     var useParallelConnections: Boolean = PlayerSettings.DEFAULT_USE_PARALLEL_CONNECTIONS
+    var customNetworkEnabled: Boolean = false
+    var autoSpeedupEnabled: Boolean = true
     var parallelConnectionCount: Int = PlayerSettings.DEFAULT_PARALLEL_CONNECTION_COUNT
     var parallelChunkSizeKb: Int = PlayerSettings.DEFAULT_PARALLEL_CHUNK_SIZE_KB
     // Gated by the parallel network toggle because its only use is the native memory argument to
@@ -145,20 +153,9 @@ internal class PlayerMediaSourceFactory(
         // MP4 session mode is deliberately single-connection; leave its 1+1 behaviour.
         if (mp4SessionMode || !nuvioPerformanceModeEnabled) return connections + 1
         val chunkMb = (chunkBytes / (1024L * 1024L)).toInt().coerceAtLeast(1)
-        // An automatic target is already all this box should hold, so the window stays at its floor.
-        val safeNativeMb = if (NuvioExoPlayerPerformanceHelper.targetIsAutomatic) {
-            NuvioExoPlayerPerformanceHelper.targetBufferSizeMb
-        } else {
-            NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)
-        }
-        // Reserve the SampleQueue's target-buffer bytes (its own pool, set from settings)
-        // so the two together stay inside the safe envelope; give the remainder to chunks.
-        val reserveMb = NuvioExoPlayerPerformanceHelper.targetBufferSizeMb.coerceAtLeast(0)
-        // Delegate to the shared single-source-of-truth function so the runtime
-        // window and the settings screen's displayed estimate can never drift apart.
-        return com.nuvio.tv.ui.screens.settings.MemoryBudget.prefetchDepthChunks(
-            connections, chunkMb, safeNativeMb, reserveMb
-        )
+        // The same rule sizes the settings estimate and the network speed test.
+        return NuvioExoPlayerPerformanceHelper.currentDownloadWindow(nuvioPerformanceModeEnabled, context)
+            .prefetchDepth(connections, chunkMb)
     }
     var vodCacheEnabled: Boolean = PlayerSettings.DEFAULT_VOD_CACHE_ENABLED
     var vodCacheSizeMode: VodCacheSizeMode = PlayerSettings.DEFAULT_VOD_CACHE_SIZE_MODE
@@ -167,8 +164,10 @@ internal class PlayerMediaSourceFactory(
     // OkHttp client used only by the opt-in parallel-connections path.
     // Not named playbackHttpClient so it does not shadow
     // PlayerPlaybackNetworking.playbackHttpClient inside this file.
+    // Many piece sockets at once: each keeps the kernel's own window, so they cannot pile up big receive buffers.
     private val chunkSessionHttpClient by lazy {
         PlayerPlaybackNetworking.playbackHttpClient.newBuilder()
+            .socketFactory(NoDelaySocketFactory)
             .cookieJar(NuvioApplication.extensionCookieJar)
             .let { NuvioExoPlayerPerformanceHelper.applyNetworkOptimizations(it) }
             .let(::withChunkSessionTimeouts)
@@ -181,26 +180,8 @@ internal class PlayerMediaSourceFactory(
             .build()
     }
 
-    private val chunkSessionLanes = java.util.concurrent.ConcurrentHashMap<Int, okhttp3.Call.Factory>()
-
-    private fun chunkSessionCallFactory(connections: Int, url: String): okhttp3.Call.Factory {
-        if (SlowStartServer.matches(url)) return chunkSessionSlowStartHttpClient
-        // Plain http:// never negotiates HTTP/2, so lanes would only split the idle sockets.
-        if (url.startsWith("http://", ignoreCase = true)) return chunkSessionHttpClient
-        val factory = chunkSessionLanes.getOrPut(connections) {
-            HttpLanes.callFactory(
-                chunkSessionHttpClient,
-                connections,
-                NuvioExoPlayerPerformanceHelper::lanePool
-            ).also { factory ->
-                if (factory is LaneCallFactory) {
-                    Log.i("PlayerMediaSourceFactory", "HTTP2_LANES lanes=${factory.lanes.size}")
-                }
-            }
-        }
-        (factory as? LaneCallFactory)?.restart()
-        return factory
-    }
+    private fun chunkSessionClient(url: String): okhttp3.OkHttpClient =
+        if (SlowStartServer.matches(url)) chunkSessionSlowStartHttpClient else chunkSessionHttpClient
 
     /** Connections playback opens to [url]. */
     fun playbackConnections(url: String?): Int {
@@ -285,10 +266,11 @@ internal class PlayerMediaSourceFactory(
             responseHeaders = responseHeaders,
             mimeTypeOverride = mimeTypeOverride
         )
+        notePlaybackStart(url)
         if (!shape.useChunkSessionSource || shape.mp4SessionMode) return
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         val sanitizedHeaders = sanitizeHeaders(headers)
-        val okHttpFactory = OkHttpDataSource.Factory(chunkSessionCallFactory(shape.effectiveConnections, url)).apply {
+        val okHttpFactory = OkHttpDataSource.Factory(chunkSessionClient(url)).apply {
             setDefaultRequestProperties(sanitizedHeaders)
             if (sanitizedHeaders.none { it.key.equals("User-Agent", ignoreCase = true) }) {
                 setUserAgent(DEFAULT_USER_AGENT)
@@ -321,11 +303,8 @@ internal class PlayerMediaSourceFactory(
         mediaMetadata: androidx.media3.common.MediaMetadata? = null,
         cacheKey: String? = null
     ): MediaSource {
+        notePlaybackStart(url)
         val sanitizedHeaders = sanitizeHeaders(headers)
-        val httpDataSourceFactory = PlayerPlaybackNetworking.createDataSourceFactory(
-            context, sanitizedHeaders, slowStart = SlowStartServer.matches(url)
-        )
-
         val chunkSessionShape = resolveChunkSessionShape(
             url = url,
             filename = filename,
@@ -335,6 +314,21 @@ internal class PlayerMediaSourceFactory(
         val resolvedMimeType = chunkSessionShape.resolvedMimeType
         val isHls = chunkSessionShape.isHls
         val isDash = chunkSessionShape.isDash
+        val slowStart = SlowStartServer.matches(url)
+        // DefaultDataSource stays in front so data: manifests resolve; loopback engines serve
+        // adaptive manifests slowly, so they get the long read timeout as well.
+        val httpDataSourceFactory = if (isHls || isDash) {
+            DefaultDataSource.Factory(
+                context,
+                PlayerPlaybackNetworking.createHttpDataSourceFactory(
+                    sanitizedHeaders,
+                    useLongReadTimeout = isLoopbackUrl(url),
+                    slowStart = slowStart
+                )
+            )
+        } else {
+            PlayerPlaybackNetworking.createDataSourceFactory(context, sanitizedHeaders, slowStart = slowStart)
+        }
 
         val mediaItemBuilder = MediaItem.Builder().setUri(url)
         resolvedMimeType?.let(mediaItemBuilder::setMimeType)
@@ -362,7 +356,7 @@ internal class PlayerMediaSourceFactory(
                 "backBufferMs=${NuvioExoPlayerPerformanceHelper.backBufferMs} " +
                 "targetMb=${NuvioExoPlayerPerformanceHelper.targetBufferSizeMb} " +
                 "safeNativeMb=${NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)} " +
-                "parallel=$parallelCount chunkKb=$parallelChunkSizeKb " +
+                "parallel=$parallelCount chunkKb=$parallelChunkSizeKb auto=$autoSpeedupEnabled " +
                 PlayerMemoryReporter.snapshot(context)
         )
         PlayerMemoryReporter.startSampling(context)
@@ -378,7 +372,7 @@ internal class PlayerMediaSourceFactory(
         val mp4SessionMode = chunkSessionShape.mp4SessionMode
         val useChunkSessionSource = chunkSessionShape.useChunkSessionSource
         parallelStartupPrefetchUnlocked.set(!useChunkSessionSource)
-        val progressiveUpstreamFactory: DataSource.Factory = if (useChunkSessionSource) {
+        val networkProgressiveFactory: DataSource.Factory = if (useChunkSessionSource) {
             if (mp4SessionMode) {
                 Log.i(
                     "PlayerMediaSourceFactory",
@@ -387,7 +381,7 @@ internal class PlayerMediaSourceFactory(
                         "for progressive MP4 with parallel connections off"
                 )
             }
-            val okHttpFactory = OkHttpDataSource.Factory(chunkSessionCallFactory(chunkSessionShape.effectiveConnections, url)).apply {
+            val okHttpFactory = OkHttpDataSource.Factory(chunkSessionClient(url)).apply {
                 setDefaultRequestProperties(sanitizedHeaders)
                 if (sanitizedHeaders.none { it.key.equals("User-Agent", ignoreCase = true) }) {
                     setUserAgent(DEFAULT_USER_AGENT)
@@ -417,9 +411,23 @@ internal class PlayerMediaSourceFactory(
             }
         } else if (isLoopbackUrl(url)) {
             PlayerPlaybackNetworking.createHttpDataSourceFactory(sanitizedHeaders, useLongReadTimeout = true)
+        } else if (usesAutoSpeedup(
+                enabled = autoSpeedupEnabled,
+                customNetwork = customNetworkEnabled,
+                mediaServer = isMediaServerUrl(url),
+                adaptive = isHls || isDash,
+                slowStart = SlowStartServer.matches(url)
+            )
+        ) {
+            autoSpeedupFactory(context, url, LedgerDataSourceFactory(httpDataSourceFactory), sanitizedHeaders)
         } else {
             LedgerDataSourceFactory(httpDataSourceFactory)
         }
+        if (networkProgressiveFactory !is AutoSpeedupDataSource.Factory) AutoSpeedup.end()
+        val progressiveUpstreamFactory: DataSource.Factory =
+            RedirectReportingDataSource.Factory(networkProgressiveFactory, url) { resolvedUrl ->
+                onStreamRedirected?.invoke(url, resolvedUrl)
+            }
 
         // 2. VOD disk cache (opt-in).
         val useVodCache = ENABLE_VOD_CACHE && vodCacheEnabled && !isHls && !isDash && shouldUseVodCache(url)
@@ -507,10 +515,56 @@ internal class PlayerMediaSourceFactory(
         return wrapAudioDelay(mediaSource = mediaSource, audioDelayUsProvider = audioDelayUsProvider)
     }
 
+    /** Rebuilds of the same stream (a subtitle added, a retry) keep the clamp: it still describes this server. */
+    private fun notePlaybackStart(url: String) {
+        if (playbackStart.isNew(url)) ParallelRangeDataSource.resetRateLimitMirrors()
+    }
+
     fun shutdown() {
         // Free any chunk buffers retained across seek reopens so native
         // allocations never outlive the player.
+        AutoSpeedup.end()
         ParallelRangeDataSource.releaseRetainedSession()
+    }
+
+    private fun autoSpeedupFactory(
+        context: Context,
+        url: String,
+        single: DataSource.Factory,
+        headers: Map<String, String>
+    ): DataSource.Factory {
+        AutoSpeedup.begin(url, NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context))
+        val limits = AutoSpeedup.limits
+        // The few long downloads keep the playback receive window, unlike the many piece sockets of Custom network.
+        val client = PlayerPlaybackNetworking.createHttpClient(headers).newBuilder()
+            .cookieJar(NuvioApplication.extensionCookieJar)
+            .let(::withChunkSessionTimeouts)
+            .build()
+        val okHttpFactory = OkHttpDataSource.Factory(client).apply {
+            setDefaultRequestProperties(headers)
+            if (headers.none { it.key.equals("User-Agent", ignoreCase = true) }) setUserAgent(DEFAULT_USER_AGENT)
+        }
+        val multi = ParallelRangeDataSource.Factory(
+            okHttpFactory,
+            limits.maxDownloads,
+            limits.holdBytes,
+            useNativeMemory = nuvioPerformanceModeEnabled,
+            prefetchDepthChunks = limits.maxDownloads,
+            allowContinuationReopen = true,
+            onResolvedUri = { resolved -> currentVodCacheResolvedUrl = resolved?.toString() },
+            defaultRequestHeaders = headers,
+            depthLimit = { AutoSpeedup.downloads },
+            receivedBytes = AutoSpeedup.received
+        )
+        return AutoSpeedupDataSource.Factory(
+            single = single,
+            multi = multi,
+            pieceBytes = limits.holdBytes,
+            downloads = { AutoSpeedup.downloads },
+            received = AutoSpeedup.received,
+            onMultiClosed = ParallelRangeDataSource::releaseRetainedSessionIfIdle,
+            multiOpen = AutoSpeedup.multiOpen
+        )
     }
 
     // The counters are all zero at playback start, so the start line never shows what the cache
@@ -743,8 +797,20 @@ internal class PlayerMediaSourceFactory(
             return host == "127.0.0.1" || host == "::1" || host.equals("localhost", ignoreCase = true)
         }
 
-        /** Parallel connections, with performance mode's deeper window and HTTP/2 lanes: never on a media server. */
+        /** Parallel connections, with performance mode's deeper window: never on a media server. */
         internal fun usesParallelConnections(setting: Boolean, mediaServer: Boolean): Boolean = setting && !mediaServer
+
+        /**
+         * Automatic speed-up on a progressive stream: not with Custom network on (the user's own settings win), not on a
+         * media server, and not on a slow-start engine, whose pieces would each wait for the engine to fetch.
+         */
+        internal fun usesAutoSpeedup(
+            enabled: Boolean,
+            customNetwork: Boolean,
+            mediaServer: Boolean,
+            adaptive: Boolean,
+            slowStart: Boolean
+        ): Boolean = enabled && !customNetwork && !mediaServer && !adaptive && !slowStart
 
         /**
          * Progressive MP4 on the single-connection chunk session. Not on a media server, where it would keep two
@@ -1354,6 +1420,18 @@ private inline fun <reified T : Throwable> Throwable.findCause(): T? {
         current = current.cause
     }
     return null
+}
+
+/** Tells a new playback from a rebuild of the one already playing (same URL). */
+internal class NewPlaybackGate {
+    private var url: String? = null
+
+    @Synchronized
+    fun isNew(url: String): Boolean {
+        if (url == this.url) return false
+        this.url = url
+        return true
+    }
 }
 
 private class PlayerLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy(6) {

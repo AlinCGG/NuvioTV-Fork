@@ -7,10 +7,13 @@ import android.view.SurfaceHolder
 import com.nuvio.tv.data.local.MpvHardwareDecodeMode
 import com.nuvio.tv.data.local.SubtitleStyleSettings
 import `is`.xyz.mpv.BaseMPVView
+import `is`.xyz.mpv.MPV
 import `is`.xyz.mpv.Utils
 import java.util.Locale
 import kotlin.math.pow
 import kotlin.math.roundToLong
+
+internal const val MPV_TRACK_LIST_PROPERTY = "track-list"
 
 class NuvioMpvSurfaceView @JvmOverloads constructor(
     context: Context,
@@ -425,6 +428,7 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
     fun isHdrVideo(): Boolean = initialized && runCatching {
         mpv.getPropertyString("video-params/gamma") in setOf("pq", "hlg", "st2084")
     }.getOrDefault(false)
+    var subtitleLiftFraction: Double = 0.0
 
     fun applySubtitleStyle(style: SubtitleStyleSettings) {
         if (!initialized) return
@@ -446,7 +450,13 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
             mpv.setPropertyDouble("sub-scale", scale)
             mpv.setPropertyBoolean("sub-bold", style.bold)
             mpv.setPropertyDouble("sub-outline-size", edges.outlineSize)
-            mpv.setPropertyDouble("sub-pos", subPos)
+            // Subtitles sit above the controls while they are shown; the user's offset still wins below that line.
+            val liftedSubPos = if (subtitleLiftFraction > 0.0) {
+                minOf(subPos, 100.0 * (1.0 - subtitleLiftFraction))
+            } else {
+                subPos
+            }
+            mpv.setPropertyDouble("sub-pos", liftedSubPos)
             mpv.setPropertyInt("sub-margin-y", subMarginY)
             mpv.setPropertyDouble("sub-shadow-offset", edges.shadowOffset)
             mpv.setPropertyString("sub-border-style", edges.borderStyle)
@@ -610,6 +620,11 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
 
             when (type) {
                 "audio" -> {
+                    val role = when {
+                        mpv.getPropertyBoolean("track-list/$i/visual-impaired") == true -> TrackRole.AUDIO_DESCRIPTION
+                        mpv.getPropertyBoolean("track-list/$i/hearing-impaired") == true -> TrackRole.HEARING_IMPAIRED
+                        else -> null
+                    }
                     audioTracks += MpvTrack(
                         id = id,
                         type = type,
@@ -619,7 +634,10 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
                         channelCount = channelCount,
                         isSelected = selected,
                         isForced = false,
-                        isExternal = external
+                        isExternal = external,
+                        title = title,
+                        sampleRate = mpv.getPropertyInt("track-list/$i/demux-samplerate")?.takeIf { it > 0 },
+                        role = role
                     )
                 }
 
@@ -698,7 +716,9 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
     }
 
     override fun observeProperties() {
-        // Progress is polled by PlayerRuntimeController.
+        // Progress is polled by PlayerRuntimeController. Track-list changes are pushed so
+        // the poll can skip re-reading an unchanged track list.
+        mpv.observeProperty(MPV_TRACK_LIST_PROPERTY, MPV.mpvFormat.MPV_FORMAT_NONE)
     }
 
     private fun applyHeaders(headers: Map<String, String>) {
@@ -822,7 +842,10 @@ data class MpvTrack(
     val channelCount: Int?,
     val isSelected: Boolean,
     val isForced: Boolean,
-    val isExternal: Boolean
+    val isExternal: Boolean,
+    val title: String? = null,
+    val sampleRate: Int? = null,
+    val role: TrackRole? = null
 )
 
 /**

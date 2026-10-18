@@ -7,6 +7,8 @@
 package com.nuvio.tv.ui.screens.home
 
 import com.nuvio.tv.ui.v2.components.sidebarPageContent
+import com.nuvio.tv.ui.v2.appearance.LocalUiScaleDecision
+import com.nuvio.tv.ui.v2.scale.posterSizeDp
 
 import com.nuvio.tv.ui.theme.NuvioTheme
 
@@ -694,8 +696,9 @@ fun ModernHomeContent(
         }
     }
 
-    val portraitBaseWidth = uiState.posterCardWidthDp.dp
-    val portraitBaseHeight = uiState.posterCardHeightDp.dp
+    val uiScale = LocalUiScaleDecision.current
+    val portraitBaseWidth = uiScale.posterSizeDp(uiState.posterCardWidthDp).dp
+    val portraitBaseHeight = uiScale.posterSizeDp(uiState.posterCardHeightDp).dp
     val portraitModernPosterScale = 1.08f
     val landscapeModernPosterScale = 1.34f
     val portraitCatalogCardWidth = portraitBaseWidth * 0.84f * portraitModernPosterScale
@@ -787,13 +790,14 @@ fun ModernHomeContent(
                     
                     // Artwork is available independently of metadata enrichment. All candidates
                     // come from the settled item; a row fallback can belong to another title.
-                    val artwork = heroArtworkSelection(
-                        heroCarouselItem?.key,
-                        resolvedHero?.backdrop,
-                        heroCarouselItem?.heroPreview?.backdrop,
-                        resolvedHero?.imageUrl,
-                        resolvedHero?.poster,
-                        heroCarouselItem?.heroPreview?.poster
+                    val artSource = enrichedItem ?: heroCarouselItem?.metaPreview
+                    val artwork = landscapeHeroArtwork(
+                        owner = heroCarouselItem?.key,
+                        poster = artSource?.poster ?: resolvedHero?.poster,
+                        background = artSource?.background ?: resolvedHero?.backdrop,
+                        landscape = artSource?.landscapePoster,
+                        fallbackBackground = heroCarouselItem?.heroPreview?.backdrop,
+                        fallbackPoster = heroCarouselItem?.heroPreview?.poster
                     )
                     ResolvedModernHeroState(artwork, resolvedHero, effectiveEnrichmentActive)
                 }
@@ -928,7 +932,7 @@ fun ModernHomeContent(
                 derivedStateOf {
                     val (artwork, resolvedHero, enrichmentActive) = resolvedHeroState.value
                     val (heroMediaUrl, heroMediaAudioUrl, heroMediaPlaybackKey) = heroMediaDataState.value
-                    val preview = if (!isV2 && enrichmentActive) null else resolvedHero
+                    val preview = resolvedHero
                     ModernHeroSceneState(
                         artwork = artwork,
                         heroBackdrop = artwork.urls.firstOrNull(),
@@ -945,104 +949,6 @@ fun ModernHomeContent(
                     )
                 }
             }
-            val stableHeroSceneStateRef = remember { mutableStateOf<ModernHeroSceneState?>(null) }
-
-            LaunchedEffect(liveHeroSceneState) {
-                snapshotFlow {
-                    val currentLive = liveHeroSceneState.value
-                    val isScrolling = verticalRowListState.isScrollInProgress
-                    val isRapidNav = isRapidHorizontalNav.value
-                    val stable = stableHeroSceneStateRef.value
-                    val stableHasPreview = stable?.preview?.title?.isNotBlank() == true
-                    val liveHasPreview = currentLive.preview?.title?.isNotBlank() == true
-                    when {
-                        isScrolling && stableHasPreview -> stable
-                        isScrolling && !stableHasPreview && liveHasPreview -> currentLive
-                        isRapidNav && stableHasPreview -> stable
-                        else -> currentLive
-                    }
-                }.collect { currentStable ->
-                    if (stableHeroSceneStateRef.value != currentStable) {
-                        // Skip updates where preview is blank (transient empty state from row transitions).
-                        val incomingPreview = currentStable.preview
-                        if (incomingPreview != null && incomingPreview.title.isBlank()) {
-                            return@collect
-                        }
-                        // If incoming has null preview (enrichment pending) and we're scrolling,
-                        // don't overwrite a good stable preview.
-                        val existingStable = stableHeroSceneStateRef.value
-                        if (incomingPreview == null && existingStable?.preview?.title?.isNotBlank() == true) {
-                            if (verticalRowListState.isScrollInProgress) {
-                                return@collect
-                            }
-                        }
-                        stableHeroSceneStateRef.value = currentStable
-                    }
-                }
-            }
-
-            val latestLiveHeroSceneState = rememberUpdatedState(liveHeroSceneState)
-
-            val heroSceneStateLambda = remember(isV2) {
-                {
-                    val currentLive = latestLiveHeroSceneState.value.value
-                    if (isV2) {
-                        // The live hero already follows settled focus. Same-title enrichment
-                        // can update its artwork without following intermediate poster focus.
-                        currentLive
-                    } else {
-                        val stable = stableHeroSceneStateRef.value
-                        val stableHasPreview = stable?.preview?.title?.isNotBlank() == true
-                        when {
-                            // During vertical scroll: freeze stable to avoid flashing
-                            // transient addon data before enrichment completes
-                            verticalRowListState.isScrollInProgress && stableHasPreview -> stable!!
-                            // During rapid horizontal nav: freeze to avoid backdrop flashing
-                            isRapidHorizontalNav.value && stable != null -> stable
-                            // Normal: show live state
-                            else -> currentLive
-                        }
-                    }
-                }
-            }
-
-            LaunchedEffect(artworkAccent) {
-                snapshotFlow {
-                    val scene = heroSceneStateLambda()
-                    if (isRapidHorizontalNav.value || verticalRowListState.isScrollInProgress || scene.enrichmentActive) null
-                    else (settledCarouselItemState.value?.key.orEmpty() to scene.heroBackdrop)
-                }.collect { selection ->
-                    selection?.let { (id, url) -> artworkAccent?.select(id, url) }
-                }
-            }
-
-            // Keep the stable copy on the latest live state with real content, only while
-            // not scrolling - after scroll stops, the enrichment mechanism will gate the
-            // preview through enrichmentActive in previewProvider.
-            LaunchedEffect(liveHeroSceneState) {
-                snapshotFlow {
-                    liveHeroSceneState.value.takeIf {
-                        !verticalRowListState.isScrollInProgress && !isRapidHorizontalNav.value && !it.enrichmentActive
-                    }
-                }.collect { latestLiveForStable ->
-                    if (latestLiveForStable == null) return@collect
-                    val hasNewPreview = latestLiveForStable.preview?.title?.isNotBlank() == true &&
-                        stableHeroSceneStateRef.value?.preview != latestLiveForStable.preview
-                    val hasNewBackdrop = latestLiveForStable.heroBackdrop != null &&
-                        stableHeroSceneStateRef.value?.heroBackdrop != latestLiveForStable.heroBackdrop
-                    if (hasNewPreview || hasNewBackdrop) {
-                        stableHeroSceneStateRef.value = latestLiveForStable
-                    }
-                }
-            }
-
-            val isFullScreenState = remember(liveHeroSceneState) {
-                derivedStateOf { liveHeroSceneState.value.fullScreenBackdrop }
-            }
-            val isFullScreenLambda = remember(isFullScreenState) {
-                { isFullScreenState.value }
-            }
-
             val localDensity = LocalDensity.current
             val rowsViewportHeightFraction = if (useLandscapePosters) 0.49f else 0.52f
             val rowsViewportHeight = remember(screenHeight, rowsViewportHeightFraction) { screenHeight * rowsViewportHeightFraction }
@@ -1084,6 +990,20 @@ fun ModernHomeContent(
                     if (fullScreenBackdrop) screenHeight.roundToPx()
                     else heroBackdropHeight.roundToPx()
                 }.coerceAtLeast(1)
+            }
+
+            val preparedHeroScene = rememberPreparedHeroScene(liveHeroSceneState, heroMediaWidthPx, heroMediaHeightPx)
+            val heroSceneStateLambda = remember(preparedHeroScene) { { preparedHeroScene.value } }
+            LaunchedEffect(artworkAccent, preparedHeroScene) {
+                snapshotFlow { preparedHeroScene.value.artwork.ownerKey to preparedHeroScene.value.heroBackdrop }
+                    .collect { (owner, url) -> artworkAccent?.select(owner.orEmpty(), url) }
+            }
+
+            val isFullScreenState = remember(liveHeroSceneState) {
+                derivedStateOf { liveHeroSceneState.value.fullScreenBackdrop }
+            }
+            val isFullScreenLambda = remember(isFullScreenState) {
+                { isFullScreenState.value }
             }
 
             val heroMediaModifier = remember(heroBackdropHeight, screenHeight, fullScreenBackdrop, isV2) {
@@ -1150,15 +1070,9 @@ fun ModernHomeContent(
                 else -> 2
             }
             HeroTitleBlock(
-                previewProvider = {
-                    val state = heroSceneStateLambda()
-                    if (!isV2 && (isRapidHorizontalNav.value || state.enrichmentActive)) null
-                    else state.preview
-                },
-                enrichmentActive = {
-                    if (isV2 || isRapidHorizontalNav.value) false
-                    else heroSceneStateLambda().enrichmentActive
-                },
+                previewProvider = { heroSceneStateLambda().preview },
+                enrichmentActive = { false },
+                preparedLogo = heroSceneStateLambda().preparedLogo,
                 portraitMode = !useLandscapePosters,
                 showImdbRatings = uiState.homeImdbRatingsVisibility.showRatings,
                 mdbListShowOnHero = uiState.mdbListShowOnHero,

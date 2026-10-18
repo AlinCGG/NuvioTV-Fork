@@ -1034,6 +1034,7 @@
   <string name="layout_custom_poster_screen_library">Βιβλιοθήκη</string>
   <string name="layout_custom_poster_screen_search">Αναζήτηση</string>
   <string name="layout_custom_poster_screen_details">Οθόνη λεπτομερειών</string>
+  <string name="layout_custom_poster_screen_tv_recommendations">Προτάσεις TV</string>
   <string name="layout_always_show_landscape_clearlogo">Πάντα φόντο με λογότυπο για οριζόντιες αφίσες</string>
   <string name="layout_always_show_landscape_clearlogo_sub">Αγνόηση της οριζόντιας αφίσας από το πρόσθετο και χρήση φόντου με επικάλυψη clearlogo.</string>
   <string name="web_custom_poster_title">Προσαρμοσμένη πηγή αφίσας</string>
@@ -1907,6 +1908,8 @@
   <string name="library_sort_trakt_order">Σειρά Trakt</string>
   <string name="library_sort_added_desc">Προστέθηκε ↓</string>
   <string name="library_sort_added_asc">Προστέθηκε ↑</string>
+  <string name="library_sort_released_desc">Κυκλοφόρησε ↓</string>
+  <string name="library_sort_released_asc">Κυκλοφόρησε ↑</string>
   <string name="library_sort_title_asc">Τίτλος Α-Ω</string>
   <string name="library_sort_title_desc">Τίτλος Ω-Α</string>
   <string name="library_error_sort_failed">Δεν ήταν δυνατή η φόρτωση της σειράς ταξινόμησης. Εμφάνιση σειράς παρόχου.</string>
@@ -3044,7 +3047,6 @@
   <string name="stream_test_btn_measuring_parallel8">Μέτρηση παράλληλης (8MB)...</string>
   <string name="diag_value_not_ready">Μη έτοιμο</string>
   <string name="web_stream_badge_error_import_limit">Μπορείτε να εισαγάγετε έως %1$d URL διακριτικών.</string>
-  <string name="playback_net_http2">Ενεργοποίηση HTTP/2</string>
   <string name="dv7_libdovi_mode_4_sub">Μετατροπή σε στατικό προφίλ 8.4.</string>
   <string name="advanced_nuvio_performance_mode_subtitle">Ενεργοποιεί εγγενή εκχωρητή υψηλής απόδοσης, μνήμη εκτός σωρού και βελτιστοποιήσεις δικτύου για πιο ομαλή αναπαραγωγή</string>
   <string name="diag_value_decoder_hidden">%1$s (κρυφό)</string>
@@ -3129,7 +3131,6 @@
   <string name="web_debrid_per_resolution">Ανά ανάλυση</string>
   <string name="settings_content_discovery_addons_subtitle">Διαχείριση πρόσθετων, σειράς καταλόγων και συλλογών</string>
   <string name="licenses_attributions_premiumize_body">Το Nuvio Arc συνδέεται με το Premiumize για έλεγχο ταυτότητας λογαριασμού, πρόσβαση στη βιβλιοθήκη cloud, ελέγχους προσωρινής μνήμης cache και λειτουργίες αναπαραγωγής στο cloud. Το Nuvio Arc δεν συνδέεται ούτε υποστηρίζεται επίσημα από το Premiumize.</string>
-  <string name="playback_net_http2_sub">Ενεργοποίηση του πρωτοκόλλου HTTP/2 για τις συνδέσεις δικτύου, επιτρέποντας πολύπλεξη αιτημάτων και ταχύτερους χρόνους χειραψίας.</string>
   <string name="web_stream_badge_importing">Εισαγωγή…</string>
   <string name="settings_content_discovery_subtitle">Πρόσθετα, plugins, κατάλογοι και πηγές ανακάλυψης</string>
   <string name="diag_label_last_convert">Τελευταία μετατροπή</string>
@@ -3200,6 +3201,19 @@
   <string name="appearance_settings_style_subtitle">Επιλέξτε πώς εμφανίζονται οι οθόνες ρυθμίσεων</string>
   <string name="appearance_launcher_artwork">Εικόνα εκκίνησης</string>
   <string name="appearance_launcher_artwork_subtitle">Επιλέξτε πώς εμφανίζεται το Nuvio Arc στην αρχική οθόνη του TV σας</string>
+  <string name="ambient_mode_title">Λειτουργία περιβάλλοντος</string>
+  <string name="ambient_mode_enabled_subtitle">Γέμισμα της οθόνης με εικόνες φόντου μετά από περίοδο χωρίς είσοδο από το τηλεχειριστήριο</string>
+  <string name="ambient_mode_timeout">Έναρξη μετά από</string>
+  <string name="ambient_mode_timeout_subtitle">Πόση ώρα να περιμένει πριν ξεκινήσει η Λειτουργία περιβάλλοντος</string>
+  <plurals name="ambient_mode_timeout_minutes">
+    <item quantity="one">%1$d λεπτό</item>
+    <item quantity="other">%1$d λεπτά</item>
+  </plurals>
+  <string name="ambient_mode_catalogs">Κατάλογοι</string>
+  <string name="ambient_mode_catalogs_subtitle">Επιλέξτε έως 3 καταλόγους από τους οποίους θα αντλούνται εικόνες</string>
+  <string name="ambient_mode_catalogs_dialog_subtitle">Επιλέξτε έως 3 καταλόγους</string>
+  <string name="ambient_mode_catalogs_default">Ίδιοι με την ηρωική ενότητα</string>
+  <string name="ambient_mode_catalogs_count">%1$d από %2$d</string>
   <string name="appearance_app_icon_and_banner">Εικονίδιο εφαρμογής &amp; Banner</string>
   <string name="appearance_app_icon_and_banner_subtitle">Αλλαγή εικονιδίου εφαρμογής και banner</string>
   <string name="appearance_app_icon_picker_title">Επιλογή εικονιδίου εφαρμογής &amp; Banner</string>
@@ -3280,8 +3294,8 @@
     <string name="detail_trailer_error_age_restricted">Αυτό το τρέιλερ έχει περιορισμό ηλικίας στο YouTube και δεν μπορεί να αναπαραχθεί εδώ.</string>
     <string name="detail_trailer_error_unavailable">Αυτό το τρέιλερ δεν είναι διαθέσιμο στο YouTube.</string>
     <string name="detail_trailer_error_sign_in">Το YouTube ζητά σύνδεση για την αναπαραγωγή αυτού του τρέιλερ.</string>
-    <string name="appearance_screensaver_group_title">Προστασία οθόνης OLED</string>
-    <string name="appearance_screensaver_group_subtitle">Μείωση φωτεινότητας σε αδράνεια για λιγότερη φθορά του πάνελ</string>
+    <string name="appearance_screensaver_group_title">Προφύλαξη οθόνης</string>
+    <string name="appearance_screensaver_group_subtitle">Τι εμφανίζει η οθόνη μετά από λίγη ώρα χωρίς είσοδο από το τηλεχειριστήριο</string>
     <string name="appearance_screensaver_enabled">Σκοτείνιασμα σε αδράνεια</string>
     <string name="appearance_screensaver_enabled_subtitle">Σταδιακή μετάβαση σε σκούρα επικάλυψη μετά από διάστημα αδράνειας. Το πάτημα οποιουδήποτε κουμπιού επαναφέρει την οθόνη.</string>
     <string name="appearance_screensaver_timeout">Χρόνος αδράνειας</string>
@@ -3293,6 +3307,12 @@
     <string name="appearance_screensaver_dim_gentle">Η οθόνη παραμένει καθαρά ορατή</string>
     <string name="appearance_screensaver_dim_balanced">Σκούρα αλλά ευανάγνωστη</string>
     <string name="appearance_screensaver_dim_strong">Μόλις που φαίνεται</string>
+    <string name="appearance_app_icon_look_classic">Κλασικό</string>
+    <string name="appearance_app_icon_look_card">Κάρτα</string>
+    <string name="appearance_app_icon_look_card_lettering">Κάρτα με επιγραφή</string>
+    <string name="appearance_app_icon_choice_transparent">%1$s, διάφανο</string>
+    <string name="appearance_app_icon_transparent_background">Διάφανο φόντο</string>
+    <string name="appearance_app_icon_transparent_hint">Για launcher που σχεδιάζουν δική τους κάρτα, όπως το Projectivy</string>
     <string name="appearance_app_icon_mint">Μέντα</string>
     <string name="licenses_attributions_avatars_title">Avatar πάρτι προβολής</string>
     <string name="licenses_attributions_avatars_body">Δημιουργήθηκαν με το DiceBear, με ανάμειξη των εξής σχεδίων: \"Fun Emoji\" του Davis Uche και \"Adventurer\" της Lisa Wischofsky, με άδεια CC BY 4.0 (creativecommons.org/licenses/by/4.0). \"Lorelei\" της Lisa Wischofsky, \"Notionists\" της Zoish, \"Pixel Art\" και \"Thumbs\" του DiceBear, CC0 1.0. \"Bottts\" του Pablo Stanley, δωρεάν για προσωπική και εμπορική χρήση. Πρόσωπα ζώων από το Twemoji της Twitter, Inc. και άλλων συντελεστών, με άδεια CC BY 4.0.</string>
@@ -3452,8 +3472,6 @@
     <string name="player_layout_more_fixed_help">Πατήστε OK για απόκρυψη/εμφάνιση του Περισσότερα. Μένει στο δεξί άκρο. Μετακινήστε άλλες ενέργειες πέρα από το όριο του μενού του για να αλλάξετε τι περιέχει το αναδυόμενο μενού.</string>
     <string name="player_error_placeholder_stream">Αυτή η ροή μοιάζει με κάρτα σφάλματος του παρόχου, όχι με το βίντεο. Δοκιμάστε άλλη πηγή.</string>
     <string name="subtitle_panel_languages">Γλώσσες</string>
-    <string name="library_sort_released_desc">Κυκλοφορία ↓</string>
-    <string name="library_sort_released_asc">Κυκλοφορία ↑</string>
     <string name="library_empty_mdblist_title">Κανένα στοιχείο %1$s στη λίστα παρακολούθησης</string>
     <string name="library_empty_mdblist_subtitle">Χρησιμοποιήστε το + στις λεπτομέρειες για προσθήκη στη λίστα παρακολούθησης MDBList</string>
     <string name="library_empty_mdblist_not_auth_title">Το MDBList δεν είναι συνδεδεμένο</string>
@@ -3482,6 +3500,7 @@
     <string name="player_error_startup_timeout">Η αναπαραγωγή δεν ξεκίνησε - ο αποκωδικοποιητής βίντεο ίσως δεν ανταποκρίνεται. Μια επανεκκίνηση της συσκευής συνήθως το λύνει. Πατήστε πίσω για να επιστρέψετε και να δοκιμάσετε ξανά ή επιλέξτε άλλη ροή.</string>
     <string name="player_error_startup_video_track_unsupported">Η αναπαραγωγή δεν ξεκίνησε - αυτή η συσκευή δεν μπορεί να αναπαράγει το φορμά βίντεο αυτής της ροής. Πατήστε πίσω και επιλέξτε άλλη ροή.</string>
     <string name="player_error_startup_no_stream_data">Η αναπαραγωγή δεν ξεκίνησε - η ροή δεν έδωσε δεδομένα εγκαίρως. Η πηγή ίσως είναι αργή ή μη διαθέσιμη. Πατήστε πίσω για να δοκιμάσετε ξανά ή επιλέξτε άλλη ροή.</string>
+    <string name="search_row_updating">Ενημερώνεται</string>
     <string name="network_error_addon_timeout">Το αίτημα προς το πρόσθετο έληξε</string>
     <string name="debrid_picker_preferred_release_groups_title">Προτιμώμενα release groups</string>
     <string name="debrid_picker_preferred_release_groups_subtitle">Ταξινόμηση των επιλεγμένων release groups πρώτα, με τη σειρά της λίστας.</string>
@@ -3496,11 +3515,16 @@
     <string name="playback_buffer_seconds_hint">Στα %1$d MB χωρούν περίπου %2$d s ενός remux 4K (80 Mbit/s). Μεγαλύτερες τιμές δεν κάνουν διαφορά.</string>
     <string name="playback_buffer_back_fitted">Κρατιέται μέσα στο «Μέγεθος Target Buffer». Στα %1$d MB η εφαρμογή κρατά έως περίπου %2$d s (%3$d MB στα 80 Mbit/s), ώστε να μένουν τουλάχιστον 5 s μπροστά.</string>
     <string name="playback_buffer_back_fitted_none">Κρατιέται μέσα στο «Μέγεθος Target Buffer». Στα %1$d MB δεν υπάρχει χώρος, οπότε η εφαρμογή κρατά 5 s μπροστά.</string>
-    <string name="playback_buffer_managed_desc">Ορίζει το buffer από την ελεύθερη μνήμη της συσκευής στην έναρξη της αναπαραγωγής και το μικραίνει όταν λείπει μνήμη. Απενεργοποιήστε το για να ορίσετε μόνοι σας το «Μέγεθος Target Buffer»· σε μικρές συσκευές ένα μεγαλύτερο μέγεθος μπορεί να φέρει μικροκολλήματα.</string>
-    <string name="playback_buffer_target_size_sub">Μνήμη για buffer του βίντεο μπροστά από την αναπαραγωγή. Το όριο εξαρτάται από τη συνολική μνήμη της συσκευής. Με ενεργό το «Διαχειριζόμενο όριο μνήμης», η εφαρμογή ορίζει το μέγεθος από την ελεύθερη μνήμη στην έναρξη της αναπαραγωγής. Το buffer μικραίνει όσο λείπει μνήμη.</string>
+    <string name="playback_buffer_managed_desc">Ορίζει το buffer από την ελεύθερη μνήμη της συσκευής στην έναρξη της αναπαραγωγής και το μικραίνει όταν λείπει μνήμη. Απενεργοποιήστε το για να ορίσετε μόνοι σας το «Μέγεθος Target Buffer»: η εφαρμογή τότε κρατά το μέγεθός σας όταν η μνήμη λιγοστεύει και, αν η συσκευή μείνει πραγματικά από μνήμη, το Android μπορεί να κλείσει το πρόγραμμα αναπαραγωγής. Σε μικρές συσκευές ένα μεγαλύτερο μέγεθος μπορεί να φέρει μικροκολλήματα.</string>
+    <string name="playback_buffer_target_size_sub">Μνήμη για buffer του βίντεο μπροστά από την αναπαραγωγή. Το όριο εξαρτάται από τη συνολική μνήμη της συσκευής. Με ενεργό το «Διαχειριζόμενο όριο μνήμης», η εφαρμογή ορίζει το μέγεθος από την ελεύθερη μνήμη στην έναρξη της αναπαραγωγής και μικραίνει το buffer όσο λείπει μνήμη.</string>
     <string name="playback_buffer_target_stutter_warning">Αυτή η συσκευή έχει %1$s μνήμης. Πάνω από %2$d MB, η αναπαραγωγή μπορεί να έχει μικροκολλήματα.</string>
     <string name="playback_buffer_allow_large_desc">Επιτρέπει στο «Μέγεθος Target Buffer» να φτάσει τα 2 GB. Μόνο για συσκευές με 4 GB μνήμης ή περισσότερο· στις μικρότερες, τα μεγάλα μεγέθη κάνουν μικροκολλήματα ή κρασάρουν.</string>
+    <string name="playback_net_custom_desc">Οι συνδέσεις ορίζονται χειροκίνητα. Όταν είναι ανενεργό, η εφαρμογή χρησιμοποιεί μία σύνδεση και, σε συσκευές με αρκετή μνήμη, η Αυτόματη επιτάχυνση προσθέτει κι άλλες όταν τις χρειάζεται μια ταινία.</string>
+    <string name="playback_net_auto_speedup">Αυτόματη επιτάχυνση</string>
+    <string name="playback_net_auto_speedup_sub">Βοηθά ταινίες που κάνουν συχνά buffering από μακρινούς διακομιστές. Η εφαρμογή ζητά από τη συσκευή μεγαλύτερο παράθυρο λήψης και, σε συσκευές με αρκετή μνήμη, προσθέτει επιπλέον λήψεις αν η ταινία εξακολουθεί να μένει πίσω. Ανενεργό: μία κανονική λήψη.</string>
+    <string name="playback_net_auto_speedup_custom_note">Το Προσαρμοσμένο δίκτυο είναι ενεργό, οπότε χρησιμοποιούνται οι συνδέσεις που ορίστηκαν χειροκίνητα. Ισχύει μόνο το μεγαλύτερο παράθυρο λήψης.</string>
     <string name="playback_net_connection_count_small_box">Αυτή η συσκευή έχει %1$s μνήμης. Πάνω από 2 συνδέσεις μπορεί να φέρουν μικροκολλήματα στην αναπαραγωγή.</string>
+    <string name="playback_net_chunk_size_small_note">Chunks μικρότερα από 8 MB είναι αργά στο Real-Debrid και μπορεί να απορριφθούν από το TorBox.</string>
     <string name="diag_label_serving_host">Διακομιστής παροχής</string>
     <string name="diag_label_file">Αρχείο</string>
     <string name="diag_label_dv_applied">DV που εφαρμόστηκε</string>
@@ -3705,10 +3729,16 @@
     <string name="about_fork_updates_subtitle">Ενημερώσεις από τις εκδόσεις του Nuvio Arc στο GitHub.</string>
     <string name="playback_speculative_stream_search">Αναζήτηση πηγών πριν την Αναπαραγωγή</string>
     <string name="playback_speculative_stream_search_sub">Αναζήτηση στα πρόσθετα κατά την περιήγηση για ταχύτερη επιλογή πηγής. Ορισμένα πρόσθετα μπορεί να προσθέσουν ή να κατεβάσουν περιεχόμενο στις αναζητήσεις. Στο Απενεργοποιημένο περιμένει μέχρι την Αναπαραγωγή. Οι σύνδεσμοι πολυμέσων και η επίλυση παρόχου περιμένουν την επιλογή αναπαραγωγής, εκτός από το τέλος ενός επεισοδίου, όταν οι μικρογραφίες μετακίνησης ετοιμάζουν το επόμενο.</string>
+    <string name="playback_source_line_badges">Badges πηγής στη σελίδα λεπτομερειών</string>
+    <string name="playback_source_line_badges_sub">Εμφάνιση κάτω από τον τίτλο των badges της πηγής που βρέθηκε πριν την Αναπαραγωγή: ανάλυση, Dolby Vision ή HDR, μορφή ήχου και μέγεθος. Στο Απενεργοποιημένο κρύβονται τα badges, αλλά παραμένουν το σύμβολο αναζήτησης και το τικ ετοιμότητας.</string>
+    <string name="playback_source_line_release_group">Release group στη σελίδα λεπτομερειών</string>
+    <string name="playback_source_line_release_group_sub">Εμφάνιση του ονόματος του release group δίπλα στα badges της πηγής. Στο Απενεργοποιημένο μένουν τα badges και κρύβεται το όνομα.</string>
+    <string name="details_source_line_searching">Αναζήτηση καλύτερης πηγής</string>
+    <string name="details_source_line_ready">Έτοιμο</string>
     <string name="debrid_cached_playback_links">Επαναχρησιμοποίηση αποθηκευμένων συνδέσμων αναπαραγωγής</string>
     <string name="debrid_cached_playback_links_description">Επαναχρησιμοποίηση συνδέσμων που έχουν ήδη επιλυθεί κατά την αναπαραγωγή. Νέοι σύνδεσμοι επιλύονται μόνο μετά την επιλογή πηγής ή λίγο πριν τελειώσει ένα επεισόδιο, όταν οι μικρογραφίες μετακίνησης ετοιμάζουν το επόμενο.</string>
     <string name="dv7_mode_native_fel">Εγγενές DV7 FEL/MEL (Amlogic)</string>
-    <string name="dv7_mode_native_fel_desc">Αναπαραγωγή Profile 7 FEL και MEL σε συμβατό υλικό, με αυτόματη εναλλακτική για μη υποστηριζόμενες συσκευές.</string>
+    <string name="dv7_mode_native_fel_desc">Απαιτεί Ugoos AM9 Pro με προσαρμοσμένο πυρήνα FEL, ο οποίος δεν είναι ακόμη διαθέσιμος. Σε οποιαδήποτε άλλη συσκευή λειτουργεί όπως το Αυτόματο.</string>
     <string name="stream_test_parallel_scope">Μετρήθηκαν %1$.1f MiB / %2$.2f s · %3$.1f MiB συνολικό ωφέλιμο φορτίο</string>
     <string name="stream_test_parallel_scope_detail">Χωρίς την προθέρμανση. Μόνο ωφέλιμο φορτίο απόκρισης· η συνολική κίνηση δικτύου μπορεί να είναι μεγαλύτερη. Έως 72 MiB ή 20 δευτερόλεπτα ανά κελί. Πολύ σύντομα δείγματα δεν διατίθενται.</string>
     <string name="diagnostic_run_timed_out">Η σύγκριση έφτασε το όριο των δύο λεπτών. Τα αποτελέσματα είναι ελλιπή· δεν βγήκαν προτάσεις.</string>
@@ -3790,6 +3820,14 @@
     <string name="seek_thumbnails_prepare_off_desc">Άμεση έναρξη αναπαραγωγής· οι μικρογραφίες δημιουργούνται σε παύση και αφού σταματήσετε την παρακολούθηση.</string>
     <string name="seek_thumbnails_prepare_on">Ενεργό</string>
     <string name="seek_thumbnails_prepare_on_desc">Δημιουργία των μικρογραφιών μετακίνησης ενός τίτλου πριν ξεκινήσει. Με το \"Έναρξη παρακολούθησης τώρα\" ή το Πίσω η αναπαραγωγή ξεκινά οποιαδήποτε στιγμή.</string>
+    <string name="seek_thumbnails_before_play_title">Μικρογραφίες πριν την αναπαραγωγή</string>
+    <string name="seek_thumbnails_before_play_subtitle">Πόσες μικρογραφίες δημιουργούνται πριν ξεκινήσει ένας τίτλος. Οι υπόλοιπες ακολουθούν όσο παρακολουθείτε, μέχρι τη συνηθισμένη πυκνότητα.</string>
+    <string name="seek_thumbnails_before_play_full">Πλήρης</string>
+    <string name="seek_thumbnails_before_play_full_desc">Όλος ο τίτλος καλύπτεται πυκνά πριν ξεκινήσει. Η μεγαλύτερη αναμονή.</string>
+    <string name="seek_thumbnails_before_play_faster">Ταχύτερη</string>
+    <string name="seek_thumbnails_before_play_faster_desc">Οι μισές μικρογραφίες πριν ξεκινήσει, κατανεμημένες σε όλο τον τίτλο.</string>
+    <string name="seek_thumbnails_before_play_fastest">Ταχύτατη</string>
+    <string name="seek_thumbnails_before_play_fastest_desc">Το ένα τέταρτο πριν ξεκινήσει. Η μικρότερη αναμονή.</string>
     <string name="seek_thumbnails_from_copy_title">Μικρογραφίες από αντίγραφο</string>
     <string name="seek_thumbnails_from_copy_subtitle">Ταχύτερες μικρογραφίες για τίτλους 4K από αντίγραφο 1080p ή 720p, και για τίτλους Usenet από αντίγραφο εκτός Usenet. Ένα αντίγραφο ήδη αποθηκευμένο στο TorBox μπορεί να προστεθεί στη λίστα σας για λίγα λεπτά.</string>
     <string name="seek_thumbnails_clear_title">Διαγραφή αποθηκευμένων μικρογραφιών</string>
@@ -3943,5 +3981,9 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Αντίχειρες</string>
     <string name="party_invite_leaves_current">Με τη συμμετοχή αποχωρείτε από το πάρτι στο οποίο είστε τώρα.</string>
-    <string name="search_row_updating">Ενημερώνεται</string>
+    <string name="layout_episode_synopsis_under_row">Σύνοψη επεισοδίου κάτω από τη σειρά</string>
+    <string name="layout_episode_synopsis_under_row_sub">Εμφάνιση της σύνοψης του εστιασμένου επεισοδίου κάτω από τη σειρά επεισοδίων στη διεπαφή Nuvio V2.</string>
+    <string name="detail_episode_synopsis_none">Δεν υπάρχει ακόμη σύνοψη για αυτό το επεισόδιο.</string>
+    <string name="player_track_role_commentary">Σχολιασμός</string>
+    <string name="player_track_role_audio_description">Ηχητική περιγραφή</string>
 </resources>

@@ -68,7 +68,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.tv.material3.Border
 import androidx.compose.ui.zIndex
-import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -678,14 +677,12 @@ fun ContinueWatchingCard(
                 false
             },
         // With text under the artwork the card border would ring the text too, so the artwork draws its own.
-        border = if (isV2 || textBelowArtwork) {
-            CardDefaults.border(focusedBorder = Border.None)
+        focusedBorder = if (isV2 || textBelowArtwork) {
+            Border.None
         } else {
-            CardDefaults.border(
-                focusedBorder = Border(
-                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                    shape = cwCardShape
-                )
+            Border(
+                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                shape = cwCardShape
             )
         }
     ) {

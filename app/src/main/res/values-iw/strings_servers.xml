@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">כותרים נפתחים עם הפרטים מהתוספים ומסתנכרנים כמו כל כותר מקטלוג, וההפעלה וסימוני הצפייה עדיין נשלחים אל %1$s. ייתכן שכותרים מסוימים לא יותאמו או לא יופעלו אם התוספים ממספרים או מזהים אותם אחרת.</string>
     <string name="servers_import_continue_watching">ייבוא \"המשך צפייה\"</string>
     <string name="servers_import_continue_watching_description">כותרים שהתחלת ב-%1$s מופיעים ב\"המשך צפייה\" במסך הבית. סימוני הצפייה מסונכרנים בשני הכיוונים.</string>
+    <string name="servers_import_watch_state">ייבוא התקדמות צפייה</string>
+    <string name="servers_import_watch_state_description">הוספת כותרים שאתה צופה בהם ב-%1$s לשורת המשך הצפייה, יחד עם סימוני הצפייה. ההפעלה ממשיכה מ-%1$s בכל מקרה.</string>
+    <string name="servers_resume_row">המשך צפייה</string>
     <string name="servers_sign_in_again">התחברות מחדש</string>
     <string name="servers_second_address">כתובת שנייה</string>
     <string name="servers_second_address_description">נבדקת כשאין גישה לכתובת הראשונה, למשל כתובת ביתית ראשונה וכתובת אינטרנט שנייה.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">אישור מהימן</string>
     <string name="servers_trusted_certificate_forget">לשכוח</string>
     <string name="servers_failure_unsupported">השרת אינו תומך בפריט הזה.</string>
+    <string name="servers_failure_stream_limit">השרת אינו מאפשר כרגע עוד סטרימים עבור החשבון הזה.</string>
     <string name="servers_failure_incomplete">הספרייה של השרת הזה עדיין נבדקת. כדאי לנסות שוב בעוד רגע.</string>
     <string name="servers_playback_failed">לא ניתן היה להתחיל הפעלה מהשרת.</string>
     <string name="servers_audio_switch_failed">החלפת רצועת השמע נכשלה.</string>

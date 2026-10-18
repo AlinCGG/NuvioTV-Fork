@@ -374,8 +374,21 @@
     <string name="appearance_startup_splash_subtitle">Show logo and loading indicator after selecting a profile</string>
     <string name="appearance_settings_style">Settings Style</string>
     <string name="appearance_settings_style_subtitle">Choose how the settings screens are presented</string>
-    <string name="appearance_screensaver_group_title">OLED screen protection</string>
-    <string name="appearance_screensaver_group_subtitle">Dim the screen when idle to reduce panel wear</string>
+    <string name="appearance_screensaver_group_title">Screensaver</string>
+    <string name="appearance_screensaver_group_subtitle">What the screen shows after a while with no remote input</string>
+    <string name="ambient_mode_title">Ambient Mode</string>
+    <string name="ambient_mode_enabled_subtitle">Fill the screen with backdrops after a period with no remote input</string>
+    <string name="ambient_mode_timeout">Start After</string>
+    <string name="ambient_mode_timeout_subtitle">How long to wait before Ambient Mode starts</string>
+    <plurals name="ambient_mode_timeout_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <string name="ambient_mode_catalogs">Catalogs</string>
+    <string name="ambient_mode_catalogs_subtitle">Choose up to 3 catalogs to pull artwork from</string>
+    <string name="ambient_mode_catalogs_dialog_subtitle">Choose up to 3 catalogs</string>
+    <string name="ambient_mode_catalogs_default">Same as hero</string>
+    <string name="ambient_mode_catalogs_count">%1$d of %2$d</string>
     <string name="appearance_screensaver_enabled">Dim when idle</string>
     <string name="appearance_screensaver_enabled_subtitle">Fade to a dark overlay after a period of inactivity. Pressing any button wakes the screen.</string>
     <string name="appearance_screensaver_timeout">Idle timeout</string>
@@ -396,6 +409,13 @@
     <string name="appearance_app_icon_confirmation_title">Change app icon?</string>
     <string name="appearance_app_icon_confirmation_message">Changing to %1$s restarts Nuvio Arc with the new icon. Your home screen can take a few seconds to show it, and the TV banner may need a device restart. Select OK to continue.</string>
     <string name="appearance_app_icon_change_failed">The icon and banner could not be changed. Please try again.</string>
+    <string name="appearance_app_icon_look_classic">Classic</string>
+    <string name="appearance_app_icon_look_card">Card</string>
+    <string name="appearance_app_icon_look_card_lettering">Card lettering</string>
+    <string name="appearance_app_icon_choice" translatable="false">%1$s · %2$s</string>
+    <string name="appearance_app_icon_choice_transparent">%1$s, transparent</string>
+    <string name="appearance_app_icon_transparent_background">Transparent background</string>
+    <string name="appearance_app_icon_transparent_hint">For launchers that draw their own card, like Projectivy</string>
     <string name="appearance_app_icon_original">Original</string>
     <string name="appearance_app_icon_arctic_blue">Arctic Blue</string>
     <string name="appearance_app_icon_emerald">Emerald</string>
@@ -1344,6 +1364,7 @@
     <string name="layout_custom_poster_screen_library">Library</string>
     <string name="layout_custom_poster_screen_search">Search</string>
     <string name="layout_custom_poster_screen_details">Details Screen</string>
+    <string name="layout_custom_poster_screen_tv_recommendations">TV Recommendations</string>
 
     <!-- Custom Poster Web Page -->
     <string name="layout_always_show_landscape_clearlogo">Always Backdrop with Logo for Landscape Posters</string>
@@ -3450,13 +3471,13 @@
     <string name="playback_buffer_back_fitted_none">Kept inside the Target buffer size. At %1$d MB there is no room for it, so the app keeps 5 s ahead instead.</string>
     <string name="playback_buffer_managed">Managed memory budget</string>
     <string name="playback_buffer_managed_sub">Caps the buffer to a safe share of this device\'s memory. Turn off to set the Target Buffer Size yourself (advanced — large values can crash low-memory devices).</string>
-    <string name="playback_buffer_managed_desc">Sets the buffer from the memory this box has free when playback starts, and shrinks it when the box runs short. Turn off to pick the Target buffer size yourself; on small boxes a bigger size can make playback stutter.</string>
+    <string name="playback_buffer_managed_desc">Sets the buffer from the memory this box has free when playback starts, and shrinks it when the box runs short. Turn off to pick the Target buffer size yourself: the app then keeps your size when memory runs low, and if the box really runs out, Android may close the player. On small boxes a bigger size can make playback stutter.</string>
     <string name="playback_buffer_target">Target buffer size</string>
     <string name="playback_buffer_target_sub">Maximum RAM used for ahead-buffering. The maximum is calculated from your device\'s available memory (Android\'s per-app heap limit), so higher-RAM devices unlock larger caps automatically.</string>
     <string name="playback_buffer_target_managed_hint">Managed by the device memory budget. Turn off Managed memory budget to set this.</string>
     <string name="playback_buffer_target_warning">Warning: above device safe limit (%1$d MB). App may crash during playback.</string>
     <string name="playback_buffer_target_danger_warning">Danger: Above warning limit (%1$d MB). High crash risk.</string>
-    <string name="playback_buffer_target_size_sub">Memory used to buffer video ahead. The limit follows this box\'s total memory. With Managed memory budget on, the app sets the size from the memory free at playback start. The buffer shrinks while the box is short of memory.</string>
+    <string name="playback_buffer_target_size_sub">Memory used to buffer video ahead. The limit follows this box\'s total memory. With Managed memory budget on, the app sets the size from the memory free at playback start and shrinks the buffer while the box is short of memory.</string>
     <string name="playback_buffer_target_stutter_warning">This box has %1$s of memory. Above %2$d MB, playback may stutter.</string>
     <string name="playback_buffer_allow_large">Allow larger target buffer</string>
     <string name="playback_buffer_allow_large_sub">Removes the device-memory cap on the Target Buffer Size slider, allowing values up to 2GB. May crash on devices with less than 2GB of RAM.</string>
@@ -3477,8 +3498,10 @@
     <string name="playback_net_custom">Custom network</string>
     <string name="playback_cache_write_warning">On devices with built-in storage write activity is steady and can add wear over time.</string>
     <string name="playback_net_custom_sub">Use multiple parallel connections to fetch progressive streams. When off, a single connection is used.</string>
-    <string name="playback_net_http2">Enable HTTP/2</string>
-    <string name="playback_net_http2_sub">Enable HTTP/2 protocol for network connections, allowing request multiplexing and faster handshake times.</string>
+    <string name="playback_net_custom_desc">Set the connections yourself. When off, the app uses one connection and, on boxes with enough memory, Automatic speed-up adds more when a film needs them.</string>
+    <string name="playback_net_auto_speedup">Automatic speed-up</string>
+    <string name="playback_net_auto_speedup_sub">Helps films that keep buffering from far-away servers. The app asks the box for a bigger download window and, on boxes with enough memory, adds extra downloads if a film still runs short. Off: one standard download.</string>
+    <string name="playback_net_auto_speedup_custom_note">Custom network is on, so your own connection settings are used. Only the bigger download window still applies.</string>
     <string name="playback_net_parallel">Parallel connections</string>
     <string name="playback_net_parallel_sub">Use multiple connections in parallel for fetching streams. Activate when you experience buffering although your download speed is definitely more than sufficient.</string>
     <string name="playback_net_connection_count">Connection count</string>
@@ -3486,6 +3509,7 @@
     <string name="playback_net_connection_count_small_box">This box has %1$s of memory. More than 2 connections can make playback stutter.</string>
     <string name="playback_net_chunk_size">Chunk size</string>
     <string name="playback_net_chunk_size_sub">Size of each download chunk per connection. Larger chunks reduce overhead but use more memory.</string>
+    <string name="playback_net_chunk_size_small_note">Chunks smaller than 8 MB are slow on Real-Debrid and can be refused by TorBox.</string>
 
     <!-- Playback diagnostics card -->
     <string name="diag_last_playback_title">Last playback diagnostics</string>
@@ -3799,10 +3823,16 @@
     <string name="about_fork_updates_subtitle">Updates from the Nuvio Arc releases on GitHub.</string>
     <string name="playback_speculative_stream_search">Search sources before Play</string>
     <string name="playback_speculative_stream_search_sub">Search addons while browsing to speed up source selection. Some addons may add or grab content during searches. Off waits until Play. Media links and provider resolution wait for playback selection, except near the end of an episode when seek thumbnails prepare the next one.</string>
+    <string name="playback_source_line_badges">Source badges on the details page</string>
+    <string name="playback_source_line_badges_sub">Show the badges of the source found before Play under the title: resolution, Dolby Vision or HDR, audio format and size. Off hides the badges but keeps the searching sign and the ready tick.</string>
+    <string name="playback_source_line_release_group">Release group on the details page</string>
+    <string name="playback_source_line_release_group_sub">Show the release group name next to the source badges. Off keeps the badges and hides the name.</string>
+    <string name="details_source_line_searching">Finding best source</string>
+    <string name="details_source_line_ready">Ready</string>
     <string name="debrid_cached_playback_links">Reuse cached playback links</string>
     <string name="debrid_cached_playback_links_description">Reuse links already resolved during playback. New links are resolved only after choosing a source, or shortly before an episode ends when seek thumbnails prepare the next one.</string>
     <string name="dv7_mode_native_fel">Native DV7 FEL/MEL (Amlogic)</string>
-    <string name="dv7_mode_native_fel_desc">Profile 7 FEL and MEL playback on compatible hardware, with auto fallback for unsupported devices.</string>
+    <string name="dv7_mode_native_fel_desc">Needs a Ugoos AM9 Pro running a custom FEL kernel, which is not available yet. On any other device it behaves like Auto.</string>
     <string name="stream_test_parallel_scope">%1$.1f MiB / %2$.2f s measured · %3$.1f MiB total payload</string>
     <string name="stream_test_parallel_scope_detail">Warm-up excluded. Response payload only; total network traffic can be higher. Maximum 72 MiB or 20 seconds per cell. Very short samples are unavailable.</string>
     <string name="diagnostic_run_timed_out">The comparison reached its two-minute limit. Results are incomplete; no recommendations were produced.</string>
@@ -3884,6 +3914,14 @@
     <string name="seek_thumbnails_prepare_off_desc">Start playing at once; thumbnails are made while paused and after you stop watching.</string>
     <string name="seek_thumbnails_prepare_on">On</string>
     <string name="seek_thumbnails_prepare_on_desc">Make a title\'s seek thumbnails before it starts. \"Start watching now\" or Back starts playback at any time.</string>
+    <string name="seek_thumbnails_before_play_title">Thumbnails before play</string>
+    <string name="seek_thumbnails_before_play_subtitle">How many thumbnails are made before a title starts playing. The rest follow while you watch, down to the usual detail.</string>
+    <string name="seek_thumbnails_before_play_full">Full</string>
+    <string name="seek_thumbnails_before_play_full_desc">The whole title covered closely before it starts. The longest wait.</string>
+    <string name="seek_thumbnails_before_play_faster">Faster</string>
+    <string name="seek_thumbnails_before_play_faster_desc">Half as many thumbnails before it starts, spread over the whole title.</string>
+    <string name="seek_thumbnails_before_play_fastest">Fastest</string>
+    <string name="seek_thumbnails_before_play_fastest_desc">A quarter as many before it starts. The shortest wait.</string>
     <string name="seek_thumbnails_from_copy_title">Thumbnails from a copy</string>
     <string name="seek_thumbnails_from_copy_subtitle">Faster thumbnails for 4K titles from a 1080p or 720p copy, and for Usenet titles from a copy that is not on Usenet. A cached TorBox copy may be added to your list for a few minutes.</string>
     <string name="seek_thumbnails_clear_title">Clear saved thumbnails</string>
@@ -4073,4 +4111,9 @@
     <string name="party_avatar_set_pixel_art">Pixel art</string>
     <string name="party_avatar_set_thumbs">Thumbs</string>
     <string name="party_invite_leaves_current">Joining leaves the party you are in now.</string>
+    <string name="layout_episode_synopsis_under_row">Episode synopsis under the row</string>
+    <string name="layout_episode_synopsis_under_row_sub">Show the focused episode\'s synopsis under the episode row in the Nuvio V2 look.</string>
+    <string name="detail_episode_synopsis_none">No synopsis for this episode yet.</string>
+    <string name="player_track_role_commentary">Commentary</string>
+    <string name="player_track_role_audio_description">Audio description</string>
 </resources>

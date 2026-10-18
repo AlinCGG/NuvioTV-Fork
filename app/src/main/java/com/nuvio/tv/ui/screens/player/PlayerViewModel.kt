@@ -316,15 +316,21 @@ class PlayerViewModel @Inject constructor(
         displayModeHeight: Int?,
         lastPingMs: PlaybackConnectSample?
     ): PlaybackStatsSample {
+        val timeline = controller.playbackTimeline.value
+        val positionRow = positionStatsRow(timeline.playbackPosition, timeline.duration, timeline.isLive)
         val engine = controller.currentInternalPlayerEngine
         val mpvActive = controller.isUsingMpvEngine() ||
             (engine == InternalPlayerEngine.AUTO && controller.mpvView != null)
         if (mpvActive) {
-            return PlaybackStatsSample(isExoPlayer = false, engineLabel = "libmpv", sections = emptyList())
+            return PlaybackStatsSample(
+                isExoPlayer = false,
+                engineLabel = "libmpv",
+                sections = buildStatsSections(listOf(positionRow))
+            )
         }
         val t = PlaybackStatsThresholds
         val nowMs = android.os.SystemClock.elapsedRealtime()
-        val rows = mutableListOf<StatsRow>()
+        val rows = mutableListOf(positionRow)
         val player = controller.exoPlayer
         val hud = controller.playbackAnalyticsDiagnostics.hudSample()
         val streamUrl = runCatching { controller.getCurrentStreamUrl() }.getOrNull()
@@ -982,6 +988,31 @@ class PlayerViewModel @Inject constructor(
 
     fun seekThumbnailSkipReason(): String? =
         if (controller.isErrorCardPlayback()) "error card or a film/episode stream under 2 minutes" else null
+
+    /** Where [url] comes from, for the thumbnails "gave up" line. */
+    fun seekThumbnailKindNote(url: String?, usenet: Boolean): String {
+        val ui = controller._uiState.value
+        return thumbSourceKind(
+            serverType = serverPlayback.providerName(url),
+            usenet = usenet,
+            torrent = ui.isTorrentStream,
+            debridStore = debridStoreOf(ui.currentStreamName, controller.currentStreamDescription),
+        )
+    }
+
+    /** Player engine, buffer settings and box class, for the thumbnails "gave up" line. */
+    fun seekThumbnailSettingsNote(): String {
+        val settings = controller.currentPlayerSettingsForReport
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+        val info = android.app.ActivityManager.MemoryInfo().also { am?.getMemoryInfo(it) }
+        return thumbSettingsNote(
+            engine = controller.currentInternalPlayerEngine,
+            settings = settings,
+            nativeMemory = NuvioExoPlayerPerformanceHelper.enabled,
+            totalRamMb = info.totalMem / (1024L * 1024L),
+            lowRam = am?.isLowRamDevice == true,
+        )
+    }
 
     /** Connections playback keeps open to the stream. */
     fun playbackConnectionCount(): Int =

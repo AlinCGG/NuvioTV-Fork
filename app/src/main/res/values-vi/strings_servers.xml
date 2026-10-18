@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Nội dung mở với thông tin chi tiết từ tiện ích của bạn và đồng bộ như mọi nội dung danh mục khác, còn việc phát và đánh dấu đã xem vẫn được gửi tới %1$s. Một số nội dung có thể không khớp hoặc không phát được nếu tiện ích đánh số hay nhận diện chúng theo cách khác.</string>
     <string name="servers_import_continue_watching">Nhập Tiếp tục xem</string>
     <string name="servers_import_continue_watching_description">Nội dung bạn đã bắt đầu xem trên %1$s xuất hiện trong Tiếp tục xem ở Trang chủ. Đánh dấu đã xem luôn được giữ khớp ở cả hai trường hợp.</string>
+    <string name="servers_import_watch_state">Nhập tiến trình xem</string>
+    <string name="servers_import_watch_state_description">Thêm các nội dung bạn đang xem trên %1$s vào Tiếp tục xem, kèm đánh dấu đã xem. Dù bật hay tắt, việc phát vẫn tiếp tục từ %1$s.</string>
+    <string name="servers_resume_row">Tiếp tục xem</string>
     <string name="servers_sign_in_again">Đăng nhập lại</string>
     <string name="servers_second_address">Địa chỉ thứ hai</string>
     <string name="servers_second_address_description">Được thử khi không kết nối được địa chỉ thứ nhất, ví dụ địa chỉ trong nhà trước rồi đến địa chỉ internet.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Chứng chỉ được tin cậy</string>
     <string name="servers_trusted_certificate_forget">Quên</string>
     <string name="servers_failure_unsupported">Máy chủ không hỗ trợ mục này.</string>
+    <string name="servers_failure_stream_limit">Máy chủ hiện không cho phép thêm luồng nào cho tài khoản này.</string>
     <string name="servers_failure_incomplete">Vẫn đang kiểm tra thư viện của máy chủ này. Hãy thử lại sau giây lát.</string>
     <string name="servers_playback_failed">Không thể bắt đầu phát từ máy chủ.</string>
     <string name="servers_audio_switch_failed">Không đổi được bản âm thanh.</string>

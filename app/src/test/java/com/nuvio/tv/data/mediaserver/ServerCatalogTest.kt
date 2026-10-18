@@ -6,6 +6,7 @@ import com.nuvio.tv.domain.model.AddonResource
 import com.nuvio.tv.domain.model.ContentType
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.PosterShape
+import com.nuvio.tv.domain.model.supportsExtra
 import com.nuvio.tv.domain.repository.AddonRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -131,9 +132,25 @@ class ServerCatalogTest {
         assertEquals(ServerCatalog.addonId(connection.id), addon.id)
         assertEquals("Fake · Box", addon.displayName)
         assertTrue(ServerCatalog.isServerAddon(addon.baseUrl))
-        assertEquals(listOf("10"), addon.catalogs.map { it.id })
+        assertEquals(listOf("10", "search.movie"), addon.catalogs.map { it.id })
+        assertEquals("Box · Movies", addon.catalogs.single { it.id == "10" }.name)
         assertEquals("Box · Movies", addon.catalogs.last().name)
-        assertEquals(listOf("10"), catalog.searchAddons.first().single().catalogs.map { it.id })
+        assertEquals(listOf("10", "search.movie"), catalog.searchAddons.first().single().catalogs.map { it.id })
+        assertEquals(listOf("search.movie"), addon.catalogs.filter { it.supportsExtra("search") }.map { it.id })
+        assertTrue(addon.catalogs.last().extra.single().isRequired)
+    }
+
+    @Test
+    fun mixedLibrariesServeBothSearches() = runTest {
+        val provider = FakeServerProvider()
+        val mixed = ServerLibrary("90", "Everything", ServerMediaKind.MIXED)
+        val (catalog, _, connection) = catalog(provider, libraries = listOf(mixed))
+
+        val addon = catalog.addons.first().single()
+        assertEquals(listOf("90", "search.movie", "search.series"), addon.catalogs.map { it.id })
+        assertEquals(listOf("search.movie", "search.series"), catalog.searchAddons.first().single().catalogs.map { it.id })
+        catalog.page(connection, "search.movie", skip = 0, extra = mapOf("search" to "item"))
+        assertEquals(listOf(ServerMediaKind.MOVIE to listOf("90" to ServerMediaKind.MOVIE)), provider.searches.toList())
     }
 
     @Test
@@ -203,16 +220,31 @@ class ServerCatalogTest {
     }
 
     @Test
-    fun searchesThroughTheLibraryRows() = runTest {
-        val (catalog, _, connection) = catalog()
+    fun searchesEachTypeOnce() = runTest {
+        val provider = FakeServerProvider()
+        val movies2 = ServerLibrary("11", "4K", ServerMediaKind.MOVIE)
+        val (catalog, _, connection) = catalog(
+            provider,
+            libraries = listOf(FakeServerProvider.MOVIE_LIBRARY, movies2, FakeServerProvider.SERIES_LIBRARY)
+        )
 
-        val search = catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0, extra = mapOf("search" to "item"))
+        val search = catalog.page(connection, "search.series", skip = 0, extra = mapOf("search" to "item"))
         assertEquals(listOf(ServerItemRef(connection.id, "7").encode()), search.items.map { it.id })
         assertFalse(search.hasMore)
+        catalog.page(connection, "search.movie", skip = 0, extra = mapOf("search" to "item"))
+        assertEquals(
+            listOf(
+                ServerMediaKind.SERIES to listOf("20" to ServerMediaKind.SERIES),
+                ServerMediaKind.MOVIE to listOf("10" to ServerMediaKind.MOVIE, "11" to ServerMediaKind.MOVIE)
+            ),
+            provider.searches.toList()
+        )
+        assertTrue(catalog.page(connection, "search.movie", skip = 0).items.isEmpty())
+        assertEquals(2, provider.searches.size)
     }
 
-    private suspend fun ServerCatalog.search(connection: ServerConnection, word: String, library: ServerLibrary = FakeServerProvider.MOVIE_LIBRARY) =
-        page(connection, library.id, 0, mapOf("search" to word))
+    private suspend fun ServerCatalog.search(connection: ServerConnection, word: String, kind: ServerMediaKind = ServerMediaKind.MOVIE) =
+        page(connection, "search.${kind.contentType}", 0, mapOf("search" to word))
 
     private suspend fun FakeServerProvider.awaitSearches(count: Int) {
         withTimeout(5_000) { while (searchQueries.size < count) delay(5) }
@@ -270,14 +302,14 @@ class ServerCatalogTest {
     }
 
     @Test
-    fun eachLibrarySearchesAlongsideTheOthers() = runTest {
+    fun eachTypeSearchesAlongsideTheOther() = runTest {
         val provider = FakeServerProvider().apply { searchDelayMs = 300 }
         val (catalog, _, connection) = catalog(provider)
 
         withContext(Dispatchers.Default) {
             val movies = launch { catalog.search(connection, "toy") }
             provider.awaitSearches(1)
-            catalog.search(connection, "toy", FakeServerProvider.SERIES_LIBRARY)
+            catalog.search(connection, "toy", ServerMediaKind.SERIES)
             movies.join()
         }
 
@@ -306,7 +338,7 @@ class ServerCatalogTest {
 
         catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0)
         catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 50)
-        catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0, extra = mapOf("search" to "item"))
+        catalog.page(connection, "search.movie", skip = 0, extra = mapOf("search" to "item"))
 
         assertEquals(listOf(connection.id), announced)
         job.cancel()

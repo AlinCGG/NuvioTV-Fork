@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.FilterQuality
@@ -71,6 +72,7 @@ import com.nuvio.tv.R
 import com.nuvio.tv.domain.model.EpisodeOptionsOverlayStyle
 import com.nuvio.tv.domain.model.Video
 import com.nuvio.tv.ui.components.ImdbRatingSourceLabel
+import com.nuvio.tv.ui.screens.ambient.AmbientDialogEffect
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.util.BlurTransformation
 import com.nuvio.tv.ui.util.contentTextDirection
@@ -102,11 +104,14 @@ internal fun episodeOverlayActionKinds(
     showOpenEpisodeComments: Boolean,
     showPlayManually: Boolean,
     hasProgress: Boolean,
-    isPlayEnabled: Boolean
+    isPlayEnabled: Boolean,
+    showWatchedActions: Boolean = true
 ): List<EpisodeOverlayActionKind> = buildList {
-    add(EpisodeOverlayActionKind.TOGGLE_WATCHED)
-    add(EpisodeOverlayActionKind.TOGGLE_SEASON_WATCHED)
-    if (hasPreviousEpisodes) add(EpisodeOverlayActionKind.MARK_PREVIOUS_WATCHED)
+    if (showWatchedActions) {
+        add(EpisodeOverlayActionKind.TOGGLE_WATCHED)
+        add(EpisodeOverlayActionKind.TOGGLE_SEASON_WATCHED)
+        if (hasPreviousEpisodes) add(EpisodeOverlayActionKind.MARK_PREVIOUS_WATCHED)
+    }
     add(EpisodeOverlayActionKind.PLAY)
     if (showOpenEpisodeComments) add(EpisodeOverlayActionKind.OPEN_COMMENTS)
     if (showPlayManually && isPlayEnabled) add(EpisodeOverlayActionKind.PLAY_MANUALLY)
@@ -116,10 +121,11 @@ internal fun episodeOverlayActionKinds(
 internal fun isEpisodeOverlayActionEnabled(
     kind: EpisodeOverlayActionKind,
     isPending: Boolean,
-    isPlayEnabled: Boolean
+    isPlayEnabled: Boolean,
+    isCurrentlyPlaying: Boolean = false
 ): Boolean = when (kind) {
     EpisodeOverlayActionKind.TOGGLE_WATCHED -> !isPending
-    EpisodeOverlayActionKind.PLAY -> isPlayEnabled
+    EpisodeOverlayActionKind.PLAY -> isPlayEnabled && !isCurrentlyPlaying
     else -> true
 }
 
@@ -146,7 +152,10 @@ internal fun EpisodeOptionsOverlay(
     onToggleWatched: () -> Unit,
     onMarkSeasonWatched: () -> Unit = {},
     onMarkSeasonUnwatched: () -> Unit = {},
-    onMarkPreviousEpisodesWatched: () -> Unit = {}
+    onMarkPreviousEpisodesWatched: () -> Unit = {},
+    showWatchedActions: Boolean = true,
+    isCurrentlyPlaying: Boolean = false,
+    onNavigateEpisode: ((Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val activityDensity = LocalDensity.current
@@ -232,11 +241,12 @@ internal fun EpisodeOptionsOverlay(
         showOpenEpisodeComments = showOpenEpisodeComments,
         showPlayManually = showPlayManually,
         hasProgress = hasProgress,
-        isPlayEnabled = isPlayEnabled
+        isPlayEnabled = isPlayEnabled,
+        showWatchedActions = showWatchedActions
     ).map { kind ->
         EpisodeOverlayAction(
-            label = episodeOverlayActionLabel(kind, isWatched, isSeasonFullyWatched, isPlayEnabled),
-            enabled = isEpisodeOverlayActionEnabled(kind, isPending, isPlayEnabled),
+            label = episodeOverlayActionLabel(kind, isWatched, isSeasonFullyWatched, isPlayEnabled, isCurrentlyPlaying),
+            enabled = isEpisodeOverlayActionEnabled(kind, isPending, isPlayEnabled, isCurrentlyPlaying),
             onClick = when (kind) {
                 EpisodeOverlayActionKind.TOGGLE_WATCHED -> onToggleWatched
                 EpisodeOverlayActionKind.TOGGLE_SEASON_WATCHED ->
@@ -252,8 +262,16 @@ internal fun EpisodeOptionsOverlay(
     val initialActionIndex = actions.indexOfFirst { it.enabled }.coerceAtLeast(0)
     var acceptsSelectKey by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        primaryFocusRequester.requestFocus()
+    val hasEnabledAction = actions.any { it.enabled }
+    var descriptionFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(episode.id) {
+        detailsScrollState.scrollTo(0)
+        if (descriptionFocused) return@LaunchedEffect
+        when {
+            hasEnabledAction -> primaryFocusRequester.requestFocus()
+            !isNoneStyle -> detailsFocusRequester.requestFocus()
+        }
     }
 
     Dialog(
@@ -263,6 +281,7 @@ internal fun EpisodeOptionsOverlay(
             decorFitsSystemWindows = false
         )
     ) {
+        AmbientDialogEffect(onDismiss)
         CompositionLocalProvider(LocalDensity provides activityDensity) {
             Box(
                 modifier = Modifier
@@ -354,9 +373,15 @@ internal fun EpisodeOptionsOverlay(
                                             }
                                         }
                                         .focusable()
+                                        .onFocusChanged { descriptionFocused = it.isFocused }
                                         .onPreviewKeyEvent { event ->
+                                            val step = episodeStepForKey(event.nativeKeyEvent.keyCode, isRtl)
                                             when {
                                                 event.type != KeyEventType.KeyDown -> false
+                                                onNavigateEpisode != null && (step == -1 || (step == 1 && !hasEnabledAction)) -> {
+                                                    onNavigateEpisode(step)
+                                                    true
+                                                }
                                                 event.key == Key.DirectionDown && detailsScrollState.value < detailsScrollState.maxValue -> {
                                                     coroutineScope.launch {
                                                         detailsScrollState.animateScrollTo(
@@ -441,6 +466,18 @@ internal fun EpisodeOptionsOverlay(
                     Column(
                         modifier = Modifier
                             .width(actionsWidth)
+                            .onPreviewKeyEvent { event ->
+                                if (event.type != KeyEventType.KeyDown || onNavigateEpisode == null) {
+                                    return@onPreviewKeyEvent false
+                                }
+                                val step = episodeStepForKey(event.nativeKeyEvent.keyCode, isRtl)
+                                if (step == 1 || (step == -1 && isNoneStyle)) {
+                                    onNavigateEpisode(step)
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
                             .focusGroup(),
                         verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
                     ) {
@@ -521,7 +558,8 @@ private fun episodeOverlayActionLabel(
     kind: EpisodeOverlayActionKind,
     isWatched: Boolean,
     isSeasonFullyWatched: Boolean,
-    isPlayEnabled: Boolean
+    isPlayEnabled: Boolean,
+    isCurrentlyPlaying: Boolean
 ): String = when (kind) {
     EpisodeOverlayActionKind.TOGGLE_WATCHED -> stringResource(
         if (isWatched) R.string.episodes_mark_unwatched else R.string.episodes_mark_watched
@@ -531,7 +569,11 @@ private fun episodeOverlayActionLabel(
     )
     EpisodeOverlayActionKind.MARK_PREVIOUS_WATCHED -> stringResource(R.string.episodes_mark_previous_watched)
     EpisodeOverlayActionKind.PLAY -> stringResource(
-        if (isPlayEnabled) R.string.episodes_play else R.string.playback_unavailable
+        when {
+            isCurrentlyPlaying -> R.string.sources_playing
+            isPlayEnabled -> R.string.episodes_play
+            else -> R.string.playback_unavailable
+        }
     )
     EpisodeOverlayActionKind.OPEN_COMMENTS -> stringResource(R.string.episodes_open_comments)
     EpisodeOverlayActionKind.PLAY_MANUALLY -> stringResource(R.string.play_manually)
@@ -565,6 +607,18 @@ private fun episodeOverlayDescriptionStyle(length: Int): TextStyle {
             lineHeight = 22.sp
         )
     }
+}
+
+internal fun episodeStepForKey(keyCode: Int, isRtl: Boolean): Int = when (keyCode) {
+    AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> if (isRtl) -1 else 1
+    AndroidKeyEvent.KEYCODE_DPAD_LEFT -> if (isRtl) 1 else -1
+    else -> 0
+}
+
+internal fun adjacentEpisode(episodes: List<Video>, current: Video, step: Int): Video? {
+    val index = episodes.indexOfFirst { it.id == current.id }
+    if (index < 0) return null
+    return episodes.getOrNull(index + step)
 }
 
 private fun isSelectKey(keyCode: Int): Boolean {

@@ -222,7 +222,9 @@ class PlayerRuntimeController(
     internal val rememberedAudioLanguage: String? = navigationArgs.rememberedAudioLanguage
     internal val rememberedAudioName: String? = navigationArgs.rememberedAudioName
     internal val cloudSessionToken: String? = navigationArgs.cloudSessionToken
-    internal val mediaSourceFactory = PlayerMediaSourceFactory(context.applicationContext, serverPlayback::isServerSource)
+    internal val mediaSourceFactory = PlayerMediaSourceFactory(context.applicationContext, serverPlayback::isServerSource).apply {
+        onStreamRedirected = { requestedUrl, resolvedUrl -> handleStreamRedirect(requestedUrl, resolvedUrl) }
+    }
 
     // Resolved per sample so it follows the player across rebuilds.
     private val bufferedAheadProvider: () -> Long = {
@@ -245,6 +247,9 @@ class PlayerRuntimeController(
         PlayerMemoryReporter.bufferedAheadProvider = bufferedAheadProvider
         PlayerMediaSourceFactory.vodCachePlayheadBytesProvider = vodCachePlayheadBytesProvider
     }
+
+    // Closed on exit (stopAndRelease) or when the ViewModel is cleared, whichever comes first.
+    private val playerSession = com.nuvio.tv.core.player.PlayerSessionTracker.open()
 
     internal var currentVideoHash: String? = navigationArgs.videoHash
     internal var currentVideoSize: Long? = navigationArgs.videoSize
@@ -271,8 +276,7 @@ class PlayerRuntimeController(
     internal var placeholderProbeDone: Boolean = false
     internal var placeholderRejectedForCurrentStream: Boolean = false
     internal var currentFilename: String? = navigationArgs.filename
-        ?: initialStreamUrl.substringBefore('?').substringAfterLast('/', "")
-            .takeIf { it.isNotBlank() && it.contains('.') }
+        ?: streamFilenameFromUrl(initialStreamUrl)
     internal var currentAddonName: String? = navigationArgs.addonName
     internal var currentAddonLogo: String? = navigationArgs.addonLogo
     internal var currentStreamDescription: String? = navigationArgs.streamDescription
@@ -349,6 +353,7 @@ class PlayerRuntimeController(
         releaseProcessWideReferences()
         mediaSourceFactory.evictCachedSession()
         releasePlayer()
+        playerSession.close()
     }
 
     // These are process wide, so without this the exited player stays reachable until the next one
@@ -518,6 +523,8 @@ class PlayerRuntimeController(
     internal var hideSubtitleDelayOverlayJob: Job? = null
     internal var subtitleAutoSyncLoadJob: Job? = null
     internal var automaticSubtitleSyncJob: Job? = null // AutoSync hook
+    /** mpv: the add-on subtitle download and sub-add in flight, which AutoSync lets land first. */
+    internal var mpvAddonSubtitleSelectionJob: Job? = null // AutoSync hook
     /** ExoPlayer sidecar path: external addon cues without setMediaSource (preserves buffer). */
     internal var sidecarSubtitleJob: Job? = null
     internal var sidecarGenerationCounter: Long = 0L // AutoSync hook
@@ -599,6 +606,8 @@ class PlayerRuntimeController(
     /** Managed custom-buffer budget (MB) sized at build, before the chunk overhead comes off. */
     internal var currentManagedBudgetMb: Int = com.nuvio.tv.ui.screens.settings.MemoryBudget.autoBudgetMb
     internal var bufferMemoryKeeper: com.nuvio.tv.core.player.BufferMemoryKeeper? = null
+    // Stock buffers have no keeper; this one only lends memory to the Automatic speed-up and is never attached.
+    internal var autoSpeedupLender: com.nuvio.tv.core.player.BufferMemoryKeeper? = null
     /** Back buffer (ms) the user configured, captured at build to restore once DV7 status is known. */
     internal var configuredBackBufferMs: Int = 0
     /** The per-stream listeners registered on the live ExoPlayer, tracked so a
@@ -628,6 +637,8 @@ class PlayerRuntimeController(
     internal var scrubGlideForward = true
     internal val scrubHoldClock = ScrubHoldClock()
     internal var scrubTapFrom: Long? = null
+    /** Playback position at the first tap of a run of seek taps, until the commit or a hold; null without one. */
+    internal var scrubTapBase: Long? = null
 
     internal var isInBackground: Boolean = false
 
@@ -743,6 +754,7 @@ class PlayerRuntimeController(
     internal var mpvMediaLoadPrepared: Boolean = false
     internal var mpvTrackRefreshJob: Job? = null
     internal var mpvTrackRefreshInProgress: Boolean = false
+    internal val mpvTrackRefreshGate = MpvTrackRefreshGate()
     internal var pendingMpvHardRestartOnNextAttach: Boolean = false
     internal var mpvEventRelay: MpvEventRelay? = null
     internal var mpvEventRelayEpoch: Long = 0
@@ -791,6 +803,7 @@ class PlayerRuntimeController(
     internal var autoRecoveryBudgetUrl: String = ""
     internal var autoRecoveryCountForCurrentStream: Int = 0
     internal var pauseOverlayJob: Job? = null
+    internal val pauseDetails = PauseDetailsRequest()
     internal val pauseOverlayDelayMs = 5000L
     internal val seekProgressSyncDebounceMs = 700L
     internal val audioDelayUs = AtomicLong(0L)
@@ -968,6 +981,7 @@ class PlayerRuntimeController(
             fetchMetaDetails(contentId, contentType)
         }
         observeBlurUnwatchedEpisodes()
+        observeEpisodeOptionsOverlayStyle()
         observeEpisodeWatchProgress()
         observeTorrentSettings()
         observeStreamBadgeSettings()
@@ -1002,6 +1016,7 @@ class PlayerRuntimeController(
     fun onCleared() {
         scrubGlideJob?.cancel()
         ScrubGlide.stop()
+        playerSession.close()
         stopServerPlayback()
         releasePlayer()
         stopTorrentStream()

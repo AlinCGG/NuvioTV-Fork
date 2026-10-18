@@ -36,6 +36,7 @@ internal fun PlayerRuntimeController.reportServerPlayback() {
         if (reportedServerUrl == null) clearServerSkipIntervals()
     }
     fetchServerSkipIntervals()
+    if (reportedServerUrl != null && isPlaceholderPlayback()) return
     val state = _uiState.value
     serverPlayback.onPlaybackSnapshot(
         url = reportedServerUrl,
@@ -140,10 +141,15 @@ internal suspend fun PlayerRuntimeController.streamAddonsFor(videoId: String): L
 internal fun PlayerRuntimeController.serverSourceNames(type: String, videoId: String): List<String> =
     serverStreams.sources(type, videoId, season = null, episode = null).map { it.name }
 
-internal suspend fun PlayerRuntimeController.prepareServerStream(stream: Stream, quiet: Boolean = false): Stream? {
+/** With [replacing], the current server stream may be closed first when its server allows no more streams. */
+internal suspend fun PlayerRuntimeController.prepareServerStream(
+    stream: Stream,
+    quiet: Boolean = false,
+    replacing: Boolean = false
+): Stream? {
     val target = stream.serverTarget ?: return stream
     val session = try {
-        serverPlayback.prepare(target)
+        serverPlayback.prepare(target, replacing = if (replacing) reportedServerUrl ?: currentStreamUrl else null)
     } catch (error: CancellationException) {
         throw error
     } catch (error: Exception) {

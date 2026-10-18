@@ -1,6 +1,10 @@
 package com.nuvio.tv.data.mediaserver
 
 import com.nuvio.tv.core.tracking.TrackingExternalIds
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 enum class ServerCapability {
     SEARCH,
@@ -59,9 +63,11 @@ interface ServerProvider {
         limit: Int
     ): ServerPage<ServerTitle> = unsupported()
 
+    /** One search for [kind] across [libraries], which all hold that kind. */
     suspend fun search(
         session: ServerSession,
-        library: ServerLibrary,
+        kind: ServerMediaKind,
+        libraries: List<ServerLibrary>,
         query: String,
         limit: Int
     ): List<ServerTitle> = unsupported()
@@ -165,5 +171,24 @@ data class ServerEpisode(
 )
 
 fun ServerProvider.supports(capability: ServerCapability): Boolean = capability in capabilities
+
+/** Runs [search] for every scope side by side; fails only when every scope failed. */
+internal suspend fun <S, T> searchEach(scopes: List<S>, search: suspend (S) -> List<T>): List<T> {
+    val results = coroutineScope {
+        scopes.map { scope ->
+            async {
+                try {
+                    Result.success(search(scope))
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Result.failure<List<T>>(error)
+                }
+            }
+        }.awaitAll()
+    }
+    results.firstOrNull { it.isFailure }?.takeIf { results.all { it.isFailure } }?.exceptionOrNull()?.let { throw it }
+    return results.flatMap { it.getOrDefault(emptyList()) }
+}
 
 private fun unsupported(): Nothing = throw ServerException(ServerFailure.UNSUPPORTED)

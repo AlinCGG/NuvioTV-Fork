@@ -71,6 +71,7 @@ import com.nuvio.tv.core.player.DolbyVisionCodecFallback
 import com.nuvio.tv.core.player.DolbyVisionBaseLayerPolicy
 import com.nuvio.tv.core.player.BitrateAwareLoadControl
 import com.nuvio.tv.core.player.BufferBudgetControl
+import com.nuvio.tv.core.player.BufferMemoryKeeper
 import com.nuvio.tv.core.player.BufferSizing
 import com.nuvio.tv.core.player.DolbyVisionConversionConfig
 import com.nuvio.tv.core.player.DolbyVisionConversionStats
@@ -228,11 +229,14 @@ internal fun PlayerRuntimeController.applyMediaSourceFactorySettings(playerSetti
     if (playerSettings.parallelNetworkEnabled) {
         mediaSourceFactory.useParallelConnections = playerSettings.useParallelConnections
         mediaSourceFactory.parallelConnectionCount = playerSettings.parallelConnectionCount
-        mediaSourceFactory.parallelChunkSizeKb = playerSettings.parallelChunkSizeKb
+        mediaSourceFactory.parallelChunkSizeKb = MemoryBudget.customChunkKb(context, playerSettings)
     } else {
         // Reset each playback so the factory doesn't keep last stream's state.
         mediaSourceFactory.useParallelConnections = false
     }
+    mediaSourceFactory.customNetworkEnabled = playerSettings.parallelNetworkEnabled
+    mediaSourceFactory.autoSpeedupEnabled = playerSettings.autoSpeedupEnabled
+    com.nuvio.tv.core.network.PlaybackSocketFactory.windowEnabled = playerSettings.autoSpeedupEnabled
     mediaSourceFactory.nuvioPerformanceModeEnabled = playerSettings.nuvioPerformanceModeEnabled
     mediaSourceFactory.nativeEngineEnabled = playerSettings.nuvioPerformanceModeEnabled
     mediaSourceFactory.bufferEngineEnabled = playerSettings.bufferEngineEnabled
@@ -806,8 +810,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                 ?.memoryFootprint ?: 0) / (1024 * 1024)
             val parallelForSizing = playerSettings.parallelNetworkEnabled &&
                 playerSettings.useParallelConnections && !isTorrentStream
-            val chunkMbForSizing = Math.ceil(playerSettings.parallelChunkSizeKb / 1024.0).toInt()
-                .coerceAtMost(MemoryBudget.tierMaxChunkMb)
+            val chunkMbForSizing = Math.ceil(MemoryBudget.customChunkKb(context, playerSettings) / 1024.0).toInt()
             var builtBudgetControl: BufferBudgetControl? = null
             val loadControl = if (playerSettings.nuvioPerformanceModeEnabled) {
                 effectiveBackBufferDurationMs = NuvioExoPlayerPerformanceHelper.backBufferMs
@@ -844,8 +847,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                 // The managed budget is for all playback buffers, and the parallel chunks share it.
                 currentParallelChunkOverheadMb =
                     if (playerSettings.parallelNetworkEnabled && playerSettings.useParallelConnections) {
-                        val chunkMb = Math.ceil(playerSettings.parallelChunkSizeKb / 1024.0).toInt()
-                            .coerceAtMost(MemoryBudget.tierMaxChunkMb)
+                        val chunkMb = Math.ceil(MemoryBudget.customChunkKb(context, playerSettings) / 1024.0).toInt()
                         MemoryBudget.parallelOverheadMb(playerSettings.parallelConnectionCount, chunkMb)
                     } else {
                         0
@@ -968,6 +970,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                     afrJob.cancel()
                 }
             if (initializationGeneration != playbackRecoveryGate.generation) return@launch
+
+            if (!afrPreflightGate.isCurrent(afrPreflightToken)) return@launch
 
             // ── Libass Setup (From 0.5.7-beta/Left) ──
             requestedUseLibassByUser = playerSettings.useLibass
@@ -1596,7 +1600,11 @@ internal fun PlayerRuntimeController.initializePlayer(
             } // end rebuild branch of the reuse fork
             lastExoConstructionFingerprint = constructionFingerprint
             attachBufferMemoryKeeper(
-                if (reuseLivePlayer) bufferMemoryKeeper?.control?.takeIf { it === _loadControl } else builtBudgetControl
+                if (reuseLivePlayer) bufferMemoryKeeper?.control?.takeIf { it === _loadControl } else builtBudgetControl,
+                BufferMemoryKeeper.budgetManaged(
+                    customBuffers = playerSettings.bufferEngineEnabled,
+                    budgetManaged = playerSettings.bufferBudgetManaged
+                )
             )
             activePlayerUsesLibass = useLibass
             libassPipelineSwitchInFlight = false
@@ -1755,7 +1763,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 durationMs = playerDuration.coerceAtLeast(0L).let { d ->
                                     maxOf(d, lastKnownDuration)
                                 }
-                            )
+                            ) && !isPlaceholderPlayback()
                         _uiState.update {
                             it.copy(
                                 isBuffering = if (NuvioExoPlayerPerformanceHelper.shouldSuppressBufferingUi(
@@ -2008,6 +2016,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         _uiState.update { it.copy(isPlaying = isPlaying) }
                         if (isPlaying) {
                             userPausedManually = false
+                            dropPausedThumbnail()
                             cancelPauseOverlay()
                             startProgressUpdates()
                             startWatchProgressSaving()
@@ -2283,24 +2292,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                             val audioRendererFailed = failingMime == null ||
                                 androidx.media3.common.MimeTypes.isAudio(failingMime)
                             if (audioRendererFailed) {
-                                if (!isSafeAudioModeActiveForCurrentPlayback) {
-                                    safeAudioForcedStreamUrls.add(currentStreamUrl)
-                                    retryCurrentStreamWithSafeAudioFallback(currentPosition)
-                                    return
-                                }
-                                // Second rung: one more
-                                // safe-audio rebuild with the FFmpeg software (PCM)
-                                // decoder before giving up on audio entirely.
-                                if (!hasTriedAudioPcmFallback) {
-                                    markAudioPcmFallbackTried()
-                                    retryCurrentStreamWithSafeAudioFallback(currentPosition)
-                                    return
-                                }
-                                if (!isAudioDisabledForCurrentPlayback) {
-                                    audioDisabledForcedStreamUrls.add(currentStreamUrl)
-                                    retryCurrentStreamWithAudioDisabled(currentPosition)
-                                    return
-                                }
+                                if (tryNextAudioFallbackStep(currentPosition)) return
                             }
                         }
 
@@ -2327,21 +2319,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         }
 
                         if (error.isAudioTrackFailure()) {
-                            if (!isSafeAudioModeActiveForCurrentPlayback) {
-                                safeAudioForcedStreamUrls.add(currentStreamUrl)
-                                retryCurrentStreamWithSafeAudioFallback(currentPosition)
-                                return
-                            }
-                            if (!hasTriedAudioPcmFallback) {
-                                markAudioPcmFallbackTried()
-                                retryCurrentStreamWithSafeAudioFallback(currentPosition)
-                                return
-                            }
-                            if (!isAudioDisabledForCurrentPlayback) {
-                                audioDisabledForcedStreamUrls.add(currentStreamUrl)
-                                retryCurrentStreamWithAudioDisabled(currentPosition)
-                                return
-                            }
+                            if (tryNextAudioFallbackStep(currentPosition)) return
                         }
 
                         if (error.isStuckPlayingNoProgress()) {
@@ -2352,21 +2330,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 retryCurrentStreamWithoutTunneling(currentPosition)
                                 return
                             }
-                            if (!isSafeAudioModeActiveForCurrentPlayback) {
-                                safeAudioForcedStreamUrls.add(currentStreamUrl)
-                                retryCurrentStreamWithSafeAudioFallback(currentPosition)
-                                return
-                            }
-                            if (!hasTriedAudioPcmFallback) {
-                                markAudioPcmFallbackTried()
-                                retryCurrentStreamWithSafeAudioFallback(currentPosition)
-                                return
-                            }
-                            if (!isAudioDisabledForCurrentPlayback) {
-                                audioDisabledForcedStreamUrls.add(currentStreamUrl)
-                                retryCurrentStreamWithAudioDisabled(currentPosition)
-                                return
-                            }
+                            if (tryNextAudioFallbackStep(currentPosition)) return
                         }
 
                         val timeoutError = error.findCause<SocketTimeoutException>()
@@ -3364,7 +3328,8 @@ private class SubtitleOffsetRenderersFactory(
                 }
             },
             onIecFailed = onIecFailed,
-            onDiagnosticEvent = onAudioDiagnosticEvent
+            onDiagnosticEvent = onAudioDiagnosticEvent,
+            audioOutputReady = { PassthroughOutputReturn.outputReadyNow(context) }
         )
         val playbackSpeedAwareAudioSink = PlaybackSpeedAwareAudioSink(
             sink = iecAudioSink,
@@ -3572,7 +3537,7 @@ private class CueNormalizingTextOutput(
         var processed = SubtitleMojibakeSanitizer.sanitizeCue(cue)
         processed = PlayerSubtitleRtlFix.fixCueText(processed, isBuiltInSubtitleProvider())
         if (shouldNormalizeCuePositionProvider()) {
-            processed = normalizeCuePosition(processed)
+            processed = PlayerSubtitleUtils.normalizeBottomCuePosition(processed)
         }
         if (processed.bitmap != null) {
             val bounds = videoBoundsFractionProvider()
@@ -3602,16 +3567,6 @@ private class CueNormalizingTextOutput(
             builder.setBitmapHeight(cue.bitmapHeight * bounds.height())
         }
         return builder.build()
-    }
-
-    private fun normalizeCuePosition(cue: Cue): Cue {
-        if (cue.bitmap != null || cue.verticalType != Cue.TYPE_UNSET || cue.line == Cue.DIMEN_UNSET) {
-            return cue
-        }
-        return cue.buildUpon()
-            .setLine(Cue.DIMEN_UNSET, Cue.TYPE_UNSET)
-            .setLineAnchor(Cue.TYPE_UNSET)
-            .build()
     }
 }
 

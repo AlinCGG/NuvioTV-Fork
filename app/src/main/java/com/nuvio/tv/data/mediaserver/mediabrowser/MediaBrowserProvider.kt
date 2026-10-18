@@ -32,14 +32,17 @@ import com.nuvio.tv.data.mediaserver.ServerThumbnailFormat
 import com.nuvio.tv.data.mediaserver.ServerTitle
 import com.nuvio.tv.data.mediaserver.ServerTitleQuery
 import com.nuvio.tv.data.mediaserver.ServerTrack
+import com.nuvio.tv.data.mediaserver.searchEach
 import com.nuvio.tv.data.mediaserver.ServerTrickplay
 import com.nuvio.tv.data.mediaserver.ServerTrickplaySet
 import com.nuvio.tv.data.mediaserver.ServerUserState
 import com.nuvio.tv.data.mediaserver.verifiedTitleMatches
 import com.nuvio.tv.domain.model.Subtitle
 import java.net.URLDecoder
+import java.util.concurrent.ConcurrentHashMap
 import okhttp3.OkHttpClient
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.DeserializationStrategy
 
 internal data class Endpoint(
@@ -56,6 +59,8 @@ internal abstract class MediaBrowserProvider(
     override val capabilities: Set<ServerCapability> = ServerCapability.entries.toSet() - ServerCapability.HOME_ROWS
 
     protected val client = MediaBrowserClient(authorizationHeader, http, identity)
+    private val libraryGenres = ConcurrentHashMap<String, String>()
+    private val aioStreamsServers = ConcurrentHashMap<String, Boolean>()
 
     protected abstract fun viewsEndpoint(userId: String): Endpoint
 
@@ -215,7 +220,7 @@ internal abstract class MediaBrowserProvider(
         get(session, viewsEndpoint(session.userId), ItemsResult.serializer())
             .items
             .mapNotNull { view ->
-                val kind = libraryKind(view.collectionType) ?: return@mapNotNull null
+                val kind = libraryKind(view.collectionType, view.type) ?: return@mapNotNull null
                 ServerLibrary(id = view.id, name = view.name.orEmpty(), kind = kind)
             }
 
@@ -225,21 +230,51 @@ internal abstract class MediaBrowserProvider(
         start: Int,
         limit: Int
     ): ServerPage<ServerTitle> {
-        val result = get(
-            session,
-            itemsEndpoint(session.userId),
-            ItemsResult.serializer(),
-            itemQuery(library) + mapOf(
-                "sortBy" to if (library.kind == ServerMediaKind.COLLECTION) "SortName" else "DateCreated,SortName",
-                "sortOrder" to if (library.kind == ServerMediaKind.COLLECTION) "Ascending" else "Descending",
-                "startIndex" to start.toString(),
-                "limit" to limit.toString(),
-                "enableTotalRecordCount" to "true"
-            )
-        )
+        val key = "${session.connection.id}:${library.id}"
+        var result = libraryItems(session, library, start, limit, libraryGenres[key])
+        if (result.items.isEmpty() && start == 0 && !libraryGenres.containsKey(key) && library.kind != ServerMediaKind.COLLECTION) {
+            val genre = firstGenre(session, library).orEmpty()
+            libraryGenres[key] = genre
+            if (genre.isNotEmpty()) result = libraryItems(session, library, start, limit, genre)
+        }
         val mapper = mapper(session)
         return ServerPage(result.items.mapNotNull(mapper::title), result.totalRecordCount)
     }
+
+    private suspend fun libraryItems(
+        session: ServerSession,
+        library: ServerLibrary,
+        start: Int,
+        limit: Int,
+        genreId: String?
+    ): ItemsResult = get(
+        session,
+        itemsEndpoint(session.userId),
+        ItemsResult.serializer(),
+        itemQuery(library) + mapOf(
+            "genreIds" to genreId?.takeIf { it.isNotEmpty() },
+            "sortBy" to if (library.kind == ServerMediaKind.COLLECTION) "SortName" else "DateCreated,SortName",
+            "sortOrder" to if (library.kind == ServerMediaKind.COLLECTION) "Ascending" else "Descending",
+            "startIndex" to start.toString(),
+            "limit" to limit.toString(),
+            "enableTotalRecordCount" to "true"
+        )
+    )
+
+    /** Some libraries (AIOStreams catalogs) list nothing without a genre; their first genre opens them. */
+    private suspend fun firstGenre(session: ServerSession, library: ServerLibrary): String? =
+        try {
+            get(
+                session,
+                Endpoint("/Genres"),
+                ItemsResult.serializer(),
+                mapOf("parentId" to library.id, "userId" to session.userId, "limit" to "1")
+            ).items.firstOrNull()?.id
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            null
+        }
 
     override suspend fun collectionPage(
         session: ServerSession,
@@ -266,20 +301,44 @@ internal abstract class MediaBrowserProvider(
 
     override suspend fun search(
         session: ServerSession,
-        library: ServerLibrary,
+        kind: ServerMediaKind,
+        libraries: List<ServerLibrary>,
         query: String,
         limit: Int
     ): List<ServerTitle> {
-        val result = get(
-            session,
-            itemsEndpoint(session.userId),
-            ItemsResult.serializer(),
-            itemQuery(library) + mapOf(
-                "searchTerm" to query,
-                "limit" to limit.toString()
-            )
-        )
-        return result.items.mapNotNull(mapper(session)::title)
+        val scopes = if (isAioStreams(session)) listOf(null) else libraries
+        val items = searchEach(scopes) { library ->
+            get(
+                session,
+                itemsEndpoint(session.userId),
+                ItemsResult.serializer(),
+                mapOf(
+                    "parentId" to library?.id,
+                    "recursive" to "true",
+                    "includeItemTypes" to kind.itemType(),
+                    "searchTerm" to query,
+                    "limit" to limit.toString(),
+                    "fields" to LIST_FIELDS,
+                    "imageTypeLimit" to "1",
+                    "enableImageTypes" to "Primary,Backdrop,Logo"
+                )
+            ).items
+        }
+        return items.mapNotNull(mapper(session)::title).distinctBy { it.preview.id }.take(limit)
+    }
+
+    /** AIOStreams answers a search the same in every catalog it lists, so it is searched once, without a library. */
+    private suspend fun isAioStreams(session: ServerSession): Boolean {
+        aioStreamsServers[session.apiRoot]?.let { return it }
+        val detected = try {
+            publicInfo(session.address).second.aioStreams != null
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            return false
+        }
+        aioStreamsServers[session.apiRoot] = detected
+        return detected
     }
 
     override suspend fun resumeItems(session: ServerSession, limit: Int): List<ServerResumeEntry> {
@@ -296,7 +355,7 @@ internal abstract class MediaBrowserProvider(
                 "enableUserData" to "true"
             )
         )
-        val allowed = session.connection.selectedLibraries.map { it.kind }.toSet()
+        val libraries = session.connection.selectedLibraries
         val mapper = mapper(session)
         return result.items
             .mapNotNull { item ->
@@ -304,7 +363,10 @@ internal abstract class MediaBrowserProvider(
                 val state = mapper.userState(item) ?: return@mapNotNull null
                 ServerResumeEntry(title, state)
             }
-            .filter { entry -> allowed.any { it.contentType == entry.title.preview.apiType } }
+            .filter { entry ->
+                val kind = ServerMediaKind.fromContentType(entry.title.preview.apiType)
+                kind != null && libraries.any { it.holds(kind) }
+            }
             .distinctBy { it.title.preview.id }
     }
 
@@ -362,7 +424,7 @@ internal abstract class MediaBrowserProvider(
             mapOf(
                 "parentId" to library.id,
                 "recursive" to "true",
-                "includeItemTypes" to library.itemType(),
+                "includeItemTypes" to library.kind.itemType(),
                 "fields" to "ProviderIds",
                 "enableImages" to "false",
                 "enableUserData" to "false",
@@ -407,7 +469,7 @@ internal abstract class MediaBrowserProvider(
             mapOf(
                 "parentId" to library.id,
                 "recursive" to "true",
-                "includeItemTypes" to library.itemType(),
+                "includeItemTypes" to library.kind.itemType(),
                 "fields" to "ProviderIds,ProductionYear",
                 "enableImages" to "false",
                 "enableUserData" to "false",
@@ -551,21 +613,25 @@ internal abstract class MediaBrowserProvider(
             enableDirectPlay = request.capabilities.allowDirectPlay,
             deviceProfile = deviceProfile(request.capabilities)
         )
-        val response = client.execute(
-            method = "POST",
-            baseUrl = session.apiRoot,
-            path = "/Items/${pathSegment(itemId)}/PlaybackInfo",
-            token = session.token,
-            query = mapOf(
-                "userId" to session.userId,
-                "mediaSourceId" to body.mediaSourceId,
-                "audioStreamIndex" to body.audioStreamIndex?.toString(),
-                "subtitleStreamIndex" to body.subtitleStreamIndex?.toString(),
-                "maxStreamingBitrate" to body.maxStreamingBitrate.toString(),
-                "enableDirectPlay" to body.enableDirectPlay.toString()
-            ),
-            body = client.json.encodeToString(PlaybackInfoRequest.serializer(), body)
-        )
+        val response = try {
+            client.execute(
+                method = "POST",
+                baseUrl = session.apiRoot,
+                path = "/Items/${pathSegment(itemId)}/PlaybackInfo",
+                token = session.token,
+                query = mapOf(
+                    "userId" to session.userId,
+                    "mediaSourceId" to body.mediaSourceId,
+                    "audioStreamIndex" to body.audioStreamIndex?.toString(),
+                    "subtitleStreamIndex" to body.subtitleStreamIndex?.toString(),
+                    "maxStreamingBitrate" to body.maxStreamingBitrate.toString(),
+                    "enableDirectPlay" to body.enableDirectPlay.toString()
+                ),
+                body = client.json.encodeToString(PlaybackInfoRequest.serializer(), body)
+            )
+        } catch (error: ServerException) {
+            throw playbackInfoFailure(error)
+        }
         val info = client.json.decodeFromString(PlaybackInfoResult.serializer(), response.body)
         return playbackSession(session, request, info, client.deviceId)
     }
@@ -580,10 +646,11 @@ internal abstract class MediaBrowserProvider(
         when (info.errorCode) {
             null -> Unit
             "NotAllowed" -> throw ServerException(ServerFailure.FORBIDDEN)
+            "RateLimitExceeded" -> throw ServerException(ServerFailure.STREAM_LIMIT, info.errorCode)
             else -> throw ServerException(ServerFailure.UNSUPPORTED, info.errorCode)
         }
         val source = info.mediaSources.firstOrNull { it.id == request.target.mediaSourceId }
-            ?: info.mediaSources.firstOrNull()
+            ?: info.mediaSources.firstOrNull { !it.isPlaceholder }
             ?: throw ServerException(ServerFailure.NOT_FOUND)
         val (url, method) = when {
             source.supportsDirectPlay && request.capabilities.allowDirectPlay -> buildUrl(
@@ -631,6 +698,20 @@ internal abstract class MediaBrowserProvider(
             transcodeOffered = source.transcodingUrl != null || source.supportsTranscoding
         )
     }
+
+    /** A play request refused with HTTP 429 for too many concurrent streams or transcodes. */
+    private fun playbackInfoFailure(error: ServerException): ServerException =
+        if (error.httpStatus != 429 || error.detail?.contains("concurrent", ignoreCase = true) != true) {
+            error
+        } else {
+            ServerException(
+                ServerFailure.STREAM_LIMIT,
+                error.message,
+                detail = error.detail,
+                httpStatus = error.httpStatus,
+                code = error.code
+            )
+        }
 
     private fun audioTracks(source: MediaSource, url: String, requestedIndex: Int?): List<ServerTrack> {
         val selected = queryValue(url, "AudioStreamIndex")?.toIntOrNull() ?: requestedIndex ?: source.defaultAudioStreamIndex
@@ -722,7 +803,7 @@ internal abstract class MediaBrowserProvider(
     private fun itemQuery(library: ServerLibrary): Map<String, String?> = mapOf(
         "parentId" to library.id,
         "recursive" to (library.kind != ServerMediaKind.COLLECTION).toString(),
-        "includeItemTypes" to library.itemType().takeUnless { library.kind == ServerMediaKind.COLLECTION },
+        "includeItemTypes" to library.kind.itemType().takeUnless { library.kind == ServerMediaKind.COLLECTION },
         "fields" to LIST_FIELDS,
         "imageTypeLimit" to "1",
         "enableImageTypes" to "Primary,Backdrop,Logo"
@@ -741,10 +822,11 @@ internal abstract class MediaBrowserProvider(
             apiRoot + serverUrl
         }
 
-    private fun ServerLibrary.itemType(): String = when (kind) {
+    private fun ServerMediaKind.itemType(): String = when (this) {
         ServerMediaKind.MOVIE -> "Movie"
         ServerMediaKind.SERIES -> "Series"
         ServerMediaKind.COLLECTION -> "BoxSet"
+        ServerMediaKind.MIXED -> "Movie,Series"
     }
 
     private fun deviceProfile(capabilities: ServerPlayerCapabilities) = DeviceProfile(

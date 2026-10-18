@@ -444,7 +444,7 @@ internal fun PlayerRuntimeController.maybeAdjustLibassPipelineForTracks(tracks: 
     }
 
     scope.launch {
-        releasePlayer()
+        releasePlayer(flushPlaybackState = true, keepTorrentStream = true)
         initializePlayer(currentStreamUrl, currentHeaders)
     }
 }

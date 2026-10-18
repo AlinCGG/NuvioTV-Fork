@@ -62,7 +62,11 @@ internal class ParallelRangeDataSource(
     // make repeat visits free.
     private val allowContinuationReopen: Boolean = true,
     private val defaultRequestHeaders: Map<String, String> = emptyMap(),
-    private val isolateSession: Boolean = false
+    private val isolateSession: Boolean = false,
+    // Live limit on downloads at once (Automatic speed-up); null keeps the configured depth.
+    private val depthLimit: (() -> Int)? = null,
+    // Counts bytes as they arrive from the network, before the reader gets to them.
+    private val receivedBytes: java.util.concurrent.atomic.AtomicLong? = null
 ) : DataSource, androidx.media3.common.ByteBufferDataReader {
 
     companion object {
@@ -185,8 +189,21 @@ internal class ParallelRangeDataSource(
             get() = playbackResources.hudHedgeExhausted
             set(value) { playbackResources.hudHedgeExhausted = value }
         fun hudClampCooldownRemainingMs(nowUptimeMs: Long): Long = playbackResources.hudClampCooldownRemainingMs(nowUptimeMs)
+        /** A new playback: an earlier title's rate-limit clamp no longer applies, whatever source this one uses. */
+        fun resetRateLimitMirrors() = playbackResources.resetClampMirrors()
         internal fun releaseRetainedSession() = playbackResources.releaseRetainedSession()
+        /** Frees the retained session when no playback instance still reads from it. */
+        internal fun releaseRetainedSessionIfIdle() = playbackResources.releaseRetainedSessionIfIdle()
+        /** Drops retained pieces outside reader..reader+[keepAhead] and the idle buffers behind them. */
+        internal fun trimRetainedSession(keepAhead: Int) = playbackResources.trimRetainedSession(keepAhead)
         internal fun drainIdleBuffers(chunkSize: Long) = playbackResources.drainIdleBuffers(chunkSize)
+
+        // Most downloads an isolated test session runs at once.
+        internal const val MAX_DIAGNOSTIC_DOWNLOADS = 32
+
+        /** Chunks in flight ahead of the reader, never below connections+1 (what it takes to saturate the connections). */
+        internal fun prefetchDepth(prefetchDepthChunks: Int, parallelConnections: Int): Int =
+            prefetchDepthChunks.coerceAtLeast(parallelConnections + 1)
 
         @VisibleForTesting
         internal var allocateChunk: (Int) -> Allocation? = { DefaultAllocatorNative.createAllocation(it) }
@@ -279,6 +296,15 @@ internal class ParallelRangeDataSource(
 
         // Logs the watchdog settings once per process, even when nothing stalls.
         val obsAnnounced = AtomicBoolean(false)
+
+        fun resetClampMirrors() {
+            hudClampLatched = false
+            hudClampTrips = 0
+            hudClampLastHitAtMs = 0L
+            hudDepthCap = 0
+            hudDepthConfigured = 0
+            hudNextStepAtMs = 0L
+        }
 
         /** Time until the next +1 depth step; 0 when not capped. HUD read only. */
         fun hudClampCooldownRemainingMs(nowUptimeMs: Long): Long {
@@ -639,12 +665,7 @@ internal class ParallelRangeDataSource(
                     teardownSessionLocked(pending, poolCap)
                 }
                 // Fresh session, fresh clamp state for the HUD.
-                hudClampLatched = false
-                hudClampTrips = 0
-                hudClampLastHitAtMs = 0L
-                hudDepthCap = 0
-                hudDepthConfigured = 0
-                hudNextStepAtMs = 0L
+                resetClampMirrors()
                 hudHedgeRestarts = 0
                 hudHedgeExhausted = false
                 val created = ChunkSession(requestUri, requestHeaders, chunkSz, chunkCap, prefetchWindow)
@@ -658,6 +679,30 @@ internal class ParallelRangeDataSource(
          * chunk buffers and downloads never outlive the player. Buffers are
          * freed directly (poolCap = 0), playback is over.
          */
+        /** Like [releaseRetainedSession] for the live session only; a pre-started one stays. */
+        internal fun releaseRetainedSessionIfIdle() {
+            synchronized(sessionLock) {
+                if (activeInstances.get() > 0) return
+                currentChunkSession?.let { teardownSessionLocked(it, poolCap = 0) }
+                currentChunkSession = null
+            }
+            clearGlobalPool()
+        }
+
+        internal fun trimRetainedSession(keepAhead: Int) {
+            val chunkSz = synchronized(sessionLock) {
+                val session = currentChunkSession ?: return
+                val reader = session.lastReadChunkIndex
+                if (reader < 0L) return
+                synchronized(session) {
+                    session.futures.keys.filter { it < reader || it > reader + keepAhead }
+                        .forEach { evictFuture(session, it, poolCap = 0) }
+                }
+                session.chunkSize
+            }
+            drainIdleBuffers(chunkSz)
+        }
+
         internal fun releaseRetainedSession() {
             synchronized(sessionLock) {
                 currentChunkSession?.let { teardownSessionLocked(it, poolCap = 0) }
@@ -725,17 +770,17 @@ internal class ParallelRangeDataSource(
          * evicts [protectIndex] (the chunk being read) or anything touched in
          * the last EVICTION_TOUCH_GUARD_MS.
          */
-        fun enforceSessionCap(session: ChunkSession, protectIndex: Long, poolCap: Int) {
-            if (session.futures.size <= session.chunkCap) return
+        fun enforceSessionCap(session: ChunkSession, protectIndex: Long, poolCap: Int, cap: Int = session.chunkCap) {
+            if (session.futures.size <= cap) return
             synchronized(session) {
-                while (session.futures.size > session.chunkCap) {
+                while (session.futures.size > cap) {
                     val now = SystemClock.uptimeMillis()
                     // The 2 s touch guard makes the cap soft: when every
                     // candidate is recently touched the loop bails and an active
                     // file holds ~cap+2-3 chunks (~50% overshoot on low-RAM
                     // tiers). Beyond cap+2 the ceiling is hard: evict the
                     // oldest-touched candidate regardless of the guard.
-                    val hardOver = session.futures.size > session.chunkCap + 2
+                    val hardOver = session.futures.size > cap + 2
                     // Position-aware victim selection. Touch-LRU alone would
                     // systematically evict PREFETCHED chunks: ahead-of-reader
                     // entries are touched only at creation, so once the reader
@@ -783,7 +828,11 @@ internal class ParallelRangeDataSource(
     
     }
 
-    private val resources = if (isolateSession) Resources(true, parallelConnections.coerceIn(1, 16)) else playbackResources
+    private val resources = if (isolateSession) {
+        Resources(true, prefetchDepth(prefetchDepthChunks, parallelConnections).coerceIn(1, MAX_DIAGNOSTIC_DOWNLOADS))
+    } else {
+        playbackResources
+    }
 
     internal val diagnosticClampTrips: Int get() { check(isolateSession); return resources.hudClampTrips }
     internal val diagnosticWorkersStopped: Boolean get() {
@@ -871,11 +920,9 @@ internal class ParallelRangeDataSource(
     private var bytesRemaining: Long = C.LENGTH_UNSET.toLong()
     private val closed = AtomicBoolean(false)
 
-    // The in-flight window, never below connections+1 (what it takes to
-    // saturate the connections). All three caps
-    // below derive from this single value so they cannot drift out of step.
-    private val effectivePrefetchDepth: Int =
-        prefetchDepthChunks.coerceAtLeast(parallelConnections + 1)
+    // The in-flight window. All three caps below derive from this single
+    // value so they cannot drift out of step.
+    private val effectivePrefetchDepth: Int = prefetchDepth(prefetchDepthChunks, parallelConnections)
 
     // Buffer pool limit. Idle-buffer recycling headroom above the in-flight window.
     private val maxPoolSize = effectivePrefetchDepth + 2
@@ -1309,6 +1356,9 @@ internal class ParallelRangeDataSource(
         if (currentChunkIndex != chunkIndex || currentChunk == null) {
             val activeSession = session ?: return C.RESULT_END_OF_INPUT
             ensureChunkScheduled(chunkIndex)
+            // Speed-up downloads start with the piece they follow, not when it completes: a reader waiting on
+            // that piece would otherwise only ever have one download running.
+            if (depthLimit != null) scheduleChunks()
             val future = activeSession.futures[chunkIndex] ?: return C.RESULT_END_OF_INPUT
             activeSession.noteRead(chunkIndex)
             // Progressive reads: blocking on chunk 0's LAST byte would hold
@@ -1634,13 +1684,15 @@ internal class ParallelRangeDataSource(
         // meaningful sequential run. Side cursors (a few bytes per open on
         // scatter-read files) fetch only the chunk they actually need, instead
         // of fanning out connections+1 chunks of dead prefetch per visit.
-        val earnedAhead = if (bytesServedThisOpen >= EARNED_PREFETCH_BYTES) effectivePrefetchDepth else 1
+        val earnedAhead =
+            if (depthLimit != null || bytesServedThisOpen >= EARNED_PREFETCH_BYTES) effectivePrefetchDepth else 1
         // AIMD: a rate-limited session halves its depth cap and
         // recovers +1 per quiet probe interval (Resources.ChunkSession.currentAllowedDepth),
         // so a provider that 429s converges just under its actual request
         // budget instead of latching to a single connection.
-        val maxAhead = session?.currentAllowedDepth(effectivePrefetchDepth)?.coerceAtMost(earnedAhead)
-            ?: earnedAhead
+        val maxAhead = (session?.currentAllowedDepth(minOf(effectivePrefetchDepth, liveDepthLimit()))
+            ?.coerceAtMost(earnedAhead)
+            ?: earnedAhead).coerceAtMost(liveDepthLimit())
 
         for (i in 0 until maxAhead) {
             val ci = currentChunkIdx + i
@@ -1649,10 +1701,14 @@ internal class ParallelRangeDataSource(
         }
     }
 
+    private fun liveDepthLimit(): Int = depthLimit?.invoke()?.coerceAtLeast(1) ?: Int.MAX_VALUE
+
     private fun ensureChunkScheduled(chunkIndex: Long) {
         val activeSession = session ?: return
         // Make room under the memory-tiered cap before growing the map.
-        resources.enforceSessionCap(activeSession, protectIndex = chunkIndex, poolCap = maxPoolSize)
+        val cap = if (depthLimit == null) activeSession.chunkCap
+            else minOf(activeSession.chunkCap, liveDepthLimit() + 1)
+        resources.enforceSessionCap(activeSession, protectIndex = chunkIndex, poolCap = maxPoolSize, cap = cap)
         activeSession.futures.computeIfAbsent(chunkIndex) {
             val future = CompletableFuture<DownloadedChunk>()
             activeSession.touch(chunkIndex)
@@ -2107,6 +2163,7 @@ internal class ParallelRangeDataSource(
                     consecutiveZeroReads = 0
                 }
                 totalRead += read
+                receivedBytes?.addAndGet(read.toLong())
                 // Volatile store orders every buffer write above it.
                 inFlight.watermark = totalRead
                 // Rate-based body-stall sample, emitted every window
@@ -2368,6 +2425,9 @@ internal class ParallelRangeDataSource(
         if (currentChunkIndex != chunkIndex || currentChunk == null) {
             val activeSession = session ?: return C.RESULT_END_OF_INPUT
             ensureChunkScheduled(chunkIndex)
+            // Speed-up downloads start with the piece they follow, not when it completes: a reader waiting on
+            // that piece would otherwise only ever have one download running.
+            if (depthLimit != null) scheduleChunks()
             val future = activeSession.futures[chunkIndex] ?: return C.RESULT_END_OF_INPUT
             activeSession.noteRead(chunkIndex)
             try {
@@ -2483,7 +2543,9 @@ internal class ParallelRangeDataSource(
         private val shouldAllowBackgroundPrefetch: () -> Boolean = { true },
         private val onResolvedUri: (Uri?) -> Unit = {},
         private val allowContinuationReopen: Boolean = true,
-        private val defaultRequestHeaders: Map<String, String> = emptyMap()
+        private val defaultRequestHeaders: Map<String, String> = emptyMap(),
+        private val depthLimit: (() -> Int)? = null,
+        private val receivedBytes: java.util.concurrent.atomic.AtomicLong? = null
     ) : DataSource.Factory {
         @Volatile
         private var startupBootstrapCache: BootstrapCacheEntry? = null
@@ -2508,6 +2570,8 @@ internal class ParallelRangeDataSource(
                 onResolvedUri = onResolvedUri,
                 allowContinuationReopen = allowContinuationReopen,
                 defaultRequestHeaders = defaultRequestHeaders,
+                depthLimit = depthLimit,
+                receivedBytes = receivedBytes,
                 consumeBootstrapCache = { dataSpec ->
                     val cached = startupBootstrapCache ?: return@ParallelRangeDataSource null
                     val isFresh = SystemClock.uptimeMillis() - cached.createdAtUptimeMs <= 15_000L

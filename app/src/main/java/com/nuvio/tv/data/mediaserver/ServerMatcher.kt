@@ -1,5 +1,6 @@
 package com.nuvio.tv.data.mediaserver
 
+import android.util.Log
 import com.nuvio.tv.core.tmdb.TmdbMetadataService
 import com.nuvio.tv.core.tmdb.TmdbService
 import com.nuvio.tv.core.tracking.TrackingExternalIds
@@ -199,12 +200,14 @@ class ServerMatcher internal constructor(
 
     private suspend fun index(connection: ServerConnection, library: ServerLibrary, forceRefresh: Boolean): LibraryIndex {
         val build = build(connection, library, forceRefresh)
-        return withTimeoutOrNull(INDEX_WAIT_MS) { build.result.await() }
-            ?: throw ServerException(ServerFailure.INCOMPLETE)
+        return withTimeoutOrNull(INDEX_WAIT_MS) { build.result.await() } ?: run {
+            Log.w(TAG, "${connection.providerId} library ${library.name} was not indexed within ${INDEX_WAIT_MS}ms")
+            throw ServerException(ServerFailure.INCOMPLETE)
+        }
     }
 
     private fun build(connection: ServerConnection, library: ServerLibrary, forceRefresh: Boolean): IndexBuild {
-        val key = "${connection.id}:${library.id}"
+        val key = "${connection.id}:${library.id}:${library.kind}"
         val revision = repository.uiState.value.revision
         val now = System.currentTimeMillis()
         val build = synchronized(lock) {
@@ -216,11 +219,14 @@ class ServerMatcher internal constructor(
         }
         scope.launch {
             try {
-                build.result.complete(LibraryIndex(fetchEntries(connection, library)))
+                val entries = fetchEntries(connection, library)
+                Log.i(TAG, "Indexed ${entries.size} items in ${connection.providerId} library ${library.name} in ${System.currentTimeMillis() - now}ms")
+                build.result.complete(LibraryIndex(entries))
             } catch (error: Throwable) {
                 build.failed = true
                 build.result.completeExceptionally(error)
                 if (error is CancellationException) throw error
+                Log.w(TAG, "Indexing ${connection.providerId} library ${library.name} failed: ${error.forLog()}")
             }
         }
         return build
@@ -281,6 +287,7 @@ class ServerMatcher internal constructor(
     }
 
     private companion object {
+        const val TAG = "ServerMatcher"
         const val INDEX_PAGE_SIZE = 500
         const val INDEX_TTL_MS = 10 * 60_000L
         const val INDEX_WAIT_MS = 12_000L

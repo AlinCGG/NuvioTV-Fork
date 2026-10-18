@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import javax.inject.Inject
@@ -115,6 +116,8 @@ data class FolderDetailGridFocusState(
     val focusedItemKey: String? = null,
     val hasSavedFocus: Boolean = false
 )
+
+private const val TRAILER_PREVIEW_DEBOUNCE_MS = 180L
 
 @HiltViewModel
 class FolderDetailViewModel @Inject constructor(
@@ -1466,6 +1469,9 @@ class FolderDetailViewModel @Inject constructor(
         trailerPreviewJob = viewModelScope.launch {
             val folderItem = findItemInTabs(itemId)
             val lookup = try {
+                // Wait for focus to settle before hitting the network, as the home screen does.
+                delay(TRAILER_PREVIEW_DEBOUNCE_MS)
+                if (trailerPreviewRequestVersion != requestVersion) return@launch
                 lookupTrailerPreview(
                     trailerService = trailerService,
                     tmdbService = tmdbService,
@@ -1486,8 +1492,12 @@ class FolderDetailViewModel @Inject constructor(
 
             val resolvedSource = lookup.source
             if (resolvedSource == null) {
-                trailerPreviewNegativeCache[itemId] =
-                    trailerPreviewMissTimestamp(lookup.rememberMiss, System.currentTimeMillis())
+                // While YouTube is rate limiting, a miss isn't remembered, so the
+                // trailer comes back on a later focus once the pause is over.
+                if (!trailerService.isRateLimited()) {
+                    trailerPreviewNegativeCache[itemId] =
+                        trailerPreviewMissTimestamp(lookup.rememberMiss, System.currentTimeMillis())
+                }
                 _trailerPreviewUrls.update { it - itemId }
                 _trailerPreviewAudioUrls.update { it - itemId }
             } else {

@@ -1,6 +1,7 @@
 package com.nuvio.tv.ui.screens.detail
 
 import com.nuvio.tv.core.stream.withFileSizeVisibility
+import com.nuvio.tv.core.stream.withSourceLineVisibility
 import kotlinx.coroutines.flow.stateIn
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
@@ -192,7 +193,7 @@ class MetaDetailsViewModel @Inject constructor(
                 )
                 sig.phase == com.nuvio.tv.core.stream.SourcePrefetchPhase.EMPTY -> null
                 else -> sig.withFileSizeVisibility(badgeSettings.showFileSizeBadges)
-            }
+            }.withSourceLineVisibility(settings.showSourceLineBadges, settings.showSourceLineReleaseGroup)
         }.stateIn(
             viewModelScope,
             kotlinx.coroutines.flow.SharingStarted.Eagerly,
@@ -448,6 +449,7 @@ class MetaDetailsViewModel @Inject constructor(
         observeRelatedWatchedStatus()
         observeBlurUnwatchedEpisodes()
         observeEpisodeOptionsOverlayStyle()
+        observeEpisodeSynopsisUnderRow()
         observeOverallRatingsVisibility()
         observeDetailImdbRatingsVisibility()
         viewModelScope.launch {
@@ -903,6 +905,18 @@ class MetaDetailsViewModel @Inject constructor(
                         } else {
                             state.copy(episodeOptionsOverlayStyle = style)
                         }
+                    }
+                }
+        }
+    }
+
+    private fun observeEpisodeSynopsisUnderRow() {
+        viewModelScope.launch {
+            layoutPreferenceDataStore.episodeSynopsisUnderRow
+                .distinctUntilChanged()
+                .collectLatest { enabled ->
+                    _uiState.update { state ->
+                        if (state.episodeSynopsisUnderRow == enabled) state else state.copy(episodeSynopsisUnderRow = enabled)
                     }
                 }
         }

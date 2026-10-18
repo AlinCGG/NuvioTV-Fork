@@ -21,6 +21,7 @@ import coil3.bitmapFactoryMaxParallelism
 import okio.Path.Companion.toOkioPath
 import com.nuvio.tv.core.runtime.PluginRuntimeHooks
 import com.nuvio.tv.core.sync.StartupSyncService
+import com.nuvio.tv.core.sync.androidtv.AndroidTvChannelSyncService
 import com.nuvio.tv.core.network.IPv4FirstDns
 import com.nuvio.tv.core.network.NoDelaySocketFactory
 import com.nuvio.tv.core.network.ServerTrust
@@ -35,7 +36,9 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import com.nuvio.tv.data.local.PlayerSettingsDataStore
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -44,6 +47,7 @@ import javax.inject.Inject
 class NuvioApplication : Application(), SingletonImageLoader.Factory {
 
     @Inject lateinit var startupSyncService: StartupSyncService
+    @Inject lateinit var androidTvChannelSyncService: AndroidTvChannelSyncService
     @Inject lateinit var playerSettingsDataStore: PlayerSettingsDataStore
     @Inject lateinit var simklAnimeIdPreferenceHolder: SimklAnimeIdPreferenceHolder
     @Inject lateinit var serverUserStateProjection: ServerUserStateProjection
@@ -88,8 +92,11 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
     }
 
     override fun onCreate() {
+        com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("app_create")
         super.onCreate()
+        com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("app_injected")
         PluginRuntimeHooks.onApplicationCreate(this)
+        androidTvChannelSyncService.start()
         // Hydrate the AFR fps cache from disk (background load) so cold
         // rewatches take the preflight hit path (switch before prepare).
         com.nuvio.tv.core.player.FrameRateUtils.initFrameRateCachePersistence(this)
@@ -107,6 +114,14 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             delay(CACHE_READOUT_DELAY_MS)
             logCacheSizes()
+        }
+
+        // The playback window follows the Automatic speed-up switch from the first connection on, prewarm included.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            playerSettingsDataStore.playerSettings
+                .map { it.autoSpeedupEnabled }
+                .distinctUntilChanged()
+                .collect { com.nuvio.tv.core.network.PlaybackSocketFactory.windowEnabled = it }
         }
 
         // Expire stored seek thumbnails even when nothing is played.
@@ -245,7 +260,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                         // unchanged disk entry and the strategy serves the stale copy again (and
                         // re-fetches the body every 10-minute cooldown). Server cache rules plus the
                         // interceptor above keep the foreground conditional-GET path that does update
-                        // the disk entry; saved copies count as fresh for at least a week.
+                        // the disk entry; saved copies from the big artwork hosts count as fresh for a week.
                         cacheStrategy = { com.nuvio.tv.core.image.imageCacheStrategy },
                     ))
                 )

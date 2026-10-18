@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">A címek a bővítményeid adataival nyílnak meg, és úgy szinkronizálódnak, mint bármely más katalóguscím; a lejátszás és a megnézett jelölések közben ide is elmennek: %1$s. Egyes címek nem találnak párt vagy nem játszhatók le, ha a bővítményeid másképp számozzák vagy azonosítják őket.</string>
     <string name="servers_import_continue_watching">Megtekintés folytatása importálása</string>
     <string name="servers_import_continue_watching_description">A(z) %1$s szerveren elkezdett címek megjelennek a Kezdőlap Megtekintés folytatása sorában. A megnézett jelölések mindkét irányban szinkronban maradnak.</string>
+    <string name="servers_import_watch_state">Megtekintési előrehaladás importálása</string>
+    <string name="servers_import_watch_state_description">A(z) %1$s szerveren nézett címek bekerülnek a Megtekintés folytatása sorba a megnézett jelölésekkel együtt. A lejátszás mindkét esetben a(z) %1$s szerverről folytatódik.</string>
+    <string name="servers_resume_row">Megtekintés folytatása</string>
     <string name="servers_sign_in_again">Bejelentkezés újra</string>
     <string name="servers_second_address">Második cím</string>
     <string name="servers_second_address_description">Akkor próbálja, ha az első cím nem érhető el, például első az otthoni cím, második az internetes.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Megbízható tanúsítvány</string>
     <string name="servers_trusted_certificate_forget">Elfelejtés</string>
     <string name="servers_failure_unsupported">A szerver nem támogatja ezt az elemet.</string>
+    <string name="servers_failure_stream_limit">A szerver jelenleg nem enged több streamet ehhez a fiókhoz.</string>
     <string name="servers_failure_incomplete">A szerver könyvtárának ellenőrzése még tart. Próbáld újra egy pillanat múlva.</string>
     <string name="servers_playback_failed">Nem sikerült elindítani a lejátszást a szerverről.</string>
     <string name="servers_audio_switch_failed">Nem sikerült hangsávot váltani.</string>

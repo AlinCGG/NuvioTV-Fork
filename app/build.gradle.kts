@@ -102,8 +102,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1489
-        versionName = "1.1.0-nt.5.1"
+        versionCode = 1493
+        versionName = "1.1.0-nt.7"
         // Optional -PnuvioAppIdSuffix=.name installs a local test build next to the main app.
         providers.gradleProperty("nuvioAppIdSuffix").orNull?.takeIf { it.isNotBlank() }?.let {
             applicationIdSuffix = it
@@ -465,7 +465,7 @@ dependencies {
     implementation(files(
         "libs/lib-decoder-av1-release.aar"
     ))
-    implementation(files("libs/lib-nuvio-engine-android-0.1.4.aar"))
+    implementation(files("libs/lib-nuvio-engine-android-0.1.5.aar"))
     if (useLocalFfmpegDecoder) {
         implementation(project(":ffmpeg-decoder-downmix"))
     } else {

@@ -5,6 +5,8 @@ import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.data.mediaserver.FakeServerProvider
 import com.nuvio.tv.data.mediaserver.MemoryServerPersistence
 import com.nuvio.tv.data.mediaserver.ServerConnection
+import com.nuvio.tv.data.mediaserver.ServerLibrary
+import com.nuvio.tv.data.mediaserver.ServerMediaKind
 import com.nuvio.tv.data.mediaserver.ServerRepository
 import com.nuvio.tv.data.mediaserver.SyncedLibrary
 import com.nuvio.tv.data.mediaserver.SyncedServer
@@ -73,6 +75,50 @@ class MediaServerSyncServiceTest {
         assertFalse(connections.first().libraries.single().selected)
         assertEquals(listOf("s1", "s2", "s3"), remote!!.map { it.remoteServerId })
         assertEquals("token-c", remote!!.last().token)
+    }
+
+    @Test
+    fun syncsMixedLibraries() = runBlocking {
+        val mixed = ServerLibrary("90", "Everything", ServerMediaKind.MIXED)
+        repository.store(connection("local-a", server = "s1").copy(libraries = listOf(mixed)), token = "token-a")
+
+        service.syncFromRemote(1).getOrThrow()
+        assertEquals(listOf(SyncedLibrary("90", "Everything", "mixed", true)), remote!!.single().libraries)
+
+        remote = listOf(synced("remote-a", server = "s1", token = "token-a").copy(libraries = listOf(SyncedLibrary("90", "Everything", "mixed", false))))
+        service.syncFromRemote(1).getOrThrow()
+
+        assertEquals(listOf(mixed.copy(selected = false)), repository.uiState.value.connections.single().libraries)
+    }
+
+    @Test
+    fun theAccountsImportSwitchIsSentBackUnchanged() = runBlocking {
+        remote = listOf(synced("a", server = "s1", token = "shared").copy(importWatchState = false))
+        service.syncFromRemote(1).getOrThrow()
+        assertTrue(repository.uiState.value.connections.single().importContinueWatching)
+
+        repository.setLibrarySelected("a", "10", false)
+        service.syncFromRemote(1).getOrThrow()
+
+        assertEquals(false, remote!!.single().importWatchState)
+        assertFalse(remote!!.single().libraries.single().selected)
+
+        remote = listOf(remote!!.single().copy(importWatchState = null))
+        service.syncFromRemote(1).getOrThrow()
+        assertEquals(false, repository.uiState.value.connections.single().syncedImportWatchState)
+    }
+
+    @Test
+    fun aLocalChangeDoesNotClearAnImportSwitchThisBoxHasNotReadYet() = runBlocking {
+        remote = listOf(synced("a", server = "s1", token = "shared"))
+        service.syncFromRemote(1).getOrThrow()
+        remote = listOf(remote!!.single().copy(importWatchState = true))
+
+        repository.setLibrarySelected("a", "10", false)
+        service.syncFromRemote(1).getOrThrow()
+
+        assertFalse(remote!!.single().libraries.single().selected)
+        assertEquals(true, remote!!.single().importWatchState)
     }
 
     @Test
@@ -249,6 +295,10 @@ class MediaServerSyncServiceTest {
             REQUIRED_KEYS + "display_name",
             listOf(old.copy(displayName = "Home NAS")).toSyncPayload().jsonArray.single().jsonObject.keys
         )
+        assertEquals(
+            REQUIRED_KEYS + "import_watch_state",
+            listOf(old.copy(importWatchState = true)).toSyncPayload().jsonArray.single().jsonObject.keys
+        )
     }
 
     @Test
@@ -348,7 +398,7 @@ class MediaServerSyncServiceTest {
                 ).toString()
                 "sync_push_media_servers" -> {
                     val servers = params.getValue("p_servers").jsonArray
-                    val allowed = if (backend == Backend.REFUSES_NAMES) REQUIRED_KEYS else REQUIRED_KEYS + OPTIONAL_KEYS
+                    val allowed = if (backend == Backend.REFUSES_NAMES) REQUIRED_KEYS + "import_watch_state" else REQUIRED_KEYS + OPTIONAL_KEYS
                     servers.forEach { server ->
                         if (server.jsonObject.keys - allowed != emptySet<String>()) {
                             synchronized(calls) { calls += REFUSED }
@@ -375,6 +425,6 @@ class MediaServerSyncServiceTest {
             "id", "provider_id", "name", "address", "remote_server_id", "remote_user_id",
             "user_name", "token", "libraries", "enabled", "use_catalog_metadata"
         )
-        val OPTIONAL_KEYS = setOf("display_name")
+        val OPTIONAL_KEYS = setOf("display_name", "import_watch_state")
     }
 }

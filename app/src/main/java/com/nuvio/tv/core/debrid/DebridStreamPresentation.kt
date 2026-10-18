@@ -58,14 +58,14 @@ class DebridStreamPresentation @Inject constructor(
             }
 
             val presented = DirectDebridStreamFilter.presentWithCopies(debridStreams, settings)
-            val presentedDebridStreams = presented.shown
-                .map { stream -> formatter.format(stream, settings, badgeFilters) }
+            val presentedDebridStreams = presented.shownWithFacts
+                .map { (stream, facts) -> formatter.format(stream, settings, badgeFilters, facts) }
             val passthroughStreams = visibleStreams.filterNot { stream -> stream.isManagedDebridStream() }
 
             group.copy(
                 streams = presentedDebridStreams + passthroughStreams,
-                thumbnailCopyStreams = presented.thumbnailCopies
-                    .map { stream -> formatter.format(stream, settings, badgeFilters) }
+                thumbnailCopyStreams = presented.thumbnailCopiesWithFacts
+                    .map { (stream, facts) -> formatter.format(stream, settings, badgeFilters, facts) }
             )
         }
     }

@@ -115,7 +115,6 @@ import androidx.compose.ui.zIndex
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.tv.material3.Border
-import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Glow
 import androidx.tv.material3.MaterialTheme
@@ -163,7 +162,7 @@ import com.nuvio.tv.ui.components.watchedPosterFade
 import com.nuvio.tv.ui.components.watchedPosterFilter
 import com.nuvio.tv.ui.components.placeholderCardShimmer
 import com.nuvio.tv.ui.components.nuvioCardDepth
-import com.nuvio.tv.ui.components.rememberArtworkBackedCardGlow
+import com.nuvio.tv.ui.components.rememberArtworkBackedFocusGlow
 import com.nuvio.tv.ui.components.rememberPlaceholderShimmerOffsetState
 import com.nuvio.tv.ui.components.wideFolderCoverNeedsCrop
 import com.nuvio.tv.LocalSidebarExpanded
@@ -1645,17 +1644,16 @@ private fun ModernCarouselCard(
         )
     }
     val effectiveFocusedBorder = if (isFastScrolling) transparentFocusBorder else focusedBorder
-    val noFocusGlow = remember { CardDefaults.glow(focusedGlow = Glow.None) }
-    val cardGlow = when {
-        isV2 -> noFocusGlow
-        payload != null -> rememberArtworkBackedCardGlow(
+    val cardFocusGlow = when {
+        isV2 -> Glow.None
+        payload != null -> rememberArtworkBackedFocusGlow(
             imageUrl = imageUrl,
             fallbackSeed = "${item.title}:${payload.collectionTitle}",
             enabled = payload.focusGlowEnabled
         )
-        else -> noFocusGlow
+        else -> Glow.None
     }
-    val effectiveCardGlow = if (isFastScrolling) noFocusGlow else cardGlow
+    val effectiveFocusGlow = if (isFastScrolling) Glow.None else cardFocusGlow
     val titleStyle = remember(titleMedium) {
         titleMedium.copy(fontWeight = FontWeight.Medium)
     }
@@ -1742,8 +1740,8 @@ private fun ModernCarouselCard(
             // need the solid backing (grey), matching the official app;
             // emoji / no-image cards likewise keep the solid colour.
             containerColor = if (hasImage && !isCollectionFolder) Color.Transparent else backgroundCardColor,
-            border = CardDefaults.border(focusedBorder = if (isV2) Border.None else effectiveFocusedBorder),
-            glow = if (isV2) noFocusGlow else effectiveCardGlow
+            focusedBorder = if (isV2) Border.None else effectiveFocusedBorder,
+            focusedGlow = effectiveFocusGlow
         ) {
             Box(
                 modifier = Modifier

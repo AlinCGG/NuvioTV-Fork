@@ -521,8 +521,9 @@ internal fun PlayerRuntimeController.evaluatePostPlayOverlayVisibility(positionM
 
     // Preload: start fetching sources for next episode before the button appears.
     if (preloadNextEpisodeSourcesSetting && !nextEpisodePreloadTriggered && state.nextEpisode != null) {
-        val preloadLeadMs = streamAutoPlayTimeoutSecondsSetting.toLong() * 1_000L
-        val shouldPreload = PlayerNextEpisodeRules.shouldShowNextEpisodeCard(
+        val preloadLeadMs = maxOf(streamAutoPlayTimeoutSecondsSetting.toLong() * 1_000L, 10_000L)
+            .coerceAtMost(30_000L)
+        val shouldPreloadByCard = PlayerNextEpisodeRules.shouldShowNextEpisodeCard(
             positionMs = positionMs + preloadLeadMs,
             durationMs = effectiveDuration,
             skipIntervals = skipIntervals,
@@ -530,7 +531,9 @@ internal fun PlayerRuntimeController.evaluatePostPlayOverlayVisibility(positionM
             thresholdPercent = nextEpisodeThresholdPercentSetting,
             thresholdMinutesBeforeEnd = nextEpisodeThresholdMinutesBeforeEndSetting
         )
-        if (shouldPreload) {
+        val shouldPreloadByEnd = effectiveDuration > 0L &&
+            (effectiveDuration - positionMs) <= preloadLeadMs
+        if (shouldPreloadByCard || shouldPreloadByEnd) {
             preloadNextEpisodeSources()
         }
     }
@@ -621,7 +624,8 @@ internal fun PlayerRuntimeController.updateActiveSkipInterval(positionMs: Long) 
         if (
             segmentType != null &&
             segmentType in autoSkipSegmentTypes &&
-            activeKey !in autoSkippedIntervalKeys
+            activeKey !in autoSkippedIntervalKeys &&
+            !isPartyControlLocked
         ) {
             autoSkippedIntervalKeys.add(activeKey)
             skipInterval(active)

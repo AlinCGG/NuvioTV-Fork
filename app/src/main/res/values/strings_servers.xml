@@ -52,6 +52,9 @@
     <string name="servers_catalog_metadata_description">Titles open with your addons\' details and sync like any other catalog title, with playback and watched marks still sent to %1$s. Some titles may not match or play if your addons number or identify them differently.</string>
     <string name="servers_import_continue_watching">Import Continue Watching</string>
     <string name="servers_import_continue_watching_description">Titles you have started on %1$s appear in Continue Watching on Home. Watched marks are kept in step either way.</string>
+    <string name="servers_import_watch_state">Import watch progress</string>
+    <string name="servers_import_watch_state_description">Add titles you\'re watching in %1$s to Continue watching, along with its watched marks. Playback resumes from %1$s either way.</string>
+    <string name="servers_resume_row">Continue watching</string>
     <string name="servers_sign_in_again">Sign in again</string>
     <string name="servers_second_address">Second address</string>
     <string name="servers_second_address_description">Tried when the first address cannot be reached, for example a home address first and an internet address second.</string>
@@ -106,6 +109,7 @@
     <string name="servers_trusted_certificate">Trusted certificate</string>
     <string name="servers_trusted_certificate_forget">Forget</string>
     <string name="servers_failure_unsupported">The server doesn\'t support this item.</string>
+    <string name="servers_failure_stream_limit">The server allows no more streams for this account right now.</string>
     <string name="servers_failure_incomplete">Still checking this server\'s library. Try again in a moment.</string>
     <string name="servers_playback_failed">Could not start playback from the server.</string>
     <string name="servers_audio_switch_failed">Couldn\'t switch the audio track.</string>

@@ -14,12 +14,15 @@ import com.nuvio.tv.core.debrid.DebridStreamPresentation
 import com.nuvio.tv.core.debrid.DirectDebridResolveResult
 import com.nuvio.tv.core.debrid.DirectDebridResolver
 import com.nuvio.tv.core.debrid.DirectDebridStreamPreparer
+import com.nuvio.tv.core.party.PartyPlayerRule
 import com.nuvio.tv.core.plugin.PluginManager
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.torrent.TorrentSettings
 import com.nuvio.tv.core.torrent.TorrentService
 import com.nuvio.tv.core.torrent.TorrentState
 import com.nuvio.tv.core.player.AutoPlaySelection
+import com.nuvio.tv.core.player.FilenameEpisodeMatcher
+import com.nuvio.tv.core.player.StreamQualityRank
 import com.nuvio.tv.core.player.PrefetchedSelectionGate
 import com.nuvio.tv.core.player.SelectionOutcome
 import com.nuvio.tv.core.player.SelectionSnapshot
@@ -74,6 +77,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -85,6 +89,7 @@ import javax.inject.Inject
 private const val TAG = "StreamScreenViewModel"
 private const val DIRECT_AUTOPLAY_HARD_TIMEOUT_MS = 60_000L
 private const val STREAM_FILTER_PAGE_SIZE = 100
+private const val BADGE_PUBLISH_INTERVAL_NS = 300_000_000L
 
 @HiltViewModel
 class StreamScreenViewModel @Inject constructor(
@@ -208,8 +213,12 @@ class StreamScreenViewModel @Inject constructor(
     val uiState: StateFlow<StreamScreenUiState> = _uiState.asStateFlow()
     val streamBadgeSettings = streamBadgeSettingsDataStore.settings
 
-    val playerPreference = playerSettingsDataStore.playerSettings
-        .map { it.playerPreference }
+    private val partyState = partyRuntime.state
+
+    val playerPreference = combine(
+        playerSettingsDataStore.playerSettings.map { it.playerPreference },
+        partyState.map { it.isActive }
+    ) { saved, partyActive -> PartyPlayerRule.preferenceFor(saved, partyActive) }
         .distinctUntilChanged()
 
     val p2pEnabled = torrentSettings.settings
@@ -227,6 +236,35 @@ class StreamScreenViewModel @Inject constructor(
         }
     }
 
+    private fun publishStreamBadges(addonNames: Set<String>, badgedByKey: Map<String, Stream>) {
+        if (badgedByKey.isEmpty()) return
+        updateUiStateIfChanged { state ->
+            val updatedAddonStreams = state.addonStreams.map { group ->
+                if (group.addonName !in addonNames) {
+                    group
+                } else {
+                    group.copy(
+                        streams = group.streams.map { stream ->
+                            badgedByKey[stream.badgeMergeKey()] ?: stream
+                        }
+                    )
+                }
+            }
+            val updatedAllStreams = updatedAddonStreams.flatMap { it.streams }
+            val fullFiltered = viewOf(updatedAllStreams, state.selectedAddonFilter)
+            streamFilterFullList = fullFiltered
+            val pageEnd = state.filteredStreams.size
+                .coerceAtLeast(STREAM_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
+                .coerceAtMost(fullFiltered.size)
+            state.copy(
+                addonStreams = updatedAddonStreams,
+                allStreams = updatedAllStreams,
+                filteredStreams = if (pageEnd >= fullFiltered.size) fullFiltered
+                    else fullFiltered.subList(0, pageEnd)
+            )
+        }
+    }
+
     private fun scheduleStreamBadgePresentation(groups: List<AddonStreams>) {
         // Only process addon groups that haven't been badged yet
         val newGroups = groups.filter { it.addonName !in badgedAddonNames }
@@ -239,37 +277,28 @@ class StreamScreenViewModel @Inject constructor(
         streamBadgePresentationJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
             var pending = newGroups
             while (pending.isNotEmpty()) {
+                val pendingNames = pending.mapTo(HashSet()) { it.addonName }
                 val allNewStreams = pending.flatMap { it.streams }
-                val chunks = allNewStreams.chunked(5)
-                for (chunk in chunks) {
+                val badgedByKey = HashMap<String, Stream>()
+                var lastPublishNs = System.nanoTime()
+                for (chunk in allNewStreams.chunked(5)) {
                     ensureActive()
                     val chunkGroup = AddonStreams(addonName = "", addonLogo = null, streams = chunk)
                     val badgedChunk = streamBadgePresentation.apply(listOf(chunkGroup))
                         .firstOrNull()?.streams ?: chunk
-                    ensureActive()
-                    val badgedByKey = badgedChunk.associateBy { it.badgeMergeKey() }
-                    updateUiStateIfChanged { state ->
-                        val updatedAddonStreams = state.addonStreams.map { group ->
-                            group.copy(
-                                streams = group.streams.map { stream ->
-                                    badgedByKey[stream.badgeMergeKey()] ?: stream
-                                }
-                            )
-                        }
-                        val updatedAllStreams = updatedAddonStreams.flatMap { it.streams }
-                        val fullFiltered = viewOf(updatedAllStreams, state.selectedAddonFilter)
-                        streamFilterFullList = fullFiltered
-                        val pageEnd = state.filteredStreams.size
-                            .coerceAtLeast(STREAM_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
-                            .coerceAtMost(fullFiltered.size)
-                        state.copy(
-                            addonStreams = updatedAddonStreams,
-                            allStreams = updatedAllStreams,
-                            filteredStreams = if (pageEnd >= fullFiltered.size) fullFiltered
-                                else fullFiltered.subList(0, pageEnd)
-                        )
+                    badgedChunk.forEachIndexed { index, badged ->
+                        val original = chunk.getOrNull(index) ?: return@forEachIndexed
+                        if (badged !== original) badgedByKey[original.badgeMergeKey()] = badged
+                    }
+                    if (badgedByKey.isNotEmpty() && System.nanoTime() - lastPublishNs >= BADGE_PUBLISH_INTERVAL_NS) {
+                        ensureActive()
+                        publishStreamBadges(pendingNames, badgedByKey)
+                        badgedByKey.clear()
+                        lastPublishNs = System.nanoTime()
                     }
                 }
+                ensureActive()
+                publishStreamBadges(pendingNames, badgedByKey)
                 // Mark processed addons as done
                 badgedAddonNames = badgedAddonNames + pending.map { it.addonName }.toSet()
                 // Check if new addons arrived while we were processing
@@ -477,7 +506,10 @@ class StreamScreenViewModel @Inject constructor(
                     autoPlayHandledForSession = true
                     resolvedAutoPlayTarget = true
                     val isCachedTorrent = cached.infoHash != null && cached.url.isNullOrBlank()
-                    val showOverlay = playerSettings.playerPreference == PlayerPreference.EXTERNAL
+                    val showOverlay = PartyPlayerRule.preferenceFor(
+                        playerSettings.playerPreference,
+                        partyState.value.isActive
+                    ) == PlayerPreference.EXTERNAL
                     updateUiStateIfChanged {
                         it.copy(
                             autoPlayPlaybackInfo = StreamPlaybackInfo(
@@ -545,6 +577,15 @@ class StreamScreenViewModel @Inject constructor(
                 playerSettings.streamAutoPlayReuseBingeGroup) {
                 contentId?.let { bingeGroupCacheDataStore.get(it) }
             } else null
+            val persistedFilename = if (persistedBingeGroup != null) {
+                contentId?.let { bingeGroupCacheDataStore.getFilename(it) }
+            } else null
+            val persistedInfoHash = if (persistedBingeGroup != null) {
+                contentId?.let { bingeGroupCacheDataStore.getInfoHash(it) }
+            } else null
+            // The file the last episode played from, moved on to this episode's number, so the
+            // same release is preferred inside the binge group.
+            val bingeGroupNextFilename = persistedFilename?.let { bingeGroupNextFilename(it) }
 
             // Extracted so both selection call sites below, and future callers
             // that must predict the same winner (ranking during the prefetch,
@@ -603,7 +644,13 @@ class StreamScreenViewModel @Inject constructor(
                 val earlyBingeGroupMatch = if (!autoPlayHandledForSession && !resolvedAutoPlayTarget && persistedBingeGroup != null) {
                     val debridPreferences = latestDebridStreamPreferences
                     withContext(Dispatchers.Default) {
-                        AutoPlaySelection.select(
+                        bingeGroupFileMatch(
+                            streams = allStreams,
+                            bingeGroup = persistedBingeGroup,
+                            nextFilename = bingeGroupNextFilename,
+                            infoHash = persistedInfoHash,
+                            debridPreferences = debridPreferences
+                        ) ?: AutoPlaySelection.select(
                             streams = allStreams,
                             inputs = autoPlayInputs,
                             debridStreamPreferences = debridPreferences,
@@ -904,7 +951,13 @@ class StreamScreenViewModel @Inject constructor(
                                 val allStreams = orderedStreams.flatMap { it.streams }
                                 val debridPreferences = latestDebridStreamPreferences
                                 val earlyMatch = withContext(Dispatchers.Default) {
-                                    AutoPlaySelection.select(
+                                    bingeGroupFileMatch(
+                                        streams = allStreams,
+                                        bingeGroup = persistedBingeGroup,
+                                        nextFilename = bingeGroupNextFilename,
+                                        infoHash = persistedInfoHash,
+                                        debridPreferences = debridPreferences
+                                    ) ?: AutoPlaySelection.select(
                                         streams = allStreams,
                                         inputs = autoPlayInputs,
                                         debridStreamPreferences = debridPreferences,
@@ -1788,7 +1841,54 @@ class StreamScreenViewModel @Inject constructor(
 
     private suspend fun persistBingeGroupForPlayback(playbackInfo: StreamPlaybackInfo) {
         val cid = playbackInfo.contentId?.takeIf { it.isNotBlank() } ?: return
-        bingeGroupCacheDataStore.replace(cid, playbackInfo.bingeGroup)
+        bingeGroupCacheDataStore.replace(cid, playbackInfo.bingeGroup, playbackInfo.filename, playbackInfo.infoHash)
+    }
+
+    fun persistBingeGroupForStream(stream: Stream) {
+        val cid = contentId?.takeIf { it.isNotBlank() } ?: return
+        val bg = stream.behaviorHints?.bingeGroup
+        val fn = stream.behaviorHints?.filename
+        val ih = stream.infoHash
+        viewModelScope.launch {
+            bingeGroupCacheDataStore.replace(cid, bg, fn, ih)
+        }
+    }
+
+    private fun bingeGroupNextFilename(lastFilename: String): String {
+        val (lastSeason, lastEpisode) = FilenameEpisodeMatcher.extractSeasonEpisode(lastFilename)
+            ?: return lastFilename
+        return FilenameEpisodeMatcher.buildNextFilename(
+            filename = lastFilename,
+            currentSeason = lastSeason,
+            currentEpisode = lastEpisode,
+            nextSeason = season,
+            nextEpisode = episode ?: 0
+        ) ?: lastFilename
+    }
+
+    /**
+     * The binge group's file for this episode: the same release by filename first, then by
+     * infohash. Several add-ons can list the same file, so the matches are ranked rather than
+     * taken in list order.
+     */
+    private fun bingeGroupFileMatch(
+        streams: List<Stream>,
+        bingeGroup: String,
+        nextFilename: String?,
+        infoHash: String?,
+        debridPreferences: com.nuvio.tv.domain.model.DebridStreamPreferences?
+    ): Stream? {
+        val group = streams.filter { !it.isExternal() && it.behaviorHints?.bingeGroup == bingeGroup }
+        if (group.isEmpty()) return null
+        val byFilename = if (nextFilename != null) {
+            group.filter { FilenameEpisodeMatcher.matches(it.behaviorHints?.filename, nextFilename) }
+        } else emptyList()
+        val byInfoHash = if (byFilename.isEmpty() && infoHash != null) {
+            group.filter { it.infoHash?.equals(infoHash, ignoreCase = true) == true }
+        } else emptyList()
+        val matches = byFilename.ifEmpty { byInfoHash }
+        if (matches.isEmpty()) return null
+        return StreamQualityRank.rank(matches, debridPreferences).firstOrNull()
     }
 
     override fun onCleared() {

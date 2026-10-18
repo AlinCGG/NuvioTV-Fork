@@ -1,5 +1,6 @@
 package com.nuvio.tv.data.mediaserver
 
+import com.nuvio.tv.R
 import com.nuvio.tv.core.player.StreamAutoPlaySelector
 import com.nuvio.tv.core.tmdb.TmdbService
 import com.nuvio.tv.data.local.StreamAutoPlayMode
@@ -11,7 +12,9 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,7 +37,10 @@ class ServerPlaybackTest {
         val playback: ServerPlayback
     )
 
-    private fun harness(provider: FakeServerProvider = FakeServerProvider()): Harness {
+    private fun harness(
+        provider: FakeServerProvider = FakeServerProvider(),
+        scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined)
+    ): Harness {
         val (repository, connection) = fakeServerRepository(provider)
         val matcher = ServerMatcher(repository, mockk<TmdbService>(relaxed = true), metaRepository)
         return Harness(
@@ -42,7 +48,7 @@ class ServerPlaybackTest {
             repository = repository,
             connection = connection,
             streams = ServerStreams(repository, matcher),
-            playback = ServerPlayback(repository, CoroutineScope(Dispatchers.Unconfined)) { now }
+            playback = ServerPlayback(repository, scope) { now }
         )
     }
 
@@ -202,6 +208,139 @@ class ServerPlaybackTest {
 
         assertFalse(playback.isServerSource(second.url))
         assertTrue(harness.provider.reported.isEmpty())
+    }
+
+    private fun startPlaying(harness: Harness, itemId: String): String = runBlocking {
+        val url = harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, itemId), "src-$itemId")).url
+        harness.playback.onPlaybackSnapshot(url, 0L, isPlaying = true, isLoading = false, isEnded = false)
+        harness.playback.onPlaybackSnapshot(url, 2_500_000L, isPlaying = true, isLoading = false, isEnded = false)
+        url
+    }
+
+    private fun refusal(block: suspend () -> Unit): ServerFailure? =
+        runCatching { runBlocking { block() } }.exceptionOrNull()?.let { (it as ServerException).failure }
+
+    @Test
+    fun theNextEpisodeClosesTheCurrentStreamWhenTheServerAllowsOnlyOne() = runBlocking {
+        val harness = harness(FakeServerProvider().apply { streamLimit = 1 })
+        val current = startPlaying(harness, "1")
+        val next = ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2")
+
+        val session = harness.playback.prepare(next, replacing = current)
+
+        assertTrue(harness.playback.isServerSource(session.url))
+        assertFalse(harness.playback.isServerSource(current))
+        assertEquals(ServerPlaybackEventType.STOP, harness.provider.reported.last())
+        assertEquals(2_500_000L, harness.provider.reportedPositions.last())
+        assertEquals(3, harness.provider.playbackRequests.size)
+    }
+
+    @Test
+    fun theClosedStreamStaysQuietWhenThePlayerLetsGoOfItLater() = runBlocking {
+        val harness = harness(FakeServerProvider().apply { streamLimit = 1 })
+        val current = startPlaying(harness, "1")
+        harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2"), replacing = current)
+        val reports = harness.provider.reported.size
+
+        harness.playback.onPlaybackSnapshot(current, 2_600_000L, isPlaying = true, isLoading = false, isEnded = false)
+        harness.playback.onPlaybackSnapshot(current, 2_600_000L, isPlaying = false, isLoading = false, isEnded = true)
+        harness.playback.stop(current)
+
+        assertEquals(reports, harness.provider.reported.size)
+        assertEquals(1, harness.provider.reported.count { it == ServerPlaybackEventType.STOP })
+    }
+
+    @Test
+    fun anEpisodeThatJustEndedIsWaitedForBeforeAskingAgain() = runBlocking {
+        val provider = FakeServerProvider().apply { streamLimit = 1 }
+        val harness = harness(provider, CoroutineScope(Dispatchers.Default))
+        val current = harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "1"), "src-1")).url
+        harness.playback.onPlaybackSnapshot(current, 0L, isPlaying = true, isLoading = false, isEnded = false)
+        withTimeout(5_000L) { while (synchronized(provider.playing) { provider.playing.isEmpty() }) delay(10L) }
+        provider.stopReportDelayMs = 1_000L
+        harness.playback.onPlaybackSnapshot(current, 2_700_000L, isPlaying = false, isLoading = false, isEnded = true)
+
+        val session = harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2"), replacing = current)
+
+        assertTrue(harness.playback.isServerSource(session.url))
+        assertEquals(1, harness.provider.reported.count { it == ServerPlaybackEventType.STOP })
+        assertEquals(3, harness.provider.playbackRequests.size)
+    }
+
+    @Test
+    fun aServerWithRoomForTwoStreamsKeepsTheCurrentOneUntilTheSwitch() = runBlocking {
+        val harness = harness(FakeServerProvider().apply { streamLimit = 2 })
+        val current = startPlaying(harness, "1")
+
+        val session = harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2"), replacing = current)
+
+        assertTrue(harness.playback.isServerSource(session.url))
+        assertTrue(harness.playback.isServerSource(current))
+        assertFalse(ServerPlaybackEventType.STOP in harness.provider.reported)
+        assertEquals(2, harness.provider.playbackRequests.size)
+    }
+
+    @Test
+    fun withoutAStreamToReplaceTheLimitIsReportedAsIs() {
+        val harness = harness(FakeServerProvider().apply { streamLimit = 1 })
+        val current = startPlaying(harness, "1")
+
+        val failure = refusal { harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2")) }
+
+        assertEquals(ServerFailure.STREAM_LIMIT, failure)
+        assertTrue(harness.playback.isServerSource(current))
+        assertFalse(ServerPlaybackEventType.STOP in harness.provider.reported)
+    }
+
+    @Test
+    fun aStreamOnAnotherDeviceStillEndsInTheLimitAfterOneMoreTry() {
+        val harness = harness(FakeServerProvider().apply { streamLimit = 1 })
+        val current = startPlaying(harness, "1")
+        harness.provider.streamsElsewhere = 1
+
+        val failure = refusal {
+            harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2"), replacing = current)
+        }
+
+        assertEquals(ServerFailure.STREAM_LIMIT, failure)
+        assertEquals(3, harness.provider.playbackRequests.size)
+        assertFalse(harness.playback.isServerSource(current))
+    }
+
+    @Test
+    fun otherRefusalsKeepTheCurrentStreamAndAskOnlyOnce() {
+        val harness = harness()
+        val current = startPlaying(harness, "1")
+        harness.provider.playbackFailure = ServerFailure.UNSUPPORTED
+
+        val failure = refusal {
+            harness.playback.prepare(ServerPlaybackTarget(ServerItemRef(harness.connection.id, "2"), "src-2"), replacing = current)
+        }
+
+        assertEquals(ServerFailure.UNSUPPORTED, failure)
+        assertEquals(2, harness.provider.playbackRequests.size)
+        assertTrue(harness.playback.isServerSource(current))
+        assertFalse(ServerPlaybackEventType.STOP in harness.provider.reported)
+    }
+
+    @Test
+    fun aStreamOnAnotherServerIsNotClosed() {
+        val harness = harness(FakeServerProvider().apply { streamLimit = 1 })
+        val current = startPlaying(harness, "1")
+        harness.repository.store(harness.connection.copy(id = "cother"), token = "token")
+
+        val failure = refusal {
+            harness.playback.prepare(ServerPlaybackTarget(ServerItemRef("cother", "2"), "src-2"), replacing = current)
+        }
+
+        assertEquals(ServerFailure.STREAM_LIMIT, failure)
+        assertTrue(harness.playback.isServerSource(current))
+    }
+
+    @Test
+    fun theStreamLimitHasItsOwnMessage() {
+        assertEquals(R.string.servers_failure_stream_limit, ServerException(ServerFailure.STREAM_LIMIT).serverPlaybackMessageRes())
+        assertEquals(R.string.servers_failure_unsupported, ServerException(ServerFailure.UNSUPPORTED).serverPlaybackMessageRes())
     }
 
     @Test

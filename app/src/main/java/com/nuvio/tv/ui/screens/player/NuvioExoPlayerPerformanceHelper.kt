@@ -46,15 +46,6 @@ object NuvioExoPlayerPerformanceHelper {
         java.util.concurrent.TimeUnit.MINUTES
     ).also(com.nuvio.tv.core.network.ServerTrust::closeConnectionsOnWithdrawal)
 
-    private val extraLanePools: List<okhttp3.ConnectionPool> = List(HttpLanes.MAX_LANES - 1) {
-        okhttp3.ConnectionPool(NUVIO_LANE_POOL_MAX_IDLE, 3, java.util.concurrent.TimeUnit.MINUTES)
-            .also(com.nuvio.tv.core.network.ServerTrust::closeConnectionsOnWithdrawal)
-    }
-
-    /** Pool for HTTP/2 lane [index]; lane 0 is [sharedConnectionPool]. */
-    fun lanePool(index: Int): okhttp3.ConnectionPool =
-        if (index == 0) sharedConnectionPool else extraLanePools[index - 1]
-
     // ─── Constants ────────────────────────────────────────────────────────────
     const val DEFAULT_NUVIO_ALLOCATOR_SEGMENT_SIZE = 64 * 1024        // 64 KB
 
@@ -71,7 +62,6 @@ object NuvioExoPlayerPerformanceHelper {
     // Parallel chunk fetching keeps more sockets alive than the old cap of 8, which was evicting
     // live chunk connections mid playback and forcing cold reopens.
     const val NUVIO_SHARED_POOL_MAX_IDLE = 32
-    const val NUVIO_LANE_POOL_MAX_IDLE = 8
     private const val BACK_BUFFER_TARGET_SHARE_NUM = 1L
     private const val BACK_BUFFER_TARGET_SHARE_DEN = 2L
 
@@ -128,17 +118,9 @@ object NuvioExoPlayerPerformanceHelper {
 
         val safeLimitMb = getSafeNativeMemoryLimitMb(context)
         val autoMb = getAutoBufferMb(context)
-        targetIsAutomatic = !(customBuffers && !settings.bufferBudgetManaged)
-        targetBufferSizeMb = if (!targetIsAutomatic) {
-            val storedSize = bufferSettings.targetBufferSizeMb
-            if (!settings.allowLargeTargetBuffer && storedSize > safeLimitMb) {
-                safeLimitMb
-            } else {
-                storedSize
-            }
-        } else {
-            autoMb
-        }
+        val (automatic, targetMb) = targetBufferFor(settings, safeLimitMb, autoMb)
+        targetIsAutomatic = automatic
+        targetBufferSizeMb = targetMb
 
         val effectiveBufferMb = when {
             settings.nuvioPerformanceModeEnabled -> {
@@ -168,6 +150,38 @@ object NuvioExoPlayerPerformanceHelper {
             DEFAULT_NUVIO_CONNECTION_POOL_SIZE
         }
     }
+
+    /** The target buffer playback runs with for [settings], and whether it is the app's own size. */
+    internal fun targetBufferFor(settings: PlayerSettings, safeLimitMb: Int, autoMb: Int): Pair<Boolean, Int> {
+        val automatic = !(settings.bufferEngineEnabled && !settings.bufferBudgetManaged)
+        if (automatic) return true to autoMb
+        val storedSize = settings.bufferSettings.targetBufferSizeMb
+        return false to if (!settings.allowLargeTargetBuffer && storedSize > safeLimitMb) safeLimitMb else storedSize
+    }
+
+    /** The prefetch window playback uses for these settings. */
+    fun downloadWindow(settings: PlayerSettings, context: Context): MemoryBudget.DownloadWindow {
+        val safeLimitMb = getSafeNativeMemoryLimitMb(context)
+        val (automatic, targetMb) = targetBufferFor(settings, safeLimitMb, getAutoBufferMb(context))
+        return downloadWindow(settings.nuvioPerformanceModeEnabled, automatic, targetMb, safeLimitMb)
+    }
+
+    /** The window the player runs with now, from the settings it last applied. */
+    fun currentDownloadWindow(performanceMode: Boolean, context: Context): MemoryBudget.DownloadWindow =
+        downloadWindow(performanceMode, targetIsAutomatic, targetBufferSizeMb, getSafeNativeMemoryLimitMb(context))
+
+    // An automatic target is already all this box should hold, so the window stays at its floor.
+    // Otherwise the target buffer is reserved out of the safe envelope and the rest goes to chunks.
+    internal fun downloadWindow(
+        performanceMode: Boolean,
+        targetIsAutomatic: Boolean,
+        targetBufferMb: Int,
+        safeNativeLimitMb: Int
+    ) = MemoryBudget.DownloadWindow(
+        performanceMode,
+        safeNativeLimitMb = if (targetIsAutomatic) targetBufferMb else safeNativeLimitMb,
+        reserveBufferMb = targetBufferMb.coerceAtLeast(0)
+    )
 
     private const val SEEK_BACKWARD_TOLERANCE_MS = 2_000L
     const val SEEK_SUPPRESS_TIMEOUT_MS = 800L

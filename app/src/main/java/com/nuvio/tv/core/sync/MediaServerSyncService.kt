@@ -136,7 +136,7 @@ class MediaServerSyncService @Inject constructor(
         repository.selectProfile(profileId)
         val local = repository.syncSnapshot(profileId) ?: return false
         if (local.syncedKeys != null && (pushOnly || local.pendingPush)) {
-            if (local.pendingPush) push(local)
+            if (local.pendingPush) push(withAccountImportSwitches(local))
             return false
         }
         val remote = pull(profileId)
@@ -154,6 +154,23 @@ class MediaServerSyncService @Inject constructor(
         Log.d(TAG, "Synchronized ${merged.size} media servers for profile $profileId")
         lastForegroundPullAtMs = SystemClock.elapsedRealtime()
         return merged != local.servers
+    }
+
+    /** Fills in import_watch_state this box has not read yet, so a push does not clear what another app set. */
+    private suspend fun withAccountImportSwitches(snapshot: ServerSyncSnapshot): ServerSyncSnapshot {
+        if (snapshot.servers.none { it.importWatchState == null }) return snapshot
+        val remote = try {
+            pull(snapshot.profileId)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not read the account's import switches before pushing", error)
+            null
+        }?.associateBy { it.key } ?: return snapshot
+        val servers = snapshot.servers.map { server ->
+            if (server.importWatchState != null) server else server.copy(importWatchState = remote[server.key]?.importWatchState)
+        }
+        return ServerSyncSnapshot(snapshot.profileId, snapshot.version, servers, snapshot.pendingPush, snapshot.syncedKeys)
     }
 
     private suspend fun pull(profileId: Int): List<SyncedServer>? {

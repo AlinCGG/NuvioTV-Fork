@@ -76,6 +76,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.onKeyEvent
@@ -922,6 +925,7 @@ fun MetaDetailsScreen(
                     shufflePoolEmpty = uiState.shufflePoolEmpty,
                     onEpisodeShuffleChange = viewModel::setEpisodeShuffle,
                     episodeOptionsOverlayStyle = uiState.episodeOptionsOverlayStyle,
+                    episodeSynopsisUnderRow = uiState.episodeSynopsisUnderRow,
                     showFullReleaseDate = uiState.showFullReleaseDate,
                     overallRatingsVisibility = uiState.overallRatingsVisibility,
                     detailImdbRatingsVisibility = uiState.detailImdbRatingsVisibility,
@@ -1263,6 +1267,7 @@ private fun MetaDetailsContent(
     shufflePoolEmpty: Boolean,
     onEpisodeShuffleChange: suspend (com.nuvio.tv.domain.model.EpisodeShuffleSettings) -> Boolean,
     episodeOptionsOverlayStyle: EpisodeOptionsOverlayStyle,
+    episodeSynopsisUnderRow: Boolean,
     showFullReleaseDate: Boolean,
     overallRatingsVisibility: HomeImdbRatingsVisibility,
     detailImdbRatingsVisibility: DetailImdbRatingsVisibility,
@@ -1496,17 +1501,20 @@ private fun MetaDetailsContent(
     }
     var lastDetailDpadKey by rememberSaveable(meta.id) { mutableIntStateOf(0) }
     val tapScroll = remember { DetailTapScroll() }
+    val episodeRowHeightPx = remember { mutableIntStateOf(0) }
+    val episodeSynopsisBlockPx = remember { mutableIntStateOf(0) }
     val episodeRowStayVerticalResponder = remember(lastDetailDpadKey, pendingRestoreType) {
         object : BringIntoViewResponder {
             override fun calculateRectForParent(localRect: Rect): Rect {
                 val stayVertical = pendingRestoreType == RestoreTarget.EPISODE ||
                     lastDetailDpadKey == KeyEvent.KEYCODE_DPAD_LEFT ||
                     lastDetailDpadKey == KeyEvent.KEYCODE_DPAD_RIGHT
-                return if (stayVertical) {
-                    Rect(localRect.left, 0f, localRect.right, 0f)
-                } else {
-                    localRect
-                }
+                return episodeRowBringIntoViewRect(
+                    localRect = localRect,
+                    stayVertical = stayVertical,
+                    rowBottom = episodeRowHeightPx.intValue.toFloat(),
+                    blockShown = episodeSynopsisBlockPx.intValue > 0
+                )
             }
 
             override suspend fun bringChildIntoView(localRect: () -> Rect?) { }
@@ -1858,6 +1866,12 @@ private fun MetaDetailsContent(
             (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset > 200)
         }
     }
+
+    val belowHeroAlpha = animateFloatAsState(
+        targetValue = if (isTrailerPlaying) 0f else 1f,
+        animationSpec = tween(NuvioMotion.tokens.durations.overlay),
+        label = "belowHeroFade"
+    )
 
     LaunchedEffect(isScrolledPastHero) { onScrollPastHero(isScrolledPastHero) }
     val people = if (secondaryReady) peopleState.value else DetailPeopleState(emptyList(), emptyList(), emptyList(), emptyList())
@@ -2399,7 +2413,9 @@ private fun MetaDetailsContent(
         )
         val revealSecondaryImmediately = secondaryDemanded || isScrolledPastHero || detailReturnEpisodeFocusRequest?.episode != null
         CompositionLocalProvider(
-            LocalBringIntoViewSpec provides if (suppressRestoreBringIntoView) {
+            // The hero grows to full height during a trailer; keep the list from
+            // scrolling to follow the focused hero while it resizes.
+            LocalBringIntoViewSpec provides if (suppressRestoreBringIntoView || isTrailerPlaying) {
                 restoreNoScrollBringIntoViewSpec
             } else {
                 detailPageBringIntoViewSpec
@@ -2411,6 +2427,7 @@ private fun MetaDetailsContent(
                 .fillMaxSize()
                 .graphicsLayer { alpha = trailerContentAlpha.value }
                 .recompositionHighlighter()
+                .fadeBelowHero(listState, belowHeroAlpha)
                 .onPreviewKeyEvent { event ->
                     val native = event.nativeKeyEvent
                     if (native.action == KeyEvent.ACTION_DOWN) {
@@ -2687,7 +2704,11 @@ private fun MetaDetailsContent(
                         } else {
                             null
                         }
-                        Box(modifier = Modifier.bringIntoViewResponder(episodeRowStayVerticalResponder)) {
+                        Box(
+                            modifier = Modifier
+                                .onSizeChanged { episodeRowHeightPx.intValue = it.height }
+                                .bringIntoViewResponder(episodeRowStayVerticalResponder)
+                        ) {
                             EpisodesRow(
                                 episodes = episodesForSeason,
                                 episodeProgressMap = episodeProgressMap,
@@ -2696,6 +2717,8 @@ private fun MetaDetailsContent(
                                 episodeWatchedPendingKeys = episodeWatchedPendingKeys,
                                 blurUnwatchedEpisodes = blurUnwatchedEpisodes,
                                 episodeOptionsOverlayStyle = episodeOptionsOverlayStyle,
+                                showFocusedSynopsis = episodeSynopsisUnderRow,
+                                onSynopsisBlockHeightChanged = { episodeSynopsisBlockPx.intValue = it },
                                 posterCardCornerRadiusDp = posterCardCornerRadiusDp,
                                 onEpisodeClick = episodeClick,
                                 canPlayEpisode = canPlayEpisode,
@@ -3375,6 +3398,36 @@ private fun PlaybackHandoffBackdrop(backdropUrl: String?) {
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.TopEnd
             )
+        }
+    }
+}
+
+/**
+ * Fades the rows below the hero item while a full-screen trailer plays. On screens
+ * taller than the hero (lower-density TV boxes) the next row would otherwise sit over
+ * the trailer.
+ */
+private fun Modifier.fadeBelowHero(
+    listState: LazyListState,
+    alpha: State<Float>
+): Modifier = drawWithCache {
+    val layerPaint = Paint()
+    onDrawWithContent {
+        val belowHeroAlpha = alpha.value
+        if (belowHeroAlpha >= 1f) {
+            drawContent()
+            return@onDrawWithContent
+        }
+        val heroBottom = listState.layoutInfo.visibleItemsInfo
+            .firstOrNull { it.key == "hero" }
+            ?.let { (it.offset + it.size).toFloat() }
+            ?: 0f
+        clipRect(bottom = heroBottom) { this@onDrawWithContent.drawContent() }
+        if (belowHeroAlpha > 0f) {
+            layerPaint.alpha = belowHeroAlpha
+            drawContext.canvas.saveLayer(Rect(0f, heroBottom, size.width, size.height), layerPaint)
+            clipRect(top = heroBottom) { this@onDrawWithContent.drawContent() }
+            drawContext.canvas.restore()
         }
     }
 }

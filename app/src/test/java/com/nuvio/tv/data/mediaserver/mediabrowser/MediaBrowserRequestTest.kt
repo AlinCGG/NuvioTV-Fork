@@ -50,6 +50,154 @@ class MediaBrowserRequestTest {
     )
 
     @Test
+    fun searchesAioStreamsOnceAcrossItsCatalogs() = runTest {
+        val http = TestHttp { request ->
+            when (request.url.encodedPath) {
+                "/jellyfin/System/Info/Public" -> """{"ServerName": "Den", "Version": "10.10.7", "aiostreams": {"features": {}}}"""
+                else -> """{"Items": [{"Id": "m1", "Name": "Heat", "Type": "Movie"}]}"""
+            }
+        }
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val session = session("jellyfin", "https://media.example.com/jellyfin")
+        val libraries = listOf(ServerLibrary("lib1", "Popular", ServerMediaKind.MOVIE), ServerLibrary("lib2", "Trending", ServerMediaKind.MOVIE))
+
+        val first = jellyfin.search(session, ServerMediaKind.MOVIE, libraries, "heat", 30)
+        jellyfin.search(session, ServerMediaKind.MOVIE, libraries, "heat", 30)
+
+        assertEquals(listOf("Heat"), first.map { it.preview.name })
+        val searches = http.requests.filter { it.url.encodedPath.endsWith("/Items") }
+        assertEquals(1, http.requests.count { it.url.encodedPath.endsWith("/System/Info/Public") })
+        assertEquals(2, searches.size)
+        searches.forEach { request ->
+            assertNull(request.url.queryParameter("parentId"))
+            assertEquals("heat", request.url.queryParameter("searchTerm"))
+            assertEquals("Movie", request.url.queryParameter("includeItemTypes"))
+        }
+    }
+
+    @Test
+    fun searchesEachSelectedLibraryOnJellyfin() = runTest {
+        val http = TestHttp { request ->
+            when (request.url.encodedPath) {
+                "/jellyfin/System/Info/Public" -> """{"ServerName": "Den", "Version": "10.10.7"}"""
+                else -> """{"Items": [{"Id": "m1", "Name": "Heat", "Type": "Movie"}]}"""
+            }
+        }
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val libraries = listOf(ServerLibrary("lib1", "Movies", ServerMediaKind.MOVIE), ServerLibrary("lib2", "4K", ServerMediaKind.MOVIE))
+
+        val results = jellyfin.search(session("jellyfin", "https://media.example.com/jellyfin"), ServerMediaKind.MOVIE, libraries, "heat", 30)
+
+        assertEquals(listOf("Heat"), results.map { it.preview.name })
+        assertEquals(
+            setOf("lib1", "lib2"),
+            http.requests.filter { it.url.encodedPath.endsWith("/Items") }.map { it.url.queryParameter("parentId") }.toSet()
+        )
+    }
+
+    @Test
+    fun oneBrokenLibraryLeavesTheOthersInTheSearch() = runTest {
+        var broken = setOf("lib2")
+        val http = TestHttp(
+            status = { request -> if (request.url.queryParameter("parentId") in broken) 500 else 200 },
+            responder = { request ->
+                when (request.url.encodedPath) {
+                    "/jellyfin/System/Info/Public" -> """{"ServerName": "Den", "Version": "10.10.7"}"""
+                    else -> """{"Items": [{"Id": "m1", "Name": "Heat", "Type": "Movie"}]}"""
+                }
+            }
+        )
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val session = session("jellyfin", "https://media.example.com/jellyfin")
+        val libraries = listOf(ServerLibrary("lib1", "Movies", ServerMediaKind.MOVIE), ServerLibrary("lib2", "Gone", ServerMediaKind.MOVIE))
+
+        assertEquals(listOf("Heat"), jellyfin.search(session, ServerMediaKind.MOVIE, libraries, "heat", 30).map { it.preview.name })
+
+        broken = setOf("lib1", "lib2")
+        assertTrue(runCatching { jellyfin.search(session, ServerMediaKind.MOVIE, libraries, "heat", 30) }.exceptionOrNull() is ServerException)
+    }
+
+    @Test
+    fun aLibraryWhoseGenresFailOpensEmpty() = runTest {
+        val http = TestHttp(
+            status = { request -> if (request.url.encodedPath.endsWith("/Genres")) 500 else 200 },
+            responder = { request ->
+                if (request.url.encodedPath.endsWith("/Genres")) "{}" else """{"Items": [], "TotalRecordCount": 0}"""
+            }
+        )
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val session = session("jellyfin", "https://media.example.com/jellyfin")
+        val library = ServerLibrary("lib1", "Empty", ServerMediaKind.MOVIE)
+
+        assertTrue(jellyfin.libraryPage(session, library, start = 0, limit = 50).items.isEmpty())
+        jellyfin.libraryPage(session, library, start = 0, limit = 50)
+
+        assertEquals(1, http.requests.count { it.url.encodedPath.endsWith("/Genres") })
+    }
+
+    @Test
+    fun opensLibrariesThatNeedAGenreOnTheirFirstOne() = runTest {
+        val http = TestHttp { request ->
+            when {
+                request.url.encodedPath.endsWith("/Genres") -> """{"Items": [{"Id": "g1", "Name": "Action"}]}"""
+                request.url.queryParameter("genreIds") == "g1" ->
+                    """{"Items": [{"Id": "m1", "Name": "Heat", "Type": "Movie"}], "TotalRecordCount": 60}"""
+                else -> """{"Items": [], "TotalRecordCount": 0}"""
+            }
+        }
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val session = session("jellyfin", "https://media.example.com/jellyfin")
+        val library = ServerLibrary("lib1", "By genre", ServerMediaKind.MOVIE)
+
+        val first = jellyfin.libraryPage(session, library, start = 0, limit = 50)
+        jellyfin.libraryPage(session, library, start = 50, limit = 50)
+
+        assertEquals(listOf("Heat"), first.items.map { it.preview.name })
+        assertEquals(60, first.totalCount)
+        assertEquals(1, http.requests.count { it.url.encodedPath.endsWith("/Genres") })
+        assertEquals("lib1", http.requests.single { it.url.encodedPath.endsWith("/Genres") }.url.queryParameter("parentId"))
+        assertEquals("g1", http.requests.last().url.queryParameter("genreIds"))
+    }
+
+    @Test
+    fun aLibraryThatIsEmptyAsksForItsGenresOnlyOnce() = runTest {
+        val http = TestHttp { request ->
+            if (request.url.encodedPath.endsWith("/Genres")) """{"Items": []}""" else """{"Items": [], "TotalRecordCount": 0}"""
+        }
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val session = session("jellyfin", "https://media.example.com/jellyfin")
+        val library = ServerLibrary("lib1", "Empty", ServerMediaKind.MOVIE)
+
+        jellyfin.libraryPage(session, library, start = 0, limit = 50)
+        jellyfin.libraryPage(session, library, start = 0, limit = 50)
+
+        assertEquals(1, http.requests.count { it.url.encodedPath.endsWith("/Genres") })
+        assertEquals(3, http.requests.size)
+        assertNull(http.requests.last().url.queryParameter("genreIds"))
+    }
+
+    @Test
+    fun listsMixedLibrariesWithMoviesAndShows() = runTest {
+        val http = TestHttp { request ->
+            if (request.url.encodedPath.endsWith("/UserViews")) {
+                """{"Items": [{"Id": "lib1", "Name": "Movies", "Type": "CollectionFolder", "CollectionType": "movies"},
+                              {"Id": "lib2", "Name": "Everything", "Type": "CollectionFolder"},
+                              {"Id": "lib3", "Name": "Music", "Type": "CollectionFolder", "CollectionType": "music"}]}"""
+            } else {
+                """{"Items": [{"Id": "m1", "Name": "Heat", "Type": "Movie"}], "TotalRecordCount": 1}"""
+            }
+        }
+        val jellyfin = JellyfinProvider(http.client, testIdentity)
+        val session = session("jellyfin", "https://media.example.com/jellyfin")
+
+        val libraries = jellyfin.libraries(session)
+        jellyfin.libraryPage(session, libraries.last(), start = 0, limit = 50)
+
+        assertEquals(listOf(ServerMediaKind.MOVIE, ServerMediaKind.MIXED), libraries.map { it.kind })
+        assertEquals("Movie,Series", http.requests.last().url.queryParameter("includeItemTypes"))
+    }
+
+    @Test
     fun aShorterConnectLimitFromTheCallerReachesTheRequest() = runTest {
         val http = TestHttp { """{"ServerName": "Den", "Version": "10.10.0", "Id": "srv"}""" }
         val provider = JellyfinProvider(http.client, testIdentity)
@@ -547,6 +695,7 @@ class MediaBrowserRequestTest {
         assertEquals("ms1", info.url.queryParameter("mediaSourceId"))
         assertEquals("2", info.url.queryParameter("audioStreamIndex"))
         assertTrue(info.text.contains("\"AudioStreamIndex\":2"))
+        assertTrue(info.text.contains("\"IsPlayback\":true"))
         assertTrue(info.text.contains("{\"Format\":\"subrip\",\"Method\":\"Embed\"}"))
         assertTrue(info.text.contains("{\"Format\":\"subrip\",\"Method\":\"External\"}"))
         assertTrue(playback.url.startsWith("https://media.example.com/emby/Videos/i1/stream?static=true"))
@@ -555,5 +704,36 @@ class MediaBrowserRequestTest {
         assertTrue(report.text.contains("\"PositionTicks\":15000000"))
         assertTrue(report.text.contains("\"EventName\":\"TimeUpdate\""))
         assertTrue(report.text.contains("\"PlaySessionId\":\"ps1\""))
+    }
+
+    @Test
+    fun aRefusedPlayRequestWithTooManyRequestsIsAStreamLimit() = runTest {
+        val playRequest = ServerPlaybackRequest(ServerPlaybackTarget(ServerItemRef("cabc", "item1"), "ms1"), ServerPlayerCapabilities())
+        fun provider(providerId: String, http: TestHttp) = when (providerId) {
+            "silo" -> SiloProvider(http.client, testIdentity)
+            "emby" -> EmbyProvider(http.client, testIdentity)
+            else -> JellyfinProvider(http.client, testIdentity)
+        }
+        for (providerId in listOf("jellyfin", "emby", "silo")) {
+            val limited = TestHttp(status = { 429 }) { """{"Error": "TooManyStreams", "Message": "Too many concurrent streams"}""" }
+            val limit = runCatching {
+                provider(providerId, limited).preparePlayback(session(providerId, "https://media.example.com"), playRequest)
+            }.exceptionOrNull() as ServerException
+            assertEquals(providerId, ServerFailure.STREAM_LIMIT, limit.failure)
+            assertEquals(providerId, 429, limit.httpStatus)
+            assertEquals(providerId, "Too many concurrent streams", limit.detail)
+
+            val throttled = TestHttp(status = { 429 }) { "<html>Too Many Requests</html>" }
+            val busy = runCatching {
+                provider(providerId, throttled).preparePlayback(session(providerId, "https://media.example.com"), playRequest)
+            }.exceptionOrNull() as ServerException
+            assertEquals(providerId, ServerFailure.FAILED, busy.failure)
+
+            val broken = TestHttp(status = { 500 }) { "" }
+            val other = runCatching {
+                provider(providerId, broken).preparePlayback(session(providerId, "https://media.example.com"), playRequest)
+            }.exceptionOrNull() as ServerException
+            assertEquals(providerId, ServerFailure.UNREACHABLE, other.failure)
+        }
     }
 }

@@ -23,7 +23,9 @@ data class SyncedServer(
     val enabled: Boolean = true,
     @SerialName("use_catalog_metadata") val useCatalogMetadata: Boolean = false,
     @EncodeDefault(EncodeDefault.Mode.NEVER)
-    @SerialName("display_name") val displayName: String? = null
+    @SerialName("display_name") val displayName: String? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName("import_watch_state") val importWatchState: Boolean? = null
 ) {
     val key: String
         get() = serverKey(providerId, remoteServerId, remoteUserId)
@@ -65,7 +67,11 @@ internal fun mergeSyncedServers(
     val remoteKeys = remote.mapTo(mutableSetOf()) { it.key }
     val kept = remote.map { server ->
         localByKey[server.key]?.let { local ->
-            server.copy(id = local.id, displayName = server.displayName ?: local.displayName)
+            server.copy(
+                id = local.id,
+                displayName = server.displayName ?: local.displayName,
+                importWatchState = server.importWatchState ?: local.importWatchState
+            )
         } ?: server
     }
     val added = local.filter { it.key !in remoteKeys && (syncedKeys == null || it.key !in syncedKeys) }
@@ -84,7 +90,8 @@ internal fun ServerConnection.toSynced(token: String) = SyncedServer(
     libraries = libraries.map { SyncedLibrary(it.id, it.name, it.kind.contentType, it.selected) },
     enabled = enabled,
     useCatalogMetadata = useCatalogMetadata,
-    displayName = displayName
+    displayName = displayName,
+    importWatchState = syncedImportWatchState
 )
 
 internal fun SyncedServer.toConnection(id: String, credentialRef: String) = ServerConnection(
@@ -103,5 +110,6 @@ internal fun SyncedServer.toConnection(id: String, credentialRef: String) = Serv
     },
     enabled = enabled,
     useCatalogMetadata = useCatalogMetadata,
-    displayName = displayName?.let { serverDisplayName(it, name) ?: "" }
+    displayName = displayName?.let { serverDisplayName(it, name) ?: "" },
+    syncedImportWatchState = importWatchState
 )

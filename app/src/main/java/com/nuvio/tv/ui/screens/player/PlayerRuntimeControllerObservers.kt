@@ -338,6 +338,14 @@ internal fun PlayerRuntimeController.observeBlurUnwatchedEpisodes() {
     }
 }
 
+internal fun PlayerRuntimeController.observeEpisodeOptionsOverlayStyle() {
+    scope.launch {
+        layoutPreferenceDataStore.episodeOptionsOverlayStyle.collectLatest { style ->
+            _uiState.update { it.copy(episodeOptionsOverlayStyle = style) }
+        }
+    }
+}
+
 internal fun PlayerRuntimeController.observeEpisodeWatchProgress() {
     val id = contentId ?: return
     val type = contentType ?: return
@@ -578,7 +586,7 @@ internal fun PlayerRuntimeController.loadSavedProgressFor(season: Int?, episode:
 
     scope.launch {
         pendingResumeProgress = null
-        val progress = if (isCloudLibraryPlayback) {
+        val local = if (isCloudLibraryPlayback) {
             loadCloudLibraryResumeProgress()
         } else if (season != null && episode != null) {
             watchProgressRepository.getEpisodeProgress(
@@ -590,6 +598,7 @@ internal fun PlayerRuntimeController.loadSavedProgressFor(season: Int?, episode:
         } else {
             watchProgressRepository.getProgress(progressContentId!!, profileId).firstOrNull()
         }
+        val progress = newerServerProgress(local)
 
         progress?.let { saved ->
 
@@ -627,7 +636,7 @@ internal suspend fun PlayerRuntimeController.loadSavedProgressSuspend(season: In
     if (!isCloudLibraryPlayback && progressContentId == null) return
 
     pendingResumeProgress = null
-    val progress = if (isCloudLibraryPlayback) {
+    val local = if (isCloudLibraryPlayback) {
         loadCloudLibraryResumeProgress()
     } else savedOrServerProgress {
         if (season != null && episode != null) {
@@ -641,6 +650,7 @@ internal suspend fun PlayerRuntimeController.loadSavedProgressSuspend(season: In
             watchProgressRepository.getProgress(progressContentId!!, profileId).firstOrNull()
         }
     }
+    val progress = newerServerProgress(local)
 
     progress?.let { saved ->
         if (saved.isInProgress()) {
@@ -1457,7 +1467,7 @@ internal fun PlayerRuntimeController.scheduleDeferredPlayerReinitialize(
     scope.launch {
         yield()
         runCatching {
-            releasePlayer()
+            releasePlayer(flushPlaybackState = true, keepTorrentStream = true)
             initializePlayer(currentStreamUrl, currentHeaders)
         }.onFailure { e ->
             _uiState.update {

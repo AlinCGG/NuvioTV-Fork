@@ -7,6 +7,8 @@ import com.nuvio.tv.ui.v2.appearance.ResolvedAppearance
 import com.nuvio.tv.ui.v2.appearance.rememberStableUiScale
 import com.nuvio.tv.ui.v2.appearance.rememberUiCanvasSnapshot
 import com.nuvio.tv.ui.v2.scale.isPlayerUiVisible
+import com.nuvio.tv.ui.v2.profile.startPicture
+import com.nuvio.tv.ui.v2.profile.startPictureOr
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -116,6 +118,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import com.nuvio.tv.ui.screens.ambient.AMBIENT_BEFORE_OLED_DIM
+import com.nuvio.tv.ui.screens.ambient.AmbientIdleController
+import com.nuvio.tv.ui.screens.ambient.AmbientModeHost
+import com.nuvio.tv.ui.screens.ambient.LocalAmbientIdleController
 import com.nuvio.tv.core.runtime.PluginRuntimeHooks
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -289,6 +295,9 @@ open class MainActivity : ComponentActivity() {
     lateinit var startupSyncService: StartupSyncService
 
     @Inject
+    lateinit var androidTvChannelSyncService: com.nuvio.tv.core.sync.androidtv.AndroidTvChannelSyncService
+
+    @Inject
     lateinit var profileSyncService: ProfileSyncService
 
     @Inject
@@ -328,10 +337,16 @@ open class MainActivity : ComponentActivity() {
     lateinit var screensaverController: com.nuvio.tv.core.player.ScreensaverController
 
     @Inject
+    lateinit var ambientModeDataStore: com.nuvio.tv.data.local.AmbientModeDataStore
+
+    @Inject
     lateinit var calendarSettingsDataStore: com.nuvio.tv.core.calendar.CalendarSettingsDataStore
 
     @Inject
     lateinit var calendarReminders: com.nuvio.tv.core.calendar.CalendarReminderCenter
+
+    @Inject
+    lateinit var calendarAppVisibility: com.nuvio.tv.core.calendar.CalendarAppVisibility
 
     @Inject
     lateinit var calendarEpisodeResolver: dagger.Lazy<com.nuvio.tv.core.calendar.CalendarEpisodeResolver>
@@ -353,8 +368,9 @@ open class MainActivity : ComponentActivity() {
     /** True until the first onResume after onCreate completes. */
     private var isFirstResumeAfterCreate = false
 
-    /** True after a screensaver wake until the waking press's ACTION_UP has been swallowed. */
+    /** True after an idle-overlay wake until the waking press's ACTION_UP has been swallowed. */
     private var swallowKeysUntilUp = false
+    private val ambientIdleController by lazy { AmbientIdleController(screensaverController) }
     private var calendarMenuKeyDown = false
     @Volatile private var searchKeyOpensSearch = false
     private val searchKeyPresses = mutableIntStateOf(0)
@@ -379,11 +395,18 @@ open class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("activity_create")
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        window?.decorView?.let { com.nuvio.tv.core.util.StartupLatencyTrace.coldOnFirstDraw(it, "first_frame") }
         com.nuvio.tv.core.performance.DetailEntryTrace.attach(window)
         isFirstResumeAfterCreate = true
-        window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+        val startPicture = com.nuvio.tv.ui.v2.profile.StartPicture(
+            window?.decorView?.background?.constantState?.newDrawable(resources)?.takeIf {
+                savedInstanceState == null && com.nuvio.tv.ui.brand.ArcStartHandoff.windowCarriesMark(android.os.Build.VERSION.SDK_INT)
+            }
+        ) { window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT)) }
+        if (!startPicture.showing) window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 
         // Wire the Activity-level launcher to the tracker
         externalPlaybackTracker.activityLauncher = externalPlayerLauncher
@@ -392,13 +415,17 @@ open class MainActivity : ComponentActivity() {
 
         // OLED screensaver: 1 Hz idle ticker while STARTED. collectLatest restarts the
         // loop (and the idle clock) whenever the enable/timeout settings change, and the
-        // clock also restarts every time the activity returns to STARTED.
+        // clock also restarts every time the activity returns to STARTED. The dimmer
+        // yields to Ambient Mode when both are on (AMBIENT_BEFORE_OLED_DIM).
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
                     themeDataStore.screensaverEnabled,
-                    themeDataStore.screensaverTimeoutMinutes
-                ) { enabled, minutes -> enabled to minutes }
+                    themeDataStore.screensaverTimeoutMinutes,
+                    ambientModeDataStore.settings.map { it.enabled }
+                ) { enabled, minutes, ambientEnabled ->
+                    (enabled && !(ambientEnabled && AMBIENT_BEFORE_OLED_DIM)) to minutes
+                }
                     .collectLatest { (enabled, minutes) ->
                         if (!enabled) {
                             screensaverController.notifyWake()
@@ -635,9 +662,10 @@ open class MainActivity : ComponentActivity() {
             val originalScale = uiScalePercent
             // Resolve the device snapshot before profile selection's first themed frame.
             if (device == null || appearance == null || originalScale == null) {
-                Box(Modifier.fillMaxSize().background(Color.Black))
+                Box(Modifier.fillMaxSize().then(if (startPicture.showing) Modifier else Modifier.background(Color.Black)))
                 return@setContent
             }
+            SideEffect { com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("prefs_ready") }
             var playbackUiActive by remember { mutableStateOf(false) }
             val profileEntry = remember { com.nuvio.tv.ui.v2.profile.ProfileEntryState() }
             var entryConsumedKey by remember { mutableStateOf<Int?>(null) }
@@ -684,6 +712,7 @@ open class MainActivity : ComponentActivity() {
                     LocalAlwaysBackdropWithLogo provides mainUiPrefs.alwaysBackdropWithLogo,
                     LocalLogoOverCardTrailer provides mainUiPrefs.logoOverCardTrailer,
                     LocalMemberAccess provides mainUiPrefs.memberAccess,
+                    LocalAmbientIdleController provides ambientIdleController,
                     com.nuvio.tv.core.player.LocalTrailerPlayerPool provides trailerPlayerPool
                 ) {
                 val transparentPlayerBackdrop = PlayerWindowBackdrop.isTransparentRequested
@@ -733,7 +762,7 @@ open class MainActivity : ComponentActivity() {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(NuvioTheme.colors.Background)
+                                .startPictureOr(startPicture, NuvioTheme.colors.Background)
                         )
                         return@Surface
                     }
@@ -742,7 +771,7 @@ open class MainActivity : ComponentActivity() {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(NuvioTheme.colors.Background)
+                                .startPictureOr(startPicture, NuvioTheme.colors.Background)
                         )
                         return@Surface
                     }
@@ -752,6 +781,7 @@ open class MainActivity : ComponentActivity() {
                         authState !is AuthState.FullAccount &&
                         !onboardingCompletedThisSession
                     ) {
+                        SideEffect { startPicture.end() }
                         AuthQrSignInScreen(
                             onBackPress = { finish() },
                             onContinue = {
@@ -797,6 +827,7 @@ open class MainActivity : ComponentActivity() {
                         !hasSelectedProfileThisSession && (profiles.size > 1 || activeProfileHasPin || v2ProfilePickerRequested)
 
                     if (shouldShowProfileSelection) {
+                        SideEffect { startPicture.end() }
                         ProfileSelectionScreen(
                             onProfileSelected = {
                                 v2ProfilePickerRequested = false
@@ -812,18 +843,27 @@ open class MainActivity : ComponentActivity() {
                         return@Surface
                     }
 
+                    // Past sign-in and the profile page, the intro is what comes next: get its art ready while Home loads.
+                    val introPalette = NuvioTheme.arcPalette
+                    val rootView = LocalView.current
+                    LaunchedEffect(introPalette, mainUiPrefs.experienceModeLoaded, device.interfaceExperience, appearance.introAnimationEnabled) {
+                        if (mainUiPrefs.experienceModeLoaded && appearance.introAnimationEnabled && !profileEntry.hasRunThisSession &&
+                            device.interfaceExperience == com.nuvio.tv.domain.model.InterfaceExperience.NUVIO_V2) {
+                            com.nuvio.tv.ui.brand.ArcIntroPrep.warm(context, introPalette, rootView.width, rootView.height)
+                        }
+                    }
                     val layoutChosen = mainUiPrefs.hasChosenLayout
                     if (layoutChosen == null || !mainUiPrefs.experienceModeLoaded || installedAddons == null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(NuvioTheme.colors.Background)
+                                .startPictureOr(startPicture, NuvioTheme.colors.Background)
                         )
                         return@Surface
                     }
-                    val effectiveExperienceMode = mainUiPrefs.experienceMode
-                        ?: if (layoutChosen) ExperienceMode.ADVANCED else null
+                    val effectiveExperienceMode = resolveStartExperienceMode(mainUiPrefs.experienceMode, layoutChosen)
                     val needsExperienceSelection = effectiveExperienceMode == null
+                    val followsLaunchTargets = launchTargetsReady(mainUiPrefs.experienceMode, layoutChosen)
                     val needsEssentialAddonSetup =
                         effectiveExperienceMode == ExperienceMode.ESSENTIAL &&
                             installedAddons.orEmpty().isEmpty() &&
@@ -833,7 +873,7 @@ open class MainActivity : ComponentActivity() {
                     LaunchedEffect(pendingDeepLink) {
                         val url = pendingDeepLink ?: return@LaunchedEffect
                         val deepLink = DeepLinkParser.parse(url)
-                        if (deepLink is AppDeepLink.AddonInstall && (needsEssentialAddonSetup || !layoutChosen)) {
+                        if (deepLink is AppDeepLink.AddonInstall && (needsEssentialAddonSetup || !followsLaunchTargets)) {
                             Toast.makeText(context, context.getString(R.string.addon_installing), Toast.LENGTH_SHORT).show()
                             val installResult = deepLinkHandler.installAddon(deepLink.manifestUrl)
                             if (pendingDeepLinkUrl.value == url) {
@@ -844,6 +884,7 @@ open class MainActivity : ComponentActivity() {
                     }
 
                     if (needsEssentialAddonSetup) {
+                        SideEffect { startPicture.end() }
                         EssentialAddonSetupScreen(
                             onSkip = {
                                 lifecycleScope.launch {
@@ -919,6 +960,7 @@ open class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(actualRoute) {
                         optimisticRoute = null
+                        screensaverController.notifyInteraction()
                     }
 
                     // Auto-play next episode for EXTERNAL players: the tracker resolves the
@@ -992,7 +1034,7 @@ open class MainActivity : ComponentActivity() {
 
                     // Navigate to content when launched from the Continue Watching channel row.
                     LaunchedEffect(navController) {
-                        if (launchContentId != null && launchContentType != null && layoutChosen) {
+                        if (launchContentId != null && launchContentType != null && followsLaunchTargets) {
                             if (launchMode == "stream" && launchVideoId != null && launchName != null) {
                                 navController.navigate(
                                     Screen.Stream.createRoute(
@@ -1023,9 +1065,9 @@ open class MainActivity : ComponentActivity() {
                     }
 
                     val pendingLaunch by pendingLaunchIntent.collectAsState()
-                    LaunchedEffect(navController, layoutChosen, pendingLaunch) {
+                    LaunchedEffect(navController, followsLaunchTargets, pendingLaunch) {
                         val intent = pendingLaunch ?: return@LaunchedEffect
-                        if (!layoutChosen) return@LaunchedEffect
+                        if (!followsLaunchTargets) return@LaunchedEffect
                         pendingLaunchIntent.value = null
                         val contentId = intent.getStringExtra("contentId") ?: return@LaunchedEffect
                         val contentType = intent.getStringExtra("contentType") ?: return@LaunchedEffect
@@ -1059,9 +1101,9 @@ open class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    LaunchedEffect(navController, layoutChosen, pendingDeepLink) {
+                    LaunchedEffect(navController, followsLaunchTargets, pendingDeepLink) {
                         val url = pendingDeepLink ?: return@LaunchedEffect
-                        if (!layoutChosen) return@LaunchedEffect
+                        if (!followsLaunchTargets) return@LaunchedEffect
                         when (val deepLink = DeepLinkParser.parse(url)) {
                             is AppDeepLink.Meta -> {
                                 pendingDeepLinkUrl.value = null
@@ -1390,11 +1432,54 @@ open class MainActivity : ComponentActivity() {
                                 if (currentRoute != null && currentRoute != Screen.Home.route) profileEntry.finish()
                             }
                             if (profileEntry.pending && !playbackUiActive) {
-                                com.nuvio.tv.ui.v2.profile.ProfileEntryIdent(profileEntry, soundEnabled = appearance.introSoundEnabled) {
+                                com.nuvio.tv.ui.v2.profile.ProfileEntryIdent(
+                                    profileEntry,
+                                    soundEnabled = appearance.introSoundEnabled,
+                                    startPicture = startPicture
+                                ) {
                                     v2ProfilePickerRequested = true
                                     hasSelectedProfileThisSession = false
                                 }
+                            } else if (
+                                startPicture.showing && com.nuvio.tv.ui.v2.profile.EntryIdentPolicy.introComing(
+                                    pending = profileEntry.pending,
+                                    nuvioV2 = device.interfaceExperience == com.nuvio.tv.domain.model.InterfaceExperience.NUVIO_V2,
+                                    introEnabled = appearance.introAnimationEnabled,
+                                    startsOnEntry = profileEntry.shouldStartOnEntry(),
+                                    playbackUiActive = playbackUiActive
+                                )
+                            ) {
+                                // The ident starts with the next frame: keep the start window's mark over Home until then.
+                                Box(Modifier.fillMaxSize().startPicture(startPicture))
+                            } else {
+                                SideEffect { startPicture.end() }
                             }
+
+                            val isTrailerPlaying by trailerPlayerPool.isTrailerPlaying.collectAsState()
+                            val playbackActive by screensaverController.playbackActive.collectAsState()
+                            val ambientShowing by ambientIdleController.isShowing.collectAsState()
+                            val dimWhenIdle by themeDataStore.screensaverEnabled.collectAsState(initial = true)
+                            LaunchedEffect(isTrailerPlaying) {
+                                if (!isTrailerPlaying) screensaverController.notifyInteraction()
+                            }
+                            LaunchedEffect(ambientShowing) {
+                                if (!ambientShowing && !screensaverController.overlayVisible.value) {
+                                    trailerPlayerPool.setScreensaverSuppressed(false)
+                                }
+                            }
+                            AmbientModeHost(
+                                controller = ambientIdleController,
+                                allowed = !playbackUiActive &&
+                                    !playbackActive &&
+                                    autoNextOverlay == null &&
+                                    !isTrailerPlaying &&
+                                    !profileEntry.pending &&
+                                    (AMBIENT_BEFORE_OLED_DIM || !dimWhenIdle),
+                                onShown = {
+                                    trailerPlayerPool.setScreensaverSuppressed(true)
+                                    trailerPlayerPool.stop()
+                                }
+                            )
                         }
                     }
                 }
@@ -1419,6 +1504,7 @@ open class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        ambientIdleController.dismiss()
         qualityGovernor.resume(System.nanoTime())
         if (::jankStats.isInitialized) jankStats.isTrackingEnabled = true
         memberAccessRepository.refreshIfStale()
@@ -1471,17 +1557,23 @@ open class MainActivity : ComponentActivity() {
     // and then immediately exiting the app).
     val longPressBackHeld = mutableStateOf(false)
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        screensaverController.notifyInteraction()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN || event.action == KeyEvent.ACTION_UP) {
             qualityGovernor.input(System.nanoTime(), event.keyCode, event.action == KeyEvent.ACTION_DOWN)
         }
-        // OLED screensaver: while the dim overlay is visible, the first key press wakes
-        // it and the whole press (down, repeats, and the matching up) is swallowed so
-        // waking never also navigates. Stray key-ups after wake are swallowed too, so
-        // ACTION_UP handlers below never see an up without its down.
-        if (screensaverController.overlayVisible.value) {
+        // Idle overlays (OLED dimmer, Ambient Mode): while one is visible, the first key
+        // press wakes it and the whole press (down, repeats, and the matching up) is
+        // swallowed so waking never also navigates. Stray key-ups after wake are swallowed
+        // too, so ACTION_UP handlers below never see an up without its down.
+        if (screensaverController.overlayVisible.value || ambientIdleController.isShowing.value) {
             if (event.action == KeyEvent.ACTION_DOWN) {
                 screensaverController.notifyWake()
+                ambientIdleController.dismiss()
                 swallowKeysUntilUp = true
             }
             return true
@@ -1542,16 +1634,20 @@ open class MainActivity : ComponentActivity() {
         externalPlaybackTracker.raiseAutoNextOverlayOnReturn()
         super.onStart()
         startupSyncService.startPeriodicSurfacePulls()
+        androidTvChannelSyncService.onForegroundChanged(true)
         partyRuntime.setAppVisible(true)
         calendarReminders.setAppVisible(true)
+        calendarAppVisibility.visible.value = true
     }
 
     override fun onStop() {
         externalPlaybackTracker.onExternalPlayerCoveredApp()
         super.onStop()
         startupSyncService.stopPeriodicSurfacePulls()
+        androidTvChannelSyncService.onForegroundChanged(false)
         partyRuntime.setAppVisible(false)
         calendarReminders.setAppVisible(false)
+        calendarAppVisibility.visible.value = false
         calendarMenuKeyDown = false
     }
 
@@ -2694,6 +2790,13 @@ private val SEARCH_KEY_IGNORED_ROUTES = setOf(
 /** The remote's Search button opens the app's search, except in the player (a Remote buttons job there) and before sign-in. */
 internal fun searchButtonOpensSearch(route: String?, playbackUiActive: Boolean): Boolean =
     route != null && !playbackUiActive && route != Screen.Player.route && route !in SEARCH_KEY_IGNORED_ROUTES
+
+internal fun resolveStartExperienceMode(storedMode: ExperienceMode?, hasChosenLayout: Boolean): ExperienceMode? =
+    storedMode ?: if (hasChosenLayout) ExperienceMode.ADVANCED else null
+
+/** Launch extras, launcher rows and links open their title once the first-run choice is known, chosen layout or not. */
+internal fun launchTargetsReady(storedMode: ExperienceMode?, hasChosenLayout: Boolean): Boolean =
+    resolveStartExperienceMode(storedMode, hasChosenLayout) != null
 
 /** Pages with a menu entry; a page without one, such as a hidden Calendar opened from a reminder, goes Back to Home. */
 internal fun appRootRoutes(discoverInSidebar: Boolean, calendarInMenu: Boolean): Set<String> = buildSet {

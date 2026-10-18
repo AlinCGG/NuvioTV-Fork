@@ -1,6 +1,7 @@
 package com.nuvio.tv.data.mediaserver
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.nuvio.tv.R
 import com.nuvio.tv.core.tracking.TrackingExternalIds
@@ -59,6 +60,7 @@ class ServerWatched internal constructor(
         return scope.launch {
             val failed = write(targets, played)
             if (failed.isEmpty()) return@launch
+            Log.w(TAG, "Could not mark ${failed.size} of ${targets.size} server items played=$played")
             notifyFailure()
             onFailed(failed)
             failed.mapNotNull { ServerItemRef.parse(it.contentId) }.distinct().forEach { resync(it) }
@@ -78,12 +80,14 @@ class ServerWatched internal constructor(
                         matcher.match(connection, request, forceRefresh = false).map { it to mark }
                     } catch (error: CancellationException) {
                         throw error
-                    } catch (_: Exception) {
+                    } catch (error: Exception) {
+                        Log.w(TAG, "Looking up ${mark.contentType} ${mark.videoId ?: mark.contentId} on ${connection.providerId} failed: ${error.forLog()}")
                         emptyList()
                     }
                 }
             }.distinctBy { it.first }
-            write(targets, played)
+            val failed = write(targets, played)
+            if (failed.isNotEmpty()) Log.w(TAG, "Could not mirror played=$played to ${failed.size} of ${targets.size} server items")
         }
     }
 
@@ -117,7 +121,8 @@ class ServerWatched internal constructor(
             true
         } catch (error: CancellationException) {
             throw error
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            Log.w(TAG, "Setting played=$played on item ${ref.itemId} failed: ${error.forLog()}")
             false
         }
 
@@ -149,6 +154,7 @@ class ServerWatched internal constructor(
     }
 
     private companion object {
+        const val TAG = "ServerWatched"
         const val WRITE_BATCH = 6
         const val TRACKER_IDS_TIMEOUT_MS = 5_000L
     }

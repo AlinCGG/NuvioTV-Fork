@@ -1,6 +1,8 @@
 package com.nuvio.tv.data.mediaserver
 
+import android.content.Context
 import android.util.Log
+import com.nuvio.tv.R
 import com.nuvio.tv.core.poster.CustomPosterUrlResolver.ContentIds
 import com.nuvio.tv.core.poster.withCustomPosterUrl
 import com.nuvio.tv.core.streams.supportsResource
@@ -12,8 +14,8 @@ import com.nuvio.tv.domain.model.CatalogRow
 import com.nuvio.tv.domain.model.ContentType
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.enabledAddons
-import com.nuvio.tv.domain.model.supportsExtra
 import com.nuvio.tv.domain.repository.AddonRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.TimeSource
@@ -91,11 +93,27 @@ private fun MetaPreview.withPosterPatternAfterSwap(before: MetaPreview, pattern:
 }
 
 @Singleton
-class ServerCatalog @Inject constructor(
+class ServerCatalog internal constructor(
     private val repository: ServerRepository,
     private val addonRepository: AddonRepository,
-    private val artwork: ServerArtwork
+    private val artwork: ServerArtwork,
+    private val kindName: (ServerMediaKind) -> String = { if (it == ServerMediaKind.SERIES) "Series" else "Movies" }
 ) {
+    @Inject
+    constructor(
+        @ApplicationContext context: Context,
+        repository: ServerRepository,
+        addonRepository: AddonRepository,
+        artwork: ServerArtwork
+    ) : this(
+        repository = repository,
+        addonRepository = addonRepository,
+        artwork = artwork,
+        kindName = { kind ->
+            context.getString(if (kind == ServerMediaKind.SERIES) R.string.type_series_plural else R.string.type_movies)
+        }
+    )
+
     val detailsLoaded = MutableSharedFlow<ServerItemDetails>(extraBufferCapacity = DETAILS_BUFFER)
 
     private val refreshedHomeRows = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
@@ -113,9 +131,15 @@ class ServerCatalog @Inject constructor(
         }
         .distinctUntilChanged()
 
+    /** Search rows, one per type and server, and the movie and show libraries Discover browses. */
     val searchAddons: Flow<List<Addon>> = addons.map { addons ->
-        addons.map { addon -> addon.copy(catalogs = addon.catalogs.filter { it.supportsExtra("search") }) }
-            .filter { it.catalogs.isNotEmpty() }
+        addons.map { addon ->
+            addon.copy(
+                catalogs = addon.catalogs.filter {
+                    !it.id.startsWith(HOME_ROW_PREFIX) && ServerMediaKind.fromContentType(it.apiType) != null
+                }
+            )
+        }.filter { it.catalogs.isNotEmpty() }
     }
 
     fun libraries(): List<ServerLibraryRef> {
@@ -156,7 +180,8 @@ class ServerCatalog @Inject constructor(
                     provider.collectionPage(session, catalogId.removePrefix(COLLECTION_PREFIX), skip, PAGE_SIZE)
                 }
             }
-            query != null -> searchPage(connection, catalogId, query, skip, posterPattern)
+            catalogId.startsWith(SEARCH_PREFIX) ->
+                searchPage(connection, catalogId.removePrefix(SEARCH_PREFIX), query, skip, posterPattern)
             else -> {
                 val library = connection.libraries.firstOrNull { it.id == catalogId }
                     ?: throw ServerException(ServerFailure.NOT_FOUND)
@@ -268,16 +293,22 @@ class ServerCatalog @Inject constructor(
                 rawType = library.kind.contentType,
                 id = library.id,
                 name = "$rowLabel · ${library.name}",
-                extra = buildList {
-                    add(CatalogExtra(name = "skip"))
-                    if (library.kind != ServerMediaKind.COLLECTION && provider.supports(ServerCapability.SEARCH)) {
-                        add(CatalogExtra(name = "search"))
-                    }
-                },
+                extra = listOf(CatalogExtra(name = "skip")),
                 showInHome = true,
                 hasExplicitShowInHome = true
             )
         }
+        val searches = SEARCH_KINDS
+            .filter { kind -> provider.supports(ServerCapability.SEARCH) && libraries.any { it.holds(kind) } }
+            .map { kind ->
+                CatalogDescriptor(
+                    type = kind.domainType(),
+                    rawType = kind.contentType,
+                    id = SEARCH_PREFIX + kind.contentType,
+                    name = "$rowLabel · ${kindName(kind)}",
+                    extra = listOf(CatalogExtra(name = "search", isRequired = true))
+                )
+            }
         val label = repository.sourceLabel(connection)
         return Addon(
             id = addonId(connection.id),
@@ -287,7 +318,7 @@ class ServerCatalog @Inject constructor(
             description = null,
             logo = null,
             baseUrl = baseUrl(connection.id),
-            catalogs = catalogs,
+            catalogs = catalogs + searches,
             types = listOf(ContentType.MOVIE, ContentType.SERIES),
             resources = listOf(AddonResource(name = "catalog", types = emptyList(), idPrefixes = null))
         )
@@ -318,29 +349,29 @@ class ServerCatalog @Inject constructor(
 
     private suspend fun searchPage(
         connection: ServerConnection,
-        libraryId: String,
-        query: String,
+        contentType: String,
+        query: String?,
         skip: Int,
         posterPattern: String
     ): Page {
-        if (skip > 0) return Page(emptyList(), null)
-        val library = connection.libraries.firstOrNull { it.id == libraryId } ?: throw ServerException(ServerFailure.NOT_FOUND)
-        val titles = serverSearch(connection, library, query)
+        val kind = ServerMediaKind.fromContentType(contentType)
+        if (query == null || kind == null || skip > 0) return Page(emptyList(), null)
+        val titles = serverSearch(connection, kind, query)
         return Page(present(connection, titles, posterPattern), null)
     }
 
     /**
-     * One search per library on a server at a time. A server keeps working on a search the app has
-     * stopped waiting for, so a newer word waits for it, up to [searchWaitMs], instead of piling up
-     * behind it. The same word already running is shared. A search nobody waits for any more is
-     * dropped once that wait is over.
+     * One search per type on a server at a time, across that type's libraries. A server keeps
+     * working on a search the app has stopped waiting for, so a newer word waits for it, up to
+     * [searchWaitMs], instead of piling up behind it. The same word already running is shared. A
+     * search nobody waits for any more is dropped once that wait is over.
      */
-    private suspend fun serverSearch(connection: ServerConnection, library: ServerLibrary, query: String): List<ServerTitle> {
-        val key = "${connection.id}/${library.id}"
+    private suspend fun serverSearch(connection: ServerConnection, kind: ServerMediaKind, query: String): List<ServerTitle> {
+        val key = "${connection.id}/${kind.contentType}"
         while (true) {
             val search = searchLock.withLock {
                 val running = serverSearches[key]?.takeIf { it.result.isActive && (it.matches(query) || it.waitLeftMs() > 0) }
-                    ?: ServerSearch(query, searchWaitMs, startSearch(connection, library, query)).also { serverSearches[key] = it }
+                    ?: ServerSearch(query, searchWaitMs, startSearch(connection, kind, query)).also { serverSearches[key] = it }
                 running.also { if (it.matches(query)) it.waiters.incrementAndGet() }
             }
             if (!search.matches(query)) {
@@ -362,11 +393,12 @@ class ServerCatalog @Inject constructor(
         }
     }
 
-    private fun startSearch(connection: ServerConnection, library: ServerLibrary, query: String): Deferred<List<ServerTitle>> =
+    private fun startSearch(connection: ServerConnection, kind: ServerMediaKind, query: String): Deferred<List<ServerTitle>> =
         refreshScope.async {
             repository.call(connection.id) { provider, session ->
                 if (!provider.supports(ServerCapability.SEARCH)) throw ServerException(ServerFailure.UNSUPPORTED)
-                provider.search(session, library, query, SEARCH_LIMIT)
+                val libraries = session.connection.selectedLibraries(kind)
+                if (libraries.isEmpty()) emptyList() else provider.search(session, kind, libraries, query, SEARCH_LIMIT)
             }
         }
 
@@ -419,6 +451,8 @@ class ServerCatalog @Inject constructor(
         private const val ARTWORK_SETTLE_MS = 8_000L
         private const val COLLECTION_PREFIX = "collection:"
         private const val HOME_ROW_PREFIX = "home:"
+        private const val SEARCH_PREFIX = "search."
+        private val SEARCH_KINDS = listOf(ServerMediaKind.MOVIE, ServerMediaKind.SERIES)
         private const val BASE_URL_PREFIX = "nuvio-server://"
         private const val ADDON_ID_PREFIX = "server."
 

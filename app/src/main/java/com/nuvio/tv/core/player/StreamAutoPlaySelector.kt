@@ -58,6 +58,26 @@ object StreamAutoPlaySelector {
             (AppFeaturePolicy.inAppTrailerPlaybackEnabled && stream.youTubeIdToResolve() != null)
     }
 
+    /**
+     * The best playable stream of the release [nextFilename] names, from any add-on, and only
+     * from [bingeGroup] when one is given. Several add-ons can list the same file, so the matches
+     * are ranked rather than taken in list order.
+     */
+    fun selectByFilename(
+        streams: List<Stream>,
+        nextFilename: String,
+        bingeGroup: String? = null,
+        debridStreamPreferences: DebridStreamPreferences? = null
+    ): Stream? {
+        val matches = streams.filter { stream ->
+            !stream.isExternal() &&
+                (bingeGroup == null || stream.behaviorHints?.bingeGroup == bingeGroup) &&
+                FilenameEpisodeMatcher.matches(stream.behaviorHints?.filename, nextFilename) &&
+                isPlayable(stream)
+        }
+        return StreamQualityRank.rank(matches, debridStreamPreferences).firstOrNull()
+    }
+
 
 
     fun selectAutoPlayStream(

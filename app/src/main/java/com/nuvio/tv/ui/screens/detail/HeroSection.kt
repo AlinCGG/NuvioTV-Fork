@@ -87,6 +87,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.painter.Painter
 import coil3.request.ImageRequest
@@ -202,10 +203,18 @@ fun HeroContentSection(
         animationSpec = tween(600),
         label = "logoWidth"
     )
+    // During a trailer the hero fills the screen so the logo sits at the bottom
+    // on screens taller than the hero (lower-density TV boxes).
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val heroHeight by animateDpAsState(
+        targetValue = if (isTrailerPlaying) maxOf(540.dp, screenHeight) else 540.dp,
+        animationSpec = tween(600),
+        label = "heroHeight"
+    )
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(540.dp)
+            .height(heroHeight)
             .drawWithContent {
                 drawContent()
                 com.nuvio.tv.core.performance.DetailEntryTrace.mark("hero_draw", once = true)

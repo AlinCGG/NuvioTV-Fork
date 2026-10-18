@@ -66,6 +66,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.exp
+import com.nuvio.tv.ui.screens.ambient.AmbientDialogEffect
 
 @Composable
 fun SynopsisDescription(
@@ -215,6 +216,7 @@ fun SynopsisOverlay(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        AmbientDialogEffect(onDismiss)
         Box(
             modifier = Modifier
                 .fillMaxSize()

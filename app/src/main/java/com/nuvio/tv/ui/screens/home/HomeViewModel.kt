@@ -439,9 +439,11 @@ class HomeViewModel @Inject constructor(
     @Volatile internal var mdbBatchHasFired: Boolean = false
     internal val cwMetaCache: MutableMap<String, CwMetaSummary?> = createLruMap(MAX_CW_CACHE_SIZE)
     internal val cwMetaNegativeCacheTimestamps: MutableMap<String, Long> = createLruMap(MAX_CW_CACHE_SIZE)
+    internal val cwMetaRefreshAtMs: MutableMap<String, Long> = createLruMap(MAX_CW_CACHE_SIZE)
+    internal val cwMetaStaleKeys: MutableSet<String> = ConcurrentHashMap.newKeySet()
     /** Ultra-light cache for badge evaluation: contentId → set of aired (season, episode) pairs. */
     internal val cwBadgeEpisodeCache: MutableMap<String, Set<Pair<Int, Int>>?> = createLruMap(MAX_CW_CACHE_SIZE)
-    /** Per-series earliest upcoming season release date (epochMs) for smart TTL scheduling. */
+    /** Per-series check-again time (epochMs): next known release, else a fallback interval. */
     internal val cwBadgeNextSeasonMs: MutableMap<String, Long> = createLruMap(MAX_CW_CACHE_SIZE)
     /** Snapshot of watchedShowEpisodes keys from the last badge evaluation cycle. */
     @Volatile
@@ -596,6 +598,8 @@ class HomeViewModel @Inject constructor(
                     // profile doesn't leak into the new one.
                     cwMetaCache.clear()
                     cwMetaNegativeCacheTimestamps.clear()
+                    cwMetaRefreshAtMs.clear()
+                    cwMetaStaleKeys.clear()
                     cwBadgeEpisodeCache.clear()
                     cwBadgeNextSeasonMs.clear()
                     cwTmdbIdCache.clear()
@@ -656,6 +660,8 @@ class HomeViewModel @Inject constructor(
     private fun clearAllCwInMemoryCaches() {
         cwMetaCache.clear()
         cwMetaNegativeCacheTimestamps.clear()
+        cwMetaRefreshAtMs.clear()
+        cwMetaStaleKeys.clear()
         cwBadgeEpisodeCache.clear()
         cwBadgeNextSeasonMs.clear()
         cwTmdbIdCache.clear()
@@ -853,6 +859,8 @@ class HomeViewModel @Inject constructor(
                     if (previousSource != null && previousSource != source && !profileChanged) {
                         // Genuine in-profile source change — clear CW caches to prevent mixing.
                         cwMetaCache.clear()
+                        cwMetaRefreshAtMs.clear()
+                        cwMetaStaleKeys.clear()
                         cwEnrichedNextUpOverlay.clear()
                         cwEnrichedInProgressOverlay.clear()
                         discoveredOlderNextUpItems.clear()

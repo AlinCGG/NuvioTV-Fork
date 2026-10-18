@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Tytuły otwierają się ze szczegółami z Twoich dodatków i synchronizują jak każdy inny tytuł z katalogu, a odtwarzanie i oznaczenia obejrzanych nadal trafiają do %1$s. Niektóre tytuły mogą się nie dopasować lub nie odtworzyć, jeśli dodatki inaczej je numerują lub identyfikują.</string>
     <string name="servers_import_continue_watching">Importuj Kontynuuj oglądanie</string>
     <string name="servers_import_continue_watching_description">Tytuły zaczęte na %1$s pojawiają się w Kontynuuj oglądanie na stronie głównej. Oznaczenia obejrzanych są uzgadniane w obu przypadkach.</string>
+    <string name="servers_import_watch_state">Importuj postęp oglądania</string>
+    <string name="servers_import_watch_state_description">Dodaj tytuły oglądane na %1$s do Kontynuuj oglądanie wraz z oznaczeniami obejrzanych. Odtwarzanie i tak wznawia się z %1$s.</string>
+    <string name="servers_resume_row">Kontynuuj oglądanie</string>
     <string name="servers_sign_in_again">Zaloguj się ponownie</string>
     <string name="servers_second_address">Drugi adres</string>
     <string name="servers_second_address_description">Używany, gdy pierwszy adres jest nieosiągalny, na przykład najpierw adres domowy, a potem internetowy.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Zaufany certyfikat</string>
     <string name="servers_trusted_certificate_forget">Zapomnij</string>
     <string name="servers_failure_unsupported">Serwer nie obsługuje tej pozycji.</string>
+    <string name="servers_failure_stream_limit">Serwer nie zezwala teraz na więcej strumieni dla tego konta.</string>
     <string name="servers_failure_incomplete">Biblioteka tego serwera jest jeszcze sprawdzana. Spróbuj ponownie za chwilę.</string>
     <string name="servers_playback_failed">Nie udało się rozpocząć odtwarzania z serwera.</string>
     <string name="servers_audio_switch_failed">Nie udało się przełączyć ścieżki audio.</string>

@@ -91,4 +91,10 @@ class ProfileSettingsCredentialPolicyTest {
         assertTrue(shouldExcludePreferenceFromProfileSettingsSync("player_settings", "tunnel_dead_audio_app_version"))
         assertTrue(shouldExcludePreferenceFromProfileSettingsSync("player_settings", "audio_rejection_reset_token"))
     }
+
+    @Test
+    fun `4k trailers stay on the device while other trailer settings sync`() {
+        assertTrue(shouldExcludePreferenceFromProfileSettingsSync("trailer_settings", "trailer_allow_4k"))
+        assertFalse(shouldExcludePreferenceFromProfileSettingsSync("trailer_settings", "trailer_enabled"))
+    }
 }
