@@ -1,8 +1,11 @@
 package com.nuvio.tv
 
+import com.nuvio.tv.data.local.resolveExperienceMode
+import com.nuvio.tv.domain.model.ExperienceMode
 import com.nuvio.tv.ui.navigation.Screen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -29,5 +32,22 @@ class AppRootRoutesTest {
         assertFalse(searchButtonOpensSearch(Screen.ProfileSelection.route, playbackUiActive = false))
         assertFalse(searchButtonOpensSearch(Screen.AuthQrSignIn.route, playbackUiActive = false))
         assertFalse(searchButtonOpensSearch(null, playbackUiActive = false))
+    }
+
+    @Test fun `a fresh profile that never picked a layout follows launch extras and links`() {
+        val freshMode = resolveExperienceMode(storedMode = null, essentialChosen = false)
+        assertTrue(launchTargetsReady(freshMode, hasChosenLayout = false))
+        assertEquals(ExperienceMode.ADVANCED, resolveStartExperienceMode(freshMode, hasChosenLayout = false))
+    }
+
+    @Test fun `older profiles and Essential profiles follow them too`() {
+        assertTrue(launchTargetsReady(ExperienceMode.ADVANCED, hasChosenLayout = true))
+        assertTrue(launchTargetsReady(ExperienceMode.ESSENTIAL, hasChosenLayout = false))
+        assertTrue(launchTargetsReady(null, hasChosenLayout = true))
+    }
+
+    @Test fun `with no experience mode and no layout the first-run choice still comes first`() {
+        assertNull(resolveStartExperienceMode(null, hasChosenLayout = false))
+        assertFalse(launchTargetsReady(null, hasChosenLayout = false))
     }
 }
