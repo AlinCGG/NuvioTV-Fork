@@ -513,7 +513,8 @@ class IecAudioTimestampClockTest {
         val sink = IecPassthroughAudioSink(
             sink = SilentSink(),
             trackFactory = ReadyFactory(track),
-            nanoTime = { now[0] }
+            nanoTime = { now[0] },
+            keepAliveEnabled = false
         )
         sink.configure(trueHdFormat(), 0, null)
         sink.play()
@@ -543,7 +544,8 @@ class IecAudioTimestampClockTest {
         val sink = IecPassthroughAudioSink(
             sink = SilentSink(),
             trackFactory = ReadyFactory(track),
-            nanoTime = { now[0] }
+            nanoTime = { now[0] },
+            keepAliveEnabled = false
         )
         sink.configure(trueHdFormat(), 0, null)
         sink.play()
