@@ -6,6 +6,7 @@ import com.nuvio.tv.R
 import com.nuvio.tv.data.local.RemoteButtonBinding
 import com.nuvio.tv.data.local.RemoteButtonJob
 import com.nuvio.tv.data.local.RemoteButtonMap
+import com.nuvio.tv.data.local.RemotePressKind
 import java.util.Locale
 
 internal fun remoteKeyLabel(context: Context, keyCode: Int): String {
@@ -40,8 +41,10 @@ internal fun remoteKeyLabel(context: Context, keyCode: Int): String {
         KeyEvent.KEYCODE_TV -> R.string.remote_key_live_tv
         KeyEvent.KEYCODE_SETTINGS -> R.string.remote_key_settings
         KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> R.string.remote_key_ok
-        KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
-        KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> R.string.remote_key_arrow
+        KeyEvent.KEYCODE_DPAD_UP -> R.string.remote_key_up
+        KeyEvent.KEYCODE_DPAD_DOWN -> R.string.remote_key_down
+        KeyEvent.KEYCODE_DPAD_LEFT -> R.string.remote_key_left
+        KeyEvent.KEYCODE_DPAD_RIGHT -> R.string.remote_key_right
         KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> R.string.remote_key_back
         else -> null
     }
@@ -63,6 +66,7 @@ internal fun remoteJobLabel(context: Context, job: RemoteButtonJob): String = co
     RemoteButtonJob.NOTHING -> R.string.remote_buttons_job_nothing
     RemoteButtonJob.STATS -> R.string.remote_buttons_job_stats
     RemoteButtonJob.INFO -> R.string.cd_stream_info
+    RemoteButtonJob.SHOW_DETAILS -> R.string.remote_buttons_job_show_details
     RemoteButtonJob.SOURCES -> R.string.cd_sources
     RemoteButtonJob.EPISODES -> R.string.player_pill_episodes
     RemoteButtonJob.AUDIO -> R.string.cd_audio_tracks
@@ -95,10 +99,17 @@ internal fun remoteBindingLabel(context: Context, binding: RemoteButtonBinding):
     else -> remoteJobLabel(context, binding.job)
 }
 
-internal fun remoteJobDescription(context: Context, job: RemoteButtonJob): String? = when (job) {
-    RemoteButtonJob.SEEK_FORWARD, RemoteButtonJob.SEEK_BACK -> context.getString(R.string.remote_buttons_job_seek_desc)
+internal fun remoteJobDescription(
+    context: Context,
+    job: RemoteButtonJob,
+    kind: RemotePressKind = RemotePressKind.PRESS
+): String? = when (job) {
+    RemoteButtonJob.SEEK_FORWARD, RemoteButtonJob.SEEK_BACK -> context.getString(
+        if (kind == RemotePressKind.HOLD) R.string.remote_buttons_job_seek_hold_desc else R.string.remote_buttons_job_seek_desc
+    )
     RemoteButtonJob.SKIP_FORWARD, RemoteButtonJob.SKIP_BACK -> context.getString(R.string.remote_buttons_job_skip_desc)
     RemoteButtonJob.SKIP_INTRO_OR_NEXT -> context.getString(R.string.remote_buttons_job_skip_intro_or_next_desc)
     RemoteButtonJob.JUMP_TO_PERCENT -> context.getString(R.string.remote_buttons_number_keys_desc)
+    RemoteButtonJob.SHOW_DETAILS -> context.getString(R.string.remote_buttons_job_show_details_desc)
     else -> null
 }

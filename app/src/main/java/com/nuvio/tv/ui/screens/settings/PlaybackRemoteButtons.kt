@@ -1,6 +1,8 @@
 package com.nuvio.tv.ui.screens.settings
 
+import android.content.Context
 import android.view.KeyEvent
+import android.view.ViewConfiguration
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,8 +29,10 @@ import com.nuvio.tv.data.local.RemoteButtonBinding
 import com.nuvio.tv.data.local.RemoteButtonJob
 import com.nuvio.tv.data.local.RemoteButtonMap
 import com.nuvio.tv.data.local.RemoteKeyKind
+import com.nuvio.tv.data.local.RemotePressKind
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
+import com.nuvio.tv.ui.screens.player.RemotePressTracker
 import com.nuvio.tv.ui.screens.player.remoteBindingLabel
 import com.nuvio.tv.ui.screens.player.remoteJobDescription
 import com.nuvio.tv.ui.screens.player.remoteJobLabel
@@ -46,8 +50,10 @@ internal fun PlaybackRemoteButtonsSection(
 ) {
     val context = LocalContext.current
     var learning by remember { mutableStateOf(false) }
-    var editingKey by remember { mutableStateOf<Int?>(null) }
-    var sizeFor by remember { mutableStateOf<Pair<Int, RemoteButtonJob>?>(null) }
+    var numberKeys by remember { mutableStateOf(false) }
+    var kindFor by remember { mutableStateOf<Int?>(null) }
+    var editing by remember { mutableStateOf<Pair<Int, RemotePressKind>?>(null) }
+    var sizeFor by remember { mutableStateOf<Triple<Int, RemotePressKind, RemoteButtonJob>?>(null) }
 
     RemoteButtonsNote(stringResource(R.string.remote_buttons_intro))
     SettingsActionRow(
@@ -65,14 +71,14 @@ internal fun PlaybackRemoteButtonsSection(
                     context,
                     if (map.numberKeysJump) RemoteButtonJob.JUMP_TO_PERCENT else RemoteButtonJob.NOTHING
                 ),
-                onClick = { editingKey = key }
+                onClick = { numberKeys = true }
             )
         } else {
             SettingsActionRow(
                 title = remoteKeyLabel(context, key),
-                subtitle = if (map.isCustomKey(key)) stringResource(R.string.remote_buttons_added) else null,
-                value = remoteBindingLabel(context, map.bindingFor(key) ?: RemoteButtonBinding.NOTHING),
-                onClick = { editingKey = key }
+                subtitle = remoteRowSubtitle(context, map, key),
+                value = remotePressValue(context, map, key),
+                onClick = { kindFor = key }
             )
         }
     }
@@ -84,19 +90,19 @@ internal fun PlaybackRemoteButtonsSection(
         onClick = { onChange(RemoteButtonMap.DEFAULT) }
     )
     RemoteButtonsNote(stringResource(R.string.remote_buttons_mapper_note))
+    RemoteButtonsNote(stringResource(R.string.remote_buttons_hold_note))
 
     if (learning) {
         RemoteButtonLearnDialog(
             onDismiss = { learning = false },
-            onLearned = { key ->
+            onLearned = { key, kind ->
                 learning = false
-                editingKey = key
+                editing = key to kind
             }
         )
     }
 
-    val key = editingKey
-    if (key == RemoteButtonMap.NUMBER_KEYS_ROW) {
+    if (numberKeys) {
         val options = listOf(RemoteButtonJob.JUMP_TO_PERCENT, RemoteButtonJob.NOTHING)
         SettingsSingleChoiceDialog(
             title = stringResource(R.string.remote_buttons_job_title, stringResource(R.string.remote_buttons_number_keys)),
@@ -104,52 +110,106 @@ internal fun PlaybackRemoteButtonsSection(
             selectedValue = if (map.numberKeysJump) RemoteButtonJob.JUMP_TO_PERCENT else RemoteButtonJob.NOTHING,
             onOptionSelected = {
                 onChange(map.withNumberKeysJump(it == RemoteButtonJob.JUMP_TO_PERCENT))
-                editingKey = null
+                numberKeys = false
             },
-            onDismiss = { editingKey = null }
+            onDismiss = { numberKeys = false }
         )
-    } else if (key != null) {
-        val current = map.bindingFor(key) ?: RemoteButtonBinding.NOTHING
-        val options = buildList<SettingsPickerOption<RemoteButtonJob?>> {
-            RemoteButtonMap.jobsFor(key).forEach {
-                add(SettingsPickerOption(it, remoteJobLabel(context, it), remoteJobDescription(context, it)))
-            }
-            if (map.isCustomKey(key) && key in map.rowKeys) {
-                add(SettingsPickerOption(null, stringResource(R.string.remote_buttons_remove)))
-            }
+    }
+
+    kindFor?.let { key ->
+        val hold = map.holdFor(key)
+        val options = buildList<SettingsPickerOption<RemotePressKind?>> {
+            add(
+                SettingsPickerOption(
+                    RemotePressKind.PRESS, stringResource(R.string.remote_buttons_press),
+                    remotePressValue(context, map, key)
+                )
+            )
+            add(
+                SettingsPickerOption(
+                    RemotePressKind.HOLD, stringResource(R.string.remote_buttons_hold),
+                    hold?.let { remoteBindingLabel(context, it) } ?: stringResource(R.string.remote_buttons_hold_not_set)
+                )
+            )
+            if (map.isCustomKey(key)) add(SettingsPickerOption(null, stringResource(R.string.remote_buttons_remove)))
+        }
+        val kindNote = stringResource(R.string.remote_buttons_kind_subtitle)
+        SettingsSingleChoiceDialog(
+            title = stringResource(R.string.remote_buttons_kind_title, remoteKeyLabel(context, key)),
+            subtitle = if (RemoteButtonMap.isHiddenControlsKey(key)) {
+                stringResource(R.string.remote_buttons_up_down_desc) + " " + kindNote
+            } else kindNote,
+            options = options,
+            selectedValue = RemotePressKind.PRESS,
+            width = 480.dp,
+            onOptionSelected = { kind ->
+                kindFor = null
+                if (kind == null) onChange(map.without(key)) else editing = key to kind
+            },
+            onDismiss = { kindFor = null }
+        )
+    }
+
+    editing?.let { (key, kind) ->
+        val current = map.bindingFor(key, kind) ?: RemoteButtonBinding.NOTHING
+        val options = RemoteButtonMap.jobsFor(key, kind).map {
+            SettingsPickerOption(it, remoteJobLabel(context, it), remoteJobDescription(context, it, kind))
         }
         SettingsSingleChoiceDialog(
-            title = stringResource(R.string.remote_buttons_job_title, remoteKeyLabel(context, key)),
+            title = stringResource(
+                if (kind == RemotePressKind.HOLD) R.string.remote_buttons_hold_job_title else R.string.remote_buttons_job_title,
+                remoteKeyLabel(context, key)
+            ),
+            subtitle = if (RemoteButtonMap.isHiddenControlsKey(key)) stringResource(R.string.remote_buttons_up_down_desc) else null,
             options = options,
             selectedValue = current.job,
             width = 480.dp,
             maxHeight = 380.dp,
             onOptionSelected = { job ->
-                editingKey = null
-                when {
-                    job == null -> onChange(map.without(key))
-                    job.needsSkipSize -> sizeFor = key to job
-                    else -> onChange(map.with(key, RemoteButtonBinding(job)))
-                }
+                editing = null
+                if (job.needsSkipSize) sizeFor = Triple(key, kind, job)
+                else onChange(map.with(key, kind, RemoteButtonBinding(job)))
             },
-            onDismiss = { editingKey = null }
+            onDismiss = { editing = null }
         )
     }
 
-    sizeFor?.let { (sizeKey, job) ->
-        val current = map.bindingFor(sizeKey)?.takeIf { it.job == job }?.skipMs ?: RemoteButtonMap.DEFAULT_SKIP_MS
+    sizeFor?.let { (sizeKey, kind, job) ->
+        val current = map.bindingFor(sizeKey, kind)?.takeIf { it.job == job }?.skipMs ?: RemoteButtonMap.DEFAULT_SKIP_MS
         SettingsSingleChoiceDialog(
-            title = stringResource(R.string.remote_buttons_skip_size_title, remoteKeyLabel(context, sizeKey)),
+            title = stringResource(
+                if (kind == RemotePressKind.HOLD) R.string.remote_buttons_hold_skip_size_title else R.string.remote_buttons_skip_size_title,
+                remoteKeyLabel(context, sizeKey)
+            ),
             subtitle = stringResource(R.string.remote_buttons_skip_size_subtitle),
             options = RemoteButtonMap.SKIP_SIZES_MS.map { SettingsPickerOption(it, remoteSkipSizeLabel(context, it)) },
             selectedValue = current,
             onOptionSelected = { ms ->
-                onChange(map.with(sizeKey, RemoteButtonBinding(job, ms)))
+                onChange(map.with(sizeKey, kind, RemoteButtonBinding(job, ms)))
                 sizeFor = null
             },
             onDismiss = { sizeFor = null }
         )
     }
+}
+
+/** Up and Down without a press job keep showing the controls, so they read "Not set" rather than "Do nothing". */
+private fun remotePressValue(context: Context, map: RemoteButtonMap, key: Int): String =
+    map.bindingFor(key)?.let { remoteBindingLabel(context, it) } ?: context.getString(
+        if (RemoteButtonMap.isHiddenControlsKey(key)) R.string.remote_buttons_hold_not_set else R.string.remote_buttons_job_nothing
+    )
+
+/** The hold job first, then where the button came from. */
+private fun remoteRowSubtitle(context: Context, map: RemoteButtonMap, key: Int): String? {
+    val parts = listOfNotNull(
+        map.holdFor(key)?.let { context.getString(R.string.remote_buttons_hold_value, remoteBindingLabel(context, it)) },
+        when {
+            RemoteButtonMap.isHiddenControlsKey(key) -> context.getString(R.string.remote_buttons_up_down_row)
+            map.isCustomKey(key) -> context.getString(R.string.remote_buttons_added)
+            else -> null
+        }
+    )
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
 @Composable
@@ -165,12 +225,14 @@ private fun RemoteButtonsNote(text: String) {
 @Composable
 private fun RemoteButtonLearnDialog(
     onDismiss: () -> Unit,
-    onLearned: (Int) -> Unit
+    onLearned: (Int, RemotePressKind) -> Unit
 ) {
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
+    val tracker = remember { RemotePressTracker(ViewConfiguration.getLongPressTimeout().toLong()) }
     var message by remember { mutableStateOf<String?>(null) }
     var waitedLong by remember { mutableStateOf(false) }
+    var holdSeen by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { focusRequester.requestFocusAfterFrames() }
     LaunchedEffect(Unit) {
         delay(LEARN_HINT_DELAY_MS)
@@ -206,9 +268,25 @@ private fun RemoteButtonLearnDialog(
                             }
                             true
                         }
-                        RemoteKeyKind.ASSIGNABLE -> {
+                        RemoteKeyKind.ASSIGNABLE, RemoteKeyKind.HIDDEN_CONTROLS -> {
+                            val target = RemoteButtonMap.learnTarget(code)
                             if (native.action == KeyEvent.ACTION_DOWN && native.repeatCount == 0) {
-                                onLearned(RemoteButtonMap.learnTarget(code))
+                                tracker.start(code, native.eventTime)
+                                holdSeen = false
+                                message = null
+                            } else if (tracker.isTracking(code)) {
+                                // The job list opens once the button is let go, so none of its repeats land there.
+                                when (tracker.onKey(native)) {
+                                    RemotePressTracker.Outcome.HOLD -> if (native.action == KeyEvent.ACTION_UP) {
+                                        onLearned(target, RemotePressKind.HOLD)
+                                    } else {
+                                        holdSeen = true
+                                        message = context.getString(R.string.remote_buttons_learn_let_go)
+                                    }
+                                    RemotePressTracker.Outcome.RELEASED -> if (holdSeen) onLearned(target, RemotePressKind.HOLD)
+                                    RemotePressTracker.Outcome.PRESS -> onLearned(target, RemotePressKind.PRESS)
+                                    else -> Unit
+                                }
                             }
                             true
                         }

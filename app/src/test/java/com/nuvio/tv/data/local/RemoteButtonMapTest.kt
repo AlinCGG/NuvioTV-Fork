@@ -133,11 +133,145 @@ class RemoteButtonMapTest {
     }
 
     @Test
+    fun `a saved setup from before holds reads back with its press jobs and no holds`() {
+        val old = "digits=0,${KeyEvent.KEYCODE_PROG_GREEN}=skip_back@30000,${KeyEvent.KEYCODE_F2}=leave,${KeyEvent.KEYCODE_7}=jump_percent"
+        val read = RemoteButtonMap.decode(old)
+        assertEquals(RemoteButtonBinding(RemoteButtonJob.SKIP_BACK, 30_000L), read.overrideFor(KeyEvent.KEYCODE_PROG_GREEN))
+        assertEquals(RemoteButtonJob.LEAVE, read.overrideFor(KeyEvent.KEYCODE_F2)?.job)
+        assertEquals(RemoteButtonJob.JUMP_TO_PERCENT, read.overrideFor(KeyEvent.KEYCODE_7)?.job)
+        assertFalse(read.numberKeysJump)
+        assertTrue(read.rowKeys.none { read.holdFor(it) != null })
+        assertEquals(old, read.encode())
+    }
+
+    @Test
+    fun `a hold job is saved next to the press job and reads back`() {
+        val map = default
+            .withHold(KeyEvent.KEYCODE_MENU, RemoteButtonBinding(RemoteButtonJob.SOURCES))
+            .withHold(KeyEvent.KEYCODE_PROG_RED, RemoteButtonBinding(RemoteButtonJob.SKIP_FORWARD, 60_000L))
+            .with(KeyEvent.KEYCODE_F1, RemotePressKind.HOLD, RemoteButtonBinding(RemoteButtonJob.LEAVE))
+        val read = RemoteButtonMap.decode(map.encode())
+        assertEquals(map, read)
+        assertEquals(RemoteButtonJob.STATS, read.takeOver(KeyEvent.KEYCODE_MENU)?.press?.job)
+        assertEquals(RemoteButtonJob.SOURCES, read.takeOver(KeyEvent.KEYCODE_MENU)?.hold?.job)
+        assertEquals(60_000L, read.holdFor(KeyEvent.KEYCODE_PROG_RED)?.skipMs)
+        val f1 = read.takeOver(KeyEvent.KEYCODE_F1)
+        assertNull(f1?.press)
+        assertEquals(RemoteButtonJob.LEAVE, f1?.hold?.job)
+        assertTrue(KeyEvent.KEYCODE_F1 in read.rowKeys)
+        assertEquals(RemoteButtonJob.LEAVE, read.bindingFor(KeyEvent.KEYCODE_F1, RemotePressKind.HOLD)?.job)
+    }
+
+    @Test
+    fun `a player key is taken over as soon as it has a hold job`() {
+        assertNull(default.takeOver(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+        val held = default.withHold(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, RemoteButtonBinding(RemoteButtonJob.SPEED))
+        val jobs = held.takeOver(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+        assertEquals(RemoteButtonJob.PLAY_PAUSE, jobs?.press?.job)
+        assertEquals(RemoteButtonJob.SPEED, jobs?.hold?.job)
+        assertNull(held.takeOver(KeyEvent.KEYCODE_MEDIA_PLAY))
+    }
+
+    @Test
+    fun `a hold that does nothing is removed and removing a button drops both jobs`() {
+        val held = default.withHold(KeyEvent.KEYCODE_MENU, RemoteButtonBinding(RemoteButtonJob.SOURCES))
+        assertEquals(default, held.withHold(KeyEvent.KEYCODE_MENU, RemoteButtonBinding.NOTHING))
+        val both = default
+            .with(KeyEvent.KEYCODE_F1, RemoteButtonBinding(RemoteButtonJob.STATS))
+            .withHold(KeyEvent.KEYCODE_F1, RemoteButtonBinding(RemoteButtonJob.SOURCES))
+        assertEquals(default, both.without(KeyEvent.KEYCODE_F1))
+        assertEquals(default, RemoteButtonMap.decode("${KeyEvent.KEYCODE_MENU}h=nothing"))
+    }
+
+    @Test
+    fun `holds on locked keys and jump holds are not read back`() {
+        val sneaky = RemoteButtonMap.decode("${KeyEvent.KEYCODE_BACK}h=stats,${KeyEvent.KEYCODE_DPAD_LEFT}h=sources,${KeyEvent.KEYCODE_5}h=jump_percent,${KeyEvent.KEYCODE_MEDIA_PLAY}h=speed")
+        assertEquals(default, sneaky)
+        assertFalse(RemoteButtonJob.JUMP_TO_PERCENT in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_5, RemotePressKind.HOLD))
+        assertTrue(RemoteButtonJob.JUMP_TO_PERCENT in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_5, RemotePressKind.PRESS))
+    }
+
+    @Test
+    fun `up and down take a job only while the controls are hidden`() {
+        assertEquals(RemoteKeyKind.HIDDEN_CONTROLS, RemoteButtonMap.kindOf(KeyEvent.KEYCODE_DPAD_UP))
+        assertEquals(RemoteKeyKind.HIDDEN_CONTROLS, RemoteButtonMap.kindOf(KeyEvent.KEYCODE_DPAD_DOWN))
+        assertEquals(RemoteKeyKind.LOCKED, RemoteButtonMap.kindOf(KeyEvent.KEYCODE_DPAD_LEFT))
+        assertEquals(RemoteKeyKind.LOCKED, RemoteButtonMap.kindOf(KeyEvent.KEYCODE_DPAD_RIGHT))
+        assertTrue(RemoteButtonMap.canLearn(KeyEvent.KEYCODE_DPAD_UP))
+        assertFalse(RemoteButtonMap.canLearn(KeyEvent.KEYCODE_DPAD_RIGHT))
+        assertNull(default.takeOver(KeyEvent.KEYCODE_DPAD_UP, controlsHidden = true))
+        assertFalse(KeyEvent.KEYCODE_DPAD_UP in default.rowKeys)
+        val up = default.with(KeyEvent.KEYCODE_DPAD_UP, RemoteButtonBinding(RemoteButtonJob.AUDIO))
+        assertEquals(RemoteButtonJob.AUDIO, up.takeOver(KeyEvent.KEYCODE_DPAD_UP, controlsHidden = true)?.press?.job)
+        assertNull(up.takeOver(KeyEvent.KEYCODE_DPAD_UP, controlsHidden = false))
+        assertTrue(up.isCustomKey(KeyEvent.KEYCODE_DPAD_UP))
+        assertEquals(KeyEvent.KEYCODE_DPAD_UP, up.rowKeys.last())
+        val down = default.withHold(KeyEvent.KEYCODE_DPAD_DOWN, RemoteButtonBinding(RemoteButtonJob.SOURCES))
+        val jobs = down.takeOver(KeyEvent.KEYCODE_DPAD_DOWN, controlsHidden = true)
+        assertNull(jobs?.press)
+        assertEquals(RemoteButtonJob.SOURCES, jobs?.hold?.job)
+        assertNull(down.takeOver(KeyEvent.KEYCODE_DPAD_DOWN, controlsHidden = false))
+        assertEquals(up, RemoteButtonMap.decode(up.encode()))
+        assertEquals(down, RemoteButtonMap.decode(down.encode()))
+    }
+
+    @Test
     fun `settings page starts with the starting set and the number keys row`() {
         val rows = default.rowKeys
         assertEquals(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, rows.first())
         assertTrue(RemoteButtonMap.NUMBER_KEYS_ROW in rows)
         assertTrue(rows.indexOf(RemoteButtonMap.NUMBER_KEYS_ROW) == rows.indexOf(KeyEvent.KEYCODE_PROG_BLUE) + 1)
         assertFalse(rows.any { RemoteButtonMap.isNumberKey(it) })
+    }
+
+    @Test
+    fun `show details is offered as a press and a hold job and Info keeps stream info`() {
+        assertTrue(RemoteButtonJob.SHOW_DETAILS in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_INFO))
+        assertTrue(RemoteButtonJob.SHOW_DETAILS in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_INFO, RemotePressKind.HOLD))
+        assertTrue(RemoteButtonJob.SHOW_DETAILS in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_5))
+        assertEquals(RemoteButtonJob.INFO, default.overrideFor(KeyEvent.KEYCODE_INFO)?.job)
+        assertTrue(RemoteButtonMap.DEFAULTS.values.none { it.job == RemoteButtonJob.SHOW_DETAILS })
+    }
+
+    @Test
+    fun `show details on Info runs instead of stream info`() {
+        val map = default.with(KeyEvent.KEYCODE_INFO, RemoteButtonBinding(RemoteButtonJob.SHOW_DETAILS))
+        assertEquals(RemoteButtonJob.SHOW_DETAILS, map.overrideFor(KeyEvent.KEYCODE_INFO)?.job)
+        val jobs = map.takeOver(KeyEvent.KEYCODE_INFO)
+        assertEquals(RemoteButtonJob.SHOW_DETAILS, jobs?.press?.job)
+        assertNull(jobs?.hold)
+    }
+
+    @Test
+    fun `show details as a hold keeps the press job`() {
+        val map = default.withHold(KeyEvent.KEYCODE_INFO, RemoteButtonBinding(RemoteButtonJob.SHOW_DETAILS))
+        val jobs = map.takeOver(KeyEvent.KEYCODE_INFO)
+        assertEquals(RemoteButtonJob.INFO, jobs?.press?.job)
+        assertEquals(RemoteButtonJob.SHOW_DETAILS, jobs?.hold?.job)
+    }
+
+    @Test
+    fun `show details survives saving as a press and as a hold`() {
+        val map = default
+            .with(KeyEvent.KEYCODE_PROG_GREEN, RemoteButtonBinding(RemoteButtonJob.SHOW_DETAILS))
+            .withHold(KeyEvent.KEYCODE_MENU, RemoteButtonBinding(RemoteButtonJob.SHOW_DETAILS))
+        val encoded = map.encode()
+        assertTrue(encoded.contains("${KeyEvent.KEYCODE_PROG_GREEN}=show_details"))
+        assertTrue(encoded.contains("${KeyEvent.KEYCODE_MENU}h=show_details"))
+        val decoded = RemoteButtonMap.decode(encoded)
+        assertEquals(map, decoded)
+        assertEquals(RemoteButtonJob.SHOW_DETAILS, decoded.overrideFor(KeyEvent.KEYCODE_PROG_GREEN)?.job)
+        assertEquals(RemoteButtonJob.SHOW_DETAILS, decoded.holdFor(KeyEvent.KEYCODE_MENU)?.job)
+        assertEquals(RemoteButtonJob.SHOW_DETAILS, RemoteButtonJob.fromId("show_details"))
+    }
+
+    @Test
+    fun `show details deals with the pause overlay itself`() {
+        assertTrue(RemoteButtonJob.SHOW_DETAILS.keepsPauseOverlay)
+        assertTrue(RemoteButtonJob.PLAY_PAUSE.keepsPauseOverlay)
+        assertTrue(RemoteButtonJob.NOTHING.keepsPauseOverlay)
+        assertTrue(RemoteButtonJob.LEAVE.keepsPauseOverlay)
+        assertFalse(RemoteButtonJob.INFO.keepsPauseOverlay)
+        assertFalse(RemoteButtonJob.SOURCES.keepsPauseOverlay)
     }
 }
