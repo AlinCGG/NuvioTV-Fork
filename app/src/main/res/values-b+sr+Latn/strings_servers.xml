@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Naslovi se otvaraju sa detaljima iz vaših dodataka i sinhronizuju se kao svaki drugi naslov iz kataloga, a reprodukcija i oznake odgledanog se i dalje šalju na %1$s. Neki naslovi se možda neće poklopiti ili pustiti ako ih vaši dodaci drugačije numerišu ili prepoznaju.</string>
     <string name="servers_import_continue_watching">Uvezi Nastavak gledanja</string>
     <string name="servers_import_continue_watching_description">Naslovi koje ste započeli na %1$s pojavljuju se u Nastavku gledanja na Početnoj. Oznake odgledanog se usklađuju u oba smera.</string>
+    <string name="servers_import_watch_state">Uvezi napredak gledanja</string>
+    <string name="servers_import_watch_state_description">Dodaj naslove koje gledate na %1$s u Nastavak gledanja, zajedno sa oznakama odgledanog. Reprodukcija se u svakom slučaju nastavlja od pozicije na %1$s.</string>
+    <string name="servers_resume_row">Nastavi gledanje</string>
     <string name="servers_sign_in_again">Prijavi se ponovo</string>
     <string name="servers_second_address">Druga adresa</string>
     <string name="servers_second_address_description">Koristi se kada prva adresa nije dostupna, na primer prvo kućna adresa, a zatim internet adresa.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Pouzdani sertifikat</string>
     <string name="servers_trusted_certificate_forget">Zaboravi</string>
     <string name="servers_failure_unsupported">Server ne podržava ovu stavku.</string>
+    <string name="servers_failure_stream_limit">Server trenutno ne dozvoljava više strimova za ovaj nalog.</string>
     <string name="servers_failure_incomplete">Biblioteka ovog servera se još proverava. Pokušajte ponovo za trenutak.</string>
     <string name="servers_playback_failed">Nije moguće pokrenuti reprodukciju sa servera.</string>
     <string name="servers_audio_switch_failed">Nije moguće promeniti zvučni zapis.</string>

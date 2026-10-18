@@ -109,6 +109,7 @@
     <string name="calendar_setting_coming_up">Vrstica Kmalu</string>
     <string name="calendar_setting_coming_up_sub">Vrstica za Nadaljuj z gledanjem z novimi in prihajajočimi epizodami ter filmi iz Koledarja</string>
     <string name="calendar_coming_up_title">Kmalu</string>
+    <string name="calendar_coming_up_takes_upcoming">Ko je vrstica Kmalu v Koledarju vklopljena, so te epizode prikazane v njej.</string>
     <string name="calendar_coming_up_new">Novo</string>
     <string name="calendar_coming_up_today_at">Danes %1$s</string>
     <string name="calendar_coming_up_tonight_at">Nocoj %1$s</string>

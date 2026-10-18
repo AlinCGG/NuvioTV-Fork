@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Dugmad daljinskog</string>
     <string name="remote_buttons_section_desc">Dodelite funkcije dugmadi daljinskog tokom gledanja.</string>
-    <string name="remote_buttons_intro">OK, strelice i „Nazad“ uvek zadržavaju svoje uobičajene funkcije. Jačinom zvuka upravlja uređaj ili televizor.</string>
+    <string name="remote_buttons_intro">Svako dugme može da ima funkciju na pritisak i funkciju na držanje. OK, „Levo“, „Desno“ i „Nazad“ uvek zadržavaju svoje uobičajene funkcije. „Gore“ i „Dole“ mogu da dobiju funkciju za vreme dok su kontrole plejera sakrivene. Jačinom zvuka upravlja uređaj ili televizor.</string>
     <string name="remote_buttons_setup_title">Podesi dugme</string>
-    <string name="remote_buttons_setup_subtitle">Pritisnite ga na daljinskom, pa izaberite funkciju</string>
+    <string name="remote_buttons_setup_subtitle">Pritisnite ga ili ga držite na daljinskom, pa izaberite funkciju</string>
     <string name="remote_buttons_reset">Resetuj svu dugmad</string>
     <string name="remote_buttons_mapper_note">Koristite tvQuickActions ili Button Mapper? Tamo podesite dugme da šalje taster, na primer „Crveno“ ili „Info“, pa ovde izaberite funkciju tog tastera.</string>
+    <string name="remote_buttons_hold_note">Držanje radi kada uređaj prosleđuje držano dugme aplikaciji. Ako se držanje nikad ne pojavi u „Podesi dugme“, to dugme na ovom uređaju ima samo funkciju na pritisak.</string>
     <string name="remote_buttons_number_keys">Dugmad sa brojevima</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = polovina, 0 = početak</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = polovina, 0 = početak</string>
     <string name="remote_buttons_added">Podešeno na ovom uređaju</string>
+    <string name="remote_buttons_up_down_row">Dok su kontrole sakrivene</string>
+    <string name="remote_buttons_up_down_desc">Samo dok su kontrole plejera sakrivene. Kada su kontrole prikazane, „Gore“ i „Dole“ se kreću po njima kao i obično.</string>
     <string name="remote_buttons_learn_title">Podesi dugme</string>
-    <string name="remote_buttons_learn_subtitle">Pritisnite dugme na daljinskom kojem želite da dodelite funkciju. „Nazad“ otkazuje.</string>
+    <string name="remote_buttons_learn_subtitle">Pritisnite dugme na daljinskom kojem želite da dodelite funkciju. Držite ga da biste umesto toga podesili funkciju na držanje. „Nazad“ otkazuje.</string>
     <string name="remote_buttons_learn_waiting">Čeka se dugme…</string>
+    <string name="remote_buttons_learn_let_go">Držanje prepoznato. Pustite dugme.</string>
     <string name="remote_buttons_learn_nothing">Još ništa nije stiglo. Neka dugmad, kao što su „Početna“, mikrofon, jačina zvuka i dugmad Netflix ili YouTube, pripadaju uređaju i nikad ne stižu do aplikacije. Ako koristite daljinski od televizora, televizor možda ne prosleđuje ovo dugme uređaju. Probajte drugo dugme ili oslobodite ovo pomoću aplikacije za mapiranje dugmadi, kao što je tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s: ne može da se promeni. OK, strelice i „Nazad“ uvek zadržavaju svoje uobičajene funkcije, da se niko ne bi zaglavio u plejeru. Pritisnite drugo dugme.</string>
+    <string name="remote_buttons_learn_locked">%1$s: ne može da se promeni. OK, „Levo“, „Desno“ i „Nazad“ uvek zadržavaju svoje uobičajene funkcije, da se niko ne bi zaglavio u plejeru. Pritisnite drugo dugme.</string>
     <string name="remote_buttons_learn_volume">Jačinom zvuka upravlja uređaj ili televizor. Pritisnite drugo dugme.</string>
+    <string name="remote_buttons_press">Pritisak</string>
+    <string name="remote_buttons_hold">Držanje</string>
+    <string name="remote_buttons_hold_value">Držanje: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Nije podešeno</string>
+    <string name="remote_buttons_kind_title">%1$s: pritisak ili držanje</string>
+    <string name="remote_buttons_kind_subtitle">Držanje traje oko pola sekunde. Kada dugme ima funkciju na držanje, funkcija na pritisak se izvršava kad ga pustite.</string>
     <string name="remote_buttons_job_title">%1$s: izaberite funkciju</string>
+    <string name="remote_buttons_hold_job_title">%1$s, držanje: izaberite funkciju</string>
     <string name="remote_buttons_remove">Ukloni ovo dugme</string>
     <string name="remote_buttons_skip_size_title">%1$s: skok za</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, držanje: skok za</string>
     <string name="remote_buttons_skip_size_subtitle">Svaki pritisak skače ovoliko.</string>
     <string name="remote_buttons_size_seconds">%1$d s</string>
     <string name="remote_buttons_size_minutes">%1$d min</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Premotavanje napred</string>
     <string name="remote_buttons_job_seek_back">Premotavanje nazad</string>
     <string name="remote_buttons_job_seek_desc">Kao tasteri za premotavanje: pritisak skače 10 sekundi, držanje glatko premotava</string>
+    <string name="remote_buttons_job_seek_hold_desc">Glatko premotava dok držite, kao držanje dugmeta „Premotavanje napred“</string>
     <string name="remote_buttons_job_skip_forward">Skok napred</string>
     <string name="remote_buttons_job_skip_back">Skok nazad</string>
     <string name="remote_buttons_job_skip_forward_value">Skok napred za %1$s</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Preskoči uvod ili sledeća epizoda</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Preskače kada se prikaže dugme za preskakanje, inače pušta sledeću epizodu</string>
     <string name="remote_buttons_job_leave">Izađi iz plejera</string>
+    <string name="remote_buttons_job_show_details">Prikaži detalje</string>
+    <string name="remote_buttons_job_show_details_desc">Pauzira i odmah prikazuje naslov, opis radnje i glumačku ekipu. Pritisnite ponovo ili Nazad za zatvaranje</string>
     <string name="remote_key_play_pause">Pusti/pauza</string>
     <string name="remote_key_fast_forward">Premotavanje napred</string>
     <string name="remote_key_rewind">Premotavanje nazad</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">TV uživo</string>
     <string name="remote_key_settings">Podešavanja</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">Strelice</string>
+    <string name="remote_key_up">Gore</string>
+    <string name="remote_key_down">Dole</string>
+    <string name="remote_key_left">Levo</string>
+    <string name="remote_key_right">Desno</string>
     <string name="remote_key_back">Nazad</string>
     <string name="remote_key_space">Razmak</string>
     <string name="remote_buttons_banner_audio">Zvuk: %1$s</string>

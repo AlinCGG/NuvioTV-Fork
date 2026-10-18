@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Butoanele telecomenzii</string>
     <string name="remote_buttons_section_desc">Dă butoanelor telecomenzii o funcție în timp ce vizionezi.</string>
-    <string name="remote_buttons_intro">OK, săgețile și Înapoi își păstrează mereu funcțiile obișnuite. Volumul rămâne controlat de dispozitiv sau de televizor.</string>
+    <string name="remote_buttons_intro">Fiecare buton poate avea o funcție la apăsare și una la apăsare lungă. OK, Stânga, Dreapta și Înapoi își păstrează mereu funcțiile obișnuite. Sus și Jos pot primi o funcție pentru când controalele playerului sunt ascunse. Volumul rămâne controlat de dispozitiv sau de televizor.</string>
     <string name="remote_buttons_setup_title">Configurează un buton</string>
-    <string name="remote_buttons_setup_subtitle">Apasă-l pe telecomandă, apoi alege-i funcția</string>
+    <string name="remote_buttons_setup_subtitle">Apasă-l sau ține-l apăsat pe telecomandă, apoi alege-i funcția</string>
     <string name="remote_buttons_reset">Resetează toate butoanele</string>
     <string name="remote_buttons_mapper_note">Folosești tvQuickActions sau Button Mapper? Setează acolo butonul să trimită o tastă, de exemplu Roșu sau Info, apoi alege aici funcția acelei taste.</string>
+    <string name="remote_buttons_hold_note">Apăsarea lungă funcționează când dispozitivul transmite aplicației butonul ținut apăsat. Dacă în Configurează un buton nu apare niciodată o apăsare lungă, pe acest dispozitiv butonul are doar funcție la apăsare.</string>
     <string name="remote_buttons_number_keys">Taste numerice</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = jumătate, 0 = început</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = jumătate, 0 = început</string>
     <string name="remote_buttons_added">Configurat pe acest dispozitiv</string>
+    <string name="remote_buttons_up_down_row">Cât timp controalele sunt ascunse</string>
+    <string name="remote_buttons_up_down_desc">Doar cât timp controalele playerului sunt ascunse. Când controalele sunt afișate, Sus și Jos navighează prin ele ca de obicei.</string>
     <string name="remote_buttons_learn_title">Configurează un buton</string>
-    <string name="remote_buttons_learn_subtitle">Apasă pe telecomandă butonul căruia vrei să-i dai o funcție. Înapoi anulează.</string>
+    <string name="remote_buttons_learn_subtitle">Apasă pe telecomandă butonul căruia vrei să-i dai o funcție. Ține-l apăsat pentru a-i seta funcția la apăsare lungă. Înapoi anulează.</string>
     <string name="remote_buttons_learn_waiting">Se așteaptă un buton…</string>
+    <string name="remote_buttons_learn_let_go">Apăsare lungă detectată. Eliberează butonul.</string>
     <string name="remote_buttons_learn_nothing">Încă n-a sosit nimic. Unele butoane, cum ar fi Home, microfonul, volumul și butoanele Netflix sau YouTube, aparțin dispozitivului și nu ajung niciodată la aplicație. Dacă folosești telecomanda televizorului, televizorul poate să nu transmită acest buton dispozitivului. Încearcă alt buton sau eliberează-l pe acela cu o aplicație de remapare a butoanelor, cum ar fi tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s: nu se poate schimba. OK, săgețile și Înapoi își păstrează mereu funcțiile obișnuite, ca nimeni să nu rămână blocat în player. Apasă alt buton.</string>
+    <string name="remote_buttons_learn_locked">%1$s: nu se poate schimba. OK, Stânga, Dreapta și Înapoi își păstrează mereu funcțiile obișnuite, ca nimeni să nu rămână blocat în player. Apasă alt buton.</string>
     <string name="remote_buttons_learn_volume">Volumul rămâne controlat de dispozitiv sau de televizor. Apasă alt buton.</string>
+    <string name="remote_buttons_press">Apăsare</string>
+    <string name="remote_buttons_hold">Apăsare lungă</string>
+    <string name="remote_buttons_hold_value">Apăsare lungă: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Nesetat</string>
+    <string name="remote_buttons_kind_title">%1$s: apăsare sau apăsare lungă</string>
+    <string name="remote_buttons_kind_subtitle">O apăsare lungă durează cam o jumătate de secundă. Când un buton are funcție la apăsare lungă, funcția la apăsare rulează când îl eliberezi.</string>
     <string name="remote_buttons_job_title">%1$s: alege o funcție</string>
+    <string name="remote_buttons_hold_job_title">%1$s, apăsare lungă: alege o funcție</string>
     <string name="remote_buttons_remove">Elimină acest buton</string>
     <string name="remote_buttons_skip_size_title">%1$s: mărimea saltului</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, apăsare lungă: mărimea saltului</string>
     <string name="remote_buttons_skip_size_subtitle">Fiecare apăsare sare atât de departe.</string>
     <string name="remote_buttons_size_seconds">%1$d s</string>
     <string name="remote_buttons_size_minutes">%1$d min</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Derulează înainte</string>
     <string name="remote_buttons_job_seek_back">Derulează înapoi</string>
     <string name="remote_buttons_job_seek_desc">Ca Derulare înainte și Derulare înapoi: o apăsare sare 10 secunde, ținând apăsat derulează lin</string>
+    <string name="remote_buttons_job_seek_hold_desc">Derulează lin cât timp ții apăsat, ca ținând apăsat Derulare înainte</string>
     <string name="remote_buttons_job_skip_forward">Salt înainte</string>
     <string name="remote_buttons_job_skip_back">Salt înapoi</string>
     <string name="remote_buttons_job_skip_forward_value">Salt înainte %1$s</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Omite intro sau episodul următor</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Omite când apare butonul Omite, altfel redă episodul următor</string>
     <string name="remote_buttons_job_leave">Ieși din player</string>
+    <string name="remote_buttons_job_show_details">Arată detaliile</string>
+    <string name="remote_buttons_job_show_details_desc">Pune pauză și arată imediat titlul, sinopsisul și distribuția. Apasă din nou sau Înapoi pentru a închide</string>
     <string name="remote_key_play_pause">Redare/Pauză</string>
     <string name="remote_key_fast_forward">Derulare înainte</string>
     <string name="remote_key_rewind">Derulare înapoi</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">TV live</string>
     <string name="remote_key_settings">Setări</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">Săgețile</string>
+    <string name="remote_key_up">Sus</string>
+    <string name="remote_key_down">Jos</string>
+    <string name="remote_key_left">Stânga</string>
+    <string name="remote_key_right">Dreapta</string>
     <string name="remote_key_back">Înapoi</string>
     <string name="remote_key_space">Spațiu</string>
     <string name="remote_buttons_banner_audio">Audio: %1$s</string>

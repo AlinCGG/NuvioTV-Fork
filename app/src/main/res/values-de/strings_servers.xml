@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Titel öffnen sich mit den Details Ihrer Add-ons und werden wie jeder andere Katalogtitel synchronisiert; Wiedergabe und Gesehen-Markierungen gehen weiterhin an %1$s. Manche Titel werden eventuell nicht erkannt oder lassen sich nicht abspielen, wenn Ihre Add-ons sie anders nummerieren oder zuordnen.</string>
     <string name="servers_import_continue_watching">Weiter ansehen importieren</string>
     <string name="servers_import_continue_watching_description">Titel, die Sie auf %1$s begonnen haben, erscheinen auf der Startseite unter Weiter ansehen. Gesehen-Markierungen werden in jedem Fall abgeglichen.</string>
+    <string name="servers_import_watch_state">Fortschritt importieren</string>
+    <string name="servers_import_watch_state_description">Titel, die Sie auf %1$s ansehen, werden samt Gesehen-Markierungen zu Weiter ansehen hinzugefügt. Die Wiedergabe wird in jedem Fall von %1$s fortgesetzt.</string>
+    <string name="servers_resume_row">Weiter ansehen</string>
     <string name="servers_sign_in_again">Erneut anmelden</string>
     <string name="servers_second_address">Zweite Adresse</string>
     <string name="servers_second_address_description">Wird versucht, wenn die erste Adresse nicht erreichbar ist, zum Beispiel zuerst eine Heimadresse und dann eine Internetadresse.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Vertrauenswürdiges Zertifikat</string>
     <string name="servers_trusted_certificate_forget">Vergessen</string>
     <string name="servers_failure_unsupported">Der Server unterstützt dieses Element nicht.</string>
+    <string name="servers_failure_stream_limit">Der Server erlaubt für dieses Konto derzeit keine weiteren Streams.</string>
     <string name="servers_failure_incomplete">Die Bibliothek dieses Servers wird noch geprüft. Gleich erneut versuchen.</string>
     <string name="servers_playback_failed">Wiedergabe vom Server konnte nicht gestartet werden.</string>
     <string name="servers_audio_switch_failed">Audiospur konnte nicht gewechselt werden.</string>

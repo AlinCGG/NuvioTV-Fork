@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Titlar öppnas med dina tilläggs detaljer och synkas som alla andra katalogtitlar, medan uppspelning och sett-markeringar fortfarande skickas till %1$s. Vissa titlar kanske inte matchar eller går att spela om dina tillägg numrerar eller identifierar dem annorlunda.</string>
     <string name="servers_import_continue_watching">Importera Fortsätt titta</string>
     <string name="servers_import_continue_watching_description">Titlar du har börjat på i %1$s visas i Fortsätt titta på Hem. Sett-markeringar hålls i takt åt båda håll.</string>
+    <string name="servers_import_watch_state">Importera tittarframsteg</string>
+    <string name="servers_import_watch_state_description">Lägg till titlar du tittar på i %1$s i Fortsätt titta, tillsammans med sett-markeringarna. Uppspelningen återupptas ändå från %1$s.</string>
+    <string name="servers_resume_row">Fortsätt titta</string>
     <string name="servers_sign_in_again">Logga in igen</string>
     <string name="servers_second_address">Andra adress</string>
     <string name="servers_second_address_description">Provas när den första adressen inte kan nås, till exempel en hemadress först och en internetadress sedan.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Betrott certifikat</string>
     <string name="servers_trusted_certificate_forget">Glöm</string>
     <string name="servers_failure_unsupported">Servern stöder inte det här objektet.</string>
+    <string name="servers_failure_stream_limit">Servern tillåter inga fler strömmar för det här kontot just nu.</string>
     <string name="servers_failure_incomplete">Serverns bibliotek kontrolleras fortfarande. Försök igen om en stund.</string>
     <string name="servers_playback_failed">Kunde inte starta uppspelning från servern.</string>
     <string name="servers_audio_switch_failed">Kunde inte byta ljudspår.</string>

@@ -91,6 +91,7 @@
     <string name="calendar_setting_coming_up">Hàng Mới và sắp tới</string>
     <string name="calendar_setting_coming_up_sub">Một hàng sau Tiếp tục xem với các tập và phim mới, sắp ra mắt từ Lịch của bạn</string>
     <string name="calendar_coming_up_title">Mới và sắp tới</string>
+    <string name="calendar_coming_up_takes_upcoming">Khi hàng Mới và sắp tới của Lịch đang bật, các tập này sẽ hiển thị ở Mới và sắp tới thay thế.</string>
     <string name="calendar_coming_up_new">Mới</string>
     <string name="calendar_coming_up_today_at">Hôm nay %1$s</string>
     <string name="calendar_coming_up_tonight_at">Tối nay %1$s</string>

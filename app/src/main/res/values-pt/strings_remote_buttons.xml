@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Botões do comando</string>
     <string name="remote_buttons_section_desc">Dá uma função aos botões do comando enquanto vês.</string>
-    <string name="remote_buttons_intro">OK, as setas e Voltar mantêm sempre as suas funções habituais. O volume continua a ser controlado pela box ou pela TV.</string>
+    <string name="remote_buttons_intro">Cada botão pode ter uma função de toque e uma função de manter premido. OK, Esquerda, Direita e Voltar mantêm sempre as suas funções habituais. Cima e Baixo podem ter uma função para quando os controlos do leitor estão escondidos. O volume continua a ser controlado pela box ou pela TV.</string>
     <string name="remote_buttons_setup_title">Configurar um botão</string>
-    <string name="remote_buttons_setup_subtitle">Carrega nele no comando e escolhe a sua função</string>
+    <string name="remote_buttons_setup_subtitle">Carrega nele ou mantém-no premido no comando e escolhe a sua função</string>
     <string name="remote_buttons_reset">Repor todos os botões</string>
     <string name="remote_buttons_mapper_note">Usas o tvQuickActions ou o Button Mapper? Configura lá o botão para enviar uma tecla, por exemplo Vermelho ou Info, e escolhe aqui a função dessa tecla.</string>
+    <string name="remote_buttons_hold_note">Manter premido funciona quando a box passa o botão mantido premido à app. Se, em Configurar um botão, nunca é detetado um toque longo, nesta box esse botão só tem função de toque.</string>
     <string name="remote_buttons_number_keys">Teclas numéricas</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = a meio, 0 = início</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = a meio, 0 = início</string>
     <string name="remote_buttons_added">Configurado nesta box</string>
+    <string name="remote_buttons_up_down_row">Com os controlos escondidos</string>
+    <string name="remote_buttons_up_down_desc">Só enquanto os controlos do leitor estão escondidos. Com os controlos visíveis, Cima e Baixo movem-se por eles como habitualmente.</string>
     <string name="remote_buttons_learn_title">Configurar um botão</string>
-    <string name="remote_buttons_learn_subtitle">Carrega no botão do comando a que queres dar uma função. Voltar cancela.</string>
+    <string name="remote_buttons_learn_subtitle">Carrega no botão do comando a que queres dar uma função. Mantém-no premido para definir a função de manter premido. Voltar cancela.</string>
     <string name="remote_buttons_learn_waiting">À espera de um botão…</string>
+    <string name="remote_buttons_learn_let_go">Toque longo detetado. Solta o botão.</string>
     <string name="remote_buttons_learn_nothing">Ainda não chegou nada. Alguns botões, como Home, o microfone, o volume e os botões Netflix ou YouTube, pertencem à box e nunca chegam à app. Se usas o comando da TV, a TV pode não passar este botão à box. Experimenta outro botão ou liberta esse com uma app de mapeamento de botões, como o tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s: não é possível alterar. OK, as setas e Voltar mantêm sempre as suas funções habituais, para ninguém ficar preso no leitor. Carrega noutro botão.</string>
+    <string name="remote_buttons_learn_locked">%1$s: não é possível alterar. OK, Esquerda, Direita e Voltar mantêm sempre as suas funções habituais, para ninguém ficar preso no leitor. Carrega noutro botão.</string>
     <string name="remote_buttons_learn_volume">O volume continua a ser controlado pela box ou pela TV. Carrega noutro botão.</string>
+    <string name="remote_buttons_press">Toque</string>
+    <string name="remote_buttons_hold">Manter premido</string>
+    <string name="remote_buttons_hold_value">Manter premido: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Não definido</string>
+    <string name="remote_buttons_kind_title">%1$s: toque ou manter premido</string>
+    <string name="remote_buttons_kind_subtitle">Um toque longo dura cerca de meio segundo. Quando um botão tem função de manter premido, a função de toque corre ao soltar.</string>
     <string name="remote_buttons_job_title">%1$s: escolhe uma função</string>
+    <string name="remote_buttons_hold_job_title">%1$s, manter premido: escolhe uma função</string>
     <string name="remote_buttons_remove">Remover este botão</string>
     <string name="remote_buttons_skip_size_title">%1$s: tamanho do salto</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, manter premido: tamanho do salto</string>
     <string name="remote_buttons_skip_size_subtitle">Cada toque salta esta distância.</string>
     <string name="remote_buttons_size_seconds">%1$d s</string>
     <string name="remote_buttons_size_minutes">%1$d min</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Avançar</string>
     <string name="remote_buttons_job_seek_back">Recuar</string>
     <string name="remote_buttons_job_seek_desc">Como Avanço rápido e Rebobinar: um toque salta 10 segundos, manter premido percorre o vídeo</string>
+    <string name="remote_buttons_job_seek_hold_desc">Percorre o vídeo enquanto manténs premido, como ao manter premido Avanço rápido</string>
     <string name="remote_buttons_job_skip_forward">Saltar para a frente</string>
     <string name="remote_buttons_job_skip_back">Saltar para trás</string>
     <string name="remote_buttons_job_skip_forward_value">Saltar %1$s para a frente</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Saltar intro ou episódio seguinte</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Salta quando aparece o botão Saltar; caso contrário, reproduz o episódio seguinte</string>
     <string name="remote_buttons_job_leave">Sair do leitor</string>
+    <string name="remote_buttons_job_show_details">Mostrar detalhes</string>
+    <string name="remote_buttons_job_show_details_desc">Pausa e mostra logo o título, a sinopse e o elenco. Prime novamente ou Voltar para fechar</string>
     <string name="remote_key_play_pause">Reproduzir/Pausa</string>
     <string name="remote_key_fast_forward">Avanço rápido</string>
     <string name="remote_key_rewind">Rebobinar</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">TV em direto</string>
     <string name="remote_key_settings">Definições</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">As setas</string>
+    <string name="remote_key_up">Cima</string>
+    <string name="remote_key_down">Baixo</string>
+    <string name="remote_key_left">Esquerda</string>
+    <string name="remote_key_right">Direita</string>
     <string name="remote_key_back">Voltar</string>
     <string name="remote_key_space">Espaço</string>
     <string name="remote_buttons_banner_audio">Áudio: %1$s</string>

@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Наслови се отварају са детаљима из ваших додатака и синхронизују се као сваки други наслов из каталога, а репродукција и ознаке одгледаног се и даље шаљу на %1$s. Неки наслови се можда неће поклопити или пустити ако их ваши додаци другачије нумеришу или препознају.</string>
     <string name="servers_import_continue_watching">Увези Наставак гледања</string>
     <string name="servers_import_continue_watching_description">Наслови које сте започели на %1$s појављују се у Наставку гледања на Почетној. Ознаке одгледаног се усклађују у оба смера.</string>
+    <string name="servers_import_watch_state">Увези напредак гледања</string>
+    <string name="servers_import_watch_state_description">Додај наслове које гледате на %1$s у Наставак гледања, заједно са ознакама одгледаног. Репродукција се у сваком случају наставља од позиције на %1$s.</string>
+    <string name="servers_resume_row">Наставак гледања</string>
     <string name="servers_sign_in_again">Пријави се поново</string>
     <string name="servers_second_address">Друга адреса</string>
     <string name="servers_second_address_description">Користи се када прва адреса није доступна, на пример прво кућна адреса, а затим интернет адреса.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Поуздани сертификат</string>
     <string name="servers_trusted_certificate_forget">Заборави</string>
     <string name="servers_failure_unsupported">Сервер не подржава ову ставку.</string>
+    <string name="servers_failure_stream_limit">Сервер тренутно не дозвољава више стримова за овај налог.</string>
     <string name="servers_failure_incomplete">Библиотека овог сервера се још проверава. Покушајте поново за тренутак.</string>
     <string name="servers_playback_failed">Није могуће покренути репродукцију са сервера.</string>
     <string name="servers_audio_switch_failed">Није могуће променити звучни запис.</string>

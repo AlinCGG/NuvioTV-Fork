@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Zeile „Neu und demnächst“</string>
     <string name="calendar_setting_coming_up_sub">Eine Zeile nach „Weiter ansehen“ mit neuen und kommenden Folgen und Filmen aus Ihrem Kalender</string>
     <string name="calendar_coming_up_title">Neu und demnächst</string>
+    <string name="calendar_coming_up_takes_upcoming">Solange die Zeile „Neu und demnächst“ des Kalenders aktiv ist, werden diese Folgen stattdessen dort angezeigt.</string>
     <string name="calendar_coming_up_new">Neu</string>
     <string name="calendar_coming_up_today_at">Heute %1$s</string>
     <string name="calendar_coming_up_tonight_at">Heute Abend %1$s</string>

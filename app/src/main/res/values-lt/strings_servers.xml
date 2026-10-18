@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Pavadinimai atidaromi su jūsų priedų informacija ir sinchronizuojami kaip bet kuris kitas katalogo pavadinimas, o atkūrimas ir peržiūros žymės toliau siunčiami į %1$s. Kai kurie pavadinimai gali nesutapti arba nepasileisti, jei jūsų priedai juos numeruoja ar atpažįsta kitaip.</string>
     <string name="servers_import_continue_watching">Importuoti „Tęsti žiūrėjimą“</string>
     <string name="servers_import_continue_watching_description">Pavadinimai, kuriuos pradėjote žiūrėti %1$s, rodomi skiltyje „Tęsti žiūrėjimą“ pradiniame ekrane. Peržiūros žymės sinchronizuojamos abiem kryptimis.</string>
+    <string name="servers_import_watch_state">Importuoti žiūrėjimo eigą</string>
+    <string name="servers_import_watch_state_description">Prideda pavadinimus, kuriuos žiūrite %1$s, į „Tęsti žiūrėjimą“ kartu su peržiūros žymėmis. Atkūrimas abiem atvejais tęsiamas iš %1$s.</string>
+    <string name="servers_resume_row">Tęsti žiūrėjimą</string>
     <string name="servers_sign_in_again">Prisijungti iš naujo</string>
     <string name="servers_second_address">Antrasis adresas</string>
     <string name="servers_second_address_description">Bandomas, kai pirmasis adresas nepasiekiamas, pavyzdžiui, pirmas namų adresas, o antras - interneto adresas.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Patikimas sertifikatas</string>
     <string name="servers_trusted_certificate_forget">Pamiršti</string>
     <string name="servers_failure_unsupported">Serveris nepalaiko šio elemento.</string>
+    <string name="servers_failure_stream_limit">Serveris šiuo metu neleidžia daugiau srautų šiai paskyrai.</string>
     <string name="servers_failure_incomplete">Šio serverio biblioteka dar tikrinama. Netrukus bandykite dar kartą.</string>
     <string name="servers_playback_failed">Nepavyko pradėti atkūrimo iš serverio.</string>
     <string name="servers_audio_switch_failed">Nepavyko perjungti garso takelio.</string>

@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Les titres s\'ouvrent avec les détails de vos addons et se synchronisent comme tout autre titre de catalogue ; la lecture et l\'état de visionnage sont toujours envoyés à %1$s. Certains titres peuvent ne pas correspondre ou ne pas se lire si vos addons les numérotent ou les identifient autrement.</string>
     <string name="servers_import_continue_watching">Importer Continuer à regarder</string>
     <string name="servers_import_continue_watching_description">Les titres commencés sur %1$s apparaissent dans Continuer à regarder sur l\'accueil. L\'état de visionnage reste synchronisé dans tous les cas.</string>
+    <string name="servers_import_watch_state">Importer la progression</string>
+    <string name="servers_import_watch_state_description">Ajoute à Continuer à regarder les titres que vous regardez sur %1$s, avec leur état de visionnage. La lecture reprend de toute façon depuis %1$s.</string>
+    <string name="servers_resume_row">Continuer à regarder</string>
     <string name="servers_sign_in_again">Se reconnecter</string>
     <string name="servers_second_address">Seconde adresse</string>
     <string name="servers_second_address_description">Essayée quand la première adresse est injoignable, par exemple une adresse locale d\'abord et une adresse internet ensuite.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Certificat de confiance</string>
     <string name="servers_trusted_certificate_forget">Oublier</string>
     <string name="servers_failure_unsupported">Le serveur ne prend pas en charge cet élément.</string>
+    <string name="servers_failure_stream_limit">Le serveur n\'autorise plus de flux pour ce compte pour le moment.</string>
     <string name="servers_failure_incomplete">Vérification de la bibliothèque de ce serveur en cours. Réessayez dans un instant.</string>
     <string name="servers_playback_failed">Impossible de lancer la lecture depuis le serveur.</string>
     <string name="servers_audio_switch_failed">Impossible de changer de piste audio.</string>

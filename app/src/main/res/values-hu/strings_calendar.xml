@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Következik sor</string>
     <string name="calendar_setting_coming_up_sub">Sor a Megtekintés folytatása után a Naptár új és közelgő epizódjaival és filmjeivel</string>
     <string name="calendar_coming_up_title">Következik</string>
+    <string name="calendar_coming_up_takes_upcoming">Amíg a Naptár Következik sora be van kapcsolva, ezek az epizódok ott jelennek meg.</string>
     <string name="calendar_coming_up_new">Új</string>
     <string name="calendar_coming_up_today_at">Ma %1$s</string>
     <string name="calendar_coming_up_tonight_at">Ma este %1$s</string>

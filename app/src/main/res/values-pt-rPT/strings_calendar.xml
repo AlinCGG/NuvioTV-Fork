@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Linha Próximas estreias</string>
     <string name="calendar_setting_coming_up_sub">Uma linha a seguir a Continuar a ver com episódios e filmes novos e futuros do teu Calendário</string>
     <string name="calendar_coming_up_title">Próximas estreias</string>
+    <string name="calendar_coming_up_takes_upcoming">Enquanto a linha Próximas estreias do Calendário estiver ativada, estes episódios são mostrados em Próximas estreias.</string>
     <string name="calendar_coming_up_new">Novo</string>
     <string name="calendar_coming_up_today_at">Hoje %1$s</string>
     <string name="calendar_coming_up_tonight_at">Esta noite %1$s</string>

@@ -109,6 +109,7 @@
     <string name="calendar_setting_coming_up">Řádek Již brzy</string>
     <string name="calendar_setting_coming_up_sub">Řádek za Pokračovat ve sledování s novými a chystanými epizodami a filmy z Kalendáře</string>
     <string name="calendar_coming_up_title">Již brzy</string>
+    <string name="calendar_coming_up_takes_upcoming">Když je zapnutý řádek Již brzy v Kalendáři, zobrazují se tyto epizody v něm.</string>
     <string name="calendar_coming_up_new">Nový</string>
     <string name="calendar_coming_up_today_at">Dnes %1$s</string>
     <string name="calendar_coming_up_tonight_at">Dnes večer %1$s</string>

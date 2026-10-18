@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Rândul Ce urmează</string>
     <string name="calendar_setting_coming_up_sub">Un rând după Continuă vizionarea cu episoade și filme noi și viitoare din Calendar</string>
     <string name="calendar_coming_up_title">Ce urmează</string>
+    <string name="calendar_coming_up_takes_upcoming">Cât timp rândul Ce urmează din Calendar este activat, aceste episoade sunt afișate în Ce urmează.</string>
     <string name="calendar_coming_up_new">Nou</string>
     <string name="calendar_coming_up_today_at">Astăzi la %1$s</string>
     <string name="calendar_coming_up_tonight_at">Diseară la %1$s</string>

@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Raden På gång</string>
     <string name="calendar_setting_coming_up_sub">En rad efter Fortsätt titta med nya och kommande avsnitt och filmer från din Kalender</string>
     <string name="calendar_coming_up_title">På gång</string>
+    <string name="calendar_coming_up_takes_upcoming">Så länge raden På gång i Kalendern är på visas de här avsnitten i På gång i stället.</string>
     <string name="calendar_coming_up_new">Nyhet</string>
     <string name="calendar_coming_up_today_at">Idag %1$s</string>
     <string name="calendar_coming_up_tonight_at">I kväll %1$s</string>

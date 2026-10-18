@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Los títulos se abren con los detalles de tus complementos y se sincronizan como cualquier otro título de catálogo; la reproducción y las marcas de visto se siguen enviando a %1$s. Puede que algunos títulos no coincidan o no se reproduzcan si tus complementos los numeran o identifican de otra forma.</string>
     <string name="servers_import_continue_watching">Importar Continuar viendo</string>
     <string name="servers_import_continue_watching_description">Los títulos que has empezado en %1$s aparecen en Continuar viendo en Inicio. Las marcas de visto se mantienen al día en ambos sentidos.</string>
+    <string name="servers_import_watch_state">Importar progreso</string>
+    <string name="servers_import_watch_state_description">Añade a Continuar viendo los títulos que estás viendo en %1$s, junto con sus marcas de visto. La reproducción se reanuda desde %1$s en cualquier caso.</string>
+    <string name="servers_resume_row">Continuar viendo</string>
     <string name="servers_sign_in_again">Iniciar sesión de nuevo</string>
     <string name="servers_second_address">Segunda dirección</string>
     <string name="servers_second_address_description">Se prueba cuando no se puede conectar con la primera dirección; por ejemplo, primero una dirección de casa y después una de internet.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Certificado de confianza</string>
     <string name="servers_trusted_certificate_forget">Olvidar</string>
     <string name="servers_failure_unsupported">El servidor no admite este elemento.</string>
+    <string name="servers_failure_stream_limit">El servidor no permite más transmisiones para esta cuenta por ahora.</string>
     <string name="servers_failure_incomplete">Aún se está comprobando la biblioteca de este servidor. Inténtalo de nuevo en un momento.</string>
     <string name="servers_playback_failed">No se ha podido iniciar la reproducción desde el servidor.</string>
     <string name="servers_audio_switch_failed">No se ha podido cambiar la pista de audio.</string>

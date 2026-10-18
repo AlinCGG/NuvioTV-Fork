@@ -121,6 +121,7 @@
     <string name="calendar_setting_coming_up">صف قريباً</string>
     <string name="calendar_setting_coming_up_sub">صف بعد متابعة المشاهدة فيه الحلقات والأفلام الجديدة والقادمة من تقويمك</string>
     <string name="calendar_coming_up_title">قريباً</string>
+    <string name="calendar_coming_up_takes_upcoming">عندما يكون صف \"قريباً\" في التقويم قيد التشغيل، تظهر هذه الحلقات فيه بدلاً من ذلك.</string>
     <string name="calendar_coming_up_new">جديد</string>
     <string name="calendar_coming_up_today_at">اليوم %1$s</string>
     <string name="calendar_coming_up_tonight_at">الليلة %1$s</string>

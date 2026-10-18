@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Rækken Nyt og kommende</string>
     <string name="calendar_setting_coming_up_sub">En række efter Fortsæt med at se, med nye og kommende episoder og film fra din Kalender</string>
     <string name="calendar_coming_up_title">Nyt og kommende</string>
+    <string name="calendar_coming_up_takes_upcoming">Så længe rækken Nyt og kommende i Kalenderen er slået til, vises disse afsnit i stedet i Nyt og kommende.</string>
     <string name="calendar_coming_up_new">Ny</string>
     <string name="calendar_coming_up_today_at">I dag %1$s</string>
     <string name="calendar_coming_up_tonight_at">I aften %1$s</string>

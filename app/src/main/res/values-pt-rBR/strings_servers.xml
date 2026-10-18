@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Os títulos abrem com os detalhes dos seus addons e sincronizam como qualquer outro título de catálogo; a reprodução e as marcas de assistido continuam sendo enviadas ao %1$s. Alguns títulos podem não corresponder ou não reproduzir se seus addons os numerarem ou identificarem de outra forma.</string>
     <string name="servers_import_continue_watching">Importar Continuar Assistindo</string>
     <string name="servers_import_continue_watching_description">Os títulos que você começou no %1$s aparecem em Continuar Assistindo no Início. As marcas de assistido ficam em sincronia nos dois sentidos.</string>
+    <string name="servers_import_watch_state">Importar progresso</string>
+    <string name="servers_import_watch_state_description">Adiciona a Continuar Assistindo os títulos que você está assistindo no %1$s, com as marcas de assistido. A reprodução retoma do %1$s de qualquer forma.</string>
+    <string name="servers_resume_row">Continuar Assistindo</string>
     <string name="servers_sign_in_again">Entrar novamente</string>
     <string name="servers_second_address">Segundo endereço</string>
     <string name="servers_second_address_description">Usado quando o primeiro endereço não pode ser acessado; por exemplo, um endereço de casa primeiro e um da internet depois.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Certificado confiável</string>
     <string name="servers_trusted_certificate_forget">Esquecer</string>
     <string name="servers_failure_unsupported">O servidor não é compatível com este item.</string>
+    <string name="servers_failure_stream_limit">O servidor não permite mais streams para esta conta no momento.</string>
     <string name="servers_failure_incomplete">A biblioteca deste servidor ainda está sendo verificada. Tente de novo em instantes.</string>
     <string name="servers_playback_failed">Não foi possível iniciar a reprodução pelo servidor.</string>
     <string name="servers_audio_switch_failed">Não foi possível trocar a faixa de áudio.</string>

@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Кнопки пульта</string>
     <string name="remote_buttons_section_desc">Призначте кнопкам пульта дії під час перегляду.</string>
-    <string name="remote_buttons_intro">OK, стрілки та «Назад» завжди виконують свої звичні дії. Гучністю керує приставка або телевізор.</string>
+    <string name="remote_buttons_intro">У кожної кнопки може бути дія на натискання і дія на утримання. OK, «Ліворуч», «Праворуч» і «Назад» завжди виконують свої звичні дії. «Вгору» і «Вниз» можуть отримати дію на час, поки елементи керування плеєра приховані. Гучністю керує приставка або телевізор.</string>
     <string name="remote_buttons_setup_title">Налаштувати кнопку</string>
-    <string name="remote_buttons_setup_subtitle">Натисніть її на пульті, потім виберіть дію</string>
+    <string name="remote_buttons_setup_subtitle">Натисніть або утримуйте її на пульті, потім виберіть дію</string>
     <string name="remote_buttons_reset">Скинути всі кнопки</string>
     <string name="remote_buttons_mapper_note">Користуєтеся tvQuickActions або Button Mapper? Налаштуйте там кнопку на надсилання клавіші, наприклад «Червона» або «Інфо», а потім виберіть тут дію для цієї клавіші.</string>
+    <string name="remote_buttons_hold_note">Утримання працює, коли приставка передає утримувану кнопку застосунку. Якщо утримання так і не з\'являється в «Налаштувати кнопку», ця кнопка на цій приставці має лише дію на натискання.</string>
     <string name="remote_buttons_number_keys">Цифрові кнопки</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = середина, 0 = початок</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = середина, 0 = початок</string>
     <string name="remote_buttons_added">Налаштована на цій приставці</string>
+    <string name="remote_buttons_up_down_row">Поки елементи керування приховані</string>
+    <string name="remote_buttons_up_down_desc">Лише поки елементи керування плеєра приховані. Коли вони видимі, «Вгору» і «Вниз» переміщуються по них як зазвичай.</string>
     <string name="remote_buttons_learn_title">Налаштувати кнопку</string>
-    <string name="remote_buttons_learn_subtitle">Натисніть на пульті кнопку, якій хочете призначити дію. «Назад» - скасування.</string>
+    <string name="remote_buttons_learn_subtitle">Натисніть на пульті кнопку, якій хочете призначити дію. Утримуйте її, щоб задати дію на утримання. «Назад» - скасування.</string>
     <string name="remote_buttons_learn_waiting">Очікування кнопки…</string>
+    <string name="remote_buttons_learn_let_go">Утримання розпізнано. Відпустіть кнопку.</string>
     <string name="remote_buttons_learn_nothing">Поки нічого не надійшло. Деякі кнопки, як-от «Головна», мікрофон, гучність і кнопки Netflix або YouTube, належать приставці й ніколи не доходять до застосунку. Якщо ви користуєтеся пультом телевізора, телевізор може не передавати цю кнопку приставці. Спробуйте іншу кнопку або звільніть цю за допомогою застосунку для перепризначення кнопок, наприклад tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s: змінити не можна. OK, стрілки та «Назад» завжди виконують свої звичні дії, щоб ніхто не застряг у плеєрі. Натисніть іншу кнопку.</string>
+    <string name="remote_buttons_learn_locked">%1$s: змінити не можна. OK, «Ліворуч», «Праворуч» і «Назад» завжди виконують свої звичні дії, щоб ніхто не застряг у плеєрі. Натисніть іншу кнопку.</string>
     <string name="remote_buttons_learn_volume">Гучністю керує приставка або телевізор. Натисніть іншу кнопку.</string>
+    <string name="remote_buttons_press">Натискання</string>
+    <string name="remote_buttons_hold">Утримання</string>
+    <string name="remote_buttons_hold_value">Утримання: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Не задано</string>
+    <string name="remote_buttons_kind_title">%1$s: натискання чи утримання</string>
+    <string name="remote_buttons_kind_subtitle">Утримання триває близько пів секунди. Якщо кнопка має дію на утримання, дія на натискання виконується, коли ви її відпускаєте.</string>
     <string name="remote_buttons_job_title">%1$s: виберіть дію</string>
+    <string name="remote_buttons_hold_job_title">%1$s, утримання: виберіть дію</string>
     <string name="remote_buttons_remove">Видалити цю кнопку</string>
     <string name="remote_buttons_skip_size_title">%1$s: крок стрибка</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, утримання: крок стрибка</string>
     <string name="remote_buttons_skip_size_subtitle">Розмір стрибка для кожного натискання.</string>
     <string name="remote_buttons_size_seconds">%1$d с</string>
     <string name="remote_buttons_size_minutes">%1$d хв</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Перемотка вперед</string>
     <string name="remote_buttons_job_seek_back">Перемотка назад</string>
     <string name="remote_buttons_job_seek_desc">Як кнопки перемотки: натискання - стрибок на 10 секунд, утримання - плавна перемотка</string>
+    <string name="remote_buttons_job_seek_hold_desc">Плавна перемотка, поки утримуєте, як при утриманні «Перемотки вперед»</string>
     <string name="remote_buttons_job_skip_forward">Стрибок вперед</string>
     <string name="remote_buttons_job_skip_back">Стрибок назад</string>
     <string name="remote_buttons_job_skip_forward_value">Стрибок вперед на %1$s</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Пропустити заставку або наступний епізод</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Пропускає, коли видно кнопку пропуску, інакше вмикає наступний епізод</string>
     <string name="remote_buttons_job_leave">Вийти з плеєра</string>
+    <string name="remote_buttons_job_show_details">Показати деталі</string>
+    <string name="remote_buttons_job_show_details_desc">Ставить на паузу й одразу показує назву, опис і акторів. Натисніть ще раз або Назад, щоб закрити</string>
     <string name="remote_key_play_pause">Відтворення/пауза</string>
     <string name="remote_key_fast_forward">Перемотка вперед</string>
     <string name="remote_key_rewind">Перемотка назад</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">Прямий ефір</string>
     <string name="remote_key_settings">Налаштування</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">Стрілки</string>
+    <string name="remote_key_up">Вгору</string>
+    <string name="remote_key_down">Вниз</string>
+    <string name="remote_key_left">Ліворуч</string>
+    <string name="remote_key_right">Праворуч</string>
     <string name="remote_key_back">Назад</string>
     <string name="remote_key_space">Пробіл</string>
     <string name="remote_buttons_banner_audio">Аудіо: %1$s</string>

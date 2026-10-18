@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Tituly se otevírají s podrobnostmi z vašich doplňků a synchronizují se jako každý jiný titul z katalogu, přehrávání a označení zhlédnutí se dál odesílají do %1$s. Některé tituly se nemusí spárovat nebo přehrát, pokud je vaše doplňky číslují nebo identifikují jinak.</string>
     <string name="servers_import_continue_watching">Importovat Pokračovat ve sledování</string>
     <string name="servers_import_continue_watching_description">Tituly rozkoukané na %1$s se zobrazí v Pokračovat ve sledování na domovské obrazovce. Označení zhlédnutí se sladí v obou případech.</string>
+    <string name="servers_import_watch_state">Importovat průběh sledování</string>
+    <string name="servers_import_watch_state_description">Přidá tituly, které sledujete na %1$s, do Pokračovat ve sledování, včetně označení zhlédnutí. Přehrávání se v obou případech obnoví z %1$s.</string>
+    <string name="servers_resume_row">Pokračovat ve sledování</string>
     <string name="servers_sign_in_again">Přihlásit se znovu</string>
     <string name="servers_second_address">Druhá adresa</string>
     <string name="servers_second_address_description">Zkusí se, když první adresa není dostupná, například první domácí adresa a druhá internetová.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Důvěryhodný certifikát</string>
     <string name="servers_trusted_certificate_forget">Zapomenout</string>
     <string name="servers_failure_unsupported">Server tuto položku nepodporuje.</string>
+    <string name="servers_failure_stream_limit">Server pro tento účet momentálně nepovoluje další streamy.</string>
     <string name="servers_failure_incomplete">Knihovna tohoto serveru se ještě kontroluje. Zkuste to za chvíli znovu.</string>
     <string name="servers_playback_failed">Přehrávání ze serveru se nepodařilo spustit.</string>
     <string name="servers_audio_switch_failed">Zvukovou stopu se nepodařilo přepnout.</string>

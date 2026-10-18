@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Botões do controle</string>
     <string name="remote_buttons_section_desc">Dê uma função aos botões do controle enquanto assiste.</string>
-    <string name="remote_buttons_intro">OK, as setas e Voltar sempre mantêm suas funções normais. O volume continua sendo controlado pelo aparelho ou pela TV.</string>
+    <string name="remote_buttons_intro">Cada botão pode ter uma função ao pressionar e uma função ao segurar. OK, Esquerda, Direita e Voltar sempre mantêm suas funções normais. Cima e Baixo podem ter uma função para quando os controles do player estão ocultos. O volume continua sendo controlado pelo aparelho ou pela TV.</string>
     <string name="remote_buttons_setup_title">Configurar um botão</string>
-    <string name="remote_buttons_setup_subtitle">Pressione-o no controle e escolha a função dele</string>
+    <string name="remote_buttons_setup_subtitle">Pressione-o ou segure-o no controle e escolha a função dele</string>
     <string name="remote_buttons_reset">Redefinir todos os botões</string>
     <string name="remote_buttons_mapper_note">Usa o tvQuickActions ou o Button Mapper? Configure lá o botão para enviar uma tecla, por exemplo Vermelho ou Info, e escolha aqui a função dessa tecla.</string>
+    <string name="remote_buttons_hold_note">Segurar funciona quando o aparelho repassa o botão segurado ao app. Se, em Configurar um botão, um toque longo nunca é detectado, neste aparelho esse botão só tem função ao pressionar.</string>
     <string name="remote_buttons_number_keys">Teclas numéricas</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = metade, 0 = início</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = metade, 0 = início</string>
     <string name="remote_buttons_added">Configurado neste aparelho</string>
+    <string name="remote_buttons_up_down_row">Com os controles ocultos</string>
+    <string name="remote_buttons_up_down_desc">Só enquanto os controles do player estão ocultos. Com os controles visíveis, Cima e Baixo navegam por eles como de costume.</string>
     <string name="remote_buttons_learn_title">Configurar um botão</string>
-    <string name="remote_buttons_learn_subtitle">Pressione no controle o botão ao qual quer dar uma função. Voltar cancela.</string>
+    <string name="remote_buttons_learn_subtitle">Pressione no controle o botão ao qual quer dar uma função. Segure-o para definir a função ao segurar. Voltar cancela.</string>
     <string name="remote_buttons_learn_waiting">Aguardando um botão…</string>
+    <string name="remote_buttons_learn_let_go">Toque longo detectado. Solte o botão.</string>
     <string name="remote_buttons_learn_nothing">Nada chegou ainda. Alguns botões, como Home, o microfone, o volume e os botões Netflix ou YouTube, pertencem ao aparelho e nunca chegam ao app. Se você usa o controle da TV, a TV pode não repassar esse botão ao aparelho. Tente outro botão ou libere esse com um app de mapeamento de botões, como o tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s: não é possível alterar. OK, as setas e Voltar sempre mantêm suas funções normais, para ninguém ficar preso no player. Pressione outro botão.</string>
+    <string name="remote_buttons_learn_locked">%1$s: não é possível alterar. OK, Esquerda, Direita e Voltar sempre mantêm suas funções normais, para ninguém ficar preso no player. Pressione outro botão.</string>
     <string name="remote_buttons_learn_volume">O volume continua sendo controlado pelo aparelho ou pela TV. Pressione outro botão.</string>
+    <string name="remote_buttons_press">Pressionar</string>
+    <string name="remote_buttons_hold">Segurar</string>
+    <string name="remote_buttons_hold_value">Segurar: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Não definido</string>
+    <string name="remote_buttons_kind_title">%1$s: pressionar ou segurar</string>
+    <string name="remote_buttons_kind_subtitle">Um toque longo dura cerca de meio segundo. Quando um botão tem função ao segurar, a função ao pressionar é executada ao soltar.</string>
     <string name="remote_buttons_job_title">%1$s: escolha uma função</string>
+    <string name="remote_buttons_hold_job_title">%1$s, segurar: escolha uma função</string>
     <string name="remote_buttons_remove">Remover este botão</string>
     <string name="remote_buttons_skip_size_title">%1$s: tamanho do pulo</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, segurar: tamanho do pulo</string>
     <string name="remote_buttons_skip_size_subtitle">Cada toque pula essa distância.</string>
     <string name="remote_buttons_size_seconds">%1$d s</string>
     <string name="remote_buttons_size_minutes">%1$d min</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Avançar</string>
     <string name="remote_buttons_job_seek_back">Retroceder</string>
     <string name="remote_buttons_job_seek_desc">Como Avanço rápido e Rebobinar: um toque pula 10 segundos, segurar percorre o vídeo</string>
+    <string name="remote_buttons_job_seek_hold_desc">Percorre o vídeo enquanto você segura, como segurar Avanço rápido</string>
     <string name="remote_buttons_job_skip_forward">Pular para frente</string>
     <string name="remote_buttons_job_skip_back">Pular para trás</string>
     <string name="remote_buttons_job_skip_forward_value">Pular %1$s para frente</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Pular abertura ou próximo episódio</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Pula quando o botão Pular aparece; senão, reproduz o próximo episódio</string>
     <string name="remote_buttons_job_leave">Sair do player</string>
+    <string name="remote_buttons_job_show_details">Mostrar detalhes</string>
+    <string name="remote_buttons_job_show_details_desc">Pausa e mostra na hora o título, a sinopse e o elenco. Aperte de novo ou Voltar para fechar</string>
     <string name="remote_key_play_pause">Reproduzir/Pausar</string>
     <string name="remote_key_fast_forward">Avanço rápido</string>
     <string name="remote_key_rewind">Rebobinar</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">TV ao vivo</string>
     <string name="remote_key_settings">Ajustes</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">As setas</string>
+    <string name="remote_key_up">Cima</string>
+    <string name="remote_key_down">Baixo</string>
+    <string name="remote_key_left">Esquerda</string>
+    <string name="remote_key_right">Direita</string>
     <string name="remote_key_back">Voltar</string>
     <string name="remote_key_space">Espaço</string>
     <string name="remote_buttons_banner_audio">Áudio: %1$s</string>

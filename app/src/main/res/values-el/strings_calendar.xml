@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Σειρά «Νέα και επερχόμενα»</string>
     <string name="calendar_setting_coming_up_sub">Μια σειρά μετά τη Συνέχεια παρακολούθησης με νέα και επερχόμενα επεισόδια και ταινίες από το Ημερολόγιο</string>
     <string name="calendar_coming_up_title">Νέα και επερχόμενα</string>
+    <string name="calendar_coming_up_takes_upcoming">Όσο η σειρά «Νέα και επερχόμενα» του Ημερολογίου είναι ενεργή, αυτά τα επεισόδια εμφανίζονται εκεί.</string>
     <string name="calendar_coming_up_new">Νέο</string>
     <string name="calendar_coming_up_today_at">Σήμερα στις %1$s</string>
     <string name="calendar_coming_up_tonight_at">Απόψε στις %1$s</string>

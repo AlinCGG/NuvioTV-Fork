@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Judul dibuka dengan detail dari addon Anda dan disinkronkan seperti judul katalog lain, sementara pemutaran dan tanda sudah ditonton tetap dikirim ke %1$s. Beberapa judul mungkin tidak cocok atau tidak dapat diputar jika addon Anda menomori atau mengenalinya secara berbeda.</string>
     <string name="servers_import_continue_watching">Impor Lanjutkan Menonton</string>
     <string name="servers_import_continue_watching_description">Judul yang sudah Anda mulai di %1$s muncul di Lanjutkan Menonton di Beranda. Tanda sudah ditonton tetap disamakan bagaimanapun juga.</string>
+    <string name="servers_import_watch_state">Impor progres tontonan</string>
+    <string name="servers_import_watch_state_description">Tambahkan judul yang sedang Anda tonton di %1$s ke Lanjutkan Menonton, beserta tanda sudah ditonton. Pemutaran tetap dilanjutkan dari %1$s.</string>
+    <string name="servers_resume_row">Lanjutkan Menonton</string>
     <string name="servers_sign_in_again">Masuk lagi</string>
     <string name="servers_second_address">Alamat kedua</string>
     <string name="servers_second_address_description">Dicoba saat alamat pertama tidak dapat dijangkau, misalnya alamat rumah dulu lalu alamat internet.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Sertifikat tepercaya</string>
     <string name="servers_trusted_certificate_forget">Lupakan</string>
     <string name="servers_failure_unsupported">Server tidak mendukung item ini.</string>
+    <string name="servers_failure_stream_limit">Server saat ini tidak mengizinkan stream lagi untuk akun ini.</string>
     <string name="servers_failure_incomplete">Pustaka server ini masih diperiksa. Coba lagi sebentar lagi.</string>
     <string name="servers_playback_failed">Tidak dapat memulai pemutaran dari server.</string>
     <string name="servers_audio_switch_failed">Tidak dapat mengganti trek audio.</string>

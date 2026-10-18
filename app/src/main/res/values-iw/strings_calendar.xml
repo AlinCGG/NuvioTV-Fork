@@ -109,6 +109,7 @@
     <string name="calendar_setting_coming_up">שורת \"חדש ובקרוב\"</string>
     <string name="calendar_setting_coming_up_sub">שורה אחרי המשך בצפייה עם פרקים וסרטים חדשים ועתידיים מלוח השנה שלך</string>
     <string name="calendar_coming_up_title">חדש ובקרוב</string>
+    <string name="calendar_coming_up_takes_upcoming">כשהשורה \"חדש ובקרוב\" של לוח השנה פועלת, הפרקים האלה מוצגים בה במקום.</string>
     <string name="calendar_coming_up_new">חדש</string>
     <string name="calendar_coming_up_today_at">היום %1$s</string>
     <string name="calendar_coming_up_tonight_at">הערב %1$s</string>

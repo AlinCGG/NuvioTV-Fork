@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">जल्द आ रहे रो</string>
     <string name="calendar_setting_coming_up_sub">देखना जारी रखें के बाद एक रो, आपके कैलेंडर के नए और आने वाले एपिसोड और फ़िल्मों के साथ</string>
     <string name="calendar_coming_up_title">जल्द आ रहे</string>
+    <string name="calendar_coming_up_takes_upcoming">कैलेंडर की \"जल्द आ रहे\" रो चालू होने पर ये एपिसोड इसके बजाय जल्द आ रहे में दिखाए जाते हैं।</string>
     <string name="calendar_coming_up_new">नया</string>
     <string name="calendar_coming_up_today_at">आज %1$s</string>
     <string name="calendar_coming_up_tonight_at">आज रात %1$s</string>

@@ -109,6 +109,7 @@
     <string name="calendar_setting_coming_up">Eilutė „Netrukus“</string>
     <string name="calendar_setting_coming_up_sub">Eilutė po „Tęsti žiūrėjimą“ su naujomis ir būsimomis serijomis bei filmais iš jūsų kalendoriaus</string>
     <string name="calendar_coming_up_title">Netrukus</string>
+    <string name="calendar_coming_up_takes_upcoming">Kol Kalendoriaus eilutė „Netrukus“ įjungta, šios serijos rodomos joje.</string>
     <string name="calendar_coming_up_new">Nauja</string>
     <string name="calendar_coming_up_today_at">Šiandien %1$s</string>
     <string name="calendar_coming_up_tonight_at">Šįvakar %1$s</string>

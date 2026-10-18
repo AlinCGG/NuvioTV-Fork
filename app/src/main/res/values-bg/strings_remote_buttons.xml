@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Бутони на дистанционното</string>
     <string name="remote_buttons_section_desc">Задай функции на бутоните на дистанционното по време на гледане.</string>
-    <string name="remote_buttons_intro">OK, стрелките и „Назад“ винаги запазват обичайните си функции. Силата на звука се управлява от устройството или телевизора.</string>
+    <string name="remote_buttons_intro">Всеки бутон може да има функция при натискане и функция при задържане. OK, „Наляво“, „Надясно“ и „Назад“ винаги запазват обичайните си функции. „Нагоре“ и „Надолу“ могат да получат функция за времето, когато контролите на плейъра са скрити. Силата на звука се управлява от устройството или телевизора.</string>
     <string name="remote_buttons_setup_title">Настрой бутон</string>
-    <string name="remote_buttons_setup_subtitle">Натисни го на дистанционното, след това избери функцията му</string>
+    <string name="remote_buttons_setup_subtitle">Натисни го или го задръж на дистанционното, след това избери функцията му</string>
     <string name="remote_buttons_reset">Нулирай всички бутони</string>
     <string name="remote_buttons_mapper_note">Ползваш tvQuickActions или Button Mapper? Настрой бутона там да изпраща клавиш, например „Червен“ или „Инфо“, след това избери тук функцията на този клавиш.</string>
+    <string name="remote_buttons_hold_note">Задържането работи, когато устройството предава задържания бутон на приложението. Ако в „Настрой бутон“ никога не се засече задържане, този бутон има само функция при натискане на това устройство.</string>
     <string name="remote_buttons_number_keys">Цифрови бутони</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = средата, 0 = началото</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = средата, 0 = началото</string>
     <string name="remote_buttons_added">Настроен на това устройство</string>
+    <string name="remote_buttons_up_down_row">Докато контролите са скрити</string>
+    <string name="remote_buttons_up_down_desc">Само докато контролите на плейъра са скрити. Когато контролите се виждат, „Нагоре“ и „Надолу“ се движат по тях както обикновено.</string>
     <string name="remote_buttons_learn_title">Настрой бутон</string>
-    <string name="remote_buttons_learn_subtitle">Натисни бутона на дистанционното, на който искаш да зададеш функция. „Назад“ отменя.</string>
+    <string name="remote_buttons_learn_subtitle">Натисни бутона на дистанционното, на който искаш да зададеш функция. Задръж го, за да зададеш функцията му при задържане. „Назад“ отменя.</string>
     <string name="remote_buttons_learn_waiting">Изчакване на бутон…</string>
+    <string name="remote_buttons_learn_let_go">Засечено задържане. Пусни бутона.</string>
     <string name="remote_buttons_learn_nothing">Все още нищо не е получено. Някои бутони, като „Начало“, микрофонът, звукът и бутоните Netflix или YouTube, принадлежат на устройството и никога не стигат до приложението. Ако ползваш дистанционното на телевизора, той може да не предава този бутон на устройството. Опитай друг бутон или освободи този с приложение за пренасочване на бутони, например tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s: не може да се променя. OK, стрелките и „Назад“ винаги запазват обичайните си функции, за да не заседне никой в плейъра. Натисни друг бутон.</string>
+    <string name="remote_buttons_learn_locked">%1$s: не може да се променя. OK, „Наляво“, „Надясно“ и „Назад“ винаги запазват обичайните си функции, за да не заседне никой в плейъра. Натисни друг бутон.</string>
     <string name="remote_buttons_learn_volume">Силата на звука се управлява от устройството или телевизора. Натисни друг бутон.</string>
+    <string name="remote_buttons_press">Натискане</string>
+    <string name="remote_buttons_hold">Задържане</string>
+    <string name="remote_buttons_hold_value">Задържане: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Не е зададено</string>
+    <string name="remote_buttons_kind_title">%1$s: натискане или задържане</string>
+    <string name="remote_buttons_kind_subtitle">Задържането е около половин секунда. Когато бутон има функция при задържане, функцията му при натискане се изпълнява, щом го пуснеш.</string>
     <string name="remote_buttons_job_title">%1$s: избери функция</string>
+    <string name="remote_buttons_hold_job_title">%1$s, задържане: избери функция</string>
     <string name="remote_buttons_remove">Премахни този бутон</string>
     <string name="remote_buttons_skip_size_title">%1$s: скок с</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, задържане: скок с</string>
     <string name="remote_buttons_skip_size_subtitle">Всяко натискане прескача толкова.</string>
     <string name="remote_buttons_size_seconds">%1$d с</string>
     <string name="remote_buttons_size_minutes">%1$d мин</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Превъртане напред</string>
     <string name="remote_buttons_job_seek_back">Превъртане назад</string>
     <string name="remote_buttons_job_seek_desc">Като бутоните за превъртане: натискане прескача 10 секунди, задържане превърта плавно</string>
+    <string name="remote_buttons_job_seek_hold_desc">Превърта плавно, докато задържаш, както при задържане на „Превъртане напред“</string>
     <string name="remote_buttons_job_skip_forward">Скок напред</string>
     <string name="remote_buttons_job_skip_back">Скок назад</string>
     <string name="remote_buttons_job_skip_forward_value">Скок напред с %1$s</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Пропусни интро или следващ епизод</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Пропуска, когато се покаже бутонът за пропускане, иначе пуска следващия епизод</string>
     <string name="remote_buttons_job_leave">Изход от плейъра</string>
+    <string name="remote_buttons_job_show_details">Показване на детайли</string>
+    <string name="remote_buttons_job_show_details_desc">Паузира и веднага показва заглавието, описанието и актьорите. Натисни отново или Назад, за да го затвориш</string>
     <string name="remote_key_play_pause">Пускане/пауза</string>
     <string name="remote_key_fast_forward">Превъртане напред</string>
     <string name="remote_key_rewind">Превъртане назад</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">Телевизия на живо</string>
     <string name="remote_key_settings">Настройки</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">Стрелките</string>
+    <string name="remote_key_up">Нагоре</string>
+    <string name="remote_key_down">Надолу</string>
+    <string name="remote_key_left">Наляво</string>
+    <string name="remote_key_right">Надясно</string>
     <string name="remote_key_back">Назад</string>
     <string name="remote_key_space">Интервал</string>
     <string name="remote_buttons_banner_audio">Аудио: %1$s</string>

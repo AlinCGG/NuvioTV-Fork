@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Titler åbnes med dine addons\' detaljer og synkroniseres som enhver anden katalogtitel, mens afspilning og set-markeringer stadig sendes til %1$s. Nogle titler matcher eller afspilles måske ikke, hvis dine addons nummererer eller identificerer dem anderledes.</string>
     <string name="servers_import_continue_watching">Importer Fortsæt med at se</string>
     <string name="servers_import_continue_watching_description">Titler, du er begyndt på i %1$s, vises i Fortsæt med at se på Hjem. Set-markeringer holdes i takt begge veje.</string>
+    <string name="servers_import_watch_state">Importer seerfremgang</string>
+    <string name="servers_import_watch_state_description">Føj titler, du ser i %1$s, til Fortsæt med at se sammen med set-markeringerne. Afspilningen genoptages under alle omstændigheder fra %1$s.</string>
+    <string name="servers_resume_row">Fortsæt med at se</string>
     <string name="servers_sign_in_again">Log ind igen</string>
     <string name="servers_second_address">Anden adresse</string>
     <string name="servers_second_address_description">Prøves, når den første adresse ikke kan nås, for eksempel en hjemmeadresse først og en internetadresse bagefter.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Betroet certifikat</string>
     <string name="servers_trusted_certificate_forget">Glem</string>
     <string name="servers_failure_unsupported">Serveren understøtter ikke dette element.</string>
+    <string name="servers_failure_stream_limit">Serveren tillader ikke flere streams for denne konto lige nu.</string>
     <string name="servers_failure_incomplete">Serverens bibliotek tjekkes stadig. Prøv igen om et øjeblik.</string>
     <string name="servers_playback_failed">Kunne ikke starte afspilning fra serveren.</string>
     <string name="servers_audio_switch_failed">Kunne ikke skifte lydspor.</string>

@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">リモコンボタン</string>
     <string name="remote_buttons_section_desc">視聴中のリモコンボタンに機能を割り当てます。</string>
-    <string name="remote_buttons_intro">OK、矢印、戻るはいつもの機能のままです。音量はデバイスまたはテレビ側で操作します。</string>
+    <string name="remote_buttons_intro">どのボタンにも短押しの機能と長押しの機能を設定できます。OK、左、右、戻るはいつもの機能のままです。上と下には、プレーヤーのコントロールが隠れているときの機能を割り当てられます。音量はデバイスまたはテレビ側で操作します。</string>
     <string name="remote_buttons_setup_title">ボタンを設定</string>
-    <string name="remote_buttons_setup_subtitle">リモコンでボタンを押してから、機能を選んでください</string>
+    <string name="remote_buttons_setup_subtitle">リモコンでボタンを押すか長押ししてから、機能を選んでください</string>
     <string name="remote_buttons_reset">すべてのボタンをリセット</string>
     <string name="remote_buttons_mapper_note">tvQuickActions や Button Mapper をお使いですか？そちらでボタンが「赤」や「情報」などのキーを送るように設定し、ここでそのキーの機能を選んでください。</string>
+    <string name="remote_buttons_hold_note">長押しは、デバイスが長押ししたボタンをアプリに渡す場合に使えます。「ボタンを設定」で長押しが一度も検出されない場合、このデバイスではそのボタンに短押しの機能しか設定できません。</string>
     <string name="remote_buttons_number_keys">数字キー</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %、5 = 中間、0 = 最初</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %、5 = 中間、0 = 最初</string>
     <string name="remote_buttons_added">このデバイスで設定済み</string>
+    <string name="remote_buttons_up_down_row">コントロールが隠れているとき</string>
+    <string name="remote_buttons_up_down_desc">プレーヤーのコントロールが隠れているときだけ有効です。コントロールの表示中は、上と下でいつもどおりコントロール内を移動します。</string>
     <string name="remote_buttons_learn_title">ボタンを設定</string>
-    <string name="remote_buttons_learn_subtitle">機能を割り当てたいリモコンのボタンを押してください。戻るでキャンセルします。</string>
+    <string name="remote_buttons_learn_subtitle">機能を割り当てたいリモコンのボタンを押してください。長押しすると、代わりに長押しの機能を設定します。戻るでキャンセルします。</string>
     <string name="remote_buttons_learn_waiting">ボタンを待っています…</string>
+    <string name="remote_buttons_learn_let_go">長押しを検出しました。ボタンから指を離してください。</string>
     <string name="remote_buttons_learn_nothing">まだ何も届いていません。ホーム、マイク、音量、Netflix や YouTube ボタンなど一部のボタンはデバイス側で使われ、アプリには届きません。テレビのリモコンを使っている場合、テレビがこのボタンをデバイスに渡さないことがあります。別のボタンを試すか、tvQuickActions などのボタン割り当てアプリでそのボタンを使えるようにしてください。</string>
-    <string name="remote_buttons_learn_locked">「%1$s」は変更できません。OK、矢印、戻るは常にいつもの機能のままなので、プレーヤーから抜け出せなくなることはありません。別のボタンを押してください。</string>
+    <string name="remote_buttons_learn_locked">「%1$s」は変更できません。OK、左、右、戻るは常にいつもの機能のままなので、プレーヤーから抜け出せなくなることはありません。別のボタンを押してください。</string>
     <string name="remote_buttons_learn_volume">音量はデバイスまたはテレビ側で操作します。別のボタンを押してください。</string>
+    <string name="remote_buttons_press">短押し</string>
+    <string name="remote_buttons_hold">長押し</string>
+    <string name="remote_buttons_hold_value">長押し: %1$s</string>
+    <string name="remote_buttons_hold_not_set">未設定</string>
+    <string name="remote_buttons_kind_title">%1$s: 短押しか長押しか</string>
+    <string name="remote_buttons_kind_subtitle">長押しは約0.5秒です。ボタンに長押しの機能があると、短押しの機能は指を離したときに実行されます。</string>
     <string name="remote_buttons_job_title">%1$s: 機能を選択</string>
+    <string name="remote_buttons_hold_job_title">%1$s、長押し: 機能を選択</string>
     <string name="remote_buttons_remove">このボタンを削除</string>
     <string name="remote_buttons_skip_size_title">%1$s: スキップ幅</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s、長押し: スキップ幅</string>
     <string name="remote_buttons_skip_size_subtitle">1回押すごとにこの幅だけ移動します。</string>
     <string name="remote_buttons_size_seconds">%1$d秒</string>
     <string name="remote_buttons_size_minutes">%1$d分</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">早送りシーク</string>
     <string name="remote_buttons_job_seek_back">早戻しシーク</string>
     <string name="remote_buttons_job_seek_desc">早送り・早戻しと同じ: 1回押すと10秒移動、長押しで連続移動</string>
+    <string name="remote_buttons_job_seek_hold_desc">押している間は連続移動します。早送りの長押しと同じです</string>
     <string name="remote_buttons_job_skip_forward">スキップ（進む）</string>
     <string name="remote_buttons_job_skip_back">スキップ（戻る）</string>
     <string name="remote_buttons_job_skip_forward_value">%1$s進む</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">イントロをスキップ、または次のエピソード</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">スキップボタンが表示されていればスキップし、それ以外は次のエピソードを再生します</string>
     <string name="remote_buttons_job_leave">プレーヤーを終了</string>
+    <string name="remote_buttons_job_show_details">詳細を表示</string>
+    <string name="remote_buttons_job_show_details_desc">一時停止して、タイトル、あらすじ、キャストをすぐに表示。もう一度押すか戻るで閉じる</string>
     <string name="remote_key_play_pause">再生/一時停止</string>
     <string name="remote_key_fast_forward">早送り</string>
     <string name="remote_key_rewind">早戻し</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">ライブTV</string>
     <string name="remote_key_settings">設定</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">矢印ボタン</string>
+    <string name="remote_key_up">上</string>
+    <string name="remote_key_down">下</string>
+    <string name="remote_key_left">左</string>
+    <string name="remote_key_right">右</string>
     <string name="remote_key_back">戻る</string>
     <string name="remote_key_space">スペース</string>
     <string name="remote_buttons_banner_audio">音声: %1$s</string>

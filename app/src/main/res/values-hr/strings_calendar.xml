@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Red Novo i uskoro</string>
     <string name="calendar_setting_coming_up_sub">Red nakon Nastavi gledati s novim i nadolazećim epizodama i filmovima iz tvog Kalendara</string>
     <string name="calendar_coming_up_title">Novo i uskoro</string>
+    <string name="calendar_coming_up_takes_upcoming">Dok je red Novo i uskoro u Kalendaru uključen, ove se epizode prikazuju u njemu.</string>
     <string name="calendar_coming_up_new">Novo</string>
     <string name="calendar_coming_up_today_at">Danas %1$s</string>
     <string name="calendar_coming_up_tonight_at">Večeras %1$s</string>

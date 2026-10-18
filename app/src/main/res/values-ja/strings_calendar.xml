@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">「今後の予定」の行</string>
     <string name="calendar_setting_coming_up_sub">視聴を続けるの後に、カレンダーの新着や近日公開のエピソードと映画を表示する行</string>
     <string name="calendar_coming_up_title">今後の予定</string>
+    <string name="calendar_coming_up_takes_upcoming">カレンダーの「今後の予定」の行がオンの間は、これらのエピソードは代わりに「今後の予定」に表示されます。</string>
     <string name="calendar_coming_up_new">新着</string>
     <string name="calendar_coming_up_today_at">今日 %1$s</string>
     <string name="calendar_coming_up_tonight_at">今夜 %1$s</string>

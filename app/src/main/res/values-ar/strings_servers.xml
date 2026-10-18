@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">تُفتح العناوين بتفاصيل إضافاتك وتُزامَن مثل أي عنوان من القوائم، مع استمرار إرسال التشغيل وعلامات المشاهدة إلى %1$s. قد لا تتطابق بعض العناوين أو لا تعمل إذا كانت إضافاتك ترقّمها أو تعرّفها بشكل مختلف.</string>
     <string name="servers_import_continue_watching">استيراد متابعة المشاهدة</string>
     <string name="servers_import_continue_watching_description">العناوين التي بدأتها على %1$s تظهر في متابعة المشاهدة في الرئيسية. علامات المشاهدة تبقى متزامنة في الاتجاهين.</string>
+    <string name="servers_import_watch_state">استيراد تقدم المشاهدة</string>
+    <string name="servers_import_watch_state_description">إضافة العناوين التي تشاهدها على %1$s إلى متابعة المشاهدة، مع علامات المشاهدة. يستمر التشغيل من %1$s في الحالتين.</string>
+    <string name="servers_resume_row">متابعة المشاهدة</string>
     <string name="servers_sign_in_again">تسجيل الدخول مجدداً</string>
     <string name="servers_second_address">العنوان الثاني</string>
     <string name="servers_second_address_description">يُجرَّب عند تعذر الوصول إلى العنوان الأول، مثلاً عنوان منزلي أولاً وعنوان إنترنت ثانياً.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">شهادة موثوقة</string>
     <string name="servers_trusted_certificate_forget">نسيان</string>
     <string name="servers_failure_unsupported">الخادم لا يدعم هذا العنصر.</string>
+    <string name="servers_failure_stream_limit">الخادم لا يسمح بمزيد من البثوث لهذا الحساب حالياً.</string>
     <string name="servers_failure_incomplete">ما زال فحص مكتبة هذا الخادم جارياً. حاول مرة أخرى بعد لحظة.</string>
     <string name="servers_playback_failed">تعذر بدء التشغيل من الخادم.</string>
     <string name="servers_audio_switch_failed">تعذر تبديل المسار الصوتي.</string>

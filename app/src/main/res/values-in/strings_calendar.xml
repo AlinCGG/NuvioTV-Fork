@@ -91,6 +91,7 @@
     <string name="calendar_setting_coming_up">Baris Segera Hadir</string>
     <string name="calendar_setting_coming_up_sub">Baris setelah Lanjutkan Menonton berisi episode dan film baru dan yang akan datang dari Kalender Anda</string>
     <string name="calendar_coming_up_title">Segera Hadir</string>
+    <string name="calendar_coming_up_takes_upcoming">Selama baris Segera Hadir di Kalender aktif, episode ini tampil di baris itu sebagai gantinya.</string>
     <string name="calendar_coming_up_new">Baru</string>
     <string name="calendar_coming_up_today_at">Hari ini %1$s</string>
     <string name="calendar_coming_up_tonight_at">Malam ini %1$s</string>

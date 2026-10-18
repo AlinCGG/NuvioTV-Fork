@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Raden Snart</string>
     <string name="calendar_setting_coming_up_sub">En rad etter Fortsett å se med nye og kommende episoder og filmer fra Kalenderen din</string>
     <string name="calendar_coming_up_title">Snart</string>
+    <string name="calendar_coming_up_takes_upcoming">Så lenge raden Snart i Kalender er slått på, vises disse episodene i Snart i stedet.</string>
     <string name="calendar_coming_up_new">Ny</string>
     <string name="calendar_coming_up_today_at">I dag %1$s</string>
     <string name="calendar_coming_up_tonight_at">I kveld %1$s</string>

@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Red „Uskoro stiže“</string>
     <string name="calendar_setting_coming_up_sub">Red posle „Nastavi gledanje“ sa novim i predstojećim epizodama i filmovima iz Kalendara</string>
     <string name="calendar_coming_up_title">Uskoro stiže</string>
+    <string name="calendar_coming_up_takes_upcoming">Dok je red „Uskoro stiže“ u Kalendaru uključen, ove epizode se prikazuju u njemu.</string>
     <string name="calendar_coming_up_new">Novo</string>
     <string name="calendar_coming_up_today_at">Danas u %1$s</string>
     <string name="calendar_coming_up_tonight_at">Večeras u %1$s</string>

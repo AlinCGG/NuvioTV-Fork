@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Тайтли відкриваються з відомостями з ваших адонів і синхронізуються як будь-який тайтл каталогу, а відтворення й позначки про перегляд і далі надсилаються в %1$s. Деякі тайтли можуть не збігтися або не відтворитися, якщо адони нумерують чи визначають їх інакше.</string>
     <string name="servers_import_continue_watching">Імпортувати «Продовжити перегляд»</string>
     <string name="servers_import_continue_watching_description">Тайтли, розпочаті в %1$s, з\'являються в розділі «Продовжити перегляд» на головному екрані. Позначки про перегляд синхронізуються в будь-якому разі.</string>
+    <string name="servers_import_watch_state">Імпортувати прогрес перегляду</string>
+    <string name="servers_import_watch_state_description">Додавати тайтли, які ви дивитеся в %1$s, до «Продовжити перегляд» разом з позначками про перегляд. Відтворення в будь-якому разі продовжується з позиції в %1$s.</string>
+    <string name="servers_resume_row">Продовжити перегляд</string>
     <string name="servers_sign_in_again">Увійти знову</string>
     <string name="servers_second_address">Друга адреса</string>
     <string name="servers_second_address_description">Використовується, коли перша адреса недоступна: наприклад, перша адреса домашня, друга - з інтернету.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Довірений сертифікат</string>
     <string name="servers_trusted_certificate_forget">Забути</string>
     <string name="servers_failure_unsupported">Сервер не підтримує цей елемент.</string>
+    <string name="servers_failure_stream_limit">Сервер зараз не дозволяє більше потоків для цього акаунта.</string>
     <string name="servers_failure_incomplete">Бібліотека цього сервера ще перевіряється. Спробуйте за хвилину.</string>
     <string name="servers_playback_failed">Не вдалося почати відтворення із сервера.</string>
     <string name="servers_audio_switch_failed">Не вдалося перемкнути аудіодоріжку.</string>

@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Nút điều khiển từ xa</string>
     <string name="remote_buttons_section_desc">Gán chức năng cho các nút trên điều khiển khi xem.</string>
-    <string name="remote_buttons_intro">OK, các phím mũi tên và Quay lại luôn giữ chức năng thông thường. Âm lượng vẫn do thiết bị hoặc TV của bạn điều khiển.</string>
+    <string name="remote_buttons_intro">Mỗi nút có thể có một chức năng khi nhấn và một chức năng khi giữ. OK, Trái, Phải và Quay lại luôn giữ chức năng thông thường. Lên và Xuống có thể nhận chức năng dùng khi thanh điều khiển của trình phát đang ẩn. Âm lượng vẫn do thiết bị hoặc TV của bạn điều khiển.</string>
     <string name="remote_buttons_setup_title">Thiết lập nút</string>
-    <string name="remote_buttons_setup_subtitle">Nhấn nút đó trên điều khiển, rồi chọn chức năng</string>
+    <string name="remote_buttons_setup_subtitle">Nhấn hoặc giữ nút đó trên điều khiển, rồi chọn chức năng</string>
     <string name="remote_buttons_reset">Đặt lại tất cả nút</string>
     <string name="remote_buttons_mapper_note">Đang dùng tvQuickActions hoặc Button Mapper? Hãy đặt nút ở đó để gửi một phím, ví dụ Đỏ hoặc Thông tin, rồi chọn chức năng của phím đó tại đây.</string>
+    <string name="remote_buttons_hold_note">Giữ nút chỉ hoạt động khi thiết bị chuyển nút đang giữ sang ứng dụng. Nếu thao tác giữ không bao giờ hiện trong Thiết lập nút, nút đó chỉ có chức năng khi nhấn trên thiết bị này.</string>
     <string name="remote_buttons_number_keys">Phím số</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = giữa, 0 = đầu</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = giữa, 0 = đầu</string>
     <string name="remote_buttons_added">Đã thiết lập trên thiết bị này</string>
+    <string name="remote_buttons_up_down_row">Khi thanh điều khiển đang ẩn</string>
+    <string name="remote_buttons_up_down_desc">Chỉ khi thanh điều khiển của trình phát đang ẩn. Khi thanh điều khiển đang hiện, Lên và Xuống di chuyển trong đó như bình thường.</string>
     <string name="remote_buttons_learn_title">Thiết lập nút</string>
-    <string name="remote_buttons_learn_subtitle">Nhấn nút trên điều khiển mà bạn muốn gán chức năng. Nhấn Quay lại để hủy.</string>
+    <string name="remote_buttons_learn_subtitle">Nhấn nút trên điều khiển mà bạn muốn gán chức năng. Giữ nút để đặt chức năng khi giữ thay vì khi nhấn. Nhấn Quay lại để hủy.</string>
     <string name="remote_buttons_learn_waiting">Đang chờ nút…</string>
+    <string name="remote_buttons_learn_let_go">Đã nhận thao tác giữ. Hãy thả nút ra.</string>
     <string name="remote_buttons_learn_nothing">Chưa nhận được gì. Một số nút, như Trang chủ, micrô, âm lượng và nút Netflix hoặc YouTube, thuộc về thiết bị và không bao giờ đến được ứng dụng. Nếu bạn dùng điều khiển của TV, TV có thể không chuyển nút này sang thiết bị. Hãy thử nút khác, hoặc giải phóng nút đó bằng ứng dụng gán nút như tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s không thể thay đổi. OK, các phím mũi tên và Quay lại luôn giữ chức năng thông thường để không ai bị kẹt trong trình phát. Hãy nhấn nút khác.</string>
+    <string name="remote_buttons_learn_locked">%1$s không thể thay đổi. OK, Trái, Phải và Quay lại luôn giữ chức năng thông thường để không ai bị kẹt trong trình phát. Hãy nhấn nút khác.</string>
     <string name="remote_buttons_learn_volume">Âm lượng vẫn do thiết bị hoặc TV của bạn điều khiển. Hãy nhấn nút khác.</string>
+    <string name="remote_buttons_press">Nhấn</string>
+    <string name="remote_buttons_hold">Giữ</string>
+    <string name="remote_buttons_hold_value">Giữ: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Chưa đặt</string>
+    <string name="remote_buttons_kind_title">%1$s: nhấn hay giữ</string>
+    <string name="remote_buttons_kind_subtitle">Giữ là khoảng nửa giây. Khi nút có chức năng khi giữ, chức năng khi nhấn sẽ chạy lúc bạn thả nút.</string>
     <string name="remote_buttons_job_title">%1$s: chọn chức năng</string>
+    <string name="remote_buttons_hold_job_title">%1$s, giữ: chọn chức năng</string>
     <string name="remote_buttons_remove">Xóa nút này</string>
     <string name="remote_buttons_skip_size_title">%1$s: nhảy bao xa</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, giữ: nhảy bao xa</string>
     <string name="remote_buttons_skip_size_subtitle">Mỗi lần nhấn sẽ nhảy chừng này.</string>
     <string name="remote_buttons_size_seconds">%1$d s</string>
     <string name="remote_buttons_size_minutes">%1$d phút</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Tua tới</string>
     <string name="remote_buttons_job_seek_back">Tua lùi</string>
     <string name="remote_buttons_job_seek_desc">Như Tua nhanh và Tua lại: nhấn một lần tua 10 giây, giữ để tua liên tục</string>
+    <string name="remote_buttons_job_seek_hold_desc">Tua liên tục khi bạn giữ, như giữ nút Tua nhanh</string>
     <string name="remote_buttons_job_skip_forward">Nhảy tới</string>
     <string name="remote_buttons_job_skip_back">Nhảy lùi</string>
     <string name="remote_buttons_job_skip_forward_value">Nhảy tới %1$s</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Bỏ qua giới thiệu, hoặc tập tiếp theo</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Bỏ qua khi nút Bỏ qua hiện ra, nếu không thì phát tập tiếp theo</string>
     <string name="remote_buttons_job_leave">Thoát trình phát</string>
+    <string name="remote_buttons_job_show_details">Hiện chi tiết</string>
+    <string name="remote_buttons_job_show_details_desc">Tạm dừng và hiện ngay tiêu đề, tóm tắt và diễn viên. Nhấn lại hoặc Quay lại để đóng</string>
     <string name="remote_key_play_pause">Phát/Tạm dừng</string>
     <string name="remote_key_fast_forward">Tua nhanh</string>
     <string name="remote_key_rewind">Tua lại</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">TV trực tiếp</string>
     <string name="remote_key_settings">Cài đặt</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">Các phím mũi tên</string>
+    <string name="remote_key_up">Lên</string>
+    <string name="remote_key_down">Xuống</string>
+    <string name="remote_key_left">Trái</string>
+    <string name="remote_key_right">Phải</string>
     <string name="remote_key_back">Quay lại</string>
     <string name="remote_key_space">Dấu cách</string>
     <string name="remote_buttons_banner_audio">Âm thanh: %1$s</string>

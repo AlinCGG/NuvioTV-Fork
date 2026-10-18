@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Yakında satırı</string>
     <string name="calendar_setting_coming_up_sub">İzlemeye Devam Et\'ten sonra, Takviminizdeki yeni ve yaklaşan bölüm ve filmleri gösteren satır</string>
     <string name="calendar_coming_up_title">Yakında</string>
+    <string name="calendar_coming_up_takes_upcoming">Takvim\'deki Yakında satırı açıkken bu bölümler bunun yerine Yakında içinde gösterilir.</string>
     <string name="calendar_coming_up_new">Yeni</string>
     <string name="calendar_coming_up_today_at">Bugün %1$s</string>
     <string name="calendar_coming_up_tonight_at">Bu akşam %1$s</string>

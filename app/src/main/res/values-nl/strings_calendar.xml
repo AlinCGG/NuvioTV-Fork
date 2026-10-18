@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Rij Op komst</string>
     <string name="calendar_setting_coming_up_sub">Een rij na Verder kijken met nieuwe en komende afleveringen en films uit je Kalender</string>
     <string name="calendar_coming_up_title">Op komst</string>
+    <string name="calendar_coming_up_takes_upcoming">Zolang de rij Op komst van de Kalender aan staat, worden deze afleveringen in plaats daarvan in Op komst getoond.</string>
     <string name="calendar_coming_up_new">Nieuw</string>
     <string name="calendar_coming_up_today_at">Vandaag %1$s</string>
     <string name="calendar_coming_up_tonight_at">Vanavond %1$s</string>

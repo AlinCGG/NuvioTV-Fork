@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">「近期更新」行</string>
     <string name="calendar_setting_coming_up_sub">在继续观看之后显示一行，包含日历中的新剧集、即将播出的剧集和电影</string>
     <string name="calendar_coming_up_title">近期更新</string>
+    <string name="calendar_coming_up_takes_upcoming">开启日历的「近期更新」行后，这些剧集将改为显示在「近期更新」中。</string>
     <string name="calendar_coming_up_new">新</string>
     <string name="calendar_coming_up_today_at">今天 %1$s</string>
     <string name="calendar_coming_up_tonight_at">今晚 %1$s</string>

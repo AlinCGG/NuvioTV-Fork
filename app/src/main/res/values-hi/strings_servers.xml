@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">टाइटल आपके ऐडऑन के विवरण के साथ खुलते हैं और किसी भी कैटलॉग टाइटल की तरह सिंक होते हैं, जबकि प्लेबैक और देखे गए के निशान %1$s को भेजे जाते रहते हैं। अगर आपके ऐडऑन इन्हें अलग तरह से नंबर या पहचान देते हैं तो कुछ टाइटल मैच या प्ले नहीं हो सकते।</string>
     <string name="servers_import_continue_watching">\"देखना जारी रखें\" इंपोर्ट करें</string>
     <string name="servers_import_continue_watching_description">%1$s पर शुरू किए गए टाइटल होम पर \"देखना जारी रखें\" में दिखते हैं। देखे गए के निशान दोनों तरफ़ एक जैसे रखे जाते हैं।</string>
+    <string name="servers_import_watch_state">देखने की प्रगति इंपोर्ट करें</string>
+    <string name="servers_import_watch_state_description">%1$s पर देखे जा रहे टाइटल देखे गए के निशान के साथ \"देखना जारी रखें\" में जोड़ें। प्लेबैक वैसे भी %1$s से ही जारी रहता है।</string>
+    <string name="servers_resume_row">देखना जारी रखें</string>
     <string name="servers_sign_in_again">फिर से साइन इन करें</string>
     <string name="servers_second_address">दूसरा एड्रेस</string>
     <string name="servers_second_address_description">पहला एड्रेस न मिलने पर आज़माया जाता है, जैसे पहले घर का एड्रेस और दूसरा इंटरनेट एड्रेस।</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">भरोसेमंद सर्टिफ़िकेट</string>
     <string name="servers_trusted_certificate_forget">भूल जाएँ</string>
     <string name="servers_failure_unsupported">सर्वर इस आइटम को सपोर्ट नहीं करता।</string>
+    <string name="servers_failure_stream_limit">सर्वर फ़िलहाल इस अकाउंट के लिए और स्ट्रीम की अनुमति नहीं देता।</string>
     <string name="servers_failure_incomplete">इस सर्वर की लाइब्रेरी अभी जाँची जा रही है। थोड़ी देर में फिर कोशिश करें।</string>
     <string name="servers_playback_failed">सर्वर से प्लेबैक शुरू नहीं हो सका।</string>
     <string name="servers_audio_switch_failed">ऑडियो ट्रैक नहीं बदल सका।</string>

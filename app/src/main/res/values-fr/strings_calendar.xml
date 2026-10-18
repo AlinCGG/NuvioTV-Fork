@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Rangée Prochainement</string>
     <string name="calendar_setting_coming_up_sub">Une rangée après Continuer à regarder avec les épisodes et films nouveaux et à venir de votre calendrier</string>
     <string name="calendar_coming_up_title">Prochainement</string>
+    <string name="calendar_coming_up_takes_upcoming">Tant que la rangée Prochainement du Calendrier est activée, ces épisodes s\'affichent dans Prochainement à la place.</string>
     <string name="calendar_coming_up_new">Nouveau</string>
     <string name="calendar_coming_up_today_at">Aujourd\'hui à %1$s</string>
     <string name="calendar_coming_up_tonight_at">Ce soir à %1$s</string>

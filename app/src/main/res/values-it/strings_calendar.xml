@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Riga Prossimamente</string>
     <string name="calendar_setting_coming_up_sub">Una riga dopo Continua a guardare con episodi e film nuovi e in arrivo dal tuo calendario</string>
     <string name="calendar_coming_up_title">Prossimamente</string>
+    <string name="calendar_coming_up_takes_upcoming">Finché la riga Prossimamente del Calendario è attiva, questi episodi vengono mostrati in Prossimamente.</string>
     <string name="calendar_coming_up_new">Nuovo</string>
     <string name="calendar_coming_up_today_at">Oggi alle %1$s</string>
     <string name="calendar_coming_up_tonight_at">Stasera alle %1$s</string>

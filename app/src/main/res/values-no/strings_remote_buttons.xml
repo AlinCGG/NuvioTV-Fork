@@ -4,23 +4,35 @@
     <!-- Nuvio-test additions -->
     <string name="remote_buttons_section_title">Fjernkontrollknapper</string>
     <string name="remote_buttons_section_desc">Gi knappene på fjernkontrollen en funksjon mens du ser.</string>
-    <string name="remote_buttons_intro">OK, pilene og Tilbake beholder alltid sine vanlige funksjoner. Volumet styres fortsatt av boksen eller TV-en.</string>
+    <string name="remote_buttons_intro">Hver knapp kan ha en funksjon for trykk og en for langt trykk. OK, Venstre, Høyre og Tilbake beholder alltid sine vanlige funksjoner. Opp og Ned kan få en funksjon for når spillerens kontroller er skjult. Volumet styres fortsatt av boksen eller TV-en.</string>
     <string name="remote_buttons_setup_title">Sett opp en knapp</string>
-    <string name="remote_buttons_setup_subtitle">Trykk på den på fjernkontrollen, og velg så funksjon</string>
+    <string name="remote_buttons_setup_subtitle">Trykk på den eller hold den inne på fjernkontrollen, og velg så funksjon</string>
     <string name="remote_buttons_reset">Tilbakestill alle knapper</string>
     <string name="remote_buttons_mapper_note">Bruker du tvQuickActions eller Button Mapper? Still inn knappen der til å sende en tast, for eksempel Rød eller Info, og velg så tastens funksjon her.</string>
+    <string name="remote_buttons_hold_note">Langt trykk virker når boksen sender knappen du holder inne, videre til appen. Dukker et langt trykk aldri opp i Sett opp en knapp, har den knappen bare en funksjon for trykk på denne boksen.</string>
     <string name="remote_buttons_number_keys">Talltaster</string>
-    <string name="remote_buttons_number_keys_desc">1 = 10 %, 5 = halvveis, 0 = start</string>
+    <string name="remote_buttons_number_keys_desc" formatted="false">1 = 10 %, 5 = halvveis, 0 = start</string>
     <string name="remote_buttons_added">Satt opp på denne boksen</string>
+    <string name="remote_buttons_up_down_row">Mens kontrollene er skjult</string>
+    <string name="remote_buttons_up_down_desc">Bare mens spillerens kontroller er skjult. Når kontrollene vises, flytter Opp og Ned rundt i dem som vanlig.</string>
     <string name="remote_buttons_learn_title">Sett opp en knapp</string>
-    <string name="remote_buttons_learn_subtitle">Trykk på knappen på fjernkontrollen som skal få en funksjon. Tilbake avbryter.</string>
+    <string name="remote_buttons_learn_subtitle">Trykk på knappen på fjernkontrollen som skal få en funksjon. Hold den inne for i stedet å sette funksjonen for langt trykk. Tilbake avbryter.</string>
     <string name="remote_buttons_learn_waiting">Venter på en knapp…</string>
+    <string name="remote_buttons_learn_let_go">Langt trykk registrert. Slipp knappen.</string>
     <string name="remote_buttons_learn_nothing">Ingenting har kommet fram ennå. Noen knapper, som Hjem, mikrofonen, volumet og Netflix- eller YouTube-knappen, hører til boksen og når aldri appen. Bruker du fjernkontrollen til TV-en, sender kanskje ikke TV-en knappen videre til boksen. Prøv en annen knapp, eller frigjør den med en knappetilordningsapp som tvQuickActions.</string>
-    <string name="remote_buttons_learn_locked">%1$s kan ikke endres. OK, pilene og Tilbake beholder alltid sine vanlige funksjoner, så ingen blir sittende fast i spilleren. Trykk på en annen knapp.</string>
+    <string name="remote_buttons_learn_locked">%1$s kan ikke endres. OK, Venstre, Høyre og Tilbake beholder alltid sine vanlige funksjoner, så ingen blir sittende fast i spilleren. Trykk på en annen knapp.</string>
     <string name="remote_buttons_learn_volume">Volumet styres fortsatt av boksen eller TV-en. Trykk på en annen knapp.</string>
+    <string name="remote_buttons_press">Trykk</string>
+    <string name="remote_buttons_hold">Langt trykk</string>
+    <string name="remote_buttons_hold_value">Langt trykk: %1$s</string>
+    <string name="remote_buttons_hold_not_set">Ikke satt</string>
+    <string name="remote_buttons_kind_title">%1$s: trykk eller langt trykk</string>
+    <string name="remote_buttons_kind_subtitle">Et langt trykk er omtrent et halvt sekund. Når en knapp har en funksjon for langt trykk, kjøres funksjonen for trykk når du slipper.</string>
     <string name="remote_buttons_job_title">%1$s: velg funksjon</string>
+    <string name="remote_buttons_hold_job_title">%1$s, langt trykk: velg funksjon</string>
     <string name="remote_buttons_remove">Fjern denne knappen</string>
     <string name="remote_buttons_skip_size_title">%1$s: hopp med</string>
+    <string name="remote_buttons_hold_skip_size_title">%1$s, langt trykk: hopp med</string>
     <string name="remote_buttons_skip_size_subtitle">Hvert trykk hopper så langt.</string>
     <string name="remote_buttons_size_seconds">%1$d s</string>
     <string name="remote_buttons_size_minutes">%1$d min</string>
@@ -32,6 +44,7 @@
     <string name="remote_buttons_job_seek_forward">Spol fremover</string>
     <string name="remote_buttons_job_seek_back">Spol bakover</string>
     <string name="remote_buttons_job_seek_desc">Som Spol fram og Spol tilbake: et trykk hopper 10 sekunder, hold inne for å spole</string>
+    <string name="remote_buttons_job_seek_hold_desc">Spoler så lenge du holder inne, som når du holder inne Spol fram</string>
     <string name="remote_buttons_job_skip_forward">Hopp fremover</string>
     <string name="remote_buttons_job_skip_back">Hopp bakover</string>
     <string name="remote_buttons_job_skip_forward_value">Hopp %1$s fremover</string>
@@ -41,6 +54,8 @@
     <string name="remote_buttons_job_skip_intro_or_next">Hopp over intro eller neste episode</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Hopper over når Hopp over-knappen vises, ellers spilles neste episode</string>
     <string name="remote_buttons_job_leave">Forlat spilleren</string>
+    <string name="remote_buttons_job_show_details">Vis detaljer</string>
+    <string name="remote_buttons_job_show_details_desc">Pauser og viser tittel, handling og skuespillere med en gang. Trykk igjen eller Tilbake for å lukke den</string>
     <string name="remote_key_play_pause">Spill av/Pause</string>
     <string name="remote_key_fast_forward">Spol fram</string>
     <string name="remote_key_rewind">Spol tilbake</string>
@@ -69,7 +84,10 @@
     <string name="remote_key_live_tv">Direkte-TV</string>
     <string name="remote_key_settings">Innstillinger</string>
     <string name="remote_key_ok">OK</string>
-    <string name="remote_key_arrow">Piltastene</string>
+    <string name="remote_key_up">Opp</string>
+    <string name="remote_key_down">Ned</string>
+    <string name="remote_key_left">Venstre</string>
+    <string name="remote_key_right">Høyre</string>
     <string name="remote_key_back">Tilbake</string>
     <string name="remote_key_space">Mellomrom</string>
     <string name="remote_buttons_banner_audio">Lyd: %1$s</string>

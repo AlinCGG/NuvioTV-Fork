@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Naslovi se odprejo s podrobnostmi vaših dodatkov in se sinhronizirajo kot vsak drug naslov iz kataloga, predvajanje in oznake ogledanega pa se še vedno pošiljajo v %1$s. Nekateri naslovi se morda ne ujemajo ali ne predvajajo, če jih vaši dodatki številčijo ali prepoznajo drugače.</string>
     <string name="servers_import_continue_watching">Uvozi Nadaljuj z gledanjem</string>
     <string name="servers_import_continue_watching_description">Naslovi, ki ste jih začeli gledati v %1$s, se prikažejo v vrstici Nadaljuj z gledanjem na začetnem zaslonu. Oznake ogledanega se usklajujejo v obe smeri.</string>
+    <string name="servers_import_watch_state">Uvozi napredek gledanja</string>
+    <string name="servers_import_watch_state_description">Dodaj naslove, ki jih gledate v %1$s, v Nadaljuj z gledanjem, skupaj z oznakami ogledanega. Predvajanje se v vsakem primeru nadaljuje od mesta v %1$s.</string>
+    <string name="servers_resume_row">Nadaljuj z gledanjem</string>
     <string name="servers_sign_in_again">Prijavi se znova</string>
     <string name="servers_second_address">Drugi naslov</string>
     <string name="servers_second_address_description">Uporabi se, ko prvi naslov ni dosegljiv, na primer najprej domači naslov in nato internetni naslov.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Zaupanja vredno potrdilo</string>
     <string name="servers_trusted_certificate_forget">Pozabi</string>
     <string name="servers_failure_unsupported">Strežnik te vsebine ne podpira.</string>
+    <string name="servers_failure_stream_limit">Strežnik trenutno ne dovoljuje več pretokov za ta račun.</string>
     <string name="servers_failure_incomplete">Knjižnica tega strežnika se še preverja. Poskusite znova čez trenutek.</string>
     <string name="servers_playback_failed">Predvajanja s strežnika ni bilo mogoče začeti.</string>
     <string name="servers_audio_switch_failed">Zvočnega zapisa ni bilo mogoče preklopiti.</string>

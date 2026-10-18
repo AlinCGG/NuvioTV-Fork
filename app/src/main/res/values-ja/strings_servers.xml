@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">タイトルはアドオンの詳細情報で開き、他のカタログのタイトルと同じように同期されます。再生と視聴済みマークは引き続き%1$sに送られます。アドオンの番号付けや識別方法が異なる場合、一部のタイトルは一致しない、または再生できないことがあります。</string>
     <string name="servers_import_continue_watching">「視聴を続ける」を取り込む</string>
     <string name="servers_import_continue_watching_description">%1$sで視聴を始めたタイトルが、ホームの「視聴を続ける」に表示されます。視聴済みマークはどちらの場合も同期されます。</string>
+    <string name="servers_import_watch_state">視聴の進行状況を取り込む</string>
+    <string name="servers_import_watch_state_description">%1$sで視聴中のタイトルを、視聴済みマークとともに「視聴を続ける」に追加します。再生はどちらの場合も%1$sから再開されます。</string>
+    <string name="servers_resume_row">視聴を続ける</string>
     <string name="servers_sign_in_again">もう一度サインイン</string>
     <string name="servers_second_address">2つ目のアドレス</string>
     <string name="servers_second_address_description">1つ目のアドレスに接続できないときに試します。例: 1つ目に自宅のアドレス、2つ目にインターネットのアドレス。</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">信頼済みの証明書</string>
     <string name="servers_trusted_certificate_forget">削除</string>
     <string name="servers_failure_unsupported">サーバーはこのアイテムに対応していません。</string>
+    <string name="servers_failure_stream_limit">現在、サーバーはこのアカウントのこれ以上のストリームを許可していません。</string>
     <string name="servers_failure_incomplete">このサーバーのライブラリをまだ確認中です。しばらくしてからもう一度お試しください。</string>
     <string name="servers_playback_failed">サーバーからの再生を開始できませんでした。</string>
     <string name="servers_audio_switch_failed">音声トラックを切り替えられませんでした。</string>

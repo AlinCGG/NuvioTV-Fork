@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Titlurile se deschid cu detaliile din suplimentele tale și se sincronizează ca orice alt titlu de catalog, iar redarea și marcajele de vizionat sunt trimise în continuare către %1$s. Unele titluri s-ar putea să nu se potrivească sau să nu se redea dacă suplimentele le numerotează sau le identifică diferit.</string>
     <string name="servers_import_continue_watching">Importă Continuă vizionarea</string>
     <string name="servers_import_continue_watching_description">Titlurile începute pe %1$s apar în Continuă vizionarea din Acasă. Marcajele de vizionat se țin la zi în ambele sensuri.</string>
+    <string name="servers_import_watch_state">Importă progresul vizionării</string>
+    <string name="servers_import_watch_state_description">Adaugă titlurile pe care le vizionezi pe %1$s în Continuă vizionarea, împreună cu marcajele de vizionat. Redarea se reia oricum de pe %1$s.</string>
+    <string name="servers_resume_row">Continuă vizionarea</string>
     <string name="servers_sign_in_again">Conectează-te din nou</string>
     <string name="servers_second_address">A doua adresă</string>
     <string name="servers_second_address_description">Se încearcă atunci când prima adresă nu poate fi contactată, de exemplu întâi o adresă de acasă și apoi una de internet.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Certificat de încredere</string>
     <string name="servers_trusted_certificate_forget">Uită</string>
     <string name="servers_failure_unsupported">Serverul nu acceptă acest element.</string>
+    <string name="servers_failure_stream_limit">Serverul nu mai permite momentan alte fluxuri pentru acest cont.</string>
     <string name="servers_failure_incomplete">Biblioteca acestui server este încă verificată. Încearcă din nou peste puțin timp.</string>
     <string name="servers_playback_failed">Redarea de pe server nu a putut porni.</string>
     <string name="servers_audio_switch_failed">Pista audio nu a putut fi schimbată.</string>

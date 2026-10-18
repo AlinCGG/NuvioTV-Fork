@@ -109,6 +109,7 @@
     <string name="calendar_setting_coming_up">Ряд «На подходе»</string>
     <string name="calendar_setting_coming_up_sub">Ряд после «Продолжить просмотр» с новыми и будущими эпизодами и фильмами из календаря</string>
     <string name="calendar_coming_up_title">На подходе</string>
+    <string name="calendar_coming_up_takes_upcoming">Пока ряд «На подходе» в Календаре включён, эти эпизоды показываются в нём.</string>
     <string name="calendar_coming_up_new">Новый</string>
     <string name="calendar_coming_up_today_at">Сегодня в %1$s</string>
     <string name="calendar_coming_up_tonight_at">Вечером в %1$s</string>

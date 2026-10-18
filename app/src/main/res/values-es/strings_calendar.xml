@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Fila Próximos estrenos</string>
     <string name="calendar_setting_coming_up_sub">Una fila tras Continuar viendo con episodios y películas nuevos y próximos de tu Calendario</string>
     <string name="calendar_coming_up_title">Próximos estrenos</string>
+    <string name="calendar_coming_up_takes_upcoming">Mientras la fila Próximos estrenos del Calendario esté activada, estos episodios se muestran en Próximos estrenos.</string>
     <string name="calendar_coming_up_new">Nuevo</string>
     <string name="calendar_coming_up_today_at">Hoy %1$s</string>
     <string name="calendar_coming_up_tonight_at">Esta noche %1$s</string>

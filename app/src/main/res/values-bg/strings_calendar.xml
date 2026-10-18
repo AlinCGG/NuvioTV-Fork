@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">Ред „Скоро“</string>
     <string name="calendar_setting_coming_up_sub">Ред след „Продължаване на гледането“ с нови и предстоящи епизоди и филми от календара</string>
     <string name="calendar_coming_up_title">Скоро</string>
+    <string name="calendar_coming_up_takes_upcoming">Докато редът „Скоро“ в Календара е включен, тези епизоди се показват в него.</string>
     <string name="calendar_coming_up_new">Нов</string>
     <string name="calendar_coming_up_today_at">Днес в %1$s</string>
     <string name="calendar_coming_up_tonight_at">Довечера в %1$s</string>

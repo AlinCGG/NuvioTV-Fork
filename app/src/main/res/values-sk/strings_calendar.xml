@@ -109,6 +109,7 @@
     <string name="calendar_setting_coming_up">Riadok Na obzore</string>
     <string name="calendar_setting_coming_up_sub">Riadok za Pokračovať v sledovaní s novými a chystanými epizódami a filmami z Kalendára</string>
     <string name="calendar_coming_up_title">Na obzore</string>
+    <string name="calendar_coming_up_takes_upcoming">Keď je zapnutý riadok Na obzore v Kalendári, tieto epizódy sa zobrazujú v ňom.</string>
     <string name="calendar_coming_up_new">Nové</string>
     <string name="calendar_coming_up_today_at">Dnes %1$s</string>
     <string name="calendar_coming_up_tonight_at">Dnes večer %1$s</string>

@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Οι τίτλοι ανοίγουν με τις λεπτομέρειες των προσθέτων σας και συγχρονίζονται όπως κάθε άλλος τίτλος καταλόγου, ενώ η αναπαραγωγή και οι σημάνσεις προβολής στέλνονται και στο %1$s. Κάποιοι τίτλοι μπορεί να μην ταιριάξουν ή να μην παίξουν αν τα πρόσθετά σας τους αριθμούν ή τους αναγνωρίζουν διαφορετικά.</string>
     <string name="servers_import_continue_watching">Εισαγωγή Συνέχειας παρακολούθησης</string>
     <string name="servers_import_continue_watching_description">Οι τίτλοι που έχετε ξεκινήσει στο %1$s εμφανίζονται στη Συνέχεια παρακολούθησης της Αρχικής. Οι σημάνσεις προβολής συγχρονίζονται και προς τις δύο κατευθύνσεις.</string>
+    <string name="servers_import_watch_state">Εισαγωγή προόδου παρακολούθησης</string>
+    <string name="servers_import_watch_state_description">Προσθήκη των τίτλων που παρακολουθείτε στο %1$s στη Συνέχεια παρακολούθησης, μαζί με τις σημάνσεις προβολής. Η αναπαραγωγή συνεχίζεται από το %1$s και στις δύο περιπτώσεις.</string>
+    <string name="servers_resume_row">Συνέχεια παρακολούθησης</string>
     <string name="servers_sign_in_again">Σύνδεση ξανά</string>
     <string name="servers_second_address">Δεύτερη διεύθυνση</string>
     <string name="servers_second_address_description">Δοκιμάζεται όταν η πρώτη διεύθυνση δεν είναι προσβάσιμη, για παράδειγμα πρώτα μια διεύθυνση σπιτιού και μετά μια διεύθυνση διαδικτύου.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Έμπιστο πιστοποιητικό</string>
     <string name="servers_trusted_certificate_forget">Διαγραφή</string>
     <string name="servers_failure_unsupported">Ο διακομιστής δεν υποστηρίζει αυτό το στοιχείο.</string>
+    <string name="servers_failure_stream_limit">Ο διακομιστής δεν επιτρέπει προς το παρόν άλλες ροές για αυτόν τον λογαριασμό.</string>
     <string name="servers_failure_incomplete">Η βιβλιοθήκη αυτού του διακομιστή ελέγχεται ακόμη. Δοκιμάστε ξανά σε λίγο.</string>
     <string name="servers_playback_failed">Δεν ήταν δυνατή η έναρξη αναπαραγωγής από τον διακομιστή.</string>
     <string name="servers_audio_switch_failed">Δεν ήταν δυνατή η αλλαγή κομματιού ήχου.</string>

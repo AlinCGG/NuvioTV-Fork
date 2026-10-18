@@ -103,6 +103,7 @@
     <string name="calendar_setting_coming_up">Ред „Ускоро стиже“</string>
     <string name="calendar_setting_coming_up_sub">Ред после „Настави гледање“ са новим и предстојећим епизодама и филмовима из Календара</string>
     <string name="calendar_coming_up_title">Ускоро стиже</string>
+    <string name="calendar_coming_up_takes_upcoming">Док је ред „Ускоро стиже“ у Календару укључен, ове епизоде се приказују у њему.</string>
     <string name="calendar_coming_up_new">Ново</string>
     <string name="calendar_coming_up_today_at">Данас у %1$s</string>
     <string name="calendar_coming_up_tonight_at">Вечерас у %1$s</string>

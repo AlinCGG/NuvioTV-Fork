@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Tituly sa otvárajú s detailmi z vašich doplnkov a synchronizujú sa ako každý iný titul z katalógu, prehrávanie a označenia videného sa ďalej odosielajú do %1$s. Niektoré tituly sa nemusia spárovať alebo prehrať, ak ich vaše doplnky číslujú alebo identifikujú inak.</string>
     <string name="servers_import_continue_watching">Importovať Pokračovať v sledovaní</string>
     <string name="servers_import_continue_watching_description">Tituly rozpozerané na %1$s sa zobrazia v Pokračovať v sledovaní na domovskej obrazovke. Označenia videného sa zosúladia v oboch prípadoch.</string>
+    <string name="servers_import_watch_state">Importovať priebeh sledovania</string>
+    <string name="servers_import_watch_state_description">Pridá tituly, ktoré sledujete na %1$s, do Pokračovať v sledovaní vrátane označení videného. Prehrávanie sa v oboch prípadoch obnoví z %1$s.</string>
+    <string name="servers_resume_row">Pokračovať v sledovaní</string>
     <string name="servers_sign_in_again">Prihlásiť sa znova</string>
     <string name="servers_second_address">Druhá adresa</string>
     <string name="servers_second_address_description">Skúsi sa, keď prvá adresa nie je dostupná, napríklad prvá domáca adresa a druhá internetová.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Dôveryhodný certifikát</string>
     <string name="servers_trusted_certificate_forget">Zabudnúť</string>
     <string name="servers_failure_unsupported">Server túto položku nepodporuje.</string>
+    <string name="servers_failure_stream_limit">Server momentálne nepovoľuje pre tento účet ďalšie streamy.</string>
     <string name="servers_failure_incomplete">Knižnica tohto servera sa ešte kontroluje. Skúste to o chvíľu znova.</string>
     <string name="servers_playback_failed">Prehrávanie zo servera sa nepodarilo spustiť.</string>
     <string name="servers_audio_switch_failed">Zvukovú stopu sa nepodarilo prepnúť.</string>

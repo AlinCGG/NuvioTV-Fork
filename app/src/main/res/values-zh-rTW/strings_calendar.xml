@@ -97,6 +97,7 @@
     <string name="calendar_setting_coming_up">「近期更新」列</string>
     <string name="calendar_setting_coming_up_sub">在繼續觀看之後顯示一列，包含日曆中的新集數、即將播出的集數和電影</string>
     <string name="calendar_coming_up_title">近期更新</string>
+    <string name="calendar_coming_up_takes_upcoming">開啟日曆的「近期更新」列後，這些集數將改為顯示在「近期更新」中。</string>
     <string name="calendar_coming_up_new">新</string>
     <string name="calendar_coming_up_today_at">今天 %1$s</string>
     <string name="calendar_coming_up_tonight_at">今晚 %1$s</string>

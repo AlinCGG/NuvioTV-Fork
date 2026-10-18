@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">標題會以擴充套件提供的詳細資訊開啟，並像其他目錄標題一樣同步，播放和已觀看標記仍會傳送到 %1$s。如果您的擴充套件對標題的編號或識別方式不同，部分標題可能無法比對或播放。</string>
     <string name="servers_import_continue_watching">匯入繼續觀看</string>
     <string name="servers_import_continue_watching_description">您在 %1$s 上開始觀看的標題會顯示在首頁的繼續觀看中。無論開啟與否，已觀看標記都會保持同步。</string>
+    <string name="servers_import_watch_state">匯入觀看進度</string>
+    <string name="servers_import_watch_state_description">將您在 %1$s 上正在觀看的標題連同已觀看標記加入繼續觀看。無論開啟與否，都會從 %1$s 繼續播放。</string>
+    <string name="servers_resume_row">繼續觀看</string>
     <string name="servers_sign_in_again">重新登入</string>
     <string name="servers_second_address">第二位址</string>
     <string name="servers_second_address_description">第一個位址無法連線時使用，例如第一個填家用網路位址，第二個填網際網路位址。</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">已信任的憑證</string>
     <string name="servers_trusted_certificate_forget">忘記</string>
     <string name="servers_failure_unsupported">伺服器不支援此項目。</string>
+    <string name="servers_failure_stream_limit">伺服器目前不允許此帳戶再開啟更多串流。</string>
     <string name="servers_failure_incomplete">仍在檢查此伺服器的媒體庫。請稍後再試。</string>
     <string name="servers_playback_failed">無法從伺服器開始播放。</string>
     <string name="servers_audio_switch_failed">無法切換音軌。</string>

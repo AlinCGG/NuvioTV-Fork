@@ -55,6 +55,9 @@
     <string name="servers_catalog_metadata_description">Os títulos abrem com os detalhes dos teus addons e sincronizam como qualquer outro título de catálogo; a reprodução e as marcas de visto continuam a ser enviadas para o %1$s. Alguns títulos podem não corresponder ou não reproduzir se os teus addons os numerarem ou identificarem de outra forma.</string>
     <string name="servers_import_continue_watching">Importar Continuar a ver</string>
     <string name="servers_import_continue_watching_description">Os títulos que começaste no %1$s aparecem em Continuar a ver no Início. As marcas de visto mantêm-se em sincronia nos dois sentidos.</string>
+    <string name="servers_import_watch_state">Importar progresso</string>
+    <string name="servers_import_watch_state_description">Adiciona a Continuar a ver os títulos que estás a ver no %1$s, juntamente com as marcas de visto. A reprodução retoma sempre a partir do %1$s.</string>
+    <string name="servers_resume_row">Continuar a ver</string>
     <string name="servers_sign_in_again">Iniciar sessão novamente</string>
     <string name="servers_second_address">Segundo endereço</string>
     <string name="servers_second_address_description">Tentado quando o primeiro endereço não pode ser contactado; por exemplo, primeiro um endereço de casa e depois um da internet.</string>
@@ -109,6 +112,7 @@
     <string name="servers_trusted_certificate">Certificado de confiança</string>
     <string name="servers_trusted_certificate_forget">Esquecer</string>
     <string name="servers_failure_unsupported">O servidor não suporta este item.</string>
+    <string name="servers_failure_stream_limit">O servidor não permite mais streams para esta conta neste momento.</string>
     <string name="servers_failure_incomplete">A biblioteca deste servidor ainda está a ser verificada. Tenta de novo dentro de momentos.</string>
     <string name="servers_playback_failed">Não foi possível iniciar a reprodução a partir do servidor.</string>
     <string name="servers_audio_switch_failed">Não foi possível mudar a faixa de áudio.</string>
