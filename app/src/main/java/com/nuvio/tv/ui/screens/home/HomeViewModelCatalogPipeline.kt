@@ -25,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -622,7 +624,10 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         }
         val orderedRows = if (hideUnreleased) {
             val today = LocalDate.now()
-            rawRows.map { it.filterReleasedItems(today) }
+            rawRows.map {
+                ensureActive()
+                it.filterReleasedItems(today)
+            }
         } else {
             rawRows
         }
@@ -631,6 +636,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         } else {
             orderedRows
         }
+        ensureActive()
         val heldWatchedRowKey = watchedFocusRowKey?.takeIf { key ->
             watchedIds != null && visibleRows.any { row ->
                 row.stableKey() == key && row.items.any(watchedIds::isWatched)
@@ -664,71 +670,36 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         } else {
             emptyList()
         }
-        fun stableHeroCandidates(row: CatalogRow, candidates: kotlin.collections.Collection<MetaPreview>): List<MetaPreview> {
-            return candidates.sortedWith(
-                compareBy<MetaPreview> { stableHeroSortKey(row, it) }
-                    .thenBy { it.id }
-            )
-        }
-        fun slotShuffled(rows: List<CatalogRow>, filter: (MetaPreview) -> Boolean, currentOrder: List<String>): List<MetaPreview> {
-            val totalCatalogs = rows.size.coerceAtLeast(1)
-            val baseSlot = 7 / totalCatalogs
-            val remainder = 7 % totalCatalogs
-            val seen = mutableSetOf<String>()
-            val result = mutableListOf<MetaPreview>()
-            rows.forEachIndexed { index, row ->
-                val slot = baseSlot + if (index < remainder) 1 else 0
-                val existing = currentOrder.filter { id -> row.items.any { it.id == id } }
-                val byId = row.items.filter(filter).associateBy { it.id }
-                val ordered = existing.mapNotNull { byId[it] }
-                val new = stableHeroCandidates(
-                    row = row,
-                    candidates = byId.values.filter { it.id !in existing }
-                )
-                // Filter out duplicates but keep taking until slot is filled
-                val unique = (ordered + new).filter { seen.add(it.id) }
-                result += unique.take(slot)
-            }
-            return result
-        }
-
         val currentHeroOrder = heroItemOrder
 
-        val heroItemsFromSelectedCatalogs = slotShuffled(
+        val computedHeroItems = pickHeroItems(
             selectedHeroRows, { it.hasHeroArtwork() }, currentHeroOrder
-        )
-        val fallbackHeroItemsFromSelectedCatalogs = slotShuffled(
-            selectedHeroRows, { true }, currentHeroOrder
-        )
-        // When orderedRows is empty (all catalogs disabled), include any
-        // hero-only loaded catalogs as fallback hero sources.
-        val allHeroFallbackRows = if (orderedRows.isNotEmpty()) {
-            visibleRows
-        } else {
-            val nonOrderedRows = catalogSnapshot.keys
-                .filter { it !in orderedKeySet }
-                .mapNotNull { catalogSnapshot[it] }
-            val releasedRows = if (hideUnreleased) {
-                val today = LocalDate.now()
-                nonOrderedRows.map { it.filterReleasedItems(today) }
+        ).ifEmpty {
+            pickHeroItems(selectedHeroRows, { true }, currentHeroOrder)
+        }.ifEmpty {
+            if (selectedHeroCatalogSet.isNotEmpty()) return@ifEmpty emptyList()
+            // When orderedRows is empty (all catalogs disabled), include any
+            // hero-only loaded catalogs as fallback hero sources.
+            val allHeroFallbackRows = if (orderedRows.isNotEmpty()) {
+                visibleRows
             } else {
-                nonOrderedRows
+                val nonOrderedRows = catalogSnapshot.keys
+                    .filter { it !in orderedKeySet }
+                    .mapNotNull { catalogSnapshot[it] }
+                val releasedRows = if (hideUnreleased) {
+                    val today = LocalDate.now()
+                    nonOrderedRows.map { it.filterReleasedItems(today) }
+                } else {
+                    nonOrderedRows
+                }
+                if (watchedIds != null) releasedRows.map { it.withoutWatched(watchedIds) } else releasedRows
             }
-            if (watchedIds != null) releasedRows.map { it.withoutWatched(watchedIds) } else releasedRows
+            pickHeroItems(allHeroFallbackRows, { it.hasHeroArtwork() }, currentHeroOrder)
         }
-        val fallbackHeroItemsWithArtwork = slotShuffled(
-            allHeroFallbackRows, { it.hasHeroArtwork() }, currentHeroOrder
-        )
-
-        val computedHeroItems = when {
-            heroItemsFromSelectedCatalogs.isNotEmpty() -> heroItemsFromSelectedCatalogs
-            fallbackHeroItemsFromSelectedCatalogs.isNotEmpty() -> fallbackHeroItemsFromSelectedCatalogs
-            selectedHeroCatalogSet.isNotEmpty() -> emptyList()
-            fallbackHeroItemsWithArtwork.isNotEmpty() -> fallbackHeroItemsWithArtwork
-            else -> emptyList()
-        }
+        ensureActive()
 
         val computedDisplayRows = visibleRows.map { row ->
+            ensureActive()
             val shouldKeepFullRowInModern = currentLayout == HomeLayout.MODERN
             val gridTruncateLimit = 24
             if (row.items.size > gridTruncateLimit && !shouldKeepFullRowInModern) {
@@ -792,6 +763,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
             }
         }
         for (key in orderedKeys) {
+            ensureActive()
             if (key in disabledHomeCatalogKeys) continue
             val collectionEntry = collectionsSnapshot[key]
             if (collectionEntry != null) {
@@ -1008,11 +980,72 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
     }
 }
 
-private fun stableHeroSortKey(
-    row: CatalogRow,
-    item: MetaPreview
-): Int {
-    return "${row.addonId}|${row.apiType}|${row.catalogId}|${item.id}".hashCode()
+/**
+ * Shares seven hero slots across [rows]. Titles already in [currentOrder] keep their place, the rest of
+ * each slot is filled in a stable per-catalog order, and a title seen in an earlier row is never picked again.
+ */
+internal suspend fun pickHeroItems(
+    rows: List<CatalogRow>,
+    filter: (MetaPreview) -> Boolean,
+    currentOrder: List<String>
+): List<MetaPreview> {
+    val totalCatalogs = rows.size.coerceAtLeast(1)
+    val baseSlot = HERO_SLOT_COUNT / totalCatalogs
+    val remainder = HERO_SLOT_COUNT % totalCatalogs
+    val seen = HashSet<String>()
+    val result = mutableListOf<MetaPreview>()
+    for ((index, row) in rows.withIndex()) {
+        currentCoroutineContext().ensureActive()
+        val slot = baseSlot + if (index < remainder) 1 else 0
+        // Slots only shrink down the list, so no later row can add anything.
+        if (slot == 0) break
+        val existing = currentOrder.filter { id -> row.items.any { it.id == id } }
+        val byId = HashMap<String, MetaPreview>(row.items.size)
+        row.items.forEach { if (filter(it)) byId[it.id] = it }
+        val picked = ArrayList<MetaPreview>(slot)
+        existing.forEach { id ->
+            val item = byId[id] ?: return@forEach
+            if (seen.add(item.id) && picked.size < slot) picked += item
+        }
+        val need = slot - picked.size
+        if (need > 0) {
+            val prefixHash = "${row.addonId}|${row.apiType}|${row.catalogId}|".hashCode()
+            val topKeys = IntArray(need)
+            val top = arrayOfNulls<MetaPreview>(need)
+            var size = 0
+            for (item in byId.values) {
+                if (item.id in existing || item.id in seen) continue
+                val key = stableHeroSortKey(prefixHash, item.id)
+                if (size == need && compareHeroKeys(key, item.id, topKeys[size - 1], top[size - 1]!!.id) >= 0) continue
+                var pos = if (size < need) size++ else need - 1
+                while (pos > 0 && compareHeroKeys(key, item.id, topKeys[pos - 1], top[pos - 1]!!.id) < 0) {
+                    topKeys[pos] = topKeys[pos - 1]
+                    top[pos] = top[pos - 1]
+                    pos--
+                }
+                topKeys[pos] = key
+                top[pos] = item
+            }
+            for (i in 0 until size) picked += top[i]!!
+        }
+        seen.addAll(byId.keys)
+        result += picked
+    }
+    return result
+}
+
+private const val HERO_SLOT_COUNT = 7
+
+/** Same value as `(prefix + id).hashCode()` without building the joined string. */
+internal fun stableHeroSortKey(prefixHash: Int, id: String): Int {
+    var hash = prefixHash
+    for (ch in id) hash = 31 * hash + ch.code
+    return hash
+}
+
+private fun compareHeroKeys(key: Int, id: String, otherKey: Int, otherId: String): Int {
+    val byKey = key.compareTo(otherKey)
+    return if (byKey != 0) byKey else id.compareTo(otherId)
 }
 
 internal fun HomeViewModel.schedulePosterStatusReconcilePipeline(rows: List<CatalogRow>) {

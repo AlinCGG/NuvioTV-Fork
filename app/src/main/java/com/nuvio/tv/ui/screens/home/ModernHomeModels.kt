@@ -32,7 +32,7 @@ internal val YEAR_REGEX = Regex("""\b(19|20)\d{2}\b""")
 internal const val MODERN_HERO_TEXT_WIDTH_FRACTION = 0.42f
 internal const val MODERN_HERO_MEDIA_WIDTH_FRACTION = 0.72f
 internal const val MODERN_TRAILER_OVERSCAN_ZOOM = 1.0f
-internal const val MODERN_HERO_FOCUS_DEBOUNCE_MS = 450L
+internal const val MODERN_HERO_FOCUS_DEBOUNCE_MS = 300L
 internal val MODERN_ROW_HEADER_FOCUS_INSET = 40.dp
 internal const val MODERN_CONTINUE_WATCHING_ROW_KEY = "continue_watching"
 internal const val MODERN_UPCOMING_ROW_KEY = "upcoming_section"
@@ -176,7 +176,9 @@ internal data class ModernHeroSceneState(
     val trailerPlaybackKey: String?,
     val trailerMuted: Boolean,
     val fullScreenBackdrop: Boolean,
-    val featheredTrailer: Boolean = false
+    val featheredTrailer: Boolean = false,
+    val preparedImage: coil3.Image? = null,
+    val preparedLogo: coil3.Image? = null
 )
 
 internal data class ModernCatalogRowBuildCacheEntry(

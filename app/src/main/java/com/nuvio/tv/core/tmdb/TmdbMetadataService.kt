@@ -36,6 +36,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -55,6 +56,9 @@ class TmdbMetadataService(
     constructor(tmdbApi: TmdbApi) : this(tmdbApi, Dispatchers.IO)
 
     // In-memory caches
+    private val homeAgeRatingCache = ConcurrentHashMap<String, String>()
+    private val homeHeroCache = ConcurrentHashMap<String, TmdbEnrichment>()
+    private val homeHeroInFlight = ConcurrentHashMap<String, CompletableDeferred<TmdbEnrichment?>>()
     private val enrichmentCache = ConcurrentHashMap<String, TmdbEnrichment>()
     private val episodeCache = ConcurrentHashMap<String, Map<Pair<Int, Int>, TmdbEpisodeEnrichment>>()
     private val enrichmentInFlight = ConcurrentHashMap<String, CompletableDeferred<TmdbEnrichment?>>()
@@ -72,6 +76,94 @@ class TmdbMetadataService(
         val prefix = "$tmdbId:${contentType.name}:"
         return enrichmentCache.entries.firstOrNull { it.key.startsWith(prefix) }?.value?.originalTitle
     }
+
+    /** Home's core result never waits on credits, trailers, alternative titles or other addons.
+     * Separate cache: a partial Home response must never masquerade as complete Details data.
+     */
+    suspend fun fetchHomeHero(tmdbId: String, contentType: ContentType, language: String = "en"): TmdbEnrichment? =
+        withContext(ioDispatcher) {
+            val normalized = normalizeTmdbLanguage(language)
+            val key = "$tmdbId:${contentType.name}:$normalized"
+            enrichmentCache[key]?.let { return@withContext it }
+            homeHeroCache[key]?.let { return@withContext it }
+            val id = tmdbId.toIntOrNull() ?: return@withContext null
+            val result = CompletableDeferred<TmdbEnrichment?>()
+            homeHeroInFlight.putIfAbsent(key, result)?.let { return@withContext it.await() }
+            try {
+                val tv = contentType == ContentType.SERIES || contentType == ContentType.TV
+                val hero = coroutineScope {
+                    val images = async {
+                        // A slow/missing logo must not hold the background or readable title hostage.
+                        withTimeoutOrNull(750) {
+                            val languages = "${normalized.substringBefore('-')},$normalized,en,null"
+                            try {
+                                if (tv) tmdbApi.getTvImages(id, TMDB_API_KEY, languages).body()
+                                else tmdbApi.getMovieImages(id, TMDB_API_KEY, languages).body()
+                            } catch (e: CancellationException) { throw e }
+                            catch (_: Exception) { null }
+                        }
+                    }
+                    val details = if (tv) tmdbApi.getTvDetails(id, TMDB_API_KEY, normalized).body()
+                        else tmdbApi.getMovieDetails(id, TMDB_API_KEY, normalized).body()
+                    if (details == null) { images.cancel(); return@coroutineScope null }
+                    TmdbEnrichment(
+                        localizedTitle = details.title ?: details.name,
+                        description = details.overview?.takeIf(String::isNotBlank),
+                        genres = details.genres.orEmpty().map { it.name }.filter(String::isNotBlank),
+                        backdrop = buildImageUrl(details.backdropPath, "original"),
+                        logo = buildImageUrl(images.await()?.logos?.let { selectBestLocalizedImagePath(it, normalized) }, "original"),
+                        poster = buildImageUrl(details.posterPath, "w500"),
+                        directorMembers = emptyList(), writerMembers = emptyList(), castMembers = emptyList(),
+                        releaseInfo = (if (tv) details.firstAirDate else details.releaseDate).yearPart(),
+                        rating = details.voteAverage, runtimeMinutes = details.runtime ?: details.episodeRunTime?.firstOrNull(),
+                        director = emptyList(), writer = emptyList(), productionCompanies = emptyList(), networks = emptyList(),
+                        ageRating = null, status = details.status, countries = null, language = details.originalLanguage,
+                        collectionId = null, collectionName = null, originalTitle = details.originalTitle ?: details.originalName
+                    )
+                }
+                if (hero != null) {
+                    if (homeHeroCache.size >= 192) homeHeroCache.keys.firstOrNull()?.let(homeHeroCache::remove)
+                    homeHeroCache[key] = hero
+                }
+                result.complete(hero)
+                hero
+            } catch (e: CancellationException) {
+                result.cancel(e)
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Home hero request failed: ${e.javaClass.simpleName}")
+                result.complete(null)
+                null
+            } finally {
+                if (!result.isCompleted) result.complete(null)
+                homeHeroInFlight.remove(key, result)
+            }
+        }
+
+    suspend fun fetchHomeAgeRating(tmdbId: String, contentType: ContentType, language: String): String? =
+        withContext(ioDispatcher) {
+            val normalized = normalizeTmdbLanguage(language)
+            val key = "$tmdbId:${contentType.name}:$normalized"
+            homeAgeRatingCache[key]?.let { return@withContext it.takeIf(String::isNotBlank) }
+            val id = tmdbId.toIntOrNull() ?: return@withContext null
+            withTimeoutOrNull(1000) {
+                try {
+                    val rating = if (contentType == ContentType.SERIES || contentType == ContentType.TV) {
+                        val response = tmdbApi.getTvContentRatings(id, TMDB_API_KEY)
+                        if (!response.isSuccessful) return@withTimeoutOrNull null
+                        selectTvAgeRating(response.body()?.results.orEmpty(), normalized)
+                    } else {
+                        val response = tmdbApi.getMovieReleaseDates(id, TMDB_API_KEY)
+                        if (!response.isSuccessful) return@withTimeoutOrNull null
+                        selectMovieAgeRating(response.body()?.results.orEmpty(), normalized)
+                    }
+                    if (homeAgeRatingCache.size >= 192) homeAgeRatingCache.keys.firstOrNull()?.let(homeAgeRatingCache::remove)
+                    homeAgeRatingCache[key] = rating.orEmpty()
+                    rating
+                } catch (e: CancellationException) { throw e }
+                catch (_: Exception) { null }
+            }
+        }
 
     suspend fun fetchEnrichment(
         tmdbId: String,

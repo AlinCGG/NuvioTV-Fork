@@ -59,8 +59,8 @@ import com.nuvio.tv.ui.components.shouldShowHomeStartupLoader
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.components.PanelActionRow
 import com.nuvio.tv.ui.components.PlayerPanelRow
-import com.nuvio.tv.ui.components.PosterCardDefaults
 import com.nuvio.tv.ui.components.PosterCardStyle
+import com.nuvio.tv.ui.components.rememberPosterCardStyle
 import androidx.compose.ui.res.stringResource
 import com.nuvio.tv.R
 import com.nuvio.tv.ui.support.SupporterThanksNote
@@ -69,7 +69,6 @@ import com.nuvio.tv.core.tracking.supportsMembershipFor
 import com.nuvio.tv.data.local.StartupAuthNotice
 import com.nuvio.tv.ui.components.posteroptions.TrackingRemovalConfirmationDialog
 import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
 
 private data class HomePosterOptionsTarget(
     val item: MetaPreview,
@@ -227,19 +226,7 @@ fun HomeScreen(
         }
     }
 
-    val posterCardStyle = remember(
-        uiState.posterCardWidthDp,
-        uiState.posterCardCornerRadiusDp
-    ) {
-        val computedHeightDp = (uiState.posterCardWidthDp * 1.5f).roundToInt()
-        PosterCardStyle(
-            width = uiState.posterCardWidthDp.dp,
-            height = computedHeightDp.dp,
-            cornerRadius = uiState.posterCardCornerRadiusDp.dp,
-            focusedBorderWidth = PosterCardDefaults.Style.focusedBorderWidth,
-            focusedScale = PosterCardDefaults.Style.focusedScale
-        )
-    }
+    val posterCardStyle = rememberPosterCardStyle(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp)
 
     val noAddonsError = stringResource(R.string.home_empty_no_sources_title)
     val noCatalogAddonsError = stringResource(R.string.home_error_no_catalog_addons)
@@ -280,8 +267,10 @@ fun HomeScreen(
         sharedSplashEnabled = LocalStartupSplashEnabled.current,
         startupComplete = startupLoadingState?.complete != false
     )
+    LaunchedEffect(Unit) { com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("home_composed") }
     LaunchedEffect(showStartupLoader, startupLoadingState) {
         if (!showStartupLoader) {
+            com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("home_content")
             startupLoadingState?.complete = true
         }
     }

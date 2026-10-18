@@ -397,7 +397,7 @@ fun GridHomeContent(
             val cols = ((availableWidth + spacing) / (gridColumnMinSize + spacing)).toInt()
             cols.coerceAtLeast(1)
         }
-        val gridRowCount = if (posterCardStyle.width.value.toInt() <= 104) 2 else 3
+        val gridRowCount = if (uiState.posterCardWidthDp <= 104) 2 else 3
 
         // Trim content items per section so SeeAll never ends up alone on a new row.
         val trimmedPostItems = remember(postItems, actualColumnsPerRow, gridRowCount) {
@@ -612,7 +612,7 @@ fun GridHomeContent(
             }
 
             // Emit Upcoming section if SPLIT_UPCOMING mode has upcoming items
-            if (uiState.continueWatchingEnabled && uiState.upcomingItems.isNotEmpty()) {
+            if (uiState.continueWatchingEnabled && uiState.shownUpcomingItems.isNotEmpty()) {
                 item(
                     key = "upcoming_section",
                     span = { GridItemSpan(maxLineSpan) },

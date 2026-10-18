@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -108,6 +109,7 @@ internal fun ModernHeroScene(
         .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
         ModernHeroMediaLayer(
             artwork = state().artwork,
+            preparedImage = state().preparedImage,
             featheredTrailer = state().featheredTrailer,
             fullScreenBackdrop = state().fullScreenBackdrop,
             trailerBottomLimit = trailerBottomLimit,
@@ -139,6 +141,7 @@ internal fun ModernHeroScene(
 @Composable
 internal fun ModernHeroMediaLayer(
     artwork: HeroArtworkSelection,
+    preparedImage: coil3.Image?,
     featheredTrailer: Boolean = false,
     fullScreenBackdrop: Boolean = false,
     trailerBottomLimit: androidx.compose.ui.unit.Dp,
@@ -164,65 +167,24 @@ internal fun ModernHeroMediaLayer(
     val localContext = LocalContext.current
     val artworkAccent = com.nuvio.tv.ui.v2.appearance.LocalArtworkAccent.current
 
-    var artworkState by remember { mutableStateOf(HeroArtworkLoadState<Painter>(artwork)) }
-    if (artworkState.selection != artwork) artworkState = artworkState.select(artwork)
-    val ticket = artworkState.ticket
-    // Only until this hero has shown anything, so it covers a return to Home and leaves focus
-    // changes on Home with their usual fade.
-    var shownOnce by remember { mutableStateOf(false) }
-    var recalledTicket by remember { mutableStateOf<HeroArtworkTicket?>(null) }
-    if (!shownOnce && artworkState.ready == null && ticket != null) {
-        shownHeroImage.recall(ticket.url, requestWidthPx, requestHeightPx)?.let { image ->
-            artworkState = artworkState.loaded(ticket, image.asPainter(localContext))
-            recalledTicket = ticket
-            shownOnce = true
-        }
-    }
     val menuBackdrop = com.nuvio.tv.ui.v2.components.LocalMainMenuBackdrop.current
-    // Another page's hero can publish while this one fades out: clear only what this one wrote.
+    val displayedUrl = artwork.urls.firstOrNull()
     val publishedMenuUrl = remember { arrayOfNulls<String>(1) }
-    fun publishMenuUrl(url: String?) {
-        val backdrop = menuBackdrop ?: return
-        if (url != null) backdrop.artworkUrl = url
-        else if (backdrop.artworkUrl == publishedMenuUrl[0]) backdrop.artworkUrl = null
-        publishedMenuUrl[0] = url
-    }
     androidx.compose.runtime.DisposableEffect(menuBackdrop) {
-        onDispose { publishMenuUrl(null) }
-    }
-    // Start from the focused title's available artwork, without the metadata gate.
-    // Render the decoded result directly: no second image request/cache lookup.
-    LaunchedEffect(ticket, artwork.ownerKey, requestWidthPx, requestHeightPx, fullScreenBackdrop) {
-        val pageSelection = HeroBackdropState.selectPageArtwork(artwork.ownerKey, ticket?.url)
-        if (ticket == null || !fullScreenBackdrop) publishMenuUrl(null)
-        if (ticket != null && ticket == recalledTicket) {
-            if (fullScreenBackdrop) publishMenuUrl(ticket.url)
-            HeroBackdropState.recordDisplayedArtwork(pageSelection, ticket.url)
-            artworkAccent?.imageLoaded(ticket.url)
-        } else if (ticket != null) {
-            val cached = localContext.imageLoader.memoryCache?.get(coil3.memory.MemoryCache.Key(ticket.url))?.image
-            // Back and warmed A-B-A should display ready artwork without a focus
-            // debounce. Coil still validates the actual request/cache compatibility.
-            if (cached == null || cached.width < requestWidthPx || cached.height < requestHeightPx) delay(250)
-            val request = ImageRequest.Builder(localContext)
-                .data(ticket.url)
-                .size(requestWidthPx, requestHeightPx)
-                .scale(Scale.FILL)
-                .build()
-            val result = localContext.imageLoader.execute(request)
-            coroutineContext.ensureActive()
-            if (result is SuccessResult) {
-                artworkState = artworkState.loaded(ticket, result.image.asPainter(localContext))
-                shownOnce = true
-                shownHeroImage.keep(ticket.url, requestWidthPx, requestHeightPx, result.image)
-                if (fullScreenBackdrop) publishMenuUrl(ticket.url)
-                HeroBackdropState.recordDisplayedArtwork(pageSelection, ticket.url)
-                artworkAccent?.imageLoaded(ticket.url)
-            } else {
-                // A broken/missing backdrop advances to this title's next candidate.
-                artworkState = artworkState.failed(ticket)
-            }
+        onDispose {
+            if (menuBackdrop?.artworkUrl == publishedMenuUrl[0]) menuBackdrop?.artworkUrl = null
         }
+    }
+    LaunchedEffect(artwork.ownerKey, displayedUrl, preparedImage, fullScreenBackdrop) {
+        val page = HeroBackdropState.selectPageArtwork(artwork.ownerKey, displayedUrl)
+        if (preparedImage != null && displayedUrl != null) {
+            shownHeroImage.keep(displayedUrl, requestWidthPx, requestHeightPx, preparedImage)
+            HeroBackdropState.recordDisplayedArtwork(page, displayedUrl)
+            artworkAccent?.imageLoaded(displayedUrl)
+        }
+        if (fullScreenBackdrop) menuBackdrop?.artworkUrl = displayedUrl
+        else if (menuBackdrop?.artworkUrl == publishedMenuUrl[0]) menuBackdrop?.artworkUrl = null
+        publishedMenuUrl[0] = if (fullScreenBackdrop) displayedUrl else null
     }
     val cinematic = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current?.visualStyle ==
         com.nuvio.tv.domain.model.VisualStyle.CINEMATIC_GLASS
@@ -251,34 +213,12 @@ internal fun ModernHeroMediaLayer(
         drawContent()
     } else modifier) {
       BoxWithConstraints(Modifier.fillMaxSize()) {
-        // A crossfade may retain an outgoing painter only within the SAME title.
-        key(artwork.ownerKey) {
-        androidx.compose.animation.Crossfade(
-            targetState = artworkState.ready,
-            animationSpec = tween(durationMillis = NuvioMotion.tokens.durations.overlay),
-            label = "heroBackdropCrossfade"
-        ) { painter ->
-            if (painter != null) Image(
-                painter = painter,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        // Auto, not Offscreen: this layer holds a single
-                        // full-screen image (no overlapping content), so
-                        // Auto composites the transition alpha correctly while
-                        // avoiding a redundant offscreen buffer at rest. Inside a
-                        // Crossfade, Offscreen meant two buffered full-screen
-                        // backdrops alive at once during a hero swap. The hero
-                        // scrim layer keeps Offscreen (overlapping gradients).
-                        compositingStrategy = CompositingStrategy.Auto
-                        alpha = if (featheredTrailer) 1f else 1f - transitionProgressState.value
-                    }.then(if (liveTrailerGlass) Modifier else Modifier.v2GlassSource()),
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopEnd
-            )
-        }
-        }
+        HeroBackdropImages(
+            image = preparedImage,
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                alpha = if (featheredTrailer) 1f else 1f - transitionProgressState.value
+            }.then(if (liveTrailerGlass) Modifier else Modifier.v2GlassSource())
+        )
         if (shouldPlay) {
             val trailerUrlVal = heroTrailerUrl()
             val playbackKeyVal = heroTrailerPlaybackKey()
@@ -445,6 +385,7 @@ internal fun ModernHeroGradientLayer(
 internal fun HeroTitleBlock(
     previewProvider: () -> HeroPreview?,
     enrichmentActive: () -> Boolean = { false },
+    preparedLogo: coil3.Image? = null,
     portraitMode: Boolean,
     descriptionMaxLines: Int,
     showImdbRatings: Boolean,
@@ -462,7 +403,7 @@ internal fun HeroTitleBlock(
     }
     val currentPreview = displayInputs.first
     val isEnriching = displayInputs.second
-    
+
     var stablePreview by remember { mutableStateOf<HeroPreview?>(null) }
 
     LaunchedEffect(Unit) {
@@ -485,6 +426,7 @@ internal fun HeroTitleBlock(
     ) {
         HeroTitleContent(
             previewProvider = { displayPreview },
+            preparedLogo = preparedLogo,
             portraitMode = portraitMode,
             descriptionMaxLines = descriptionMaxLines,
             showImdbRatings = showImdbRatings,
@@ -498,6 +440,7 @@ internal fun HeroTitleBlock(
 @Composable
 private fun HeroTitleContent(
     previewProvider: () -> HeroPreview?,
+    preparedLogo: coil3.Image?,
     portraitMode: Boolean,
     descriptionMaxLines: Int,
     showImdbRatings: Boolean,
@@ -521,16 +464,6 @@ private fun HeroTitleContent(
     val logoMaxWidthPx = remember(density) { with(density) { 220.dp.roundToPx() } }
     val logoHeightPx = remember(density) { with(density) { 100.dp.roundToPx() } }
 
-    val logoModel = remember(context, preview.logo, logoMaxWidthPx, logoHeightPx) {
-        preview.logo?.let {
-            ImageRequest.Builder(context)
-                .data(it)
-                .memoryCacheKey(com.nuvio.tv.core.image.titleLogoCacheKey(it))
-                .crossfade(true)
-                .size(width = logoMaxWidthPx, height = logoHeightPx)
-                .build()
-        }
-    }
     // Same idea as in HeroTitleBlock: only a flip of the result should recompose this content.
     val latestTrailerPlaying = rememberUpdatedState(trailerPlaying)
     val trailerPlayingValue by remember { derivedStateOf { latestTrailerPlaying.value() } }
@@ -572,32 +505,27 @@ private fun HeroTitleContent(
             .clearAndSetSemantics { contentDescription = heroDescription },
         verticalArrangement = Arrangement.spacedBy(titleSpacing)
     ) {
-        var logoLoadFailed by remember(preview.logo) { mutableStateOf(false) }
-        val showLogo = !preview.logo.isNullOrBlank() && !logoLoadFailed
-        if (showLogo) {
-            AsyncImage(
-                model = logoModel,
-                contentDescription = preview.title,
-                onError = { logoLoadFailed = true },
-                modifier = Modifier
-                    .height(100.dp)
-                    .widthIn(min = 100.dp, max = 220.dp)
-                    .fillMaxWidth()
-                    .graphicsLayer { alpha = metaAlpha },
-                contentScale = ContentScale.Fit,
-                alignment = Alignment.CenterStart
-            )
-        } else if (preview.title.isNotBlank()) {
-            Text(
-                text = preview.title,
-                style = scaledTitleStyle,
-                color = NuvioTheme.colors.TextPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.graphicsLayer { alpha = metaAlpha }
-            )
+        // Text remains readable on logo failure/timeout; both choices occupy the same slot.
+        Box(Modifier.height(100.dp).fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+            if (preparedLogo != null) {
+                Image(
+                    painter = preparedLogo.asPainter(context), contentDescription = preview.title,
+                    modifier = Modifier.widthIn(max = 220.dp).fillMaxSize().graphicsLayer { alpha = metaAlpha },
+                    contentScale = ContentScale.Fit, alignment = Alignment.CenterStart
+                )
+            } else {
+                Text(text = preview.title, style = scaledTitleStyle,
+                    color = NuvioTheme.colors.TextPrimary, maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.graphicsLayer { alpha = metaAlpha })
+            }
         }
 
+        val metadataRowHeight = maxOf(
+            with(density) { labelMedium.lineHeight.toDp() } + NuvioTheme.spacing.xs * 2,
+            NuvioTheme.spacing.xl
+        )
+        Column(Modifier.heightIn(min = metadataRowHeight * 2 + titleSpacing), verticalArrangement = Arrangement.spacedBy(titleSpacing)) {
         val strStatusEnded = stringResource(if (preview.isSeries) R.string.series_status_ended else R.string.movie_status_ended)
         val strStatusContinuing = stringResource(if (preview.isSeries) R.string.series_status_continuing else R.string.movie_status_continuing)
         val strStatusCurrent = stringResource(if (preview.isSeries) R.string.series_status_current else R.string.movie_status_current)
@@ -826,11 +754,14 @@ private fun HeroTitleContent(
             }
         }
 
-        preview.description?.takeIf { it.isNotBlank() }?.let { description ->
+        }
+
+        preview.description.orEmpty().let { description ->
             Text(
                 text = description,
                 style = scaledDescriptionStyle.copy(textDirection = description.contentTextDirection()),
                 color = NuvioTheme.colors.TextPrimary,
+                minLines = descriptionMaxLines,
                 maxLines = descriptionMaxLines,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.graphicsLayer { alpha = metaAlpha }
@@ -945,4 +876,33 @@ private fun HeroMetaDivider(
             .graphicsLayer { alpha = if (visible) 1f else 0f }
             .background(NuvioTheme.colors.TextTertiary.copy(alpha = 0.78f))
     )
+}
+
+/** Explicit two-layer handoff: rapid input cannot accumulate Crossfade target layers. */
+@Composable
+private fun HeroBackdropImages(image: coil3.Image?, modifier: Modifier) {
+    val context = LocalContext.current
+    var current by remember { mutableStateOf(image) }
+    var outgoing by remember { mutableStateOf<coil3.Image?>(null) }
+    val alpha = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(image) {
+        if (image !== current) {
+            outgoing = current
+            current = image
+            alpha.snapTo(0f)
+            alpha.animateTo(1f, tween(350))
+            outgoing = null
+        }
+    }
+    Box(modifier) {
+        outgoing?.let {
+            Image(it.asPainter(context), null, Modifier.fillMaxSize().graphicsLayer {
+                this.alpha = if (current == null) 1f - alpha.value else 1f
+            }, contentScale = ContentScale.Crop, alignment = Alignment.TopEnd)
+        }
+        current?.let {
+            Image(it.asPainter(context), null, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha.value },
+                contentScale = ContentScale.Crop, alignment = Alignment.TopEnd)
+        }
+    }
 }

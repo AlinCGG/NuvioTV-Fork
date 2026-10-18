@@ -724,7 +724,7 @@ fun ClassicHomeContent(
             }
         }
 
-        if (uiState.continueWatchingEnabled && uiState.upcomingItems.isNotEmpty()) {
+        if (uiState.continueWatchingEnabled && uiState.shownUpcomingItems.isNotEmpty()) {
             item(key = "upcoming_section", contentType = "upcoming_section") {
                 LaunchedEffect(upcomingPendingScrollToStart.intValue) {
                     if (upcomingPendingScrollToStart.intValue > 0) {

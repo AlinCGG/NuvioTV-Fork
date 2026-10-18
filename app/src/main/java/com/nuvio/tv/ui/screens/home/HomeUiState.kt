@@ -23,6 +23,8 @@ data class HomeUiState(
     val upcomingItems: List<ContinueWatchingItem> = emptyList(),
     /** The Calendar's "Coming up" row, empty while the row is switched off. */
     val comingUpItems: List<ContinueWatchingItem> = emptyList(),
+    /** True while the Coming up row is on: it shows the Upcoming episodes and the Upcoming row stays hidden. */
+    val upcomingInComingUp: Boolean = false,
     val isLoading: Boolean = true,
     val layoutPreferencesReady: Boolean = false,
     val error: String? = null,
