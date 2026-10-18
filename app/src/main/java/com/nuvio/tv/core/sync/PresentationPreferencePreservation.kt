@@ -18,7 +18,11 @@ internal fun captureMissingPresentationChoices(
             "landscape_poster_scope",
             "watched_titles_mode"
         )
-        "player_settings" -> setOf("speculative_stream_search_enabled")
+        "player_settings" -> setOf(
+            "speculative_stream_search_enabled",
+            "show_source_line_badges",
+            "show_source_line_release_group"
+        )
         else -> emptySet()
     }
     return local.asMap().filterKeys { it.name in keys && it.name !in incomingKeys }

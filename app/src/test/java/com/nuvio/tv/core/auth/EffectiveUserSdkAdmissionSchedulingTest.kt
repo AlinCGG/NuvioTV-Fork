@@ -71,7 +71,7 @@ class EffectiveUserSdkAdmissionSchedulingTest {
             val profileClears=AtomicInteger();val credentialClears=AtomicInteger()
             coEvery { data.clearAll() } coAnswers { profileClears.incrementAndGet();Unit }
             every { credentials.clearAllProfiles() } answers { credentialClears.incrementAndGet();Unit }
-            val reset=AccountLocalDataResetService(context,factory,data,mockk<ProfileLockStateDataStore>(relaxed=true),setOf(credentials),storage)
+            val reset=AccountLocalDataResetService(context,factory,data,mockk<ProfileLockStateDataStore>(relaxed=true),setOf(credentials),mockk<com.nuvio.tv.core.sync.androidtv.AndroidTvChannelManager>(relaxed=true),storage)
             val auth=mockk<Auth>(relaxed=true)
             every { auth.sessionStatus } returns OwnedSessionFlow()
             val notices=mockk<AuthSessionNoticeDataStore>(relaxed=true)

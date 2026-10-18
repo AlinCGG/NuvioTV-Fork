@@ -48,7 +48,7 @@ class ProfileSnapshotLifecycleTest {
             val manager=ProfileManager(data,factory,setOf(credentials),context,storage)
             val cache=ContinueWatchingEnrichmentCache(context,manager,storage)
             coEvery { data.clearAll() } coAnswers { currentCoroutineContext().ensureActive();entries.value=listOf(profile(1)) }
-            val reset=AccountLocalDataResetService(context,factory,data,mockk<ProfileLockStateDataStore>(relaxed=true),setOf(credentials),storage)
+            val reset=AccountLocalDataResetService(context,factory,data,mockk<ProfileLockStateDataStore>(relaxed=true),setOf(credentials),mockk<com.nuvio.tv.core.sync.androidtv.AndroidTvChannelManager>(relaxed=true),storage)
             val f=Fixture(dir,data,factory,credentials,entries,manager,cache,reset)
             try {
                 manager.profiles.first { it.size==3 }

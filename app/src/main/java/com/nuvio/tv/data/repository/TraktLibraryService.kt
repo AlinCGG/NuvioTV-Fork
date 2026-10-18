@@ -103,6 +103,9 @@ class TraktLibraryService @Inject constructor(
     /** The watchlist and list entries already loaded, without asking Trakt. */
     fun currentItems(): List<LibraryEntry> = snapshotState.value.allEntries
 
+    /** Like [currentItems], but null until the first load for this profile has worked. */
+    fun currentItemsOrNull(): List<LibraryEntry>? = snapshotState.value.takeIf { it.updatedAtMs > 0L }?.allEntries
+
     fun observeIsRefreshing(): Flow<Boolean> {
         return refreshingState
     }

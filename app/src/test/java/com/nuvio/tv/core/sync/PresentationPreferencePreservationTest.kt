@@ -12,6 +12,18 @@ class PresentationPreferencePreservationTest {
         assertTrue(captureMissingPresentationChoices("player_settings", local, setOf(key.name)).isEmpty())
     }
 
+    @Test fun `source line switches survive a snapshot from an install without them`() {
+        val line = booleanPreferencesKey("show_source_line_badges")
+        val group = booleanPreferencesKey("show_source_line_release_group")
+        val local = preferencesOf(line to false, group to false)
+        assertEquals(mapOf<Preferences.Key<*>, Any>(Pair(line, false), Pair(group, false)),
+            captureMissingPresentationChoices("player_settings", local, setOf("speculative_stream_search_enabled")))
+        assertEquals(mapOf<Preferences.Key<*>, Any>(Pair(group, false)),
+            captureMissingPresentationChoices("player_settings", local, setOf(line.name)))
+        assertTrue(captureMissingPresentationChoices("player_settings", local, setOf(line.name, group.name)).isEmpty())
+        assertTrue(captureMissingPresentationChoices("layout_settings", local, emptySet()).isEmpty())
+    }
+
     @Test fun `older remote snapshots preserve local choices but explicit remote choices win`() {
         val enabled = booleanPreferencesKey("focused_poster_backdrop_trailer_enabled")
         val muted = booleanPreferencesKey("focused_poster_backdrop_trailer_muted")

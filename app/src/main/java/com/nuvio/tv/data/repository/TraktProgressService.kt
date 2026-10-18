@@ -1223,6 +1223,7 @@ class TraktProgressService @Inject constructor(
                 // Keep the current snapshot, and let the next poll retry instead of
                 // treating this activity change as already fetched.
                 lastKnownActivityFingerprint = null
+                currentCoroutineContext().ensureActive()
                 throw IOException("Progress snapshot fetch failed")
             }
 

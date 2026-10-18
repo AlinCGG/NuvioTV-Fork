@@ -129,6 +129,7 @@ private val localOnlyPlayerProfileSettingsKeys = setOf(
     "use_parallel_connections",
     "buffer_engine_enabled",
     "parallel_network_enabled",
+    "auto_speedup_enabled",
     "allow_large_target_buffer",
     "buffer_budget_managed",
     "parallel_connection_count",
@@ -247,10 +248,12 @@ class ProfileSettingsSyncService @Inject constructor(
         }
     }
 
-    suspend fun pushCurrentProfileToRemote(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun pushCurrentProfileToRemote(): Result<Unit> =
+        pushProfileSettingsToRemote(profileManager.activeProfileId.value)
+
+    private suspend fun pushProfileSettingsToRemote(profileId: Int): Result<Unit> = withContext(Dispatchers.IO) {
         syncMutex.withLock {
             try {
-                val profileId = profileManager.activeProfileId.value
                 pushProfileToRemote(profileId)
                 Log.d(TAG, "Pushed profile settings blob for profile $profileId")
                 Result.success(Unit)
@@ -595,13 +598,16 @@ class ProfileSettingsSyncService @Inject constructor(
                             }
                     }
                     combine(featureFlows) { signatures ->
-                        signatures.joinToString(separator = "||")
+                        profileId to signatures.joinToString(separator = "||")
                     }
+                        .distinctUntilChanged()
+                        // The first value is the profile's stored state, not a local edit. On a
+                        // profile switch it can be older than the cloud copy that is about to be
+                        // pulled, so pushing it would overwrite newer settings.
+                        .drop(1)
                 }
-                .distinctUntilChanged()
-                .drop(1)
                 .debounce(SETTINGS_PUSH_DEBOUNCE_MS)
-                .collect { signature ->
+                .collect { (profileId, signature) ->
                     if (!authManager.isAuthenticated) return@collect
                     if (applyingRemoteBlob) return@collect
                     if (profileDataStoreFactory.corruptedFileNames.isNotEmpty()) {
@@ -614,7 +620,8 @@ class ProfileSettingsSyncService @Inject constructor(
                         skipNextPushSignature = null
                         return@collect
                     }
-                    pushCurrentProfileToRemote()
+                    // A change debounced across a profile switch still belongs to the profile it was made on.
+                    pushProfileSettingsToRemote(profileId)
                 }
         }
     }
