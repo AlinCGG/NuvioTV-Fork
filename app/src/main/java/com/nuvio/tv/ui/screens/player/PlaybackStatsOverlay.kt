@@ -49,7 +49,7 @@ data class StatsRow(
  * One sampled frame of the live playback stats HUD. Rows are
  * pre-formatted label/value/dot triples so this composable stays dumb; all
  * sampling, formatting and threshold judgement happens in
- * PlayerViewModel.samplePlaybackStats().
+ * PlayerViewModel.samplePlaybackStats() and the row builders it calls.
  */
 data class PlaybackStatsSample(
     val isExoPlayer: Boolean,
@@ -59,6 +59,7 @@ data class PlaybackStatsSample(
 
 /** Section a stats row belongs to; declaration order is display order in the HUD. */
 enum class StatsGroup(val header: String) {
+    PLAYBACK("Playback"),
     SOURCE("Source"),
     VIDEO("Video"),
     AUDIO("Audio"),
@@ -73,6 +74,7 @@ data class StatsSection(
 )
 
 private val STATS_GROUP_BY_LABEL: Map<String, StatsGroup> = buildMap {
+    put("Position", StatsGroup.PLAYBACK)
     listOf("Add-on", "Provider", "Server", "Source host", "File", "Size", "File bitrate")
         .forEach { put(it, StatsGroup.SOURCE) }
     listOf("Video", "HDR", "V bitrate", "DV", "DV HDR", "DV CM", "DV levels", "DV L1", "DV L5", "Format",
@@ -189,7 +191,7 @@ internal val StatsPanelWidth = 380.dp
 /** Compact is a view of the same sample; full mode always retains every row. */
 internal fun visibleStatsSections(sections: List<StatsSection>, compact: Boolean): List<StatsSection> {
     if (!compact) return sections
-    val labels = setOf("Video", "HDR", "DV", "DV HDR", "Audio", "Route", "Speed", "Buffer", "Dropped", "Underruns", "Display")
+    val labels = setOf("Position", "Video", "HDR", "DV", "DV HDR", "Audio", "Route", "Speed", "Buffer", "Dropped", "Underruns", "Display")
     return sections.mapNotNull { section ->
         section.rows.filter { it.label in labels }.takeIf { it.isNotEmpty() }
             ?.let { section.copy(rows = it) }
@@ -220,79 +222,78 @@ fun PlaybackStatsOverlay(
                 .padding(horizontal = NuvioTheme.spacing.md, vertical = NuvioTheme.spacing.sm),
             verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xxs)
         ) {
+            visibleStatsSections(sample?.sections.orEmpty(), compact).forEach { section ->
+                Text(
+                    text = section.group.header.uppercase(),
+                    color = if (isV2) NuvioTheme.colors.TextSecondary else Color.White.copy(alpha = 0.5f),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 1.5.sp
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.White.copy(alpha = 0.12f))
+                )
+                section.rows.forEach { row ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(
+                                    color = when (row.dot) {
+                                        StatsDot.GOOD -> DotGood
+                                        StatsDot.WARN -> DotWarn
+                                        StatsDot.BAD -> DotBad
+                                        StatsDot.NONE -> Color.Transparent
+                                    },
+                                    shape = CircleShape
+                                )
+                        )
+                        Text(
+                            text = row.label,
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 10.sp,
+                            maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.width(88.dp)
+                        )
+                        if (row.marquee) {
+                            Text(
+                                text = row.value,
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .basicMarquee(
+                                        iterations = 3,
+                                        velocity = 20.dp,
+                                        initialDelayMillis = 2000
+                                    )
+                            )
+                        } else {
+                            Text(
+                                text = row.value,
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
             if (sample?.isExoPlayer == false) {
                 Text(
                     text = stringResource(R.string.player_stats_unavailable_mpv),
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 10.sp
                 )
-            } else {
-                visibleStatsSections(sample?.sections.orEmpty(), compact).forEach { section ->
-                    Text(
-                        text = section.group.header.uppercase(),
-                        color = if (isV2) NuvioTheme.colors.TextSecondary else Color.White.copy(alpha = 0.5f),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 1.5.sp
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color.White.copy(alpha = 0.12f))
-                    )
-                    section.rows.forEach { row ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(
-                                        color = when (row.dot) {
-                                            StatsDot.GOOD -> DotGood
-                                            StatsDot.WARN -> DotWarn
-                                            StatsDot.BAD -> DotBad
-                                            StatsDot.NONE -> Color.Transparent
-                                        },
-                                        shape = CircleShape
-                                    )
-                            )
-                            Text(
-                                text = row.label,
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontSize = 10.sp,
-                                maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.width(88.dp)
-                            )
-                            if (row.marquee) {
-                                Text(
-                                    text = row.value,
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Clip,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .basicMarquee(
-                                            iterations = 3,
-                                            velocity = 20.dp,
-                                            initialDelayMillis = 2000
-                                        )
-                                )
-                            } else {
-                                Text(
-                                    text = row.value,
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     }

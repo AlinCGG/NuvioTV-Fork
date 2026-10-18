@@ -120,14 +120,44 @@ class ScrubHoldClockTest {
     }
 
     @Test
-    fun tvBacklogRightAfterTheReleaseTakesBackItsTap() {
+    fun tvBacklogRightAfterTheReleaseOfAHoldTakesBackItsTap() {
         val clock = ScrubHoldClock()
+        clock.press(15_000L)
+        assertEquals(15_000L, clock.cec(15_450L))
         clock.release(20_003L)
         clock.press(20_098L)
         assertFalse(clock.takeUndoTap())
         assertNull(clock.cec(20_194L))
         assertTrue(clock.takeUndoTap())
         assertNull(clock.cec(20_290L))
+        assertFalse(clock.takeUndoTap())
+    }
+
+    /** A TV that sends every tap twice: quick taps in a row all count. */
+    @Test
+    fun tvRemote_quickTapsAfterATapAllKeepTheirStep() {
+        val clock = ScrubHoldClock()
+        clock.press(1_000L)
+        assertNull(clock.cec(1_096L))
+        clock.release(1_170L)
+        clock.press(1_300L)
+        assertNull(clock.cec(1_396L))
+        assertFalse(clock.takeUndoTap())
+        clock.release(1_470L)
+        clock.press(1_560L)
+        assertNull(clock.cec(1_656L))
+        assertFalse(clock.takeUndoTap())
+        assertFalse(clock.moving(1_700L))
+    }
+
+    @Test
+    fun boxRemote_quickTapAfterAHoldKeepsItsStep() {
+        val clock = ScrubHoldClock()
+        clock.press(0L)
+        assertEquals(0L, clock.repeat(eventTime = 400L, downTime = 0L))
+        clock.release(1_000L)
+        clock.press(1_100L)
+        assertNull(clock.repeat(eventTime = 1_150L, downTime = 1_100L))
         assertFalse(clock.takeUndoTap())
     }
 
