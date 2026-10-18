@@ -19,6 +19,38 @@ enum class AppIconOption(val key: String, val entitlement: CosmeticEntitlement? 
     WHITE("white")
 }
 
-/** Supporter colours follow the matching supporter theme; an icon already in use stays listed. */
-fun availableAppIcons(entitlements: CosmeticEntitlements, selected: AppIconOption): List<AppIconOption> =
-    AppIconOption.entries.filter { it.entitlement == null || entitlements.includes(it.entitlement) || it == selected }
+enum class AppIconLook {
+    CLASSIC,
+    CARD,
+    CARD_LETTERING
+}
+
+/** One launcher entry: a colour in a look. Only the card looks come with a transparent background. */
+data class AppIconChoice(
+    val colour: AppIconOption,
+    val look: AppIconLook = AppIconLook.CLASSIC,
+    val transparent: Boolean = false
+) {
+    init {
+        require(!transparent || look != AppIconLook.CLASSIC) { "Classic icons have no transparent banner" }
+    }
+
+    companion object {
+        fun of(colour: AppIconOption, look: AppIconLook, transparent: Boolean) =
+            AppIconChoice(colour, look, transparent && look != AppIconLook.CLASSIC)
+
+        val all: List<AppIconChoice> = AppIconLook.entries.flatMap { look ->
+            val backgrounds = if (look == AppIconLook.CLASSIC) listOf(false) else listOf(false, true)
+            backgrounds.flatMap { transparent -> AppIconOption.entries.map { AppIconChoice(it, look, transparent) } }
+        }
+    }
+}
+
+/**
+ * Supporter colours follow the matching supporter theme, in every look. The icon already in use stays listed, but
+ * not its other looks.
+ */
+fun canUseAppIcon(entitlements: CosmeticEntitlements, choice: AppIconChoice, selected: AppIconChoice): Boolean {
+    val entitlement = choice.colour.entitlement
+    return entitlement == null || entitlements.includes(entitlement) || choice == selected
+}

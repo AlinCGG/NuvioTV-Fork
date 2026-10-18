@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.Choreographer
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import com.nuvio.tv.core.util.StartupLatencyTrace
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.max
@@ -24,9 +25,13 @@ import kotlin.math.roundToInt
 @SuppressLint("ViewConstructor")
 class ArcIgnitionView(
     context: Context,
-    private val palette: ArcPalette,
+    val palette: ArcPalette,
     private val onStarted: () -> Unit,
-    private val onFailed: () -> Unit
+    private val onFailed: (reason: String) -> Unit,
+    /** Called on the intro's own thread right after the first frame was posted, so the sound lands with it. */
+    private val onFirstFrame: () -> Unit = {},
+    /** Starts from the start window's mark: the logo is already there and the frame fades in over the window. */
+    private val handoff: Boolean = false
 ) : SurfaceView(context), SurfaceHolder.Callback {
 
     private val main = Handler(Looper.getMainLooper())
@@ -37,6 +42,8 @@ class ArcIgnitionView(
     private var pendingExit: Pair<Long, () -> Unit>? = null
     private val tier = ArcIntroTier.forDevice(context)
     private val reducedSurface = tier.reducedBuffer
+    @Volatile var stage = ArcIntroStage.Waiting
+        private set
 
     init {
         setZOrderOnTop(true)
@@ -68,15 +75,9 @@ class ArcIgnitionView(
         holder.setFixedSize(max(1, (width * cap).roundToInt()), max(1, (height * cap).roundToInt()))
     }
 
-    /** A 1080p buffer keeps fill cost flat on 4K interfaces (the display scaler does the rest); light boxes use 720p. */
-    private fun bufferCap(): Float = min(1f, min(1920f / width, 1080f / height)) * if (reducedSurface) 2f / 3f else 1f
+    private fun bufferCap(): Float = bufferCapFor(width, height, reducedSurface)
 
-    /** Device pixels per stage unit in the buffer, so the scene can size its art to land pixel for pixel. */
-    private fun bufferScale(): Float {
-        if (width <= 0 || height <= 0) return if (reducedSurface) 2f / 3f else 1f
-        val cap = bufferCap()
-        return min((width * cap).roundToInt() / 1920f, (height * cap).roundToInt() / 1080f)
-    }
+    private fun bufferScale(): Float = bufferScaleFor(width, height, reducedSurface)
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         renderer = Renderer(holder).also { r ->
@@ -124,14 +125,26 @@ class ArcIgnitionView(
             val pixelScale = bufferScale()
             handler.post {
                 choreographer = Choreographer.getInstance()
+                stage = ArcIntroStage.Preparing
+                StartupLatencyTrace.cold("intro_prepare_start", palette.key)
                 val prepareStart = System.nanoTime()
-                scene = runCatching { ArcIgnitionScene.prepare(context.resources, palette, pixelScale) }
-                    .onFailure { Log.w(Tag, "prepare failed", it) }
-                    .getOrNull()
+                val ahead = ArcIntroPrep.take(palette, pixelScale)
+                scene = (ahead as? AheadOfTime.Take.Hit)?.value
+                    ?: runCatching { ArcIgnitionScene.prepare(context.resources, palette, pixelScale) }
+                        .onFailure { Log.w(Tag, "prepare failed", it) }
+                        .getOrNull()
+                val aheadName = when (ahead) {
+                    is AheadOfTime.Take.Hit -> "hit"
+                    AheadOfTime.Take.Failed -> "failed"
+                    AheadOfTime.Take.Miss -> "miss"
+                }
+                val prepareMs = (System.nanoTime() - prepareStart) / 1_000_000
+                StartupLatencyTrace.cold("intro_prepare_end", "${palette.key} $prepareMs ms ahead=$aheadName ok=${scene != null}")
                 if (quitting) return@post
-                if (scene == null) { fail(); return@post }
+                if (scene == null) { fail("prepare failed"); return@post }
                 scene?.detail = tier.detail
-                Log.i(Tag, "prepared ${palette.key} in ${(System.nanoTime() - prepareStart) / 1_000_000} ms, reduced motion=$reducedMotion, start detail=${tier.detail} smallBuffer=${tier.reducedBuffer}")
+                stage = ArcIntroStage.Ready
+                Log.i(Tag, "prepared ${palette.key} in $prepareMs ms (ahead=$aheadName), reduced motion=$reducedMotion, handoff=$handoff, start detail=${tier.detail} smallBuffer=${tier.reducedBuffer}")
                 choreographer.postFrameCallback(this)
             }
         }
@@ -175,7 +188,7 @@ class ArcIgnitionView(
 
             val elapsed = (frameTimeNanos - startNanos) / 1_000_000_000f
             val clock = if (reducedMotion) ReducedMotionClock else elapsed
-            var alpha = if (reducedMotion) ArcIgnitionScene.smooth(elapsed / 0.3f) else 1f
+            var alpha = ArcStartHandoff.frameAlpha(elapsed, handoff, reducedMotion)
             var content = 1f
             if (exitStartNanos != 0L) {
                 // First half: the mark, lettering and light fade out over the stage. Second half: the stage itself
@@ -187,7 +200,7 @@ class ArcIgnitionView(
             val still = reducedMotion && alpha == lastAlpha && content == lastContent
             lastAlpha = alpha
             lastContent = content
-            if (!still && !render(s, clock, alpha, content)) { fail(); return }
+            if (!still && !render(s, clock, alpha, content)) { fail("draw failed"); return }
             if (drawn && !reportedStart) { reportedStart = true; main.post { onStarted() } }
             if (exitStartNanos != 0L && alpha <= 0f) { finishExit(); return }
             choreographer.postFrameCallback(this)
@@ -203,11 +216,16 @@ class ArcIgnitionView(
                 val canvas = surface.lockHardwareCanvas()
                 try {
                     // The canvas has the buffer's real size, also on the frame right after the buffer was made smaller.
-                    s.draw(canvas, canvas.width, canvas.height, clock, alpha, content)
+                    s.draw(canvas, canvas.width, canvas.height, clock, alpha, content, handoff)
                 } finally {
                     surface.unlockCanvasAndPost(canvas)
                 }
-                drawn = true
+                if (!drawn) {
+                    drawn = true
+                    stage = ArcIntroStage.Drawn
+                    StartupLatencyTrace.cold("intro_first_frame", palette.key)
+                    runCatching(onFirstFrame).onFailure { Log.w(Tag, "first frame callback failed", it) }
+                }
                 val spent = System.nanoTime() - begin
                 drawNanos += spent
                 quality.onDraw(spent / 1_000_000f)
@@ -239,9 +257,10 @@ class ArcIgnitionView(
             deliverExit()
         }
 
-        private fun fail() {
+        private fun fail(reason: String) {
             running = false
-            main.post { onFailed() }
+            stage = ArcIntroStage.Failed
+            main.post { onFailed(reason) }
             deliverExit()
         }
 
@@ -260,9 +279,20 @@ class ArcIgnitionView(
         }
     }
 
-    private companion object {
-        const val Tag = "ArcIntro"
+    companion object {
+        private const val Tag = "ArcIntro"
         /** Reduced motion shows the settled mark without the breathing. */
-        const val ReducedMotionClock = 5.4f
+        private const val ReducedMotionClock = 5.4f
+
+        /** A 1080p buffer keeps fill cost flat on 4K interfaces (the display scaler does the rest); light boxes use 720p. */
+        private fun bufferCapFor(width: Int, height: Int, reduced: Boolean): Float =
+            min(1f, min(1920f / width, 1080f / height)) * if (reduced) 2f / 3f else 1f
+
+        /** Device pixels per stage unit in the buffer, so the scene can size its art to land pixel for pixel. */
+        internal fun bufferScaleFor(width: Int, height: Int, reduced: Boolean): Float {
+            if (width <= 0 || height <= 0) return if (reduced) 2f / 3f else 1f
+            val cap = bufferCapFor(width, height, reduced)
+            return min((width * cap).roundToInt() / 1920f, (height * cap).roundToInt() / 1080f)
+        }
     }
 }

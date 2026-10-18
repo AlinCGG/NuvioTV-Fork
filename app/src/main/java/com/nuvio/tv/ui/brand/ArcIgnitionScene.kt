@@ -18,6 +18,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import androidx.core.graphics.PathParser
 import com.nuvio.tv.R
+import java.util.concurrent.CancellationException
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -115,9 +116,9 @@ class ArcIgnitionScene private constructor(
     /**
      * Draws the frame at [clock] seconds onto a canvas of [width] x [height] pixels. Past
      * [SettleSeconds] the mark stays in its settled live-arc state. [alpha] fades the whole frame, [content] only the
-     * mark, lettering and light, leaving the stage.
+     * mark, lettering and light, leaving the stage. On a [handoff] the logo plate is there from the start.
      */
-    fun draw(canvas: Canvas, width: Int, height: Int, clock: Float, alpha: Float = 1f, content: Float = 1f) {
+    fun draw(canvas: Canvas, width: Int, height: Int, clock: Float, alpha: Float = 1f, content: Float = 1f, handoff: Boolean = false) {
         val scale = min(width / StageW, height / StageH)
         val backdropFits = backdrop.width == width && backdrop.height == height
         // A fitting backdrop is opaque and covers every pixel, so an opaque frame needs no clear underneath it.
@@ -138,7 +139,7 @@ class ArcIgnitionScene private constructor(
         canvas.translate(originX, originY)
         canvas.scale(scale, scale)
         if (!backdropFits) canvas.drawBitmap(backdrop, null, stageRect, plainPaint)
-        val plateFade = (smooth(clock / 0.9f) * content * 255).toInt()
+        val plateFade = (ArcStartHandoff.plateFade(clock, handoff) * content * 255).toInt()
         if (glassPlate) {
             platePaint.alpha = plateFade
             drawPlate(canvas, logoPlate, platePaint)
@@ -486,11 +487,18 @@ class ArcIgnitionScene private constructor(
 
         /**
          * Decodes, recolours and sizes the art for [pixelScale] device pixels per stage unit (1 for a 1080p buffer), so
-         * the mark and the lettering are drawn pixel for pixel. Blocking; call off the main thread.
+         * the mark and the lettering are drawn pixel for pixel. Blocking; call off the main thread. Stops with a
+         * [CancellationException] between images once [keepGoing] turns false.
          */
-        fun prepare(resources: Resources, palette: ArcPalette, pixelScale: Float = 1f): ArcIgnitionScene {
+        fun prepare(
+            resources: Resources,
+            palette: ArcPalette,
+            pixelScale: Float = 1f,
+            keepGoing: () -> Boolean = { true }
+        ): ArcIgnitionScene {
             val options = BitmapFactory.Options().apply { inScaled = false; inPreferredConfig = Bitmap.Config.ARGB_8888 }
             fun art(id: Int, recolor: Boolean, stageWidth: Float, sharpen: Boolean): Bitmap {
+                if (!keepGoing()) throw CancellationException("no longer wanted")
                 val decoded = BitmapFactory.decodeResource(resources, id, options)
                 val sw = decoded.width
                 val sh = decoded.height

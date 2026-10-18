@@ -1,7 +1,11 @@
 package com.nuvio.tv.core.util
 
+import android.os.Process
 import android.os.SystemClock
 import android.util.Log
+import android.view.View
+import android.view.ViewTreeObserver
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Lightweight startup-latency trace for task 2.13 (profile-select to main UI).
@@ -36,5 +40,26 @@ object StartupLatencyTrace {
         }
         Log.i(TAG, "[$name] t=+${now - traceStartElapsedMs} ms (step +${now - lastMarkElapsedMs} ms)")
         lastMarkElapsedMs = now
+    }
+
+    private val coldNames = ConcurrentHashMap.newKeySet<String>()
+
+    /** Logs [name] against the process start, so one cold launch reads as a single timeline. */
+    fun cold(name: String, detail: String = "") {
+        val t = SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime()
+        Log.i(TAG, if (detail.isEmpty()) "[$name] cold=+$t ms" else "[$name] cold=+$t ms $detail")
+    }
+
+    fun coldOnce(name: String, detail: String = "") {
+        if (coldNames.add(name)) cold(name, detail)
+    }
+
+    fun coldOnFirstDraw(view: View, name: String) {
+        view.viewTreeObserver.addOnDrawListener(object : ViewTreeObserver.OnDrawListener {
+            override fun onDraw() {
+                coldOnce(name)
+                view.post { view.viewTreeObserver.removeOnDrawListener(this) }
+            }
+        })
     }
 }
