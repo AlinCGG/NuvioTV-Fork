@@ -2,12 +2,11 @@ package com.nuvio.tv.data.trailer
 
 import android.content.Context
 import android.hardware.display.DisplayManager
-import android.media.MediaCodecList
-import android.os.Build
 import android.view.Display
 
+/** Trailers play on top of the UI through a TextureView; this cap holds on every device. */
 internal const val TRAILER_MAX_VIDEO_HEIGHT = 1080
-internal const val TRAILER_MAX_VIDEO_WIDTH = 1920
+internal const val TRAILER_MAX_VIDEO_WIDTH = TRAILER_MAX_VIDEO_HEIGHT * 16 / 9
 
 internal enum class TrailerVideoCodec {
     H264,
@@ -20,7 +19,8 @@ internal enum class TrailerVideoCodec {
 internal data class TrailerVideoLimits(
     val maxHeight: Int = TRAILER_MAX_VIDEO_HEIGHT,
     val maxWidth: Int = TRAILER_MAX_VIDEO_WIDTH,
-    val av1HardwareDecoder: Boolean = false,
+    // Same question the player's video renderer asks: a decoder for this codec, profile, size and frame rate.
+    val canDecode: (codecs: String, width: Int, height: Int, fps: Int) -> Boolean = { _, _, _, _ -> true },
     val hdrDisplay: Boolean = false
 )
 
@@ -48,24 +48,27 @@ internal fun isHdrTrailerFormat(mimeType: String, qualityLabel: String?, transfe
 }
 
 /**
- * The video streams a trailer may use on this device. When the limits leave nothing they are
- * given up one at a time (codec, then HDR, then size) so a trailer still plays.
+ * The video streams a trailer may use on this device. A stream the device has no decoder for
+ * is never used: it would play as audio over a black screen, while the HLS manifest or a
+ * progressive file still works. The other limits are given up one at a time (HDR, then size)
+ * so a trailer still plays.
  */
 internal fun trailerVideoCandidates(
     candidates: List<StreamCandidate>,
     limits: TrailerVideoLimits
 ): List<StreamCandidate> {
-    fun allowed(size: Boolean, hdr: Boolean, codec: Boolean) = candidates.filter { candidate ->
-        (!size || (candidate.height <= limits.maxHeight && candidate.width <= limits.maxWidth)) &&
-            (!hdr || limits.hdrDisplay || !candidate.isHdr) &&
-            (!codec || limits.av1HardwareDecoder || candidate.codec != TrailerVideoCodec.AV1)
+    val decodable = candidates.filter { candidate ->
+        val codecs = candidate.codecs ?: return@filter true
+        limits.canDecode(codecs, candidate.width, candidate.height, candidate.fps)
     }
-    return allowed(size = true, hdr = true, codec = true)
-        .ifEmpty { allowed(size = true, hdr = true, codec = false) }
-        .ifEmpty { allowed(size = true, hdr = false, codec = false) }
-        .ifEmpty { allowed(size = false, hdr = true, codec = true) }
-        .ifEmpty { allowed(size = false, hdr = true, codec = false) }
-        .ifEmpty { candidates }
+    fun allowed(size: Boolean, hdr: Boolean) = decodable.filter { candidate ->
+        (!size || (candidate.height <= limits.maxHeight && candidate.width <= limits.maxWidth)) &&
+            (!hdr || limits.hdrDisplay || !candidate.isHdr)
+    }
+    return allowed(size = true, hdr = true)
+        .ifEmpty { allowed(size = true, hdr = false) }
+        .ifEmpty { allowed(size = false, hdr = true) }
+        .ifEmpty { decodable }
 }
 
 internal fun trailerVideoCodecRank(codec: TrailerVideoCodec?): Int = when (codec) {
@@ -77,22 +80,9 @@ internal fun trailerVideoCodecRank(codec: TrailerVideoCodec?): Int = when (codec
 }
 
 internal fun deviceTrailerVideoLimits(context: Context): TrailerVideoLimits = TrailerVideoLimits(
-    av1HardwareDecoder = hasHardwareDecoder("video/av01"),
+    canDecode = VideoDecoderSupport::canDecode,
     hdrDisplay = displaySupportsHdr(context)
 )
-
-private fun hasHardwareDecoder(mimeType: String): Boolean = runCatching {
-    MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
-        !info.isEncoder &&
-            info.supportedTypes.any { it.equals(mimeType, ignoreCase = true) } &&
-            if (Build.VERSION.SDK_INT >= 29) {
-                info.isHardwareAccelerated
-            } else {
-                !info.name.startsWith("OMX.google.", ignoreCase = true) &&
-                    !info.name.startsWith("c2.android.", ignoreCase = true)
-            }
-    }
-}.getOrDefault(false)
 
 @Suppress("DEPRECATION")
 private fun displaySupportsHdr(context: Context): Boolean = runCatching {

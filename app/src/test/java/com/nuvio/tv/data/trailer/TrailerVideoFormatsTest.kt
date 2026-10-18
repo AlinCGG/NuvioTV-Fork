@@ -46,17 +46,25 @@ class TrailerVideoFormatsTest {
     }
 
     @Test
-    fun `AV1 needs a hardware decoder`() {
+    fun `a codec needs a decoder on this device`() {
         val candidates = listOf(
-            video("av1", height = 1080, codec = TrailerVideoCodec.AV1),
-            video("vp9", height = 1080, codec = TrailerVideoCodec.VP9)
+            video("av1", height = 1080, codec = TrailerVideoCodec.AV1, codecs = "av01.0.08M.08"),
+            video("vp9", height = 1080, codec = TrailerVideoCodec.VP9, codecs = "vp9")
         )
+        val noAv1 = TrailerVideoLimits(canDecode = { codecs, _, _, _ -> !codecs.startsWith("av01") })
 
-        assertEquals(listOf("vp9"), trailerVideoCandidates(candidates, TrailerVideoLimits()).map { it.url })
-        assertEquals(
-            listOf("av1", "vp9"),
-            trailerVideoCandidates(candidates, TrailerVideoLimits(av1HardwareDecoder = true)).map { it.url }
-        )
+        assertEquals(listOf("vp9"), trailerVideoCandidates(candidates, noAv1).map { it.url })
+        assertEquals(listOf("av1", "vp9"), trailerVideoCandidates(candidates, TrailerVideoLimits()).map { it.url })
+    }
+
+    @Test
+    fun `a stream the device cannot decode never comes back, even when nothing else fits`() {
+        val av1 = video("2160p-av1", height = 2160, width = 3840, codec = TrailerVideoCodec.AV1, codecs = "av01.0.12M.08")
+        val vp9 = video("2160p-vp9", height = 2160, width = 3840, codec = TrailerVideoCodec.VP9, codecs = "vp9")
+        val noAv1 = TrailerVideoLimits(canDecode = { codecs, _, _, _ -> !codecs.startsWith("av01") })
+
+        assertEquals(listOf(vp9), trailerVideoCandidates(listOf(av1, vp9), noAv1))
+        assertTrue(trailerVideoCandidates(listOf(av1), noAv1).isEmpty())
     }
 
     @Test
@@ -81,20 +89,17 @@ class TrailerVideoFormatsTest {
     }
 
     @Test
-    fun `the limits are given up one at a time, codec first, then HDR, then size`() {
-        val av1 = video("1080p-av1", height = 1080, width = 1920, codec = TrailerVideoCodec.AV1)
-        val av1Hdr = video("1080p-av1-hdr", height = 1080, width = 1920, codec = TrailerVideoCodec.AV1, isHdr = true)
+    fun `the limits are given up one at a time, HDR first, then size`() {
+        val sdr = video("1080p-vp9", height = 1080, width = 1920, codec = TrailerVideoCodec.VP9)
+        val hdr = video("1080p-vp9-hdr", height = 1080, width = 1920, codec = TrailerVideoCodec.VP9, isHdr = true)
         val big = video("2160p-vp9", height = 2160, width = 3840, codec = TrailerVideoCodec.VP9)
         val bigHdr = video("2160p-vp9-hdr", height = 2160, width = 3840, codec = TrailerVideoCodec.VP9, isHdr = true)
-        val bigAv1 = video("2160p-av1", height = 2160, width = 3840, codec = TrailerVideoCodec.AV1)
-        val bigAv1Hdr = video("2160p-av1-hdr", height = 2160, width = 3840, codec = TrailerVideoCodec.AV1, isHdr = true)
         val limits = TrailerVideoLimits()
 
-        assertEquals(listOf(av1), trailerVideoCandidates(listOf(bigAv1Hdr, bigHdr, big, av1Hdr, av1), limits))
-        assertEquals(listOf(av1Hdr), trailerVideoCandidates(listOf(bigAv1Hdr, bigHdr, big, av1Hdr), limits))
-        assertEquals(listOf(big), trailerVideoCandidates(listOf(bigAv1Hdr, bigHdr, bigAv1, big), limits))
-        assertEquals(listOf(bigAv1), trailerVideoCandidates(listOf(bigAv1Hdr, bigHdr, bigAv1), limits))
-        assertEquals(listOf(bigAv1Hdr, bigHdr), trailerVideoCandidates(listOf(bigAv1Hdr, bigHdr), limits))
+        assertEquals(listOf(sdr), trailerVideoCandidates(listOf(bigHdr, big, hdr, sdr), limits))
+        assertEquals(listOf(hdr), trailerVideoCandidates(listOf(bigHdr, big, hdr), limits))
+        assertEquals(listOf(big), trailerVideoCandidates(listOf(bigHdr, big), limits))
+        assertEquals(listOf(bigHdr), trailerVideoCandidates(listOf(bigHdr), limits))
     }
 
     @Test
@@ -129,7 +134,8 @@ class TrailerVideoFormatsTest {
         codec: TrailerVideoCodec,
         width: Int = 0,
         isHdr: Boolean = false,
-        bitrate: Double = 1_000_000.0
+        bitrate: Double = 1_000_000.0,
+        codecs: String? = null
     ) = StreamCandidate(
         client = "visionos",
         priority = 0,
@@ -142,6 +148,7 @@ class TrailerVideoFormatsTest {
         ext = "mp4",
         width = width,
         codec = codec,
+        codecs = codecs,
         isHdr = isHdr
     )
 }
