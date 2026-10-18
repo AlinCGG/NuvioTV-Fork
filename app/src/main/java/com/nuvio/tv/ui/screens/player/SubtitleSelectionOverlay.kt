@@ -375,6 +375,7 @@ internal fun SubtitleSelectionOverlay(
                             PlayerPanelRow(
                                 title = if (variant != null) "$variant - ${item.sourceLabel}" else item.sourceLabel,
                                 subtitle = item.meta,
+                                titleMaxLines = 2,
                                 selected = item.id == currentSelectedOptionId,
                                 onClick = { select(item) },
                                 onLongClick = {

@@ -335,6 +335,11 @@ public class MatroskaExtractor implements Extractor {
   private static final int ID_TRACK_TYPE = 0x83;
   private static final int ID_FLAG_DEFAULT = 0x88;
   private static final int ID_FLAG_FORCED = 0x55AA;
+  private static final int ID_FLAG_HEARING_IMPAIRED = 0x55AB;
+  private static final int ID_FLAG_VISUAL_IMPAIRED = 0x55AC;
+  private static final int ID_FLAG_TEXT_DESCRIPTIONS = 0x55AD;
+  private static final int ID_FLAG_ORIGINAL = 0x55AE;
+  private static final int ID_FLAG_COMMENTARY = 0x55AF;
   private static final int ID_DEFAULT_DURATION = 0x23E383;
   private static final int ID_MAX_BLOCK_ADDITION_ID = 0x55EE;
   private static final int ID_BLOCK_ADDITION_MAPPING = 0x41E4;
@@ -1057,6 +1062,11 @@ public class MatroskaExtractor implements Extractor {
       case ID_TRACK_TYPE:
       case ID_FLAG_DEFAULT:
       case ID_FLAG_FORCED:
+      case ID_FLAG_HEARING_IMPAIRED:
+      case ID_FLAG_VISUAL_IMPAIRED:
+      case ID_FLAG_TEXT_DESCRIPTIONS:
+      case ID_FLAG_ORIGINAL:
+      case ID_FLAG_COMMENTARY:
       case ID_DEFAULT_DURATION:
       case ID_MAX_BLOCK_ADDITION_ID:
       case ID_BLOCK_ADD_ID_TYPE:
@@ -1548,6 +1558,31 @@ public class MatroskaExtractor implements Extractor {
         break;
       case ID_FLAG_FORCED:
         getCurrentTrack(id).flagForced = value == 1;
+        break;
+      case ID_FLAG_HEARING_IMPAIRED:
+        if (currentTrack != null) {
+          currentTrack.flagHearingImpaired = value == 1;
+        }
+        break;
+      case ID_FLAG_VISUAL_IMPAIRED:
+        if (currentTrack != null) {
+          currentTrack.flagVisualImpaired = value == 1;
+        }
+        break;
+      case ID_FLAG_TEXT_DESCRIPTIONS:
+        if (currentTrack != null) {
+          currentTrack.flagTextDescriptions = value == 1;
+        }
+        break;
+      case ID_FLAG_ORIGINAL:
+        if (currentTrack != null) {
+          currentTrack.flagOriginal = value == 1;
+        }
+        break;
+      case ID_FLAG_COMMENTARY:
+        if (currentTrack != null) {
+          currentTrack.flagCommentary = value == 1;
+        }
         break;
       case ID_TRACK_TYPE:
         int matroskaTrackType = (int) value;
@@ -2821,6 +2856,26 @@ public class MatroskaExtractor implements Extractor {
     }
   }
 
+  /** Media3 role flags for the Matroska track flags; none set means no role. */
+  @C.RoleFlags
+  static int roleFlagsFor(
+      boolean commentary, boolean visualImpaired, boolean hearingImpaired, boolean original) {
+    @C.RoleFlags int roleFlags = 0;
+    if (commentary) {
+      roleFlags |= C.ROLE_FLAG_COMMENTARY;
+    }
+    if (visualImpaired) {
+      roleFlags |= C.ROLE_FLAG_DESCRIBES_VIDEO;
+    }
+    if (hearingImpaired) {
+      roleFlags |= C.ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND;
+    }
+    if (original && roleFlags == 0) {
+      roleFlags = C.ROLE_FLAG_MAIN;
+    }
+    return roleFlags;
+  }
+
   static boolean shouldFollowNestedSeekHead(
       boolean seekForCuesEnabled,
       long cuesContentPosition,
@@ -3223,6 +3278,11 @@ public class MatroskaExtractor implements Extractor {
 
     // Common track elements.
     public boolean flagDefault = true;
+    public boolean flagHearingImpaired;
+    public boolean flagVisualImpaired;
+    public boolean flagTextDescriptions;
+    public boolean flagOriginal;
+    public boolean flagCommentary;
     private String language = "eng";
 
     // Set when the output is initialized. nalUnitLengthFieldLength is only set for H264/H265.
@@ -3608,6 +3668,12 @@ public class MatroskaExtractor implements Extractor {
               .setMaxInputSize(maxInputSize)
               .setLanguage(language)
               .setSelectionFlags(selectionFlags)
+              .setRoleFlags(
+                  roleFlagsFor(
+                      flagCommentary,
+                      flagVisualImpaired || flagTextDescriptions,
+                      flagHearingImpaired,
+                      flagOriginal))
               .setInitializationData(initializationData)
               .setCodecs(codecs)
               .setDrmInitData(drmInitData)

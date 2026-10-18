@@ -120,6 +120,27 @@ class LosslessAudioTrackDefaultTest {
     }
 
     @Test
+    fun `flagged commentary or description without a telling name is never the default`() {
+        val flaggedCommentary = listOf(
+            track(0, "AC-3", "English (AC-3 5.1)", selected = true),
+            track(1, "TrueHD", "English (TrueHD 7.1)", channels = 8).copy(role = TrackRole.COMMENTARY)
+        )
+        assertNull(LosslessAudioTrackDefault.pickDefaultIndex(flaggedCommentary, listOf("en"), exactMatch))
+
+        val flaggedDescription = listOf(
+            track(0, "TrueHD", "English (TrueHD 7.1)", channels = 8).copy(role = TrackRole.AUDIO_DESCRIPTION),
+            track(1, "FLAC", "English (FLAC 5.1)")
+        )
+        assertEquals(1, LosslessAudioTrackDefault.pickDefaultIndex(flaggedDescription, listOf("en"), exactMatch))
+
+        val originalStaysEligible = listOf(
+            track(0, "AC-3", "English (AC-3 5.1)", selected = true),
+            track(1, "TrueHD", "English (TrueHD 7.1)", channels = 8).copy(role = TrackRole.ORIGINAL)
+        )
+        assertEquals(1, LosslessAudioTrackDefault.pickDefaultIndex(originalStaysEligible, listOf("en"), exactMatch))
+    }
+
+    @Test
     fun `language pool is never overridden by foreign lossless`() {
         val tracks = listOf(
             track(0, "AC-3", "English (AC-3 5.1)", language = "en", selected = true),

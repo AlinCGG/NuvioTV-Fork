@@ -295,22 +295,21 @@ private fun AudioTrackCard(
     rightFocusRequester: FocusRequester,
     focusRequester: FocusRequester?
 ) {
-    val languageLine = track.language
+    val languageName = track.language
         ?.takeIf { it.isNotBlank() && it != "und" }
         ?.let { languageCodeToName(it) }
-    val metadata = listOfNotNull(
-        track.codec,
-        track.channelCount?.let { "$it ch" },
-        track.sampleRate?.let { "${it / 1000} kHz" }
-    ).joinToString(" · ")
-    val subtitle = listOfNotNull(
-        languageLine,
-        metadata.ifBlank { null }
-    ).joinToString(" · ").ifBlank { null }
+    val rowText = audioTrackRowText(
+        track = track,
+        languageName = languageName,
+        fallbackTitle = stringResource(R.string.player_track_audio_fallback, track.index + 1),
+        commentaryLabel = stringResource(R.string.player_track_role_commentary),
+        audioDescriptionLabel = stringResource(R.string.player_track_role_audio_description)
+    )
 
     PlayerPanelRow(
-        title = track.name,
-        subtitle = subtitle,
+        title = rowText.title,
+        subtitle = rowText.subtitle,
+        titleMaxLines = 2,
         selected = isSelected,
         onClick = onClick,
         onFocused = onFocused,

@@ -55,6 +55,9 @@ internal object LosslessAudioTrackDefault {
         return null
     }
 
+    fun isCommentaryRole(role: TrackRole?): Boolean =
+        role == TrackRole.COMMENTARY || role == TrackRole.AUDIO_DESCRIPTION
+
     fun isCommentaryLike(name: String?): Boolean {
         val n = name?.lowercase() ?: return false
         return commentaryHints.any { it in n }
@@ -90,7 +93,7 @@ internal object LosslessAudioTrackDefault {
         val byTierDesc = ranked.groupBy({ it.second }, { it.first })
             .toSortedMap(compareByDescending { it })
         for ((_, tierTracks) in byTierDesc) {
-            val clean = tierTracks.filterNot { isCommentaryLike(it.name) }
+            val clean = tierTracks.filterNot { isCommentaryLike(it.name) || isCommentaryRole(it.role) }
             if (clean.isNotEmpty()) {
                 return clean
                     .sortedWith(
