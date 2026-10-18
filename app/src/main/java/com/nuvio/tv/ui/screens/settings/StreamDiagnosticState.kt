@@ -48,7 +48,8 @@ internal class StreamDiagnosticState {
         scope: CoroutineScope, context: Context, selectedMode: StreamDiagnosticMode,
         url: String, headers: Map<String, String>, estimatedBitrate: Long?,
         networkIdentity: () -> Any?, networkLabel: String,
-        now: () -> Long = System::currentTimeMillis, durationMs: Long = 0
+        now: () -> Long = System::currentTimeMillis, durationMs: Long = 0,
+        playback: MemoryBudget.DownloadWindow
     ) {
         if (run.running || url.isBlank()) return
         // Snapshot caller-owned inputs; editing diagnostics during a run cannot change its source.
@@ -93,7 +94,7 @@ internal class StreamDiagnosticState {
                                 bitrateIsMux = true
                             }
                         }
-                        StreamSweepEngine.run(context, url, requestHeaders, bitrate,
+                        StreamSweepEngine.run(context, url, requestHeaders, bitrate, playback,
                         onState = { if (current()) status = it },
                         onPassAdded = { if (current()) rows = rows + (it to null) },
                         onPassResult = { label, mbps, note -> if (current()) {

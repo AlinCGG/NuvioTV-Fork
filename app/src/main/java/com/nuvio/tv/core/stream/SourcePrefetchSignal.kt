@@ -18,11 +18,24 @@ data class SourcePrefetchSignal(
     val phase: SourcePrefetchPhase,
     val facts: DirectDebridStreamFilter.StreamFacts?,
     val badges: List<com.nuvio.tv.domain.model.StreamBadge> = emptyList(),
-    val fileSizeBytes: Long? = null
+    val fileSizeBytes: Long? = null,
+    val badgesHidden: Boolean = false
 )
+
+/** Tick on the line: READY, or RANKED when the badges are hidden and the tick stands in for them. */
+internal val SourcePrefetchSignal.showsReadyTick: Boolean
+    get() = phase == SourcePrefetchPhase.READY || (phase == SourcePrefetchPhase.RANKED && badgesHidden)
 
 internal fun SourcePrefetchSignal.withFileSizeVisibility(visible: Boolean) =
     copy(fileSizeBytes = fileSizeBytes?.takeIf { visible && it > 0 })
+
+/** The details-page switches: [showLine] off keeps only the phase sign, [showReleaseGroup] off drops the group chip. */
+internal fun SourcePrefetchSignal?.withSourceLineVisibility(showLine: Boolean, showReleaseGroup: Boolean): SourcePrefetchSignal? {
+    if (this == null) return null
+    if (!showLine) return copy(facts = null, badges = emptyList(), fileSizeBytes = null, badgesHidden = true)
+    val facts = facts ?: return this
+    return if (showReleaseGroup || facts.releaseGroup.isBlank()) this else copy(facts = facts.copy(releaseGroup = ""))
+}
 
 /** One UI winner, with a generation distinct from its content key (including A -> B -> A). */
 internal class SourcePrefetchSignalStore {

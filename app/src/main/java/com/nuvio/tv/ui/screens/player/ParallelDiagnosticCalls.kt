@@ -17,12 +17,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** One test cell owns these HTTP resources, including its established TLS fallback policy. */
 internal class ParallelDiagnosticCalls(
-    connections: Int,
+    downloads: Int,
     primary: OkHttpClient = PlayerPlaybackNetworking.playbackHttpClient,
     private val payload: DiagnosticPayloadBudget? = null,
     fallback: () -> OkHttpClient = { PlayerPlaybackNetworking.trustAllPlaybackHttpClient }
 ) : Call.Factory, AutoCloseable {
-    init { require(connections in 1..16) }
+    init { require(downloads in 1..ParallelRangeDataSource.MAX_DIAGNOSTIC_DOWNLOADS) }
     private val closed = AtomicBoolean(false)
     private val callLock = Any()
     private val ownedCalls = mutableListOf<Call>()
@@ -54,13 +54,13 @@ internal class ParallelDiagnosticCalls(
         }
     }
     private val executor = ThreadPoolExecutor(
-        connections, connections, 30L, TimeUnit.SECONDS, ArrayBlockingQueue<Runnable>(64),
+        downloads, downloads, 30L, TimeUnit.SECONDS, ArrayBlockingQueue<Runnable>(64),
         { task -> Thread(task, "parallel-test-http").apply { isDaemon = true } },
         ThreadPoolExecutor.AbortPolicy()
     ).apply { allowCoreThreadTimeOut(true) }
     private val dispatcher = Dispatcher(executor).apply {
-        maxRequests = connections
-        maxRequestsPerHost = connections
+        maxRequests = downloads
+        maxRequestsPerHost = downloads
     }
     private val pool = ConnectionPool(0, 1L, TimeUnit.SECONDS)
     private fun isolated(client: OkHttpClient) = client.newBuilder()

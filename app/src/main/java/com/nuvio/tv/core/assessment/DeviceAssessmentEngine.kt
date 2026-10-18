@@ -114,13 +114,26 @@ object DeviceAssessmentEngine {
         }
         val bitrateMbps = estimatedBitrate?.takeIf { it > 0 }?.let { it / 1_000_000.0 }
 
+        val perfModeSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+
         // --- Tier 1: the shared sweep against the real stream ---
+        // Cells run as many downloads at once as playback will with the performance mode and buffer settings this plan sets.
         val sweep: StreamSweepEngine.SweepOutcome? = if (!streamUrl.isNullOrBlank()) {
             StreamSweepEngine.run(
                 context = context,
                 streamUrl = streamUrl,
                 headers = headers,
                 estimatedBitrate = estimatedBitrate,
+                playback = NuvioExoPlayerPerformanceHelper.downloadWindow(
+                    settings.copy(
+                        nuvioPerformanceModeEnabled = perfModeSupported,
+                        bufferEngineEnabled = AssessmentBufferRules.bufferEngineChange(settings.bufferEngineEnabled)
+                            ?: settings.bufferEngineEnabled,
+                        bufferBudgetManaged = AssessmentBufferRules.managedBudgetChange(settings.bufferBudgetManaged)
+                            ?: settings.bufferBudgetManaged
+                    ),
+                    context
+                ),
                 onState = onSweepState,
                 onPassAdded = onSweepPassAdded,
                 onPassResult = onSweepPassResult
@@ -278,7 +291,6 @@ object DeviceAssessmentEngine {
             changeNeeded = AssessmentBufferRules.networkChange(networkRecommended, settings.parallelNetworkEnabled) != null
         )
 
-        val perfModeSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
         items += AssessmentItem(
             key = "perf_mode",
             title = s(R.string.assessment_item_perf_mode),

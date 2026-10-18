@@ -18,6 +18,7 @@ class BufferMemoryKeeper(
     private val freeMemory: () -> BufferSizing.FreeMemory?,
     private val clock: () -> Long = SystemClock::elapsedRealtime,
     private val worker: Worker = SharedWorker,
+    budgetManaged: Boolean = true,
 ) {
     interface Worker {
         fun run(task: () -> Unit)
@@ -31,6 +32,11 @@ class BufferMemoryKeeper(
     @Volatile private var lastSeekAtMs = 0L
     @Volatile private var seekTrimQueued = false
     @Volatile private var detached = false
+    @Volatile var lentBytes: Long = 0L
+        private set
+    /** Off: a size the user set is only cut when memory is critical; idle memory is still given back. */
+    @Volatile var budgetManaged: Boolean = budgetManaged
+        private set
 
     private val trimListener: (Int) -> Unit = ::onTrimMemory
 
@@ -53,6 +59,18 @@ class BufferMemoryKeeper(
         }
         worker.run {
             if (wanted > LEVEL_NONE) raise(wanted, "trim:$level") else trimIdle("trim:$level")
+        }
+    }
+
+    fun setBudgetManaged(enabled: Boolean) {
+        if (detached || enabled == budgetManaged) return
+        budgetManaged = enabled
+        worker.run {
+            if (!budgetManaged && pressureLevel == LEVEL_LOW) {
+                pressureLevel = LEVEL_NONE
+                applyTarget()
+                Log.i(TAG, "BUFFER_MEMORY: pressure lifted level=0 capMb=${capOrBudgetMb()} managed=false")
+            }
         }
     }
 
@@ -81,6 +99,20 @@ class BufferMemoryKeeper(
         worker.run { applyTarget(); trimIdle("budget") }
     }
 
+    /** Memory the extra downloads of the Automatic speed-up hold; the buffer gives the same amount up. */
+    fun setLentBytes(bytes: Long) {
+        if (detached) return
+        val lent = bytes.coerceAtLeast(0L)
+        worker.run {
+            if (lent == lentBytes) return@run
+            val returned = lent < lentBytes
+            lentBytes = lent
+            applyTarget()
+            if (!returned) trimIdle("lent")
+            Log.i(TAG, "BUFFER_MEMORY: lent to downloads mb=${lent / MB} capMb=${capOrBudgetMb()}")
+        }
+    }
+
     /** About every 10 s while playing: Android 14 and later no longer sends RUNNING_LOW to visible apps. */
     fun onTick() {
         if (detached) return
@@ -101,10 +133,10 @@ class BufferMemoryKeeper(
             if (pressureLevel > LEVEL_NONE) trimIdle("pressure")
             return
         }
-        val next = pressureLevel - 1
+        val next = if (budgetManaged) pressureLevel - 1 else LEVEL_NONE
         val addedMb = (capBytes(next) - capBytes(pressureLevel)) / MB
         val roomMb = free?.let { it.availMb - it.thresholdMb - BufferSizing.SYSTEM_MARGIN_MB } ?: 0L
-        if (free == null || roomMb < addedMb) {
+        if (free == null || (budgetManaged && roomMb < addedMb)) {
             lastPressureAtMs = now
             return
         }
@@ -118,7 +150,7 @@ class BufferMemoryKeeper(
     private fun raise(level: Int, reason: String) {
         if (detached) return
         lastPressureAtMs = clock()
-        val changed = level > pressureLevel
+        val changed = level > pressureLevel && (budgetManaged || level == LEVEL_CRITICAL)
         if (changed) {
             pressureLevel = level
             levelSetAtMs = lastPressureAtMs
@@ -127,7 +159,7 @@ class BufferMemoryKeeper(
         val freed = trimIdle(null)
         if (changed || freed > 0) {
             Log.i(TAG, "BUFFER_MEMORY: pressure level=$pressureLevel reason=$reason capMb=${capOrBudgetMb()} " +
-                "uncappedMb=${control.uncappedBudgetBytes / MB} freedMb=${freed / MB}")
+                "uncappedMb=${control.uncappedBudgetBytes / MB} freedMb=${freed / MB} managed=$budgetManaged")
         }
     }
 
@@ -142,10 +174,21 @@ class BufferMemoryKeeper(
         return (budget * share / 100).coerceAtLeast(floor)
     }
 
-    private fun capOrBudgetMb(): Long = capBytes(pressureLevel) / MB
+    private fun capOrBudgetMb(): Long =
+        effectiveCapBytes().takeIf { it >= 0L }?.let { it / MB } ?: (control.uncappedBudgetBytes / MB)
+
+    /** The pressure cap, lowered further by what the extra downloads hold; -1 when neither applies. */
+    internal fun effectiveCapBytes(): Long {
+        val pressure = if (pressureLevel == LEVEL_NONE) -1L else capBytes(pressureLevel)
+        val budget = control.uncappedBudgetBytes
+        if (lentBytes <= 0L || budget <= 0L) return pressure
+        val floor = minOf(budget, BufferSizing.MIN_SIZED_BUFFER_MB * MB)
+        val lent = (budget - lentBytes).coerceAtLeast(floor)
+        return if (pressure < 0L) lent else minOf(pressure, lent)
+    }
 
     private fun applyTarget() {
-        control.setPressureCapBytes(if (pressureLevel == LEVEL_NONE) -1L else capBytes(pressureLevel))
+        control.setPressureCapBytes(effectiveCapBytes())
         control.bufferAllocator.setTargetBufferSize(control.allocatorTargetBytes())
     }
 
@@ -190,6 +233,9 @@ class BufferMemoryKeeper(
     }
 
     companion object {
+        /** Only a Target buffer size set by hand counts as unmanaged. */
+        fun budgetManaged(customBuffers: Boolean, budgetManaged: Boolean): Boolean = !customBuffers || budgetManaged
+
         private const val TAG = "BufferMemory"
         private const val MB = 1024L * 1024L
         const val LEVEL_NONE = 0
@@ -198,7 +244,7 @@ class BufferMemoryKeeper(
         const val LOW_SHARE_PERCENT = 60L
         const val CRITICAL_SHARE_PERCENT = 35L
         const val SEEK_SETTLE_MS = 2_000L
-        /** Pressure eases one level per minute without a new signal, if the box has room for it. */
+        /** After a quiet minute pressure eases one level if the box has room, or straight off for a hand-set size. */
         const val RESTORE_QUIET_MS = 60_000L
         /** Still short of memory this long after the first cut: cut further. */
         const val ESCALATE_AFTER_MS = 30_000L

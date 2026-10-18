@@ -72,8 +72,8 @@ class BufferMemoryKeeperTest {
         it.onTracksSelected(params(0), TrackGroupArray.EMPTY, arrayOf<ExoTrackSelection?>())
     }
 
-    private fun keeper(control: BufferBudgetControl) =
-        BufferMemoryKeeper(control, { free }, { now }, worker)
+    private fun keeper(control: BufferBudgetControl, budgetManaged: Boolean = true) =
+        BufferMemoryKeeper(control, { free }, { now }, worker, budgetManaged)
 
     private fun take(megabytes: Long): List<Allocation> =
         List((megabytes * mb / segment).toInt()) { allocator.allocate() }
@@ -254,5 +254,138 @@ class BufferMemoryKeeperTest {
         lc.setBudgetBytesOverride(40 * mb)
         k.onBudgetLowered()
         assertTrue(allocator.availableBytes <= BufferMemoryKeeper.KEEP_IDLE_BYTES)
+    }
+
+    @Test
+    fun `extra downloads take their memory off the buffer budget and give it back`() {
+        val control = customControl(budgetMb = 200)
+        val keeper = keeper(control)
+        keeper.setLentBytes(48 * mb)
+        assertEquals(152 * mb, keeper.effectiveCapBytes())
+        assertEquals((152 * mb).toInt(), control.allocatorTargetBytes())
+        keeper.setLentBytes(0L)
+        assertEquals(-1L, keeper.effectiveCapBytes())
+        assertEquals((200 * mb).toInt(), control.allocatorTargetBytes())
+    }
+
+    @Test
+    fun `lent memory never takes the buffer below its floor`() {
+        val keeper = keeper(customControl(budgetMb = 100))
+        keeper.setLentBytes(96 * mb)
+        assertEquals(BufferSizing.MIN_SIZED_BUFFER_MB * mb, keeper.effectiveCapBytes())
+    }
+
+    @Test
+    fun `nothing is lent before the buffer has a size`() {
+        val control = ReservableLoadControl(
+            allocator = allocator,
+            minBufferMs = 15_000,
+            maxBufferMs = 45_000,
+            bufferForPlaybackMs = 3_000,
+            bufferForPlaybackAfterRebufferMs = 3_000,
+            targetBufferBytes = C.LENGTH_UNSET,
+            prioritizeTimeOverSizeThresholds = false,
+            backBufferDurationMs = 0,
+            retainBackBufferFromKeyframe = true,
+        )
+        val keeper = keeper(control)
+        keeper.setLentBytes(48 * mb)
+        assertEquals(-1L, keeper.effectiveCapBytes())
+    }
+
+    @Test
+    fun `a hand-set size is not cut while memory is low, but idle memory is still given back`() {
+        val lc = customControl(budgetMb = 100)
+        val k = keeper(lc, budgetManaged = false)
+        giveBack(take(30))
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+        assertTrue(allocator.availableBytes <= BufferMemoryKeeper.KEEP_IDLE_BYTES)
+        free = BufferSizing.FreeMemory(140 * mb, 130 * mb, true)
+        repeat(5) {
+            now += BufferMemoryKeeper.ESCALATE_AFTER_MS
+            k.onTick()
+        }
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+        assertEquals(-1L, k.effectiveCapBytes())
+        assertEquals((100 * mb).toInt(), lc.allocatorTargetBytes())
+        take(90)
+        assertTrue(lc.shouldContinueLoading(params(bufferedMs = 6_000)))
+    }
+
+    @Test
+    fun `a hand-set size is still cut when memory is critical`() {
+        val lc = customControl(budgetMb = 200)
+        val k = keeper(lc, budgetManaged = false)
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+        assertEquals(70 * mb, k.effectiveCapBytes())
+        take(90)
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 6_000)))
+    }
+
+    @Test
+    fun `a critical cut on a hand-set size stays while free memory cannot be read`() {
+        val k = keeper(customControl(budgetMb = 100), budgetManaged = false)
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        free = null
+        now += BufferMemoryKeeper.RESTORE_QUIET_MS
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+    }
+
+    @Test
+    fun `a critical cut on a hand-set size comes back in full once memory is no longer low`() {
+        val lc = customControl(budgetMb = 100)
+        val k = keeper(lc, budgetManaged = false)
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        free = BufferSizing.FreeMemory(140 * mb, 130 * mb, true)
+        now += BufferMemoryKeeper.RESTORE_QUIET_MS
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+        free = BufferSizing.FreeMemory(200 * mb, 130 * mb, false)
+        now += BufferMemoryKeeper.RESTORE_QUIET_MS - 1
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+        now += 1
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+        assertEquals((100 * mb).toInt(), lc.allocatorTargetBytes())
+    }
+
+    @Test
+    fun `turning Managed memory budget off lifts a low-memory cut but keeps a critical one`() {
+        val lc = customControl(budgetMb = 100)
+        val k = keeper(lc)
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        assertEquals((60 * mb).toInt(), lc.allocatorTargetBytes())
+        k.setBudgetManaged(false)
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+        assertEquals((100 * mb).toInt(), lc.allocatorTargetBytes())
+
+        val critical = keeper(customControl(budgetMb = 100))
+        critical.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        critical.setBudgetManaged(false)
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, critical.pressureLevel)
+    }
+
+    @Test
+    fun `a hand-set size still gives memory back after seeks and lends it to extra downloads`() {
+        val k = keeper(customControl(budgetMb = 200), budgetManaged = false)
+        giveBack(take(40))
+        k.onSeek()
+        now += BufferMemoryKeeper.SEEK_SETTLE_MS
+        delayed.removeAt(0)()
+        assertTrue(allocator.availableBytes <= BufferMemoryKeeper.KEEP_IDLE_BYTES)
+        k.setLentBytes(48 * mb)
+        assertEquals(152 * mb, k.effectiveCapBytes())
+    }
+
+    @Test
+    fun `only a size set by hand counts as unmanaged`() {
+        assertFalse(BufferMemoryKeeper.budgetManaged(customBuffers = true, budgetManaged = false))
+        assertTrue(BufferMemoryKeeper.budgetManaged(customBuffers = true, budgetManaged = true))
+        assertTrue(BufferMemoryKeeper.budgetManaged(customBuffers = false, budgetManaged = false))
+        assertTrue(BufferMemoryKeeper.budgetManaged(customBuffers = false, budgetManaged = true))
     }
 }

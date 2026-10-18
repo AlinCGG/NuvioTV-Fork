@@ -101,6 +101,7 @@ class BitrateAwareLoadControl(
     override fun giveBack(): Long = reserveCore.giveBack()
     override fun release() = reserveCore.release()
     override fun yieldLoading(on: Boolean) = reserveCore.yieldLoading(on)
+    override val yieldHolding: Boolean get() = reserveCore.yieldHolding
 
     // Time before size lets the buffer pass the budget until minBufferMs is met. Once enough is
     // buffered to start playback, it stops a quarter over the budget instead.

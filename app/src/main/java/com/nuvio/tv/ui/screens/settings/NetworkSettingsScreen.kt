@@ -214,7 +214,8 @@ fun AdvancedSettingsContent(
             ConnectionType.Offline -> R.string.network_connection_offline
         }))
         streamDiagnostic.start(scope, context, mode, url, lastHeadersMap + playbackVm.serverAuthHeaders(url), estimatedBitrate,
-            networkIdentity = { networkMonitor.token() }, networkLabel = networkLabel, durationMs = dvDiagnostics.durationMs)
+            networkIdentity = { networkMonitor.token() }, networkLabel = networkLabel, durationMs = dvDiagnostics.durationMs,
+            playback = com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.downloadWindow(dvPlayerSettings, context))
     }
 
     fun runSpeedTest() {

@@ -28,7 +28,8 @@ class StreamDiagnosticStateTest {
     @After fun cleanup() { unmockkObject(StreamSpeedTester, StreamSweepEngine) }
     private fun StreamDiagnosticState.begin(scope: CoroutineScope, mode: StreamDiagnosticMode = StreamDiagnosticMode.QUICK,
         headers: Map<String,String> = emptyMap(), network: () -> Any? = { "network" }, durationMs: Long = 0, bitrate: Long? = 10_000_000) =
-        start(scope, context, mode, "https://media.example/video", headers, bitrate, network, "Wi-Fi", now = { 1000 }, durationMs = durationMs)
+        start(scope, context, mode, "https://media.example/video", headers, bitrate, network, "Wi-Fi", now = { 1000 }, durationMs = durationMs,
+        playback = MemoryBudget.DownloadWindow(false, 250, 250))
 
     @Test fun `quick uses one baseline and never recommends settings`() = runTest {
         coEvery { StreamSpeedTester.runBaselineTest(any(), any()) } returns success
@@ -36,7 +37,7 @@ class StreamDiagnosticStateTest {
         assertEquals("Done", state.status); assertEquals(40.0, state.rows.single().second!!, 0.0)
         assertEquals("media.example", state.endpoint); assertNotNull(state.resultScope); assertNull(state.verdict)
         coVerify(exactly = 1) { StreamSpeedTester.runBaselineTest(any(), any()) }
-        coVerify(exactly = 0) { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) }
     }
     @Test fun `failed quick check is unavailable rather than zero capacity`() = runTest {
         coEvery { StreamSpeedTester.runBaselineTest(any(), any()) } returns BoundedStreamSpeedTest.Result(failure = BoundedStreamSpeedTest.Failure.BUSY)
@@ -44,10 +45,10 @@ class StreamDiagnosticStateTest {
         assertEquals("Error", state.status); assertNull(state.rows.single().second); assertNotNull(state.error); assertNull(state.verdict)
     }
     @Test fun `advanced preserves rows and its qualified verdict`() = runTest {
-        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
-            arg<(String) -> Unit>(4)("pass"); arg<(String) -> Unit>(5)("pass")
-            arg<(String,Double?,StreamSweepEngine.PassNote?) -> Unit>(6)("pass", 40.0, null)
-            arg<(String?) -> Unit>(7)("cdn.example"); outcome()
+        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
+            arg<(String) -> Unit>(5)("pass"); arg<(String) -> Unit>(6)("pass")
+            arg<(String,Double?,StreamSweepEngine.PassNote?) -> Unit>(7)("pass", 40.0, null)
+            arg<(String?) -> Unit>(8)("cdn.example"); outcome()
         }
         val state = StreamDiagnosticState(); state.begin(this, StreamDiagnosticMode.ADVANCED); runCurrent()
         assertEquals("Done", state.status); assertEquals("qualified verdict", state.verdict)
@@ -67,8 +68,8 @@ class StreamDiagnosticStateTest {
     }
     @Test fun `old advanced callbacks cannot overwrite new quick result`() = runTest {
         lateinit var late: (String) -> Unit
-        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
-            late = arg(4); awaitCancellation()
+        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
+            late = arg(5); awaitCancellation()
         }
         coEvery { StreamSpeedTester.runBaselineTest(any(), any()) } returns success
         val state = StreamDiagnosticState(); state.begin(this, StreamDiagnosticMode.ADVANCED); runCurrent()
@@ -77,7 +78,7 @@ class StreamDiagnosticStateTest {
     }
     @Test fun `changed network withholds measured rows and recommendation`() = runTest {
         var network = "one"
-        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers { network = "two"; outcome() }
+        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers { network = "two"; outcome() }
         val state = StreamDiagnosticState(); state.begin(this, StreamDiagnosticMode.ADVANCED, network = { network }); runCurrent()
         assertEquals("Error", state.status); assertNull(state.verdict); assertTrue(state.rows.isEmpty()); assertNull(state.resultScope)
     }
@@ -101,11 +102,11 @@ class StreamDiagnosticStateTest {
 
     @Test fun `advanced resolves missing bitrate inside the explicit diagnostic`() = runTest {
         coEvery { StreamSpeedTester.getStreamContentLength(any(), any()) } returns 1_000_000L
-        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) } returns outcome()
+        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns outcome()
         val state = StreamDiagnosticState()
         state.begin(this, StreamDiagnosticMode.ADVANCED, durationMs = 10_000, bitrate = null); runCurrent()
         assertTrue(state.bitrateIsMux); assertEquals(800_000L, state.bitrate)
-        coVerify { StreamSweepEngine.run(any(), any(), any(), 800_000L, any(), any(), any(), any()) }
+        coVerify { StreamSweepEngine.run(any(), any(), any(), 800_000L, any(), any(), any(), any(), any()) }
     }
     @Test fun `quick skips metadata even when bitrate is missing`() = runTest {
         coEvery { StreamSpeedTester.runBaselineTest(any(), any()) } returns success
@@ -118,7 +119,7 @@ class StreamDiagnosticStateTest {
         val tracker = com.nuvio.tv.core.network.DiagnosticNetworkTracker(); tracker.start()
         fun ready(n: String) { tracker.available(n); tracker.capabilities(n, "wifi"); tracker.links(n, "dns") }
         ready("a")
-        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
+        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
             ready("b"); ready("a"); outcome()
         }
         val s = StreamDiagnosticState(); s.begin(this, StreamDiagnosticMode.ADVANCED, network = { tracker.token("a") }); runCurrent()
@@ -131,8 +132,8 @@ class StreamDiagnosticStateTest {
     }
     @Test fun `route invalidation cancels active comparison and rejects late callback`() = runTest {
         lateinit var late: (String) -> Unit
-        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
-            late = arg(4); awaitCancellation()
+        coEvery { StreamSweepEngine.run(any(), any(), any(), any(), any(), any(), any(), any(), any()) } coAnswers {
+            late = arg(5); awaitCancellation()
         }
         val s = StreamDiagnosticState(); s.begin(this, StreamDiagnosticMode.ADVANCED); runCurrent()
         s.invalidateNetwork(context, "changed"); runCurrent(); late("obsolete")

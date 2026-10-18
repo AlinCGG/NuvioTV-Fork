@@ -1,5 +1,6 @@
 package com.nuvio.tv.ui.screens.settings
 
+import android.content.Context
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.upstream.DefaultAllocatorNative
 import com.nuvio.tv.core.player.BufferSizing
@@ -52,16 +53,19 @@ object MemoryBudget {
     private const val PREFETCH_DEPTH_UPPER_MULTIPLE = 4
 
     const val MIN_CONNECTIONS = 2
-    const val MAX_CONNECTIONS = 4
+    const val MAX_CONNECTIONS = PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT
+    const val MAX_CONNECTIONS_NATIVE_MEMORY = PlayerSettings.MAX_PARALLEL_CONNECTION_COUNT_NATIVE_MEMORY
     const val MIN_CHUNK_MB = 8
-    const val MAX_CHUNK_MB = 32
+    const val MAX_CHUNK_MB = PlayerSettings.MAX_PARALLEL_CHUNK_SIZE_KB / 1024
     // Low-RAM devices (1-2 GB class): the session's protected set (playhead
     // window + tail moov chunks + pinned side chunks) puts the worst-case
     // retained floor at roughly connections + 10 chunks on a scatter-heavy
-    // file, so chunk size is hard-capped at 16 MB on that tier — above it
+    // file, so chunk size is hard-capped at 16 MB on boxes under 2.3 GB; above it
     // the floor alone exceeds what those devices can hold. Applies in
     // performance mode too; the cap is a tier property, not a budget one.
     private const val LOW_RAM_MAX_CHUNK_MB = 16
+    // Without native memory, connections x chunk stays within this fraction (1/N) of the heap.
+    private const val HEAP_CHUNK_SHARE = 4
     const val BUFFER_STEP_MB = 25
     const val MIN_BUFFER_MB = 25
     // Half the device default floors the slider above what a low-RAM stick can sustain.
@@ -88,7 +92,9 @@ object MemoryBudget {
             ?.also(DefaultAllocatorNative::freeAllocation) != null
     }.getOrDefault(false)
 
-    val budgetMb: Int = budgetMbFor(offHeapBuffers, NuvioExoPlayerPerformanceHelper.getRamFromMemInfo(), maxHeapMb)
+    private val deviceRamBytes: Long = NuvioExoPlayerPerformanceHelper.getRamFromMemInfo()
+
+    val budgetMb: Int = budgetMbFor(offHeapBuffers, deviceRamBytes, maxHeapMb)
 
     internal fun budgetMbFor(offHeap: Boolean, deviceRamBytes: Long, maxHeapMb: Long): Int {
         if (offHeap) return NuvioExoPlayerPerformanceHelper.safeNativeMemoryLimitMbForRam(deviceRamBytes)
@@ -104,7 +110,7 @@ object MemoryBudget {
     }
 
     // budgetMb is the most the settings allow; the managed budget uses the box's automatic size instead.
-    val autoBudgetMb: Int = autoBudgetMbFor(offHeapBuffers, NuvioExoPlayerPerformanceHelper.getRamFromMemInfo(), budgetMb)
+    val autoBudgetMb: Int = autoBudgetMbFor(offHeapBuffers, deviceRamBytes, budgetMb)
 
     internal fun autoBudgetMbFor(offHeap: Boolean, deviceRamBytes: Long, budgetMb: Int): Int =
         if (offHeap) BufferSizing.autoBufferMbForRam(deviceRamBytes).coerceAtMost(budgetMb) else budgetMb
@@ -149,6 +155,24 @@ object MemoryBudget {
         )
     }
 
+    /**
+     * How many chunks playback keeps in flight from the reader: connections + 1,
+     * or the [prefetchDepthChunks] window in performance mode. The player, the
+     * settings estimate and the speed test all size their downloads from this.
+     */
+    data class DownloadWindow(
+        val performanceMode: Boolean,
+        val safeNativeLimitMb: Int,
+        val reserveBufferMb: Int
+    ) {
+        fun prefetchDepth(connections: Int, chunkSizeMb: Int): Int =
+            if (performanceMode) {
+                prefetchDepthChunks(connections, chunkSizeMb, safeNativeLimitMb, reserveBufferMb)
+            } else {
+                connections + 1
+            }
+    }
+
     // Assessment-sweep cell budgeting
     //
     // A sweep cell's true memory ceiling is the tester's prefetch WINDOW, not
@@ -166,26 +190,27 @@ object MemoryBudget {
     const val SWEEP_CELL_MAX_CONCURRENT_MB = 128
 
     /**
-     * Prefetch depth (in chunks) a sweep cell may run with on this device, or
-     * null when the cell must NOT be scheduled at all. Null when either the
-     * nominal concurrent footprint (connections x chunk) exceeds
-     * [SWEEP_CELL_MAX_CONCURRENT_MB], or the budget-derived depth falls below
-     * ParallelRangeDataSource's own floor of connections + 1: a window that
-     * small cannot be honoured, so the cell cannot be memory-bounded.
+     * Prefetch depth (in chunks) a sweep cell runs with on this device, or
+     * null when the cell must NOT be scheduled at all. The depth is the one
+     * playback would use for the same cell ([DownloadWindow.prefetchDepth]),
+     * so the test keeps as many downloads running as playback does. Null
+     * when either the nominal concurrent footprint (connections x chunk)
+     * exceeds [SWEEP_CELL_MAX_CONCURRENT_MB], or that window does not fit the
+     * sweep's share of the safe native budget.
      * Single source of truth: the sweep's ladder gate and the tester's window
      * both use this value, so the gate can never drift from the allocation.
      */
     fun sweepCellPrefetchDepth(
         connections: Int,
         chunkSizeMb: Int,
-        safeNativeLimitMb: Int
+        safeNativeLimitMb: Int,
+        playback: DownloadWindow
     ): Int? {
         val chunkMb = chunkSizeMb.coerceAtLeast(1)
         if (connections * chunkMb > SWEEP_CELL_MAX_CONCURRENT_MB) return null
         val budgetMb = (safeNativeLimitMb * SWEEP_BUDGET_FRACTION).toInt()
-        val depth = (budgetMb / chunkMb)
-            .coerceAtMost(connections * PREFETCH_DEPTH_UPPER_MULTIPLE)
-        return depth.takeIf { it >= connections + 1 }
+        val depth = playback.prefetchDepth(connections, chunkMb)
+        return depth.takeIf { it <= budgetMb / chunkMb }
     }
 
     /**
@@ -207,11 +232,8 @@ object MemoryBudget {
         reserveBufferMb: Int,
         deepPathActive: Boolean,
     ): Int {
-        val depth = if (deepPathActive) {
-            prefetchDepthChunks(connectionCount, chunkSizeMb, safeNativeLimitMb, reserveBufferMb)
-        } else {
-            connectionCount + 1
-        }
+        val depth = DownloadWindow(deepPathActive, safeNativeLimitMb, reserveBufferMb)
+            .prefetchDepth(connectionCount, chunkSizeMb)
         val sessionHeadroom = if (isLowRamTier) 2 else 4
         return (depth + sessionHeadroom) * chunkSizeMb
     }
@@ -231,12 +253,93 @@ object MemoryBudget {
             0
         }
 
-    /** Hard chunk-size ceiling for this device tier; binds everywhere, including performance mode. */
-    val tierMaxChunkMb: Int = if (isLowRamTier) LOW_RAM_MAX_CHUNK_MB else MAX_CHUNK_MB
+    /** Hard chunk-size ceiling for this device; binds everywhere, including performance mode. */
+    fun tierMaxChunkMb(nativeMemory: Boolean, connections: Int): Int =
+        tierMaxChunkMbFor(isLowRamTier, offHeapBuffers, deviceRamBytes, maxHeapMb, nativeMemory, connections)
+
+    /**
+     * Under 2.3 GB of RAM, or with chunks on the heap, a small heap keeps 16 MB; above it the ceiling follows RAM with
+     * native memory and a quarter of the heap per connection without it.
+     */
+    internal fun tierMaxChunkMbFor(
+        lowHeap: Boolean,
+        offHeap: Boolean,
+        deviceRamBytes: Long,
+        maxHeapMb: Long,
+        nativeMemory: Boolean,
+        connections: Int,
+    ): Int {
+        if (!lowHeap) return MAX_CHUNK_MB
+        if (BufferSizing.isSmallBox(deviceRamBytes) || !offHeap) return LOW_RAM_MAX_CHUNK_MB
+        if (offHeap && nativeMemory) return MAX_CHUNK_MB
+        val heapShareMb = (maxHeapMb / HEAP_CHUNK_SHARE).toInt()
+        return chunkStepAtOrBelow(heapShareMb / connections.coerceAtLeast(1)).coerceAtLeast(LOW_RAM_MAX_CHUNK_MB)
+    }
+
+    fun maxConnections(nativeMemory: Boolean): Int = PlayerSettings.maxParallelConnectionCount(nativeMemory)
+
+    /** The chunk sizes from 8 MB up that the Chunk size setting offers. */
+    val CHUNK_STEPS_MB = listOf(8, 16, 24, 32, 48, 64, 96, 128)
+
+    /** The largest offered chunk size at or below [mb], never below [MIN_CHUNK_MB]. */
+    fun chunkStepAtOrBelow(mb: Int): Int = CHUNK_STEPS_MB.lastOrNull { it <= mb } ?: MIN_CHUNK_MB
+
+    /**
+     * With native memory: the largest offered chunk size whose download window, as [displayParallelOverheadMb] works
+     * it out, stays within [limitMb]. Never above [tierMaxMb], never below [MIN_CHUNK_MB].
+     */
+    fun nativeMaxChunkMb(
+        connections: Int,
+        limitMb: Int,
+        safeNativeLimitMb: Int,
+        reserveBufferMb: Int,
+        tierMaxMb: Int = tierMaxChunkMb(nativeMemory = true, connections),
+    ): Int = CHUNK_STEPS_MB.filter { it <= tierMaxMb }.lastOrNull {
+        displayParallelOverheadMb(connections, it, safeNativeLimitMb, reserveBufferMb, deepPathActive = true) <= limitMb
+    } ?: MIN_CHUNK_MB
+
+    /**
+     * The largest chunk size Custom network uses with [settings]. With native memory the download window stays within
+     * the box's warning limit, worked out with the target the player uses; without it the chunks fit the budget beside
+     * the buffer, as the Chunk size setting allows. A larger saved size is kept and used again once it fits.
+     */
+    fun customMaxChunkMb(
+        settings: PlayerSettings,
+        autoBufferMb: Int,
+        safeNativeLimitMb: Int,
+        warningLimitMb: Int,
+        tierMaxMb: Int = tierMaxChunkMb(settings.nuvioPerformanceModeEnabled, settings.parallelConnectionCount),
+    ): Int {
+        if (!settings.nuvioPerformanceModeEnabled) {
+            val bufferMb = effectiveBufferMb(settings.bufferSettings.targetBufferSizeMb)
+            return chunkStepAtOrBelow(maxChunkMb(bufferMb, settings.parallelConnectionCount, tierMaxMb))
+        }
+        val userTarget = settings.bufferEngineEnabled && !settings.bufferBudgetManaged
+        if (!userTarget) {
+            return nativeMaxChunkMb(settings.parallelConnectionCount, warningLimitMb, autoBufferMb, autoBufferMb, tierMaxMb)
+        }
+        val storedMb = settings.bufferSettings.targetBufferSizeMb
+        val targetMb = if (!settings.allowLargeTargetBuffer && storedMb > safeNativeLimitMb) safeNativeLimitMb else storedMb
+        return nativeMaxChunkMb(settings.parallelConnectionCount, warningLimitMb, safeNativeLimitMb, targetMb, tierMaxMb)
+    }
+
+    fun customMaxChunkMb(context: Context, settings: PlayerSettings): Int = customMaxChunkMb(
+        settings,
+        NuvioExoPlayerPerformanceHelper.getAutoBufferMb(context),
+        NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context),
+        NuvioExoPlayerPerformanceHelper.getWarningNativeMemoryLimitMb(context)
+    )
+
+    /** The chunk size playback uses: the saved one, no larger than [customMaxChunkMb]. */
+    fun customChunkKb(context: Context, settings: PlayerSettings): Int =
+        settings.parallelChunkSizeKb.coerceAtMost(customMaxChunkMb(context, settings) * 1024)
 
     /** Max chunk size that fits budget given current buffer size */
-    fun maxChunkMb(bufferMb: Int, connectionCount: Int): Int =
-        ((budgetMb - bufferMb) / bufferCount(connectionCount)).coerceIn(MIN_CHUNK_MB, tierMaxChunkMb)
+    fun maxChunkMb(
+        bufferMb: Int,
+        connectionCount: Int,
+        tierMaxMb: Int = tierMaxChunkMb(nativeMemory = false, connectionCount),
+    ): Int = ((budgetMb - bufferMb) / bufferCount(connectionCount)).coerceIn(MIN_CHUNK_MB, tierMaxMb)
 
     /** Max buffer size that fits budget given current parallel overhead */
     fun maxBufferMb(parallelOverheadMb: Int): Int =

@@ -39,6 +39,7 @@ class SpeculativeStreamPolicyTest {
             explicit.incrementAndGet()
             emit(NetworkResult.Success(rows))
         }
+        override suspend fun getCachedStreamsFromAllAddons(type: String, videoId: String, season: Int?, episode: Int?): List<AddonStreams>? = null
         override suspend fun getStreamsFromAddon(addon: Addon, type: String, videoId: String): NetworkResult<List<Stream>> = error("unexpected addon request")
     }
     private fun prefetch(repo: Repository) = StreamPrefetchCache.prefetch(repo, "movie", "title", null, null, "test")

@@ -146,4 +146,35 @@ class BufferPresetDefaultsTest {
         assertEquals(100, s.bufferSettings.targetBufferSizeMb)
         assertEquals(BufferSettings.DEFAULT_BACK_BUFFER_DURATION_MS, s.bufferSettings.backBufferDurationMs)
     }
+
+    @Test
+    fun `native memory allows up to 16 connections`() = withStore((3.8 * gb).toLong()) { store ->
+        store.setNuvioPerformanceModeEnabled(true)
+        store.setParallelConnectionCount(16)
+        assertEquals(16, store.playerSettings.first().parallelConnectionCount)
+        store.setParallelConnectionCount(20)
+        assertEquals(16, store.playerSettings.first().parallelConnectionCount)
+        store.updateMemorySettings(parallelConnectionCount = 12)
+        assertEquals(12, store.playerSettings.first().parallelConnectionCount)
+    }
+
+    @Test
+    fun `without native memory connections go up to 8 and old counts stay`() = withStore((3.8 * gb).toLong()) { store ->
+        store.setParallelConnectionCount(4)
+        assertEquals(4, store.playerSettings.first().parallelConnectionCount)
+        store.setParallelConnectionCount(16)
+        assertEquals(8, store.playerSettings.first().parallelConnectionCount)
+        store.updateMemorySettings(parallelConnectionCount = 12)
+        assertEquals(8, store.playerSettings.first().parallelConnectionCount)
+    }
+
+    @Test
+    fun `chunk sizes go up to 128 MB and old sizes stay`() = withStore((3.8 * gb).toLong()) { store ->
+        store.setParallelChunkSizeKb(32 * 1024)
+        assertEquals(32 * 1024, store.playerSettings.first().parallelChunkSizeKb)
+        store.setParallelChunkSizeKb(128 * 1024)
+        assertEquals(128 * 1024, store.playerSettings.first().parallelChunkSizeKb)
+        store.setParallelChunkSizeKb(256 * 1024)
+        assertEquals(128 * 1024, store.playerSettings.first().parallelChunkSizeKb)
+    }
 }

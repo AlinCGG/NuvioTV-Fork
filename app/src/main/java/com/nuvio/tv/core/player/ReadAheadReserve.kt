@@ -67,6 +67,8 @@ internal class ReadAheadReserve(
         if (on) yieldGate.renew(SystemClock.elapsedRealtime()) else yieldGate.end()
     }
 
+    override val yieldHolding: Boolean get() = yieldGate.holding
+
     override fun release() {
         if (held <= 0L) return
         held = 0L
@@ -205,6 +207,7 @@ class ReservableLoadControl(
     override fun giveBack(): Long = reserveCore.giveBack()
     override fun release() = reserveCore.release()
     override fun yieldLoading(on: Boolean) = reserveCore.yieldLoading(on)
+    override val yieldHolding: Boolean get() = reserveCore.yieldHolding
 
     override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean =
         if (reserveCore.holdsLoading(parameters) || overPressureCap(parameters)) false

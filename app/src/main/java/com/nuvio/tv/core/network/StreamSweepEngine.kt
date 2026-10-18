@@ -120,13 +120,14 @@ object StreamSweepEngine {
         streamUrl: String,
         headers: Map<String, String>,
         estimatedBitrate: Long?,
+        playback: MemoryBudget.DownloadWindow,
         onState: (String) -> Unit,
         onPassAdded: (String) -> Unit,
         onPassResult: (String, Double?, PassNote?) -> Unit,
         onBaselineEndpoint: (String?) -> Unit = {}
     ): SweepOutcome = try {
         DiagnosticRunCoordinator.shared.run(DiagnosticRunCoordinator.COMPARISON) { run ->
-            runOwned(context, streamUrl, headers, estimatedBitrate, onState, onPassAdded,
+            runOwned(context, streamUrl, headers, estimatedBitrate, playback, onState, onPassAdded,
                 onPassResult, onBaselineEndpoint, run)
         }
     } catch (e: DiagnosticRunCoordinator.Unavailable) {
@@ -139,6 +140,7 @@ object StreamSweepEngine {
         streamUrl: String,
         headers: Map<String, String>,
         estimatedBitrate: Long?,
+        playback: MemoryBudget.DownloadWindow,
         onState: (String) -> Unit,
         onPassAdded: (String) -> Unit,
         /**
@@ -176,14 +178,15 @@ object StreamSweepEngine {
         fun overheadMb(connections: Int, chunkMb: Int) =
             MemoryBudget.parallelOverheadMb(connections, chunkMb)
 
-        // The depth the tester will actually be allowed to schedule with,
-        // budget-derived from the SAME single-source-of-truth function. Null
+        // The depth the tester will actually schedule with: the downloads at
+        // once playback runs for this cell, from the SAME single-source-of-truth
+        // function, checked against the sweep's memory budget. Null
         // means the cell can not be memory-bounded on this device (or busts
         // the absolute concurrent cap) and must never run. Gating on the
         // depth the tester really uses, not a display model, is what keeps a
         // 3 conn / 64 MB cell from exhausting native memory on a 250 MB box.
         fun cellDepth(connections: Int, chunkMb: Int): Int? =
-            MemoryBudget.sweepCellPrefetchDepth(connections, chunkMb, safeLimitMb)
+            MemoryBudget.sweepCellPrefetchDepth(connections, chunkMb, safeLimitMb, playback)
 
         // The gate explains itself, so a refused cell always leaves a reason
         // on screen. Clause order is deliberate: the absolute concurrent cap

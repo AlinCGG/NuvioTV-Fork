@@ -249,4 +249,14 @@ class PlayerMediaSourceFactoryTest {
 
     private fun String.basicAuthHeader(): String =
         "Basic " + Base64.getEncoder().encodeToString(toByteArray(Charsets.UTF_8))
+
+    @Test
+    fun `automatic speed-up only on plain progressive streams with Custom network off`() {
+        assertTrue(PlayerMediaSourceFactory.usesAutoSpeedup(true, false, false, false, false))
+        assertFalse(PlayerMediaSourceFactory.usesAutoSpeedup(false, false, false, false, false))
+        assertFalse(PlayerMediaSourceFactory.usesAutoSpeedup(true, true, false, false, false))
+        assertFalse(PlayerMediaSourceFactory.usesAutoSpeedup(true, false, true, false, false))
+        assertFalse(PlayerMediaSourceFactory.usesAutoSpeedup(true, false, false, true, false))
+        assertFalse(PlayerMediaSourceFactory.usesAutoSpeedup(true, false, false, false, true))
+    }
 }

@@ -9,13 +9,23 @@ import com.nuvio.tv.core.player.MemoryPressure
 
 /** One keeper per load control; null (stock buffers, or no player) detaches it. */
 @OptIn(UnstableApi::class)
-internal fun PlayerRuntimeController.attachBufferMemoryKeeper(control: BufferBudgetControl?) {
+internal fun PlayerRuntimeController.attachBufferMemoryKeeper(
+    control: BufferBudgetControl?,
+    budgetManaged: Boolean = true,
+) {
     val current = bufferMemoryKeeper
-    if (current != null && current.control === control) return
+    if (current != null && current.control === control) {
+        current.setBudgetManaged(budgetManaged)
+        return
+    }
     current?.detach()
     bufferMemoryKeeper = control?.let { budgetControl ->
         val appContext = context.applicationContext
         MemoryPressure.register(appContext)
-        BufferMemoryKeeper(budgetControl, { BufferSizing.read(appContext) }).also { it.attach() }
+        BufferMemoryKeeper(
+            budgetControl,
+            { BufferSizing.read(appContext) },
+            budgetManaged = budgetManaged,
+        ).also { it.attach() }
     }
 }

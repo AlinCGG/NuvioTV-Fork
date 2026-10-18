@@ -74,6 +74,9 @@ class BufferSettingsNumbersTest {
         assertFalse(BufferSettingsNumbers.connectionCountTooHigh((1.9 * gb).toLong(), 2))
         assertFalse(BufferSettingsNumbers.connectionCountTooHigh((3.8 * gb).toLong(), 4))
         assertFalse(BufferSettingsNumbers.connectionCountTooHigh(0L, 4))
+        assertTrue(BufferSettingsNumbers.connectionCountTooHigh((1.9 * gb).toLong(), 16))
+        assertTrue(BufferSettingsNumbers.connectionCountTooHigh((1.9 * gb).toLong(), 8))
+        assertFalse(BufferSettingsNumbers.connectionCountTooHigh((3.8 * gb).toLong(), 16))
     }
 
     @Test

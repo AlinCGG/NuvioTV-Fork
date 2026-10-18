@@ -96,8 +96,17 @@ internal fun PlaybackBufferNetworkSection(
 
     SettingsSectionLabel(text = stringResource(R.string.playback_network_label))
     SettingsToggleRow(
+        title = stringResource(R.string.playback_net_auto_speedup),
+        subtitle = stringResource(R.string.playback_net_auto_speedup_sub),
+        checked = settings.autoSpeedupEnabled,
+        onToggle = { onUpdate { setAutoSpeedupEnabled(!settings.autoSpeedupEnabled) } }
+    )
+    if (settings.autoSpeedupEnabled && settings.parallelNetworkEnabled) {
+        SettingsNote(text = stringResource(R.string.playback_net_auto_speedup_custom_note))
+    }
+    SettingsToggleRow(
         title = stringResource(R.string.playback_net_custom),
-        subtitle = stringResource(R.string.playback_net_custom_sub),
+        subtitle = stringResource(R.string.playback_net_custom_desc),
         checked = settings.parallelNetworkEnabled,
         onToggle = { onUpdate { setParallelNetworkEnabled(!settings.parallelNetworkEnabled) } }
     )
@@ -383,7 +392,7 @@ private fun ParallelNetworkControls(
             value = settings.parallelConnectionCount,
             valueText = settings.parallelConnectionCount.toString(),
             minValue = MemoryBudget.MIN_CONNECTIONS,
-            maxValue = MemoryBudget.MAX_CONNECTIONS,
+            maxValue = MemoryBudget.maxConnections(settings.nuvioPerformanceModeEnabled),
             step = 1,
             onValueChange = { count -> updateMemory { setParallelConnectionCount(count) } }
         )
@@ -399,7 +408,7 @@ private fun ParallelNetworkControls(
         }
 
         val maxChunkSizeMb = if (settings.nuvioPerformanceModeEnabled) {
-            MemoryBudget.tierMaxChunkMb
+            MemoryBudget.customMaxChunkMb(LocalContext.current, settings)
         } else {
             MemoryBudget.maxChunkMb(
                 MemoryBudget.effectiveBufferMb(settings.bufferSettings.targetBufferSizeMb),
@@ -408,7 +417,7 @@ private fun ParallelNetworkControls(
         }
         val chunkSizes = PARALLEL_CHUNK_SIZES.filter { it.first <= maxChunkSizeMb * 1024 }
         val currentKb = settings.parallelChunkSizeKb
-        val currentIndex = chunkSizes.indexOfFirst { it.first == currentKb }.coerceAtLeast(0)
+        val currentIndex = chunkSizes.indexOfLast { it.first <= currentKb }.coerceAtLeast(0)
         SliderSettingsItem(
             title = stringResource(R.string.playback_net_chunk_size),
             subtitle = stringResource(R.string.playback_net_chunk_size_sub),
@@ -421,6 +430,7 @@ private fun ParallelNetworkControls(
                 chunkSizes.getOrNull(index)?.let { (kb, _) -> updateMemory { setParallelChunkSizeKb(kb) } }
             }
         )
+        SettingsNote(text = stringResource(R.string.playback_net_chunk_size_small_note))
     }
 
     SettingsResetButton(
@@ -434,7 +444,7 @@ private fun ParallelNetworkControls(
 internal fun PlaybackMemoryUsageCard(settings: PlayerSettings) {
     val context = LocalContext.current
     val parallelEnabled = settings.useParallelConnections && settings.parallelNetworkEnabled
-    val chunkSizeMb = Math.ceil(settings.parallelChunkSizeKb / 1024.0).toInt()
+    val chunkSizeMb = Math.ceil(MemoryBudget.customChunkKb(context, settings) / 1024.0).toInt()
     val automaticTarget = !(settings.bufferEngineEnabled && !settings.bufferBudgetManaged)
     val parallelOverheadMb = if (parallelEnabled) MemoryBudget.parallelOverheadMb(settings.parallelConnectionCount, chunkSizeMb) else 0
     val effectiveBufferMb = when {

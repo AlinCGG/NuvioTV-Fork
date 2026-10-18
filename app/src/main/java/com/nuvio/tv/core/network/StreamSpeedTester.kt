@@ -57,14 +57,16 @@ object StreamSpeedTester {
         headers: Map<String, String>,
         chunkSizeBytes: Long,
         parallelConnections: Int,
-        // The window is the CALLER's budget-derived figure
-        // (MemoryBudget.sweepCellPrefetchDepth), not a fixed connections*4,
-        // which on a 3 conn / 64 MB cell would allow a ~1 GB session against
-        // a 250 MB safe native budget.
+        // The window is the CALLER's figure (MemoryBudget.sweepCellPrefetchDepth):
+        // the prefetch depth playback would use, checked against the sweep's
+        // memory budget, so the session schedules its downloads as playback does.
         prefetchDepthChunks: Int
     ): ParallelPassResult {
+        // Workers and requests for every download the window can keep running.
+        val downloads = ParallelRangeDataSource.prefetchDepth(prefetchDepthChunks, parallelConnections)
+            .coerceAtMost(ParallelRangeDataSource.MAX_DIAGNOSTIC_DOWNLOADS)
         val result = parallelTest.run { budget ->
-            val calls = ParallelDiagnosticCalls(parallelConnections, payload = budget)
+            val calls = ParallelDiagnosticCalls(downloads, payload = budget)
             try {
                 val dataSource = ParallelRangeDataSource(
                     upstreamFactory = OkHttpDataSource.Factory(calls).apply { setDefaultRequestProperties(headers) },
