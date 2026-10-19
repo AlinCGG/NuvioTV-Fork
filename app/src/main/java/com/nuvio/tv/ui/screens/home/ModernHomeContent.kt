@@ -157,7 +157,9 @@ fun ModernHomeContent(
     showContinueWatchingManualPlayOption: Boolean = false,
     onRequestTrailerPreview: (String, String, String?, String) -> Unit,
     onLoadMoreCatalog: (String, String, String) -> Unit,
+    onServerArtworkWindow: (List<Pair<String, List<MetaPreview>>>) -> Unit = {},
     onRemoveContinueWatching: (String, Int?, Int?, Boolean) -> Unit,
+    onHideFromComingUp: (ContinueWatchingItem) -> Unit = {},
     isCatalogItemWatched: (MetaPreview) -> Boolean = { false },
     onCatalogItemLongPress: (MetaPreview, String) -> Unit = { _, _ -> },
     onNavigateToFolderDetail: (String, String) -> Unit = { _, _ -> },
@@ -297,6 +299,7 @@ fun ModernHomeContent(
         mutableStateOf(initialFocus?.let { (row, index) -> row.heroSelectionAt(index) })
     }
     val optionsItem = remember { mutableStateOf<ContinueWatchingItem?>(null) }
+    val optionsCard = remember { mutableStateOf<Pair<String, Int>?>(null) }
     val lastFocusedContinueWatchingIndex = remember { mutableIntStateOf(-1) }
     val lastHeroNavigationAtMs = remember { mutableLongStateOf(0L) }
     val heroFocusSettleDelayMs = remember { mutableLongStateOf(MODERN_HERO_FOCUS_DEBOUNCE_MS) }
@@ -428,6 +431,13 @@ fun ModernHomeContent(
     val currentItemIdentitiesByRow = carouselLookups.itemIdentitiesByRow.map
     if (itemIdentitySnapshot.byRow !== currentItemIdentitiesByRow) {
         currentItemIdentitiesByRow.forEach { (rowKey, currentIdentities) ->
+            if (pendingRowFocusKey.value == rowKey) {
+                findRelocatedItemIndex(
+                    previousIdentities = itemIdentitySnapshot.byRow[rowKey]?.list,
+                    currentIdentities = currentIdentities.list,
+                    storedIndex = pendingRowFocusIndex.value
+                )?.let { pendingRowFocusIndex.value = it }
+            }
             val storedIndex = focusedItemByRow[rowKey]
             val relocatedIndex = findRelocatedItemIndex(
                 previousIdentities = itemIdentitySnapshot.byRow[rowKey]?.list,
@@ -951,7 +961,13 @@ fun ModernHomeContent(
             }
             val localDensity = LocalDensity.current
             val rowsViewportHeightFraction = if (useLandscapePosters) 0.49f else 0.52f
-            val rowsViewportHeight = remember(screenHeight, rowsViewportHeightFraction) { screenHeight * rowsViewportHeightFraction }
+            val tallestRowCardHeight = maxOf(
+                if (useLandscapePosters) landscapeCatalogCardHeight else portraitCatalogCardHeight,
+                continueWatchingCardHeight
+            )
+            val rowsViewportHeight = remember(screenHeight, rowsViewportHeightFraction, tallestRowCardHeight) {
+                modernRowsViewportHeight(screenHeight, rowsViewportHeightFraction, tallestRowCardHeight)
+            }
             val rowTitleLineHeight = MaterialTheme.typography.titleMedium.lineHeight
             val rowTitleHeight = remember(rowTitleLineHeight, localDensity) {
                 with(localDensity) {
@@ -1108,7 +1124,12 @@ fun ModernHomeContent(
             val onFastScrollingChangedLambda = remember { { scrolling: Boolean -> isFastScrolling.value = scrolling } }
             val onExpandedCatalogFocusKeyChangeLambda = remember { { key: String? -> expandedCatalogFocusKey.value = key } }
             val onBackdropInteractionLambda = remember { { expansionInteractionNonce.intValue++; Unit } }
-            val onContinueWatchingOptionsLambda = remember { { item: ContinueWatchingItem -> optionsItem.value = item } }
+            val onContinueWatchingOptionsLambda = remember {
+                { item: ContinueWatchingItem ->
+                    optionsCard.value = activeRowKey.value?.let { it to (focusedItemByRow[it] ?: 0) }
+                    optionsItem.value = item
+                }
+            }
             val onPendingRowFocusClearedLambda = remember {
                 {
                     pendingRowFocusKey.value = null
@@ -1157,6 +1178,7 @@ fun ModernHomeContent(
                 onNavigateToDetail = onNavigateToDetail,
                 onNavigateToFolderDetail = onNavigateToFolderDetail,
                 onLoadMoreCatalog = onLoadMoreCatalog,
+                onServerArtworkWindow = onServerArtworkWindow,
                 onContinueWatchingClick = onContinueWatchingClick,
                 onContinueWatchingOptions = onContinueWatchingOptionsLambda,
                 onRequestLazyCatalogLoad = stableOnRequestLazyCatalogLoad,
@@ -1217,20 +1239,30 @@ fun ModernHomeContent(
 
     val selectedOptionsItem = optionsItem.value
     if (selectedOptionsItem != null) {
+        val comingUp = optionsCard.value?.first == MODERN_COMING_UP_ROW_KEY
+        val removable = !comingUp || (selectedOptionsItem as? ContinueWatchingItem.NextUp)?.info?.upcomingOnly == true
+        val keepFocusAfterRemoval = {
+            val (rowKey, index) = optionsCard.value
+                ?: (MODERN_CONTINUE_WATCHING_ROW_KEY to lastFocusedContinueWatchingIndex.intValue)
+            val rowSize = carouselRows.list.firstOrNull { it.key == rowKey }?.items?.list?.size ?: 0
+            val targetIndex = removedCardFocusTarget(index, rowSize)
+            pendingRowFocusKey.value = if (targetIndex != null) rowKey else null
+            pendingRowFocusIndex.value = targetIndex
+            pendingRowFocusNonce.intValue++
+        }
         ContinueWatchingOptionsDialog(
             item = selectedOptionsItem,
             onDismiss = { optionsItem.value = null },
             onRemove = {
-                val targetIndex = if (uiState.continueWatchingItems.size <= 1) null
-                else (lastFocusedContinueWatchingIndex.intValue).coerceAtMost(uiState.continueWatchingItems.size - 2).coerceAtLeast(0)
-                pendingRowFocusKey.value = if (targetIndex != null) "continue_watching" else null
-                pendingRowFocusIndex.value = targetIndex
-                pendingRowFocusNonce.intValue++
+                keepFocusAfterRemoval()
+                val removed = if (comingUp) {
+                    uiState.upcomingItems.firstOrNull { it.contentId() == selectedOptionsItem.contentId() } ?: selectedOptionsItem
+                } else selectedOptionsItem
                 onRemoveContinueWatching(
-                    selectedOptionsItem.contentId(),
-                    selectedOptionsItem.season(),
-                    selectedOptionsItem.episode(),
-                    selectedOptionsItem is ContinueWatchingItem.NextUp
+                    removed.contentId(),
+                    removed.season(),
+                    removed.episode(),
+                    removed is ContinueWatchingItem.NextUp
                 )
                 optionsItem.value = null
             },
@@ -1242,11 +1274,19 @@ fun ModernHomeContent(
                 onContinueWatchingStartFromBeginning(selectedOptionsItem)
                 optionsItem.value = null
             },
-            showPlayManually = showContinueWatchingManualPlayOption,
+            showPlayManually = showContinueWatchingManualPlayOption && !comingUp,
+            showRemove = removable,
             onPlayManually = {
                 onContinueWatchingPlayManually(selectedOptionsItem)
                 optionsItem.value = null
-            }
+            },
+            onHideFromComingUp = if (comingUp) {
+                {
+                    keepFocusAfterRemoval()
+                    onHideFromComingUp(selectedOptionsItem)
+                    optionsItem.value = null
+                }
+            } else null
         )
     }
 }

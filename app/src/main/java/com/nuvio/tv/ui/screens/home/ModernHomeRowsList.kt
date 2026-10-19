@@ -110,6 +110,7 @@ internal fun ModernHomeRowsList(
     onNavigateToDetail: (String, String, String) -> Unit,
     onNavigateToFolderDetail: (String, String) -> Unit,
     onLoadMoreCatalog: (String, String, String) -> Unit,
+    onServerArtworkWindow: (List<Pair<String, List<MetaPreview>>>) -> Unit = {},
     onContinueWatchingClick: (ContinueWatchingItem) -> Unit,
     onContinueWatchingOptions: (ContinueWatchingItem) -> Unit,
     onRequestLazyCatalogLoad: (String) -> Unit,
@@ -242,6 +243,20 @@ internal fun ModernHomeRowsList(
         }
     }
     val latestCarouselRowsForImagePrefetch = rememberUpdatedState(carouselRows)
+    val latestOnServerArtworkWindow = rememberUpdatedState(onServerArtworkWindow)
+    LaunchedEffect(verticalRowListState) {
+        snapshotFlow {
+            val visible = verticalRowListState.layoutInfo.visibleItemsInfo
+            val rows = visible.firstOrNull()?.index?.let { it..visible.last().index } ?: IntRange.EMPTY
+            serverArtworkWindow(latestCarouselRowsForImagePrefetch.value.list, rows) { key ->
+                rowListStatesMap[key]?.layoutInfo?.visibleItemsInfo?.takeIf { it.isNotEmpty() }
+                    ?.let { it.first().index..it.last().index }
+            }
+        }
+            .distinctUntilChanged()
+            .debounce(150L)
+            .collect { window -> if (window.isNotEmpty()) latestOnServerArtworkWindow.value(window) }
+    }
     ProgressiveHomePosterWarmup(
         rows = latestCarouselRowsForImagePrefetch,
         viewport = imageViewport,

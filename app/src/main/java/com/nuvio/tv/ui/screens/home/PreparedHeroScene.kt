@@ -99,37 +99,47 @@ internal fun rememberPreparedHeroScene(
             scene.copy(preparedLogo = image, preview = scene.preview?.copy(logo = logoUrl))
         }
     }
-    return remember(requested) {
-        derivedStateOf {
-            val live = requested.value
-            val shown = presentation.displayed ?: live.neutralHero()
-            if (shown.artwork.ownerKey != live.artwork.ownerKey) {
-                shown.copy(shouldPlayTrailer = false, trailerFirstFrameRendered = false)
-            } else {
-                // Pin the composition. Late text fills reserved slots without blanking the title.
-                shown.copy(
-                    shouldPlayTrailer = live.shouldPlayTrailer,
-                    trailerFirstFrameRendered = live.trailerFirstFrameRendered,
-                    trailerUrl = live.trailerUrl, trailerAudioUrl = live.trailerAudioUrl,
-                    trailerPlaybackKey = live.trailerPlaybackKey, trailerMuted = live.trailerMuted,
-                    fullScreenBackdrop = live.fullScreenBackdrop, featheredTrailer = live.featheredTrailer,
-                    preview = shown.preview?.copy(
-                        genres = live.preview?.genres ?: shown.preview.genres,
-                        countryText = live.preview?.countryText ?: shown.preview.countryText,
-                        languageText = live.preview?.languageText ?: shown.preview.languageText,
-                        description = live.preview?.description ?: shown.preview.description,
-                        runtimeText = live.preview?.runtimeText ?: shown.preview.runtimeText,
-                        yearText = live.preview?.yearText ?: shown.preview.yearText,
-                        ageRatingText = live.preview?.ageRatingText ?: shown.preview.ageRatingText,
-                        statusText = live.preview?.statusText ?: shown.preview.statusText,
-                        mdbListRatings = live.preview?.mdbListRatings ?: shown.preview.mdbListRatings,
-                        imdbText = live.preview?.imdbText ?: shown.preview.imdbText
-                    )
-                )
-            }
-        }
-    }
+    val latestRequested = rememberUpdatedState(requested)
+    return remember { preparedHeroSceneState({ presentation.displayed }, { latestRequested.value }) }
 }
+
+/**
+ * Home rebuilds the requested state whenever rows or settings change. The result stays one object
+ * and reads the newest request, so holders of the first one still see the trailer start.
+ */
+internal fun preparedHeroSceneState(
+    displayed: () -> ModernHeroSceneState?,
+    requested: () -> State<ModernHeroSceneState>
+): State<ModernHeroSceneState> = derivedStateOf {
+    val live = requested().value
+    presentedHeroScene(displayed() ?: live.neutralHero(), live)
+}
+
+internal fun presentedHeroScene(shown: ModernHeroSceneState, live: ModernHeroSceneState): ModernHeroSceneState =
+    if (shown.artwork.ownerKey != live.artwork.ownerKey) {
+        shown.copy(shouldPlayTrailer = false, trailerFirstFrameRendered = false)
+    } else {
+        // Pin the composition. Late text fills reserved slots without blanking the title.
+        shown.copy(
+            shouldPlayTrailer = live.shouldPlayTrailer,
+            trailerFirstFrameRendered = live.trailerFirstFrameRendered,
+            trailerUrl = live.trailerUrl, trailerAudioUrl = live.trailerAudioUrl,
+            trailerPlaybackKey = live.trailerPlaybackKey, trailerMuted = live.trailerMuted,
+            fullScreenBackdrop = live.fullScreenBackdrop, featheredTrailer = live.featheredTrailer,
+            preview = shown.preview?.copy(
+                genres = live.preview?.genres ?: shown.preview.genres,
+                countryText = live.preview?.countryText ?: shown.preview.countryText,
+                languageText = live.preview?.languageText ?: shown.preview.languageText,
+                description = live.preview?.description ?: shown.preview.description,
+                runtimeText = live.preview?.runtimeText ?: shown.preview.runtimeText,
+                yearText = live.preview?.yearText ?: shown.preview.yearText,
+                ageRatingText = live.preview?.ageRatingText ?: shown.preview.ageRatingText,
+                statusText = live.preview?.statusText ?: shown.preview.statusText,
+                mdbListRatings = live.preview?.mdbListRatings ?: shown.preview.mdbListRatings,
+                imdbText = live.preview?.imdbText ?: shown.preview.imdbText
+            )
+        )
+    }
 
 private suspend fun decodeHeroBackdrop(
     context: android.content.Context, scene: ModernHeroSceneState, width: Int, height: Int

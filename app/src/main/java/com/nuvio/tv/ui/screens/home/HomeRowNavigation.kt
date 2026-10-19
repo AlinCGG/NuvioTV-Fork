@@ -58,3 +58,32 @@ internal const val VERTICAL_HEADING_MS = 600L
 /** The card focus enters a row on: the one the row is pointed at, kept inside a row that has since shrunk. */
 internal fun rowEntryCardIndex(pointedAt: Int?, itemCount: Int): Int? =
     if (itemCount <= 0) null else (pointedAt ?: 0).coerceIn(0, itemCount - 1)
+
+/** Where focus enters a row: the card it was sent to, else the one it is pointed at. */
+internal data class RowEntry(val index: Int, val waitForCard: Boolean)
+
+/**
+ * A row with a card waiting for focus enters on that card. When the card cannot take focus yet (it was just removed and
+ * the next one has not moved into its place), [RowEntry.waitForCard] says to wait for it rather than fall back to the
+ * first card. Only rows whose cards are always focusable wait.
+ */
+internal fun rowEntry(pendingIndex: Int?, pointedAt: Int?, itemCount: Int, cardsAlwaysFocusable: Boolean): RowEntry? {
+    val index = rowEntryCardIndex(pendingIndex ?: pointedAt, itemCount) ?: return null
+    return RowEntry(index, waitForCard = pendingIndex != null && cardsAlwaysFocusable)
+}
+
+/** The card focus moves to when the card at [index] leaves a row of [rowSize]: the one taking its place, else the new last. */
+internal fun removedCardFocusTarget(index: Int, rowSize: Int): Int? =
+    if (rowSize <= 1) null else index.coerceIn(0, rowSize - 2)
+
+/**
+ * Whether a card pointed at by its row takes focus when it is built. A card someone asked focus to go to always may;
+ * a card that is only the row's remembered one waits while another card in the row has focus, so it cannot pull focus
+ * back from the card the user moved on to.
+ */
+internal fun shouldClaimFocus(isTarget: Boolean, cardFocused: Boolean, rowHasFocus: Boolean, isPendingTarget: Boolean): Boolean =
+    isTarget && !cardFocused && (isPendingTarget || !rowHasFocus)
+
+/** The card focus was sent to in a row, once a card of [focusedRowKey] has taken focus: done with as soon as any card in its row has it. */
+internal fun pendingAfterFocus(pendingRowKey: String?, pendingIndex: Int?, focusedRowKey: String): Int? =
+    if (pendingRowKey == focusedRowKey) null else pendingIndex

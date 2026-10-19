@@ -149,7 +149,7 @@ class HomeTrailerCancellationTest {
             prefetchSelectionSupplier = mockk(relaxed = true),
             streamRepository = mockk(relaxed = true),
             trailerSettingsDataStore = mockk(relaxed = true),
-            serverCatalog = mockk { every { addons } returns flowOf(emptyList()) }
+            serverCatalog = mockk { every { addons } returns flowOf(emptyList()); every { artworkUpdates } returns MutableStateFlow(0L) }
         )
         viewModel.startupGracePeriodActive = false
         viewModel.externalMetaPrefetchEnabled = true

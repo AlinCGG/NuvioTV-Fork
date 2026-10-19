@@ -1139,7 +1139,9 @@ fun ContinueWatchingOptionsDialog(
     onDetails: () -> Unit,
     onStartFromBeginning: () -> Unit = {},
     showPlayManually: Boolean = false,
-    onPlayManually: () -> Unit = {}
+    onPlayManually: () -> Unit = {},
+    showRemove: Boolean = true,
+    onHideFromComingUp: (() -> Unit)? = null
 ) {
     val isPlayEnabled = LocalPlaybackAvailability.current.canStream(item)
     val title = when (item) {
@@ -1178,10 +1180,19 @@ fun ContinueWatchingOptionsDialog(
             )
         }
 
-        PanelActionRow(
-            label = stringResource(R.string.cw_action_remove),
-            onClick = onRemove
-        )
+        if (onHideFromComingUp != null) {
+            PanelActionRow(
+                label = stringResource(R.string.calendar_coming_up_hide),
+                onClick = onHideFromComingUp
+            )
+        }
+
+        if (showRemove) {
+            PanelActionRow(
+                label = stringResource(R.string.cw_action_remove),
+                onClick = onRemove
+            )
+        }
     }
 }
 

@@ -9,12 +9,12 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 
 class PosterSizingTest {
-    private val presets = listOf(104, 112, 120, 126, 134, 140)
+    private val presets = listOf(104, 112, 120, 126, 134, 140, 176)
 
     @Test
     fun `automatic calibration below 100 keeps the Original look poster size`() {
         val calibrated = UiScaleDecision(75, "Logical canvas", calibrationPercent = 75)
-        val expected = listOf(138.67f, 149.33f, 160f, 168f, 178.67f, 186.67f)
+        val expected = listOf(138.67f, 149.33f, 160f, 168f, 178.67f, 186.67f, 234.67f)
         presets.zip(expected).forEach { (preset, dp) ->
             assertEquals(dp, calibrated.posterSizeDp(preset), 0.01f)
             // The chosen width ends up at the same pixel count as the Original look at 100 percent.

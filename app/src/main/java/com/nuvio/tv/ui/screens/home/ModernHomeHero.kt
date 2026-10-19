@@ -157,8 +157,10 @@ internal fun ModernHeroMediaLayer(
     requestWidthPx: Int,
     requestHeightPx: Int
 ) {
-    val shouldPlay by remember { derivedStateOf { shouldPlayHeroTrailer() } }
-    val trailerRendered by remember { derivedStateOf { heroTrailerFirstFrameRendered() } }
+    val latestShouldPlay = rememberUpdatedState(shouldPlayHeroTrailer)
+    val latestTrailerRendered = rememberUpdatedState(heroTrailerFirstFrameRendered)
+    val shouldPlay by remember { derivedStateOf { latestShouldPlay.value() } }
+    val trailerRendered by remember { derivedStateOf { latestTrailerRendered.value() } }
     val transitionProgressState = animateFloatAsState(
         targetValue = if (shouldPlay && trailerRendered) 1f else 0f,
         animationSpec = tween(durationMillis = 480),

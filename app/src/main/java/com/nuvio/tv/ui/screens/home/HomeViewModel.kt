@@ -532,6 +532,7 @@ class HomeViewModel @Inject constructor(
         StartupLatencyTrace.mark("home_vm_init")
         shownUiState = createShuffleHomeState()
         observeCwPrefetch(shownUiState)
+        observeServerArtwork()
         android.util.Log.i("HOMEVM_LIFECYCLE", "INIT id=" + vmInstanceId)
         // Accumulates individual watched status changes and flushes them as a single
         // update after 150ms of inactivity, preventing N separate recompositions.

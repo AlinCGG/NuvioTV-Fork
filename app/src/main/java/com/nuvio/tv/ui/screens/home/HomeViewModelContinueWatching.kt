@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import com.nuvio.tv.data.repository.MetaCaller
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
@@ -2482,7 +2483,7 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
 
     val typeCandidates = listOf(progress.contentType, "series", "tv").distinct()
     val useAllAddons = externalMetaPrefetchEnabled
-    val resolved = run {
+    val resolved = withContext(MetaCaller("cw")) {
         var summary: CwMetaSummary? = null
         var attempts = 0
         for (type in typeCandidates) {
@@ -2646,12 +2647,14 @@ private suspend fun HomeViewModel.resolveBadgeEpisodes(
     for (type in typeCandidates) {
         for (candidateId in idCandidates) {
             val result = withTimeoutOrNull(2_500L) {
-                if (useAllAddons) {
-                    metaRepository.getMetaFromAllAddons(type = type, id = candidateId)
-                        .first { it !is NetworkResult.Loading }
-                } else {
-                    metaRepository.getMetaFromPrimaryAddon(type = type, id = candidateId)
-                        .first { it !is NetworkResult.Loading }
+                withContext(MetaCaller("cw-badges")) {
+                    if (useAllAddons) {
+                        metaRepository.getMetaFromAllAddons(type = type, id = candidateId)
+                            .first { it !is NetworkResult.Loading }
+                    } else {
+                        metaRepository.getMetaFromPrimaryAddon(type = type, id = candidateId)
+                            .first { it !is NetworkResult.Loading }
+                    }
                 }
             } ?: continue
             val meta = (result as? NetworkResult.Success<*>)?.data as? Meta ?: continue
@@ -3328,6 +3331,10 @@ internal fun HomeViewModel.removeContinueWatchingPipeline(
                             ) == dismissKey
                         is ContinueWatchingItem.InProgress -> false
                     }
+                },
+                comingUpItems = state.comingUpItems.filterNot { item ->
+                    item is ContinueWatchingItem.NextUp && item.info.upcomingOnly &&
+                        nextUpDismissKey(item.info.contentId, item.info.seedSeason, item.info.seedEpisode) == dismissKey
                 }
             )
         }

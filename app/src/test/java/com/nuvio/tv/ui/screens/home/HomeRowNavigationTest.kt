@@ -90,4 +90,76 @@ class HomeRowNavigationTest {
         assertEquals(0, rowEntryCardIndex(6, 1))
         assertNull(rowEntryCardIndex(0, 0))
     }
+    @Test fun aRowWithACardWaitingForFocusEntersOnThatCard() {
+        // Card 3 of a Continue watching row was removed: the card now in its place gets focus, not the first card.
+        assertEquals(RowEntry(2, waitForCard = true), rowEntry(pendingIndex = 2, pointedAt = 2, itemCount = 5, cardsAlwaysFocusable = true))
+        // The waiting card wins over the card the row was pointed at.
+        assertEquals(RowEntry(1, waitForCard = true), rowEntry(pendingIndex = 1, pointedAt = 4, itemCount = 5, cardsAlwaysFocusable = true))
+        // Past the end of a row that has since shrunk: its last card.
+        assertEquals(RowEntry(2, waitForCard = true), rowEntry(pendingIndex = 4, pointedAt = null, itemCount = 3, cardsAlwaysFocusable = true))
+    }
+
+    @Test fun onlyAWaitingCardInARowOfAlwaysFocusableCardsHoldsFocusBack() {
+        // Nothing waiting: the row falls back as before when the card cannot take focus.
+        assertEquals(RowEntry(3, waitForCard = false), rowEntry(pendingIndex = null, pointedAt = 3, itemCount = 5, cardsAlwaysFocusable = true))
+        // A catalog row's placeholders refuse focus, so it never waits for one.
+        assertEquals(RowEntry(2, waitForCard = false), rowEntry(pendingIndex = 2, pointedAt = 0, itemCount = 5, cardsAlwaysFocusable = false))
+        // An empty row has nowhere to enter and nothing to wait for.
+        assertNull(rowEntry(pendingIndex = 0, pointedAt = 0, itemCount = 0, cardsAlwaysFocusable = true))
+    }
+
+    @Test fun removingACardSendsFocusToTheOneTakingItsPlace() {
+        // First, middle and last card of five.
+        assertEquals(0, removedCardFocusTarget(0, 5))
+        assertEquals(2, removedCardFocusTarget(2, 5))
+        assertEquals(3, removedCardFocusTarget(4, 5))
+        // A stale index still lands inside the shorter row.
+        assertEquals(3, removedCardFocusTarget(9, 5))
+        assertEquals(0, removedCardFocusTarget(-1, 5))
+        // The row's only card: the row goes, so nothing waits.
+        assertNull(removedCardFocusTarget(0, 1))
+        assertNull(removedCardFocusTarget(0, 0))
+    }
+
+    @Test fun aRememberedCardNeverTakesFocusFromTheCardBesideIt() {
+        // Holding Right: the card the row remembered five back is built again while the user is on another card.
+        assertFalse(shouldClaimFocus(isTarget = true, cardFocused = false, rowHasFocus = true, isPendingTarget = false))
+        // Nothing in the row has focus yet: the remembered card takes it, as on entering the row.
+        assertTrue(shouldClaimFocus(isTarget = true, cardFocused = false, rowHasFocus = false, isPendingTarget = false))
+        // Not pointed at, or already focused: nothing to do.
+        assertFalse(shouldClaimFocus(isTarget = false, cardFocused = false, rowHasFocus = false, isPendingTarget = false))
+        assertFalse(shouldClaimFocus(isTarget = true, cardFocused = true, rowHasFocus = true, isPendingTarget = true))
+    }
+
+    @Test fun aCardFocusWasSentToStillTakesIt() {
+        // Removing a card: the row lost focus with it, and the card taking its place takes focus.
+        val pending = removedCardFocusTarget(2, 5)
+        assertTrue(shouldClaimFocus(isTarget = true, cardFocused = false, rowHasFocus = false, isPendingTarget = pending == 2))
+        // Back to the start of the row while another card there still has focus.
+        assertTrue(shouldClaimFocus(isTarget = true, cardFocused = false, rowHasFocus = true, isPendingTarget = true))
+    }
+
+    @Test fun theCardFocusWasSentToIsDoneWithOnceAnyCardInItsRowHasFocus() {
+        // Any card in the same row, not only card 4, so the old target cannot pull focus back later.
+        assertNull(pendingAfterFocus(pendingRowKey = "row", pendingIndex = 4, focusedRowKey = "row"))
+        assertNull(pendingAfterFocus(pendingRowKey = "row", pendingIndex = null, focusedRowKey = "row"))
+        // A card in another row leaves it waiting for its own row.
+        assertEquals(4, pendingAfterFocus(pendingRowKey = "row", pendingIndex = 4, focusedRowKey = "other"))
+        assertNull(pendingAfterFocus(pendingRowKey = null, pendingIndex = null, focusedRowKey = "row"))
+    }
+
+    @Test fun aStaleTargetLeftBehindByHoldingRightNeverWins() {
+        var pending: Int? = 3
+        var rowHasFocus = false
+        // Focus lands on card 3, then the user holds Right to card 9.
+        repeat(7) {
+            pending = pendingAfterFocus("row", pending, "row")
+            rowHasFocus = true
+        }
+        assertNull(pending)
+        // Card 3 is built again (scrolled back into the prefetch window): it stays put.
+        for (index in 0..8) {
+            assertFalse(shouldClaimFocus(isTarget = index == 3, cardFocused = false, rowHasFocus = rowHasFocus, isPendingTarget = pending == index))
+        }
+    }
 }

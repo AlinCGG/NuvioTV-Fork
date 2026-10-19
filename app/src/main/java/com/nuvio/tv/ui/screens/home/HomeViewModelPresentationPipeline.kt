@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import com.nuvio.tv.data.repository.MetaCaller
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
@@ -606,8 +607,10 @@ private fun HomeViewModel.externalEnrichmentOutstanding(itemId: String): Boolean
 
 private suspend fun HomeViewModel.fetchExternalMetaOutcome(item: MetaPreview): ExternalMetaOutcome =
     try {
-        val result = metaRepository.getMetaFromAllAddons(item.apiType, item.id, item.sourceAddonBaseUrl)
-            .first { it is NetworkResult.Success || it is NetworkResult.Error }
+        val result = withContext(MetaCaller("home-enrich")) {
+            metaRepository.getMetaFromAllAddons(item.apiType, item.id, item.sourceAddonBaseUrl)
+                .first { it is NetworkResult.Success || it is NetworkResult.Error }
+        }
         when {
             result is NetworkResult.Success -> ExternalMetaOutcome.Resolved(result.data)
             result is NetworkResult.Error &&
@@ -927,7 +930,7 @@ private suspend fun HomeViewModel.prefetchFocusedDetails(item: MetaPreview) {
     prefetchDetailsMeta(item)
 }
 
-internal suspend fun HomeViewModel.prefetchDetailsMeta(item: MetaPreview) {
+internal suspend fun HomeViewModel.prefetchDetailsMeta(item: MetaPreview): Unit = withContext(MetaCaller("home-details")) {
     val source = item.sourceAddonBaseUrl?.takeIf(String::isNotBlank)
     val preferred = if (!externalMetaPrefetchEnabled && source != null) {
         metaRepository.getMeta(source, item.apiType, item.id).first { it !is NetworkResult.Loading }

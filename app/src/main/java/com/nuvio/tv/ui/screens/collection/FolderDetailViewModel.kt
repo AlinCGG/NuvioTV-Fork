@@ -82,6 +82,7 @@ data class FolderDetailUiState(
     val showFullReleaseDate: Boolean = true,
     val modernLandscapePostersEnabled: Boolean = false,
     val modernHeroFullScreenBackdropEnabled: Boolean = false,
+    val alwaysShowLandscapeClearlogo: Boolean = false,
     val focusedPosterBackdropExpandEnabled: Boolean = false,
     val focusedPosterBackdropExpandDelaySeconds: Int = 3,
     val focusedPosterBackdropTrailerEnabled: Boolean = true,
@@ -268,6 +269,7 @@ class FolderDetailViewModel @Inject constructor(
             val showFullReleaseDate = layoutPreferenceDataStore.showFullReleaseDate.first()
             val modernLandscapePosters = layoutPreferenceDataStore.landscapePosterScope.first().onAllScreens
             val modernFullScreenBackdrop = layoutPreferenceDataStore.modernHeroFullScreenBackdropEnabled.first()
+            val alwaysShowLandscapeClearlogo = layoutPreferenceDataStore.alwaysShowLandscapeClearlogo.first()
             val focusedPosterBackdropExpandEnabled = layoutPreferenceDataStore.focusedPosterBackdropExpandEnabled.first()
             val focusedPosterBackdropExpandDelaySeconds = layoutPreferenceDataStore.focusedPosterBackdropExpandDelaySeconds.first()
             val focusedPosterBackdropTrailerEnabled = layoutPreferenceDataStore.focusedPosterBackdropTrailerEnabled.first()
@@ -367,6 +369,7 @@ class FolderDetailViewModel @Inject constructor(
                     showFullReleaseDate = showFullReleaseDate,
                     modernLandscapePostersEnabled = modernLandscapePosters,
                     modernHeroFullScreenBackdropEnabled = modernFullScreenBackdrop,
+                    alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
                     focusedPosterBackdropExpandEnabled = focusedPosterBackdropExpandEnabled,
                     focusedPosterBackdropExpandDelaySeconds = focusedPosterBackdropExpandDelaySeconds,
                     focusedPosterBackdropTrailerEnabled = focusedPosterBackdropTrailerEnabled &&
@@ -579,6 +582,7 @@ class FolderDetailViewModel @Inject constructor(
                         posterLabelsEnabled = if (s.homeLayout == HomeLayout.MODERN) false else s.posterLabelsEnabled,
                         modernLandscapePostersEnabled = s.modernLandscapePostersEnabled,
                         modernHeroFullScreenBackdropEnabled = s.modernHeroFullScreenBackdropEnabled,
+                        alwaysShowLandscapeClearlogo = s.alwaysShowLandscapeClearlogo,
                         catalogAddonNameEnabled = s.catalogAddonNameEnabled,
                         catalogTypeSuffixEnabled = s.catalogTypeSuffixEnabled,
                         focusedPosterBackdropExpandEnabled = s.focusedPosterBackdropExpandEnabled,
@@ -615,6 +619,7 @@ class FolderDetailViewModel @Inject constructor(
                     posterLabelsEnabled = s.posterLabelsEnabled,
                     modernLandscapePostersEnabled = s.modernLandscapePostersEnabled,
                     modernHeroFullScreenBackdropEnabled = s.modernHeroFullScreenBackdropEnabled,
+                    alwaysShowLandscapeClearlogo = s.alwaysShowLandscapeClearlogo,
                     catalogAddonNameEnabled = s.catalogAddonNameEnabled,
                     catalogTypeSuffixEnabled = s.catalogTypeSuffixEnabled,
                     focusedPosterBackdropExpandEnabled = s.focusedPosterBackdropExpandEnabled,

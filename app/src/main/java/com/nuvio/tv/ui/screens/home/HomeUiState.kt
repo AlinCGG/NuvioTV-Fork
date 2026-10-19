@@ -147,7 +147,11 @@ data class NextUpInfo(
     val contentLanguage: String? = null,
     val mdbListRatings: com.nuvio.tv.domain.model.MDBListRatings? = null,
     /** Shown on the card in place of the usual Next up or air date text. */
-    val badgeLabel: String? = null
+    val badgeLabel: String? = null,
+    /** A Coming up card for a show only the Upcoming row knows, so removing it from Home works like there. */
+    val upcomingOnly: Boolean = false,
+    /** The Calendar's key for a Coming up card's title, used to hide it from the row. */
+    val comingUpKey: String? = null
 )
 
 @Immutable

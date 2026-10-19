@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.runtime.SideEffect
 import androidx.compose.animation.core.LinearEasing
 import android.os.SystemClock
+import android.util.Log
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import androidx.compose.runtime.rememberCoroutineScope
@@ -189,6 +190,7 @@ private const val MODERN_HORIZONTAL_FOCUS_DEBOUNCE_MS = 250L
 private const val POSTER_PREFETCH_DISTANCE = 5
 private const val NESTED_PREFETCH_COUNT = 2
 private const val POSTER_TRAVEL_PREFETCH = 3
+private const val ROW_FOCUS_TAG = "HomeRowFocus"
 
 /** A focused poster only grows when its trailer plays inside it, or when no trailer plays at all. */
 internal fun focusedPosterGrows(
@@ -449,6 +451,7 @@ private fun ModernContinueWatchingRowItem(
     payload: ModernPayload.ContinueWatching,
     requester: FocusRequester,
     isTargetItem: Boolean = false,
+    mayClaimFocus: () -> Boolean = { true },
     cardWidth: Dp,
     imageHeight: Dp,
     blurUnwatchedEpisodes: Boolean,
@@ -479,7 +482,7 @@ private fun ModernContinueWatchingRowItem(
 
     if (isTargetItem) {
         LaunchedEffect(Unit) {
-            if (!isCardFocused) runCatching { requester.requestFocus() }
+            if (!isCardFocused && mayClaimFocus()) runCatching { requester.requestFocus() }
         }
     }
 
@@ -515,6 +518,7 @@ private fun ModernCatalogRowItem(
     payload: ModernPayload,
     requester: FocusRequester,
     isTargetItem: Boolean = false,
+    mayClaimFocus: () -> Boolean = { true },
     useLandscapePosters: Boolean,
     alwaysShowLandscapeClearlogo: Boolean = false,
     showLabels: Boolean,
@@ -610,7 +614,7 @@ private fun ModernCatalogRowItem(
 
     if (isTargetItem) {
         LaunchedEffect(Unit) {
-            if (!isCardFocused) runCatching { requester.requestFocus() }
+            if (!isCardFocused && mayClaimFocus()) runCatching { requester.requestFocus() }
         }
     }
 
@@ -1184,6 +1188,7 @@ internal fun ModernRowSection(
                 }
         }
 
+        val rowHasFocus = remember(rowKey) { mutableStateOf(false) }
         val focusGlide = remember { RowFocusGlide() }
         val focusGlideScope = rememberCoroutineScope()
         CompositionLocalProvider(
@@ -1208,9 +1213,19 @@ internal fun ModernRowSection(
                     .focusProperties {
                         val restore = onEnter
                         onEnter = {
-                            val card = rowEntryCardIndex(focusedItemByRow[rowKey], currentRowState.value.items.list.size)
-                                ?.let { itemFocusRequesters[it] }
-                            if (card == null || !card.requestFocus()) restore()
+                            val entry = rowEntry(
+                                pendingIndex = if (pendingRowFocusKey.value == rowKey) pendingRowFocusIndex.value ?: 0 else null,
+                                pointedAt = focusedItemByRow[rowKey],
+                                itemCount = currentRowState.value.items.list.size,
+                                cardsAlwaysFocusable = rowKey == MODERN_CONTINUE_WATCHING_ROW_KEY ||
+                                    rowKey == MODERN_UPCOMING_ROW_KEY || rowKey == MODERN_COMING_UP_ROW_KEY
+                            )
+                            val card = entry?.let { itemFocusRequesters[it.index] }
+                            when {
+                                card != null && card.requestFocus() -> Unit
+                                entry?.waitForCard == true -> cancelFocusChange()
+                                else -> restore()
+                            }
                         }
                     }
                     .focusRestorer {
@@ -1219,7 +1234,10 @@ internal fun ModernRowSection(
                             ?: itemFocusRequesters[0]
                             ?: FocusRequester.Default
                     }
-                    .onFocusChanged { if (!it.hasFocus) focusGlide.clear() }
+                    .onFocusChanged {
+                        rowHasFocus.value = it.hasFocus
+                        if (!it.hasFocus) focusGlide.clear()
+                    }
                     .focusGroup(),
                 contentPadding = PaddingValues(start = rowStartPadding, end = ROW_END_PADDING),
                 horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
@@ -1253,9 +1271,24 @@ internal fun ModernRowSection(
                     val onFocused = remember(row.key, index, isContinueWatchingRow) {
                         {
                             onRowItemFocused(row.key, index, isContinueWatchingRow)
-                            if (pendingRowFocusKey.value == row.key && (pendingRowFocusIndex.value ?: 0) == index) {
+                            if (pendingRowFocusKey.value != null &&
+                                pendingAfterFocus(pendingRowFocusKey.value, pendingRowFocusIndex.value, row.key) == null
+                            ) {
                                 onPendingRowFocusCleared()
                             }
+                        }
+                    }
+                    val mayClaimFocus = remember(row.key, index) {
+                        {
+                            val pending = if (pendingRowFocusKey.value == row.key) pendingRowFocusIndex.value ?: 0 else null
+                            val hasFocus = rowHasFocus.value
+                            Log.d(ROW_FOCUS_TAG, "claim row=${row.key} index=$index pending=$pending rowHasFocus=$hasFocus")
+                            shouldClaimFocus(
+                                isTarget = true,
+                                cardFocused = false,
+                                rowHasFocus = hasFocus,
+                                isPendingTarget = pending == index
+                            )
                         }
                     }
 
@@ -1284,6 +1317,7 @@ internal fun ModernRowSection(
                                 payload = payload,
                                 requester = requester,
                                 isTargetItem = isTargetItem,
+                                mayClaimFocus = mayClaimFocus,
                                 cardWidth = continueWatchingCardWidth,
                                 imageHeight = continueWatchingCardHeight,
                                 blurUnwatchedEpisodes = blurUnwatchedEpisodes,
@@ -1293,7 +1327,7 @@ internal fun ModernRowSection(
                                 onFocused = onFocused,
                                 onFocusGained = onFocusGained,
                                 onContinueWatchingClick = if (comingUp) openComingUp else onContinueWatchingClick,
-                                onShowOptions = if (comingUp) openComingUp else onContinueWatchingOptions
+                                onShowOptions = onContinueWatchingOptions
                             )
                         }
 
@@ -1338,6 +1372,7 @@ internal fun ModernRowSection(
                                 payload = payload,
                                 requester = requester,
                                 isTargetItem = isTargetItem,
+                                mayClaimFocus = mayClaimFocus,
                                 useLandscapePosters = useLandscapePosters,
                                 alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
                                 showLabels = showLabels,

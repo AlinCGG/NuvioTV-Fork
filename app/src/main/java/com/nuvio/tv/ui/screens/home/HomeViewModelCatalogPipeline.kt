@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.PLACEHOLDER_IMAGE_URL
@@ -473,7 +474,7 @@ internal fun HomeViewModel.loadCatalogPipeline(
                 skip = 0,
                 skipStep = skipStep,
                 supportsSkip = supportsSkip
-            ).collect { result ->
+            ).flowOn(serverArtworkContext()).collect { result ->
                 if (generation != catalogLoadGeneration) return@collect
                 when (result) {
                     is NetworkResult.Success -> {
@@ -579,7 +580,7 @@ internal fun HomeViewModel.loadMoreCatalogItemsPipeline(catalogId: String, addon
             skip = nextSkip,
             skipStep = currentRow.skipStep,
             supportsSkip = currentRow.supportsSkip
-        ).collect { result ->
+        ).flowOn(serverArtworkContext()).collect { result ->
             when (result) {
                 is NetworkResult.Success -> {
                     updateCatalogRow(key) { latestRow ->

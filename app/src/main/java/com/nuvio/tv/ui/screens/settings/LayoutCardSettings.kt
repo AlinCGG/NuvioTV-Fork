@@ -300,7 +300,8 @@ internal fun LayoutPosterCardSection(
         PresetOption(stringResource(R.string.layout_preset_standard), 120),
         PresetOption(stringResource(R.string.layout_preset_balanced), 126),
         PresetOption(stringResource(R.string.layout_preset_comfort), 134),
-        PresetOption(stringResource(R.string.layout_preset_large), 140)
+        PresetOption(stringResource(R.string.layout_preset_large), 140),
+        PresetOption(stringResource(R.string.layout_preset_extra_large), 176)
     )
     val radiusOptions = listOf(
         PresetOption(stringResource(R.string.layout_preset_sharp), 0),
