@@ -7,10 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
+import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.util.localizeEpisodeTitle
 
 internal fun playerMovieYear(value: String?): String? = value?.trim()
@@ -28,11 +32,25 @@ internal fun playerSecondaryMetadata(state: PlayerUiState, designation: String, 
 
 /** Uses the timer's theme typography, including the user's UI/font scale. */
 @Composable
-internal fun PlayerSecondaryMetadata(state: PlayerUiState, modifier: Modifier = Modifier) {
+internal fun PlayerSecondaryMetadata(
+    state: PlayerUiState,
+    modifier: Modifier = Modifier,
+    chapter: PlayerChapter? = null
+) {
     val designation = if (state.currentSeason != null && state.currentEpisode != null)
         stringResource(R.string.season_episode_format, state.currentSeason, state.currentEpisode) else ""
     val title = state.currentEpisodeTitle?.localizeEpisodeTitle(LocalContext.current)
-    val text = playerSecondaryMetadata(state, designation, title) ?: return
+    val metadata = playerSecondaryMetadata(state, designation, title)
+    val chapterText = chapter?.let { chapterLabel(it) }
+    if (metadata == null && chapterText == null) return
+    val accent = NuvioTheme.colors.Secondary
+    val text = buildAnnotatedString {
+        if (metadata != null) append(metadata)
+        if (chapterText != null) {
+            if (metadata != null) append(" • ")
+            withStyle(SpanStyle(color = accent)) { append(chapterText) }
+        }
+    }
     Text(text, color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodyMedium,
         maxLines = 1, modifier = modifier.fillMaxWidth()
             .basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 1200, velocity = 45.dp))

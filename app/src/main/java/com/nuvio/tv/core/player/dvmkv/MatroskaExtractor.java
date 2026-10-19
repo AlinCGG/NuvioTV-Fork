@@ -660,6 +660,16 @@ public class MatroskaExtractor implements Extractor {
   private boolean seekForSeekHead;
   private int followedSeekHeadCount;
   private long seekPositionAfterBuildingCues = C.INDEX_UNSET;
+
+  // Chapters.
+  private final MatroskaChapterParser chapterParser = new MatroskaChapterParser();
+  @Nullable private ChaptersMetadata chaptersMetadata;
+  private long chaptersContentPosition = C.INDEX_UNSET;
+  private boolean seekForChapters;
+  private boolean inChaptersDetour;
+  private boolean chaptersDetourLanding;
+  private boolean chaptersDetourTried;
+  private long inputLength = C.LENGTH_UNSET;
   private long clusterTimecodeUs = C.TIME_UNSET;
 
   // Reading state.
@@ -826,6 +836,9 @@ public class MatroskaExtractor implements Extractor {
     varintReader.reset();
     resetWriteSampleData();
     inCuesElement = false;
+    inChaptersDetour = false;
+    chaptersDetourLanding = false;
+    seekForChapters = false;
     currentCueTimeUs = C.TIME_UNSET;
     currentCueTrackNumber = C.INDEX_UNSET;
     currentCueClusterPosition = C.INDEX_UNSET;
@@ -925,6 +938,32 @@ public class MatroskaExtractor implements Extractor {
   }
 
   private int readFromInput(ExtractorInput input, PositionHolder seekPosition) throws IOException {
+    inputLength = input.getLength();
+    if (inChaptersDetour) {
+      try {
+        return readFromInputUnchecked(input, seekPosition);
+      } catch (ParserException | IllegalStateException | EOFException e) {
+        android.util.Log.w(
+            TAG, "MKV chapters at " + chaptersContentPosition + " unreadable: " + e.getMessage());
+        return leaveChaptersDetour(input, seekPosition);
+      }
+    }
+    return readFromInputUnchecked(input, seekPosition);
+  }
+
+  private int leaveChaptersDetour(ExtractorInput input, PositionHolder seekPosition) {
+    inChaptersDetour = false;
+    chaptersDetourLanding = false;
+    reader.reset();
+    chooseIndexSeekAtFirstCluster();
+    if (maybeSeekForCues(seekPosition, input.getPosition())) {
+      return Extractor.RESULT_SEEK;
+    }
+    return Extractor.RESULT_CONTINUE;
+  }
+
+  private int readFromInputUnchecked(ExtractorInput input, PositionHolder seekPosition)
+      throws IOException {
     haveOutputSample = false;
     boolean continueReading = true;
     while (continueReading && !haveOutputSample) {
@@ -971,6 +1010,9 @@ public class MatroskaExtractor implements Extractor {
       }
     }
     if (!continueReading) {
+      if (inChaptersDetour) {
+        return leaveChaptersDetour(input, seekPosition);
+      }
       return finishReadAtEndOfInput();
     }
     return Extractor.RESULT_CONTINUE;
@@ -1020,6 +1062,10 @@ public class MatroskaExtractor implements Extractor {
    */
   @CallSuper
   protected @EbmlProcessor.ElementType int getElementType(int id) {
+    int chapterElementType = MatroskaChapterParser.elementType(id);
+    if (chapterElementType != EbmlProcessor.ELEMENT_TYPE_UNKNOWN) {
+      return chapterElementType;
+    }
     switch (id) {
       case ID_EBML:
       case ID_SEGMENT:
@@ -1138,7 +1184,11 @@ public class MatroskaExtractor implements Extractor {
    */
   @CallSuper
   protected boolean isLevel1Element(int id) {
-    return id == ID_SEGMENT_INFO || id == ID_CLUSTER || id == ID_CUES || id == ID_TRACKS;
+    return id == ID_SEGMENT_INFO
+        || id == ID_CLUSTER
+        || id == ID_CUES
+        || id == ID_TRACKS
+        || id == MatroskaChapterParser.ID_CHAPTERS;
   }
 
   /**
@@ -1150,6 +1200,14 @@ public class MatroskaExtractor implements Extractor {
   protected void startMasterElement(int id, long contentPosition, long contentSize)
       throws ParserException {
     assertInitialized();
+    if (chaptersDetourLanding) {
+      chaptersDetourLanding = false;
+      if (id != MatroskaChapterParser.ID_CHAPTERS) {
+        inChaptersDetour = false;
+        chooseIndexSeekAtFirstCluster();
+      }
+    }
+    chapterParser.startMasterElement(id);
     switch (id) {
       case ID_SEGMENT:
         if (segmentContentPosition != C.INDEX_UNSET && segmentContentPosition != contentPosition) {
@@ -1187,21 +1245,15 @@ public class MatroskaExtractor implements Extractor {
         break;
       case ID_CLUSTER:
         if (!sentSeekMap) {
-          // We need to build cues before parsing the cluster.
-          if (seekForCuesEnabled && cuesContentPosition != C.INDEX_UNSET) {
-            // We know where the Cues element is located. Seek to request it.
-            seekForCues = true;
-          } else if (shouldFollowNestedSeekHead(
+          if (shouldSeekForChapters(
               seekForCuesEnabled,
-              cuesContentPosition,
-              pendingSeekHeadPosition,
-              followedSeekHeadCount)) {
-            seekForSeekHead = true;
+              chapterParser.isFinished() || chaptersDetourTried,
+              chaptersContentPosition,
+              contentPosition,
+              inputLength)) {
+            seekForChapters = true;
           } else {
-            // We don't know where the Cues element is located. It's most likely omitted. Allow
-            // playback, but disable seeking.
-            extractorOutput.seekMap(new SeekMap.Unseekable(durationUs));
-            sentSeekMap = true;
+            chooseIndexSeekAtFirstCluster();
           }
         }
         break;
@@ -1268,6 +1320,15 @@ public class MatroskaExtractor implements Extractor {
   @CallSuper
   protected void endMasterElement(int id) throws ParserException {
     assertInitialized();
+    boolean wasInChapters = chapterParser.isInChapters();
+    chapterParser.endMasterElement(id);
+    if (wasInChapters && chapterParser.isFinished()) {
+      publishChapters();
+      if (inChaptersDetour) {
+        inChaptersDetour = false;
+        chooseIndexSeekAtFirstCluster();
+      }
+    }
     switch (id) {
       case ID_SEGMENT_INFO:
         if (timecodeScale == C.TIME_UNSET) {
@@ -1285,6 +1346,8 @@ public class MatroskaExtractor implements Extractor {
         }
         if (seekEntryId == ID_CUES) {
           cuesContentPosition = seekEntryPosition;
+        } else if (seekEntryId == MatroskaChapterParser.ID_CHAPTERS) {
+          chaptersContentPosition = seekEntryPosition;
         } else if (seekEntryId == ID_SEEK_HEAD) {
           pendingSeekHeadPosition =
               nextNestedSeekHeadPosition(
@@ -1417,6 +1480,9 @@ public class MatroskaExtractor implements Extractor {
         } else {
           if (isCodecSupported(currentTrack.codecId)) {
             currentTrack.initializeFormat(currentTrack.number, dolbyVisionSampleTransformer);
+            if (chaptersMetadata != null) {
+              currentTrack.addChaptersMetadata(chaptersMetadata);
+            }
             currentTrack.output = extractorOutput.track(currentTrack.number, currentTrack.type);
             // Publish a provisional format even when DTS analysis is pending. Withholding it
             // blocks endTracks() until the first DTS sample is read, but the loader can stop
@@ -1512,6 +1578,10 @@ public class MatroskaExtractor implements Extractor {
    */
   @CallSuper
   protected void integerElement(int id, long value) throws ParserException {
+    if (chapterParser.isInChapters()) {
+      chapterParser.integerElement(id, value);
+      return;
+    }
     switch (id) {
       case ID_EBML_READ_VERSION:
         // Validate that EBMLReadVersion is supported. This extractor only supports v1.
@@ -1854,6 +1924,10 @@ public class MatroskaExtractor implements Extractor {
    */
   @CallSuper
   protected void stringElement(int id, String value) throws ParserException {
+    if (chapterParser.isInChapters()) {
+      chapterParser.stringElement(id, value);
+      return;
+    }
     switch (id) {
       case ID_DOC_TYPE:
         // Validate that DocType is supported.
@@ -2803,6 +2877,17 @@ public class MatroskaExtractor implements Extractor {
    * @return Whether the seek position was updated.
    */
   private boolean maybeSeekForCues(PositionHolder seekPosition, long currentPosition) {
+    if (seekForChapters) {
+      seekForChapters = false;
+      chaptersDetourTried = true;
+      if (seekPositionAfterBuildingCues == C.INDEX_UNSET) {
+        seekPositionAfterBuildingCues = currentPosition;
+      }
+      inChaptersDetour = true;
+      chaptersDetourLanding = true;
+      seekPosition.position = chaptersContentPosition;
+      return true;
+    }
     if (seekForSeekHead) {
       long target = pendingSeekHeadPosition;
       pendingSeekHeadPosition = C.INDEX_UNSET;
@@ -2839,6 +2924,51 @@ public class MatroskaExtractor implements Extractor {
       return true;
     }
     return false;
+  }
+
+  /** Decides at the first Cluster how the seek index is found: Cues, a nested SeekHead, or none. */
+  private void chooseIndexSeekAtFirstCluster() {
+    if (sentSeekMap) {
+      return;
+    }
+    if (seekForCuesEnabled && cuesContentPosition != C.INDEX_UNSET) {
+      seekForCues = true;
+    } else if (shouldFollowNestedSeekHead(
+        seekForCuesEnabled, cuesContentPosition, pendingSeekHeadPosition, followedSeekHeadCount)) {
+      seekForSeekHead = true;
+    } else {
+      // No Cues: allow playback, but disable seeking.
+      checkNotNull(extractorOutput).seekMap(new SeekMap.Unseekable(durationUs));
+      sentSeekMap = true;
+    }
+  }
+
+  private void publishChapters() {
+    ChaptersMetadata chapters = chapterParser.result();
+    if (chapters == null || chaptersMetadata != null) {
+      return;
+    }
+    chaptersMetadata = chapters;
+    android.util.Log.i(TAG, "MKV chapters: " + chapters.chapters.size());
+    for (int i = 0; i < tracks.size(); i++) {
+      Track track = tracks.valueAt(i);
+      if (track.addChaptersMetadata(chapters) && track.output != null) {
+        track.output.format(checkNotNull(track.format));
+      }
+    }
+  }
+
+  static boolean shouldSeekForChapters(
+      boolean seekForCuesEnabled,
+      boolean chaptersReadOrTried,
+      long chaptersPosition,
+      long firstClusterContentPosition,
+      long inputLength) {
+    return seekForCuesEnabled
+        && !chaptersReadOrTried
+        && chaptersPosition != C.INDEX_UNSET
+        && chaptersPosition > firstClusterContentPosition
+        && (inputLength == C.LENGTH_UNSET || chaptersPosition < inputLength);
   }
 
   private void maybeFollowPendingIndexAfterSeekHead() {
@@ -3748,6 +3878,27 @@ public class MatroskaExtractor implements Extractor {
       hdrStaticInfo.putShort((short) maxContentLuminance);
       hdrStaticInfo.putShort((short) maxFrameAverageLuminance);
       return hdrStaticInfoData;
+    }
+
+    /** Adds the chapters to the track's format; returns whether the format changed. */
+    private boolean addChaptersMetadata(ChaptersMetadata chapters) {
+      if (format == null) {
+        return false;
+      }
+      Metadata existingMetadata = format.metadata;
+      if (existingMetadata != null) {
+        for (int i = 0; i < existingMetadata.length(); i++) {
+          if (existingMetadata.get(i) instanceof ChaptersMetadata) {
+            return false;
+          }
+        }
+      }
+      Metadata newMetadata =
+          existingMetadata == null
+              ? new Metadata(chapters)
+              : existingMetadata.copyWithAppendedEntries(chapters);
+      format = format.buildUpon().setMetadata(newMetadata).build();
+      return true;
     }
 
     /**

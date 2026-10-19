@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -31,6 +33,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Rect
@@ -43,6 +46,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -67,6 +74,43 @@ internal object SeekBarAnchor {
 }
 
 private val BarGap = 12.dp
+
+/** True while thumbnails are drawn over the seek bar; the title block above the bar steps aside meanwhile. */
+internal object SeekThumbnailOverlay {
+    var visible by mutableStateOf(false)
+}
+
+/** Fades the title block out while thumbnails cover it. */
+internal fun Modifier.hideUnderSeekThumbnails(): Modifier = composed {
+    val alpha by animateFloatAsState(if (SeekThumbnailOverlay.visible) 0f else 1f, tween(150), label = "titleUnderThumbs")
+    graphicsLayer { this.alpha = alpha }
+}
+
+/** Seek time and, for a film with chapters, the chapter at that time; sits just above the picture. */
+@Composable
+private fun SeekThumbnailLabel(chapters: List<PlayerChapter>, positionMs: Long, modifier: Modifier = Modifier) {
+    val chapter = chapters.getOrNull(PlayerChapters.indexAt(chapters, positionMs))
+    val chapterText = chapter?.let { chapterLabel(it) }
+    val accent = NuvioTheme.colors.Secondary
+    val shape = RoundedCornerShape(if (LocalV2Appearance.current != null) 12.dp else NuvioTheme.radii.sm)
+    Text(
+        text = buildAnnotatedString {
+            append(formatSeekTime(positionMs))
+            if (chapterText != null) {
+                append(" · ")
+                withStyle(SpanStyle(color = accent)) { append(chapterText) }
+            }
+        },
+        style = MaterialTheme.typography.labelLarge,
+        color = Color.White,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .widthIn(max = 560.dp)
+            .thumbnailSurface(shape)
+            .padding(horizontal = NuvioTheme.spacing.md, vertical = NuvioTheme.spacing.xs)
+    )
+}
 
 /** The paused hint keeps the screen on only while its percentage still moves. */
 private const val KEEP_SCREEN_ON_STALL_MS = 5L * 60 * 1000
@@ -119,6 +163,8 @@ private fun Modifier.landingFrame(shape: Shape): Modifier =
     if (LocalV2Appearance.current != null) nuvioV2Focus(focused = true, shape = shape, stationary = true)
     else border(NuvioTheme.focusRing.border(2.dp), shape)
 
+internal fun seekThumbnailPainter(shown: SeekThumbnails.Shown?): BitmapPainter? = croppedPainter(shown)
+
 private fun croppedPainter(shown: SeekThumbnails.Shown?): BitmapPainter? {
     val bitmap = shown?.bitmap ?: return null
     val crop = shown.crop?.takeIf { it.fits(bitmap.width, bitmap.height) }
@@ -152,13 +198,17 @@ fun SeekThumbnailOverlayHost(
         barShown = uiState.showControls || uiState.showSeekOverlay
     )
     val durationMs = timeline.duration
+    DisposableEffect(Unit) { onDispose { SeekThumbnailOverlay.visible = false } }
     val restingMs = seekPositionMs ?: timeline.currentPosition
     val fraction by animateFloatAsState(
         targetValue = if (durationMs > 0L) (restingMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f,
         animationSpec = tween(PlayerScrubRates.GLIDE_PUBLISH_MS.toInt(), easing = LinearEasing),
         label = "thumbFraction"
     )
-    if (seekPositionMs == null || durationMs <= 0L) return
+    if (seekPositionMs == null || durationMs <= 0L) {
+        SideEffect { SeekThumbnailOverlay.visible = false }
+        return
+    }
 
     val stripSpacing = remember(tick) { SeekThumbnails.stripSpacingMs() }
     if (stripSpacing != null && gliding) {
@@ -172,22 +222,30 @@ fun SeekThumbnailOverlayHost(
                 lastMultiple[0]
             }
         }
+        SideEffect { SeekThumbnailOverlay.visible = true }
         SeekThumbnailStrip({ ScrubGlide.positionMs.toFloat() }, seekPositionMs, durationMs, stripSpacing, multiple,
-            aspect, tick, modifier)
+            aspect, tick, modifier, uiState.chapters)
         return
     }
 
     val painter = remember(seekPositionMs, tick) { croppedPainter(SeekThumbnails.shownFor(seekPositionMs)) }
     val aspect = painter?.intrinsicSize?.let { it.width / it.height }
         ?: SeekThumbnails.frameAspect()
-        ?: return
+    if (aspect == null) {
+        SideEffect { SeekThumbnailOverlay.visible = false }
+        return
+    }
+    SideEffect { SeekThumbnailOverlay.visible = true }
     val height = 108.dp
     val shape = RoundedCornerShape(if (LocalV2Appearance.current != null) 12.dp else NuvioTheme.radii.sm)
     AboveSeekBar(modifier, contentAlignment = BiasAlignment(horizontalBias = fraction * 2f - 1f, verticalBias = 1f)) {
-        Box(Modifier.height(height).width(height * aspect).landingFrame(shape).thumbnailSurface(shape)) {
-            if (painter != null) {
-                Image(painter, contentDescription = null, contentScale = ContentScale.FillBounds,
-                    modifier = Modifier.fillMaxSize())
+        androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            SeekThumbnailLabel(uiState.chapters, seekPositionMs, Modifier.padding(bottom = NuvioTheme.spacing.sm))
+            Box(Modifier.height(height).width(height * aspect).landingFrame(shape).thumbnailSurface(shape)) {
+                if (painter != null) {
+                    Image(painter, contentDescription = null, contentScale = ContentScale.FillBounds,
+                        modifier = Modifier.fillMaxSize())
+                }
             }
         }
     }
@@ -203,7 +261,8 @@ private fun SeekThumbnailStrip(
     multiple: Long,
     aspect: Float,
     tick: Int,
-    modifier: Modifier
+    modifier: Modifier,
+    chapters: List<PlayerChapter>
 ) {
     val spacingMs = (baseSpacingMs * multiple).toFloat()
     // [0] anchor time, [1] spacing it was set for. A new spacing keeps the tiles where they are and refills them.
@@ -265,6 +324,10 @@ private fun SeekThumbnailStrip(
                 }
             }
         }
+        SeekThumbnailLabel(
+            chapters, exactPosMs,
+            Modifier.align(Alignment.BottomCenter).padding(bottom = centreH + NuvioTheme.spacing.sm)
+        )
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -283,7 +346,7 @@ private fun SeekThumbnailStrip(
 
 /** True while a side panel, menu or the details overlay covers the screen the progress hint would sit on. */
 internal fun seekThumbnailHintCovered(state: PlayerUiState): Boolean =
-    state.showPauseOverlay || state.showSourcesPanel || state.showEpisodesPanel ||
+    state.showPauseOverlay || state.showSourcesPanel || state.showEpisodesPanel || state.showChaptersPanel ||
         state.showAudioOverlay || state.showSubtitleOverlay || state.showSubtitleStylePanel ||
         state.showSubtitleTimingDialog || state.showSubtitleDelayOverlay || state.showSpeedDialog ||
         state.showMoreDialog || state.showStreamInfoOverlay || state.showPartyPanel ||
