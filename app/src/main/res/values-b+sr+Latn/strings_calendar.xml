@@ -90,6 +90,8 @@
     <string name="calendar_setting_corner_sub">Kratka poruka u uglu kada serija sa uključenim zvoncem dobije novu epizodu</string>
     <string name="calendar_setting_lists">Uključi moje liste</string>
     <string name="calendar_setting_lists_sub">Prati i naslove iz vaših Trakt i MDBList lista. Duge liste pretrpavaju Kalendar.</string>
+    <string name="calendar_setting_other_services">Prati i moje ostale servise</string>
+    <string name="calendar_setting_other_services_sub">Prati i Trakt, Simkl, MDBList i vašu Nuvio biblioteku, ne samo vaš izvor biblioteke.</string>
     <string name="calendar_setting_hidden">Sakrivene serije</string>
     <string name="calendar_setting_hidden_sub">Naslovi koje ste sakrili iz Kalendara. Izaberite jedan da se ponovo prikaže.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -107,6 +109,11 @@
     <string name="calendar_coming_up_new">Novo</string>
     <string name="calendar_coming_up_today_at">Danas u %1$s</string>
     <string name="calendar_coming_up_tonight_at">Večeras u %1$s</string>
+    <string name="calendar_coming_up_hide">Sakrij iz reda „Uskoro stiže“</string>
+    <string name="calendar_coming_up_hidden">Sakriveno iz reda „Uskoro stiže“</string>
+    <string name="calendar_coming_up_hidden_sub">Serije koje ste sakrili iz reda „Uskoro stiže“. Ostaju u Kalendaru i Biblioteci.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Izaberite seriju da se vrati u „Uskoro stiže“</string>
+    <string name="calendar_coming_up_unhide_all">Prikaži sve</string>
     <string name="calendar_reminder_title_one">Nova epizoda</string>
     <string name="calendar_reminder_title_one_film">Novi film</string>
     <string name="calendar_reminder_title_one_release">Novo izdanje</string>

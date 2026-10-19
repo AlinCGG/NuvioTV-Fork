@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">वीडियो में कहीं भी जंप करें</string>
     <string name="remote_buttons_job_skip_intro_or_next">इंट्रो स्किप करें या अगला एपिसोड</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">स्किप बटन दिखने पर स्किप करता है, नहीं तो अगला एपिसोड चलाता है</string>
+    <string name="remote_buttons_job_next_chapter">अगला चैप्टर</string>
+    <string name="remote_buttons_job_previous_chapter">पिछला चैप्टर</string>
+    <string name="remote_buttons_job_previous_chapter_desc">अगर चैप्टर के 3 सेकंड से ज़्यादा हो चुके हैं, तो पहले उसकी शुरुआत पर लौटता है</string>
     <string name="remote_buttons_job_leave">प्लेयर से बाहर निकलें</string>
     <string name="remote_buttons_job_show_details">डिटेल्स दिखाएँ</string>
     <string name="remote_buttons_job_show_details_desc">पॉज़ करके तुरंत टाइटल, सारांश और कास्ट दिखाता है। बंद करने के लिए दोबारा दबाएँ या बैक दबाएँ</string>

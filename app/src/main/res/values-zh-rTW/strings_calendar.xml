@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">開啟了鈴鐺提醒的節目有新集數時，在角落顯示簡短提示</string>
     <string name="calendar_setting_lists">包含我自己的清單</string>
     <string name="calendar_setting_lists_sub">同時追蹤您自己的 Trakt 和 MDBList 清單中的內容。清單過長會讓日曆顯得擁擠。</string>
+    <string name="calendar_setting_other_services">同時追蹤我的其他服務</string>
+    <string name="calendar_setting_other_services_sub">除了媒體庫來源，也追蹤 Trakt、Simkl、MDBList 和您的 Nuvio 媒體庫。</string>
     <string name="calendar_setting_hidden">隱藏的節目</string>
     <string name="calendar_setting_hidden_sub">您從日曆中隱藏的內容。選擇一項即可重新顯示。</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">新</string>
     <string name="calendar_coming_up_today_at">今天 %1$s</string>
     <string name="calendar_coming_up_tonight_at">今晚 %1$s</string>
+    <string name="calendar_coming_up_hide">從「近期更新」中隱藏</string>
+    <string name="calendar_coming_up_hidden">已從「近期更新」中隱藏</string>
+    <string name="calendar_coming_up_hidden_sub">您從「近期更新」列中隱藏的節目。它們仍保留在日曆和媒體庫中。</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">選擇一個節目，將其重新顯示在「近期更新」中</string>
+    <string name="calendar_coming_up_unhide_all">全部取消隱藏</string>
     <string name="calendar_reminder_title_one">新集數</string>
     <string name="calendar_reminder_title_one_film">新電影</string>
     <string name="calendar_reminder_title_one_release">新內容</string>

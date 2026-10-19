@@ -95,6 +95,8 @@
     <string name="calendar_setting_corner_sub">הודעה קצרה בפינת המסך כשיוצא פרק חדש בסדרה שהפעמון שלה פעיל</string>
     <string name="calendar_setting_lists">הכללת הרשימות שלי</string>
     <string name="calendar_setting_lists_sub">מעקב גם אחרי כותרים ברשימות שלך ב-Trakt וב-MDBList. רשימות ארוכות מעמיסות על לוח השנה.</string>
+    <string name="calendar_setting_other_services">מעקב גם אחרי השירותים האחרים שלי</string>
+    <string name="calendar_setting_other_services_sub">מעקב גם אחרי Trakt, Simkl, MDBList והספרייה שלך ב-Nuvio, לא רק אחרי מקור הספרייה.</string>
     <string name="calendar_setting_hidden">סדרות מוסתרות</string>
     <string name="calendar_setting_hidden_sub">כותרים שהסתרת מלוח השנה. יש לבחור אחד כדי להציג אותו שוב.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -113,6 +115,11 @@
     <string name="calendar_coming_up_new">חדש</string>
     <string name="calendar_coming_up_today_at">היום %1$s</string>
     <string name="calendar_coming_up_tonight_at">הערב %1$s</string>
+    <string name="calendar_coming_up_hide">הסתרה מהשורה \"חדש ובקרוב\"</string>
+    <string name="calendar_coming_up_hidden">מוסתרות מהשורה \"חדש ובקרוב\"</string>
+    <string name="calendar_coming_up_hidden_sub">סדרות שהסתרת מהשורה \"חדש ובקרוב\". הן נשארות בלוח השנה ובספרייה.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">יש לבחור סדרה כדי להחזיר אותה לשורה \"חדש ובקרוב\"</string>
+    <string name="calendar_coming_up_unhide_all">הצגת הכול</string>
     <string name="calendar_reminder_title_one">פרק חדש</string>
     <string name="calendar_reminder_title_one_film">סרט חדש</string>
     <string name="calendar_reminder_title_one_release">יציאה חדשה</string>

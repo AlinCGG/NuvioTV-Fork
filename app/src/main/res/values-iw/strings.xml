@@ -3550,6 +3550,7 @@
     <string name="layout_watched_titles_hide_desc">סרטים שנצפו וסדרות שנצפו במלואן לא מופיעים בשורות מסך הבית ובבאנר. \"המשך בצפייה\" לא מושפע.</string>
     <string name="layout_trailer_logo">לוגו מעל טריילר בכרטיס</string>
     <string name="layout_trailer_logo_sub">הצגת לוגו הכותרת מעל טריילר שמתנגן בכרטיס.</string>
+    <string name="layout_preset_extra_large">גדול מאוד</string>
     <string name="mdblist_account_title">חשבון</string>
     <string name="mdblist_account_subtitle">שם המשתמש שלך ב-MDBList. בחירה מרעננת.</string>
     <string name="mdblist_plan_title">תוכנית</string>

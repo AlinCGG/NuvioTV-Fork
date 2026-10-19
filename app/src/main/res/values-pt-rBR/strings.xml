@@ -3357,6 +3357,7 @@
     <string name="layout_watched_titles_hide_desc">Filmes assistidos e séries totalmente assistidas ficam fora das linhas do Início e do banner. Continuar Assistindo não é afetado.</string>
     <string name="layout_trailer_logo">Logo sobre o trailer do cartão</string>
     <string name="layout_trailer_logo_sub">Exibe o logo do título sobre o trailer reproduzido em um cartão.</string>
+    <string name="layout_preset_extra_large">Muito grande</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recomendações da TV</string>
     <string name="mdblist_account_title">Conta</string>
     <string name="mdblist_account_subtitle">Seu nome de usuário do MDBList. Selecione para atualizar.</string>

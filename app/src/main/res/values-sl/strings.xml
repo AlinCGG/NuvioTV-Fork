@@ -2361,6 +2361,7 @@
     <string name="layout_watched_titles_hide_desc">Ogledani filmi in v celoti ogledane serije so izpuščeni iz vrstic začetnega zaslona in pasice. Nadaljuj z gledanjem ostane nespremenjeno.</string>
     <string name="layout_trailer_logo">Logotip čez napovednik v kartici</string>
     <string name="layout_trailer_logo_sub">Prikaži logotip naslova čez napovednik, ki se predvaja v kartici.</string>
+    <string name="layout_preset_extra_large">Zelo veliko</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Priporočila TV</string>
     <string name="mdblist_account_title">Račun</string>
     <string name="mdblist_account_subtitle">Vaše uporabniško ime MDBList. Izberite za osvežitev.</string>

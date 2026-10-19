@@ -90,6 +90,8 @@
     <string name="calendar_setting_corner_sub">Uma mensagem curta no canto quando sai um novo episódio de uma série com o sino ativado</string>
     <string name="calendar_setting_lists">Incluir minhas listas</string>
     <string name="calendar_setting_lists_sub">Também segue títulos das suas listas do Trakt e do MDBList. Listas longas deixam o Calendário cheio.</string>
+    <string name="calendar_setting_other_services">Seguir também meus outros serviços</string>
+    <string name="calendar_setting_other_services_sub">Também segue Trakt, Simkl, MDBList e sua biblioteca do Nuvio, não só a sua fonte para biblioteca.</string>
     <string name="calendar_setting_hidden">Títulos ocultos</string>
     <string name="calendar_setting_hidden_sub">Títulos que você ocultou do Calendário. Selecione um para mostrá-lo de novo.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -107,6 +109,11 @@
     <string name="calendar_coming_up_new">Novo</string>
     <string name="calendar_coming_up_today_at">Hoje %1$s</string>
     <string name="calendar_coming_up_tonight_at">Hoje à noite %1$s</string>
+    <string name="calendar_coming_up_hide">Ocultar de Próximas estreias</string>
+    <string name="calendar_coming_up_hidden">Ocultos em Próximas estreias</string>
+    <string name="calendar_coming_up_hidden_sub">Séries que você ocultou da linha Próximas estreias. Elas continuam no Calendário e na Biblioteca.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Selecione uma série para mostrá-la de novo em Próximas estreias</string>
+    <string name="calendar_coming_up_unhide_all">Mostrar todas</string>
     <string name="calendar_reminder_title_one">Novo episódio</string>
     <string name="calendar_reminder_title_one_film">Novo filme</string>
     <string name="calendar_reminder_title_one_release">Novo lançamento</string>

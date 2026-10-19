@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">按比例跳转</string>
     <string name="remote_buttons_job_skip_intro_or_next">跳过片头或下一集</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">显示跳过按钮时跳过，否则播放下一集</string>
+    <string name="remote_buttons_job_next_chapter">下一章</string>
+    <string name="remote_buttons_job_previous_chapter">上一章</string>
+    <string name="remote_buttons_job_previous_chapter_desc">如果本章已播放超过 3 秒，先回到本章开头</string>
     <string name="remote_buttons_job_leave">退出播放器</string>
     <string name="remote_buttons_job_show_details">显示详情</string>
     <string name="remote_buttons_job_show_details_desc">暂停并立即显示标题、剧情简介和演员。再按一次或按返回键关闭</string>

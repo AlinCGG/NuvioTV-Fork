@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">Ett kort meddelande i hörnet när en serie med påminnelse på får ett nytt avsnitt</string>
     <string name="calendar_setting_lists">Ta med mina egna listor</string>
     <string name="calendar_setting_lists_sub">Följer även titlar i dina egna Trakt- och MDBList-listor. Långa listor gör Kalendern rörig.</string>
+    <string name="calendar_setting_other_services">Följ även mina andra tjänster</string>
+    <string name="calendar_setting_other_services_sub">Följer även Trakt, Simkl, MDBList och ditt Nuvio-bibliotek, inte bara din bibliotekskälla.</string>
     <string name="calendar_setting_hidden">Dolda serier</string>
     <string name="calendar_setting_hidden_sub">Titlar du har dolt i Kalendern. Välj en för att visa den igen.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">Nyhet</string>
     <string name="calendar_coming_up_today_at">Idag %1$s</string>
     <string name="calendar_coming_up_tonight_at">I kväll %1$s</string>
+    <string name="calendar_coming_up_hide">Dölj i På gång</string>
+    <string name="calendar_coming_up_hidden">Dolda i På gång</string>
+    <string name="calendar_coming_up_hidden_sub">Serier du har dolt i raden På gång. De finns kvar i Kalendern och Biblioteket.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Välj en serie för att visa den i På gång igen</string>
+    <string name="calendar_coming_up_unhide_all">Visa alla</string>
     <string name="calendar_reminder_title_one">Nytt avsnitt</string>
     <string name="calendar_reminder_title_one_film">Ny film</string>
     <string name="calendar_reminder_title_one_release">Ny release</string>

@@ -95,6 +95,8 @@
     <string name="calendar_setting_corner_sub">Krótki komunikat w rogu, gdy serial z włączonym dzwonkiem ma nowy odcinek</string>
     <string name="calendar_setting_lists">Uwzględnij moje listy</string>
     <string name="calendar_setting_lists_sub">Obserwuje też tytuły z Twoich list Trakt i MDBList. Długie listy zapełniają Kalendarz.</string>
+    <string name="calendar_setting_other_services">Obserwuj też moje inne serwisy</string>
+    <string name="calendar_setting_other_services_sub">Obserwuje też Trakt, Simkl, MDBList i Twoją bibliotekę Nuvio, nie tylko źródło biblioteki.</string>
     <string name="calendar_setting_hidden">Ukryte seriale</string>
     <string name="calendar_setting_hidden_sub">Tytuły ukryte w Kalendarzu. Wybierz jeden, aby znów go pokazać.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -113,6 +115,11 @@
     <string name="calendar_coming_up_new">Nowy</string>
     <string name="calendar_coming_up_today_at">Dziś %1$s</string>
     <string name="calendar_coming_up_tonight_at">Dziś wieczorem %1$s</string>
+    <string name="calendar_coming_up_hide">Ukryj w rzędzie Wkrótce</string>
+    <string name="calendar_coming_up_hidden">Ukryte w rzędzie Wkrótce</string>
+    <string name="calendar_coming_up_hidden_sub">Seriale ukryte w rzędzie Wkrótce. Zostają w Kalendarzu i Bibliotece.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Wybierz serial, aby znów pokazać go w rzędzie Wkrótce</string>
+    <string name="calendar_coming_up_unhide_all">Pokaż wszystkie</string>
     <string name="calendar_reminder_title_one">Nowy odcinek</string>
     <string name="calendar_reminder_title_one_film">Nowy film</string>
     <string name="calendar_reminder_title_one_release">Nowa premiera</string>

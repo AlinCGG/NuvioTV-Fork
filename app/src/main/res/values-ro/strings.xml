@@ -1016,6 +1016,7 @@
     <string name="layout_watched_titles_hide_desc">Filmele vizionate și serialele vizionate complet nu apar în rândurile din Acasă și în banner. Rândul Continuă vizionarea nu este afectat.</string>
     <string name="layout_trailer_logo">Logo peste trailerul din card</string>
     <string name="layout_trailer_logo_sub">Afișează logo-ul titlului peste trailerul redat într-un card.</string>
+    <string name="layout_preset_extra_large">Foarte mare</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recomandări TV</string>
     <string name="mdblist_account_title">Cont</string>
     <string name="mdblist_account_subtitle">Numele tău de utilizator MDBList. Selectează pentru reîmprospătare.</string>

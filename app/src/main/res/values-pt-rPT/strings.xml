@@ -2759,6 +2759,7 @@
     <string name="layout_watched_titles_hide_desc">Os filmes vistos e as séries vistas por completo ficam fora das linhas do Início e do banner. Continuar a ver não é afetado.</string>
     <string name="layout_trailer_logo">Logótipo sobre o trailer do cartão</string>
     <string name="layout_trailer_logo_sub">Mostra o logótipo do título sobre um trailer a reproduzir num cartão.</string>
+    <string name="layout_preset_extra_large">Muito grande</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recomendações de TV</string>
     <string name="mdblist_account_title">Conta</string>
     <string name="mdblist_account_subtitle">O teu nome de utilizador MDBList. Seleciona para atualizar.</string>

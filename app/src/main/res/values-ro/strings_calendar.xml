@@ -90,6 +90,8 @@
     <string name="calendar_setting_corner_sub">Un mesaj scurt în colț când apare un episod nou la un serial cu clopoțelul activ</string>
     <string name="calendar_setting_lists">Include listele mele</string>
     <string name="calendar_setting_lists_sub">Urmărește și titlurile din listele tale Trakt și MDBList. Listele lungi aglomerează Calendarul.</string>
+    <string name="calendar_setting_other_services">Urmărește și celelalte servicii ale mele</string>
+    <string name="calendar_setting_other_services_sub">Urmărește și Trakt, Simkl, MDBList și biblioteca ta Nuvio, nu doar sursa bibliotecii.</string>
     <string name="calendar_setting_hidden">Seriale ascunse</string>
     <string name="calendar_setting_hidden_sub">Titluri ascunse din Calendar. Selectează unul pentru a-l afișa din nou.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -107,6 +109,11 @@
     <string name="calendar_coming_up_new">Nou</string>
     <string name="calendar_coming_up_today_at">Astăzi la %1$s</string>
     <string name="calendar_coming_up_tonight_at">Diseară la %1$s</string>
+    <string name="calendar_coming_up_hide">Ascunde din Ce urmează</string>
+    <string name="calendar_coming_up_hidden">Ascunse din Ce urmează</string>
+    <string name="calendar_coming_up_hidden_sub">Seriale ascunse din rândul Ce urmează. Rămân în Calendar și în Bibliotecă.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Selectează un serial pentru a-l readuce în Ce urmează</string>
+    <string name="calendar_coming_up_unhide_all">Afișează tot</string>
     <string name="calendar_reminder_title_one">Episod nou</string>
     <string name="calendar_reminder_title_one_film">Film nou</string>
     <string name="calendar_reminder_title_one_release">Lansare nouă</string>

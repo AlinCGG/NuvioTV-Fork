@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Skok na miesto vo videu</string>
     <string name="remote_buttons_job_skip_intro_or_next">Preskočiť intro alebo ďalšia epizóda</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Preskočí, keď sa zobrazí tlačidlo Preskočiť, inak prehrá ďalšiu epizódu</string>
+    <string name="remote_buttons_job_next_chapter">Ďalšia kapitola</string>
+    <string name="remote_buttons_job_previous_chapter">Predchádzajúca kapitola</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Ak ste v kapitole dlhšie ako 3 sekundy, najprv sa vráti na jej začiatok</string>
     <string name="remote_buttons_job_leave">Opustiť prehrávač</string>
     <string name="remote_buttons_job_show_details">Zobraziť detaily</string>
     <string name="remote_buttons_job_show_details_desc">Pozastaví a hneď zobrazí názov, popis a obsadenie. Stlačte znova alebo Späť a zatvorte</string>

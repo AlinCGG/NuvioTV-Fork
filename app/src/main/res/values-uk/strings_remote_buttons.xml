@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Перехід по відео</string>
     <string name="remote_buttons_job_skip_intro_or_next">Пропустити заставку або наступний епізод</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Пропускає, коли видно кнопку пропуску, інакше вмикає наступний епізод</string>
+    <string name="remote_buttons_job_next_chapter">Наступний розділ</string>
+    <string name="remote_buttons_job_previous_chapter">Попередній розділ</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Спершу повертає на початок розділу, якщо від нього минуло понад 3 секунди</string>
     <string name="remote_buttons_job_leave">Вийти з плеєра</string>
     <string name="remote_buttons_job_show_details">Показати деталі</string>
     <string name="remote_buttons_job_show_details_desc">Ставить на паузу й одразу показує назву, опис і акторів. Натисніть ще раз або Назад, щоб закрити</string>

@@ -3452,6 +3452,7 @@
     <string name="layout_watched_titles_hide_desc">Οι ταινίες που έχετε δει και οι σειρές που έχετε δει ολόκληρες δεν εμφανίζονται στις γραμμές της Αρχικής και στο banner. Η Συνέχεια παρακολούθησης δεν επηρεάζεται.</string>
     <string name="layout_trailer_logo">Λογότυπο πάνω στο τρέιλερ της κάρτας</string>
     <string name="layout_trailer_logo_sub">Εμφάνιση του λογότυπου του τίτλου πάνω στο τρέιλερ που παίζει σε κάρτα.</string>
+    <string name="layout_preset_extra_large">Πολύ μεγάλο</string>
     <string name="mdblist_account_title">Λογαριασμός</string>
     <string name="mdblist_account_subtitle">Το όνομα χρήστη σας στο MDBList. Επιλέξτε για ανανέωση.</string>
     <string name="mdblist_plan_title">Πλάνο</string>

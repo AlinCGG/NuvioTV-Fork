@@ -105,6 +105,8 @@
     <string name="calendar_setting_corner_sub">رسالة قصيرة في الزاوية عند صدور حلقة جديدة لمسلسل جرسه مفعّل</string>
     <string name="calendar_setting_lists">تضمين قوائمي الخاصة</string>
     <string name="calendar_setting_lists_sub">يتابع أيضاً العناوين في قوائمك الخاصة على Trakt وMDBList. القوائم الطويلة تزحم التقويم.</string>
+    <string name="calendar_setting_other_services">متابعة خدماتي الأخرى أيضاً</string>
+    <string name="calendar_setting_other_services_sub">يتابع أيضاً Trakt وSimkl وMDBList ومكتبة Nuvio، وليس مصدر المكتبة وحده.</string>
     <string name="calendar_setting_hidden">المسلسلات المخفية</string>
     <string name="calendar_setting_hidden_sub">عناوين أخفيتها من التقويم. اختر واحداً لإظهاره مجدداً.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -125,6 +127,11 @@
     <string name="calendar_coming_up_new">جديد</string>
     <string name="calendar_coming_up_today_at">اليوم %1$s</string>
     <string name="calendar_coming_up_tonight_at">الليلة %1$s</string>
+    <string name="calendar_coming_up_hide">إخفاء من \"قريباً\"</string>
+    <string name="calendar_coming_up_hidden">المخفية من \"قريباً\"</string>
+    <string name="calendar_coming_up_hidden_sub">مسلسلات أخفيتها من صف \"قريباً\". تبقى في التقويم والمكتبة.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">اختر مسلسلاً لإعادته إلى \"قريباً\"</string>
+    <string name="calendar_coming_up_unhide_all">إظهار الكل</string>
     <string name="calendar_reminder_title_one">حلقة جديدة</string>
     <string name="calendar_reminder_title_one_film">فيلم جديد</string>
     <string name="calendar_reminder_title_one_release">إصدار جديد</string>

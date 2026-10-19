@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Ugrás a videóban</string>
     <string name="remote_buttons_job_skip_intro_or_next">Intro átugrása vagy következő epizód</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Átugrik, ha megjelenik az Átugrás gomb, különben a következő epizódot játssza le</string>
+    <string name="remote_buttons_job_next_chapter">Következő fejezet</string>
+    <string name="remote_buttons_job_previous_chapter">Előző fejezet</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Ha már több mint 3 másodperce tart a fejezet, először annak elejére ugrik</string>
     <string name="remote_buttons_job_leave">Kilépés a lejátszóból</string>
     <string name="remote_buttons_job_show_details">Részletek megjelenítése</string>
     <string name="remote_buttons_job_show_details_desc">Szünetelteti a lejátszást, és azonnal megjeleníti a címet, az ismertetőt és a szereplőket. A bezáráshoz nyomd meg újra, vagy nyomd meg a Vissza gombot</string>

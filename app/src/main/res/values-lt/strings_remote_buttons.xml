@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Judėti per vaizdo įrašą</string>
     <string name="remote_buttons_job_skip_intro_or_next">Praleisti intro arba kita serija</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Praleidžia, kai rodomas praleidimo mygtukas, kitaip paleidžia kitą seriją</string>
+    <string name="remote_buttons_job_next_chapter">Kitas skyrius</string>
+    <string name="remote_buttons_job_previous_chapter">Ankstesnis skyrius</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Jei nuo skyriaus pradžios praėjo daugiau nei 3 sekundės, pirmiausia grįžta į jo pradžią</string>
     <string name="remote_buttons_job_leave">Išeiti iš grotuvo</string>
     <string name="remote_buttons_job_show_details">Rodyti informaciją</string>
     <string name="remote_buttons_job_show_details_desc">Pristabdo ir iškart parodo pavadinimą, aprašymą ir aktorius. Paspauskite dar kartą arba Atgal, kad uždarytumėte</string>

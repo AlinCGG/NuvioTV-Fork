@@ -3534,6 +3534,7 @@
     <string name="layout_watched_titles_hide_desc">I film visti e le serie viste per intero non compaiono nelle righe della Home né nel banner. Continua a guardare non cambia.</string>
     <string name="layout_trailer_logo">Logo sul trailer della scheda</string>
     <string name="layout_trailer_logo_sub">Mostra il logo del titolo sul trailer riprodotto in una scheda.</string>
+    <string name="layout_preset_extra_large">Molto grande</string>
     <string name="mdblist_account_title">Account</string>
     <string name="mdblist_account_subtitle">Il tuo nome utente MDBList. Seleziona per aggiornare.</string>
     <string name="mdblist_plan_title">Piano</string>

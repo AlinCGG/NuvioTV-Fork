@@ -1189,6 +1189,7 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="layout_watched_titles_hide_desc">Žiūrėti filmai ir iki galo žiūrėti serialai nerodomi pradinio ekrano eilutėse ir baneryje. Skilčiai „Tęsti žiūrėjimą“ tai neturi įtakos.</string>
     <string name="layout_trailer_logo">Logotipas ant kortelės anonso</string>
     <string name="layout_trailer_logo_sub">Rodyti pavadinimo logotipą ant kortelėje leidžiamo anonso.</string>
+    <string name="layout_preset_extra_large">Labai didelis</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV rekomendacijos</string>
     <string name="mdblist_account_title">Paskyra</string>
     <string name="mdblist_account_subtitle">Jūsų MDBList naudotojo vardas. Pasirinkite, kad atnaujintumėte.</string>

@@ -2631,6 +2631,7 @@
     <string name="layout_watched_titles_hide_desc">Film yang sudah ditonton dan serial yang sudah ditonton sampai habis tidak ditampilkan di baris Beranda dan banner. Lanjutkan Menonton tidak terpengaruh.</string>
     <string name="layout_trailer_logo">Logo di Atas Trailer Kartu</string>
     <string name="layout_trailer_logo_sub">Tampilkan logo judul di atas trailer yang diputar di kartu.</string>
+    <string name="layout_preset_extra_large">Sangat besar</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Rekomendasi TV</string>
     <string name="mdblist_account_title">Akun</string>
     <string name="mdblist_account_subtitle">Nama pengguna MDBList Anda. Pilih untuk menyegarkan.</string>

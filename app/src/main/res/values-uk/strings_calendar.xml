@@ -95,6 +95,8 @@
     <string name="calendar_setting_corner_sub">Коротке повідомлення в куті, коли в серіалу з дзвіночком виходить новий епізод</string>
     <string name="calendar_setting_lists">Враховувати мої списки</string>
     <string name="calendar_setting_lists_sub">Також відстежує тайтли з ваших списків Trakt і MDBList. Довгі списки перевантажують календар.</string>
+    <string name="calendar_setting_other_services">Враховувати й мої інші сервіси</string>
+    <string name="calendar_setting_other_services_sub">Також відстежує Trakt, Simkl, MDBList і вашу бібліотеку Nuvio, а не лише джерело бібліотеки.</string>
     <string name="calendar_setting_hidden">Приховані серіали</string>
     <string name="calendar_setting_hidden_sub">Тайтли, які ви приховали з календаря. Оберіть один, щоб повернути його.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -113,6 +115,11 @@
     <string name="calendar_coming_up_new">Новий</string>
     <string name="calendar_coming_up_today_at">Сьогодні о %1$s</string>
     <string name="calendar_coming_up_tonight_at">Увечері о %1$s</string>
+    <string name="calendar_coming_up_hide">Приховати з ряду «На підході»</string>
+    <string name="calendar_coming_up_hidden">Приховано з ряду «На підході»</string>
+    <string name="calendar_coming_up_hidden_sub">Серіали, які ви приховали з ряду «На підході». Вони лишаються в Календарі та Бібліотеці.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Оберіть серіал, щоб повернути його в ряд «На підході»</string>
+    <string name="calendar_coming_up_unhide_all">Показати всі</string>
     <string name="calendar_reminder_title_one">Новий епізод</string>
     <string name="calendar_reminder_title_one_film">Новий фільм</string>
     <string name="calendar_reminder_title_one_release">Новинка</string>

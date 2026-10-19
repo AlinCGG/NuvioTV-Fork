@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Se déplacer dans la vidéo</string>
     <string name="remote_buttons_job_skip_intro_or_next">Passer l\'intro ou épisode suivant</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Passe l\'intro quand le bouton Passer s\'affiche, sinon lance l\'épisode suivant</string>
+    <string name="remote_buttons_job_next_chapter">Chapitre suivant</string>
+    <string name="remote_buttons_job_previous_chapter">Chapitre précédent</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Revient d\'abord au début du chapitre si vous y êtes depuis plus de 3 secondes</string>
     <string name="remote_buttons_job_leave">Quitter le lecteur</string>
     <string name="remote_buttons_job_show_details">Afficher les détails</string>
     <string name="remote_buttons_job_show_details_desc">Met en pause et affiche aussitôt le titre, le résumé et la distribution. Appuyez à nouveau ou sur Retour pour la fermer</string>

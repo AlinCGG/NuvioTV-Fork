@@ -3415,6 +3415,7 @@
     <string name="layout_watched_titles_hide_desc">已看完的电影和已全部看完的节目不会出现在首页各行和横幅中。继续观看不受影响。</string>
     <string name="layout_trailer_logo">卡片预告片上显示标志</string>
     <string name="layout_trailer_logo_sub">在卡片中播放的预告片上显示标题标志。</string>
+    <string name="layout_preset_extra_large">特大</string>
     <string name="layout_custom_poster_screen_tv_recommendations">电视推荐</string>
     <string name="mdblist_account_title">账户</string>
     <string name="mdblist_account_subtitle">您的 MDBList 用户名。选择以刷新。</string>

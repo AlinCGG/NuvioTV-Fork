@@ -2886,6 +2886,7 @@
     <string name="layout_watched_titles_hide_desc">視聴済みの映画と全話視聴済みの番組を、ホームの行とバナーから除外します。「視聴を続ける」には影響しません。</string>
     <string name="layout_trailer_logo">カードの予告編にロゴを表示</string>
     <string name="layout_trailer_logo_sub">カードで再生中の予告編にタイトルロゴを重ねて表示</string>
+    <string name="layout_preset_extra_large">特大</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TVのおすすめ</string>
     <string name="mdblist_account_title">アカウント</string>
     <string name="mdblist_account_subtitle">MDBListのユーザー名。選択すると更新します。</string>

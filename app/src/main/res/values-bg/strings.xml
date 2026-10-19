@@ -2875,6 +2875,7 @@
     <string name="layout_watched_titles_hide_desc">Гледаните филми и изцяло изгледаните сериали не се показват в редовете на Начало и в банера. „Продължаване на гледането“ не се засяга.</string>
     <string name="layout_trailer_logo">Лого върху трейлъра в картата</string>
     <string name="layout_trailer_logo_sub">Показвай логото на заглавието върху трейлъра в картата.</string>
+    <string name="layout_preset_extra_large">Много голям</string>
     <string name="layout_custom_poster_screen_tv_recommendations">ТВ препоръки</string>
     <string name="mdblist_account_title">Акаунт</string>
     <string name="mdblist_account_subtitle">Твоето потребителско име в MDBList. Избери за обновяване.</string>

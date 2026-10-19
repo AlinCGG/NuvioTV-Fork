@@ -90,6 +90,8 @@
     <string name="calendar_setting_corner_sub">Un mensaje breve en la esquina cuando sale un episodio nuevo de una serie con la campana activada</string>
     <string name="calendar_setting_lists">Incluir mis propias listas</string>
     <string name="calendar_setting_lists_sub">También sigue los títulos de tus propias listas de Trakt y MDBList. Las listas largas llenan mucho el Calendario.</string>
+    <string name="calendar_setting_other_services">Seguir también mis otros servicios</string>
+    <string name="calendar_setting_other_services_sub">También sigue Trakt, Simkl, MDBList y tu biblioteca de Nuvio, no solo tu fuente de la biblioteca.</string>
     <string name="calendar_setting_hidden">Títulos ocultos</string>
     <string name="calendar_setting_hidden_sub">Títulos que ocultaste del Calendario. Selecciona uno para volver a mostrarlo.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -107,6 +109,11 @@
     <string name="calendar_coming_up_new">Nuevo</string>
     <string name="calendar_coming_up_today_at">Hoy %1$s</string>
     <string name="calendar_coming_up_tonight_at">Esta noche %1$s</string>
+    <string name="calendar_coming_up_hide">Ocultar de Estrenos</string>
+    <string name="calendar_coming_up_hidden">Ocultos en Estrenos</string>
+    <string name="calendar_coming_up_hidden_sub">Series que ocultaste de la fila Estrenos. Siguen en el Calendario y en tu Biblioteca.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Selecciona una serie para volver a mostrarla en Estrenos</string>
+    <string name="calendar_coming_up_unhide_all">Mostrar todo</string>
     <string name="calendar_reminder_title_one">Nuevo episodio</string>
     <string name="calendar_reminder_title_one_film">Nueva película</string>
     <string name="calendar_reminder_title_one_release">Nuevo estreno</string>

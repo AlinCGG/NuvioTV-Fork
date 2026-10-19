@@ -181,6 +181,7 @@
     <string name="layout_watched_titles_hide_desc">Одгледани филмови и потпуно одгледане серије изостављају се из редова Почетне и банера. Настави гледање се не мења.</string>
     <string name="layout_trailer_logo">Лого преко трејлера на картици</string>
     <string name="layout_trailer_logo_sub">Прикажи лого наслова преко трејлера који се пушта на картици.</string>
+    <string name="layout_preset_extra_large">Веома велико</string>
     <string name="layout_custom_poster_screen_tv_recommendations">ТВ препоруке</string>
     <string name="mdblist_account_title">Налог</string>
     <string name="mdblist_account_subtitle">Ваше MDBList корисничко име. Изаберите за освежавање.</string>

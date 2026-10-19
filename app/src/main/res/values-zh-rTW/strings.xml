@@ -3415,6 +3415,7 @@
     <string name="layout_watched_titles_hide_desc">已看完的電影和已全部看完的節目不會出現在首頁各列和橫幅中。繼續觀看不受影響。</string>
     <string name="layout_trailer_logo">卡片預告片上顯示標誌</string>
     <string name="layout_trailer_logo_sub">在卡片中播放的預告片上顯示標題標誌。</string>
+    <string name="layout_preset_extra_large">特大</string>
     <string name="layout_custom_poster_screen_tv_recommendations">電視推薦</string>
     <string name="mdblist_account_title">帳戶</string>
     <string name="mdblist_account_subtitle">您的 MDBList 使用者名稱。選擇以重新整理。</string>

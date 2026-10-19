@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Hoppa i videon</string>
     <string name="remote_buttons_job_skip_intro_or_next">Hoppa över intro eller nästa avsnitt</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Hoppar över när Hoppa över-knappen visas, annars spelas nästa avsnitt</string>
+    <string name="remote_buttons_job_next_chapter">Nästa kapitel</string>
+    <string name="remote_buttons_job_previous_chapter">Föregående kapitel</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Går först tillbaka till början av kapitlet om du är mer än 3 sekunder in</string>
     <string name="remote_buttons_job_leave">Lämna spelaren</string>
     <string name="remote_buttons_job_show_details">Visa detaljer</string>
     <string name="remote_buttons_job_show_details_desc">Pausar och visar titel, handling och medverkande direkt. Tryck igen eller Tillbaka för att stänga</string>

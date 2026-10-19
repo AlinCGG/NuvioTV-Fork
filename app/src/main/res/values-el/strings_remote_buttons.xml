@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Μετάβαση μέσα στο βίντεο</string>
     <string name="remote_buttons_job_skip_intro_or_next">Παράλειψη εισαγωγής ή επόμενο επεισόδιο</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Παραλείπει όταν εμφανίζεται το κουμπί παράλειψης, αλλιώς παίζει το επόμενο επεισόδιο</string>
+    <string name="remote_buttons_job_next_chapter">Επόμενο κεφάλαιο</string>
+    <string name="remote_buttons_job_previous_chapter">Προηγούμενο κεφάλαιο</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Πρώτα επιστρέφει στην αρχή του κεφαλαίου, αν έχουν περάσει περισσότερα από 3 δευτερόλεπτα</string>
     <string name="remote_buttons_job_leave">Έξοδος από την αναπαραγωγή</string>
     <string name="remote_buttons_job_show_details">Εμφάνιση λεπτομερειών</string>
     <string name="remote_buttons_job_show_details_desc">Κάνει παύση και εμφανίζει αμέσως τον τίτλο, τη σύνοψη και τους ηθοποιούς. Πατήστε ξανά ή Πίσω για να την κλείσετε</string>

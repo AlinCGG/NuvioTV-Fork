@@ -80,6 +80,8 @@
     <string name="calendar_setting_corner_sub">Thông báo ngắn ở góc màn hình khi chương trình đã bật chuông có tập mới</string>
     <string name="calendar_setting_lists">Gồm danh sách của tôi</string>
     <string name="calendar_setting_lists_sub">Theo dõi cả nội dung trong danh sách Trakt và MDBList của bạn. Danh sách dài sẽ làm Lịch rối.</string>
+    <string name="calendar_setting_other_services">Theo dõi cả các dịch vụ khác của tôi</string>
+    <string name="calendar_setting_other_services_sub">Theo dõi cả Trakt, Simkl, MDBList và thư viện Nuvio của bạn, không chỉ nguồn thư viện.</string>
     <string name="calendar_setting_hidden">Chương trình đã ẩn</string>
     <string name="calendar_setting_hidden_sub">Nội dung bạn đã ẩn khỏi Lịch. Chọn một mục để hiện lại.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -95,6 +97,11 @@
     <string name="calendar_coming_up_new">Mới</string>
     <string name="calendar_coming_up_today_at">Hôm nay %1$s</string>
     <string name="calendar_coming_up_tonight_at">Tối nay %1$s</string>
+    <string name="calendar_coming_up_hide">Ẩn khỏi Mới và sắp tới</string>
+    <string name="calendar_coming_up_hidden">Đã ẩn khỏi Mới và sắp tới</string>
+    <string name="calendar_coming_up_hidden_sub">Chương trình bạn đã ẩn khỏi hàng Mới và sắp tới. Vẫn còn trong Lịch và Thư viện.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Chọn một chương trình để hiện lại trong Mới và sắp tới</string>
+    <string name="calendar_coming_up_unhide_all">Hiện tất cả</string>
     <string name="calendar_reminder_title_one">Tập mới</string>
     <string name="calendar_reminder_title_one_film">Phim mới</string>
     <string name="calendar_reminder_title_one_release">Nội dung mới</string>

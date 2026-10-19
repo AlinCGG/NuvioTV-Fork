@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Переход по видео</string>
     <string name="remote_buttons_job_skip_intro_or_next">Пропустить заставку или следующий эпизод</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Пропускает, когда видна кнопка пропуска, иначе включает следующий эпизод</string>
+    <string name="remote_buttons_job_next_chapter">Следующая глава</string>
+    <string name="remote_buttons_job_previous_chapter">Предыдущая глава</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Сначала возвращает к началу главы, если с её начала прошло больше 3 секунд</string>
     <string name="remote_buttons_job_leave">Выйти из плеера</string>
     <string name="remote_buttons_job_show_details">Показать детали</string>
     <string name="remote_buttons_job_show_details_desc">Ставит на паузу и сразу показывает название, описание и актёров. Нажмите ещё раз или «Назад», чтобы закрыть</string>

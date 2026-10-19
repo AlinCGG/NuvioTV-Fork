@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Videoda konuma git</string>
     <string name="remote_buttons_job_skip_intro_or_next">İntroyu atla veya sıradaki bölüm</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Atla düğmesi görünürse atlar, yoksa sıradaki bölümü oynatır</string>
+    <string name="remote_buttons_job_next_chapter">Sonraki sahne</string>
+    <string name="remote_buttons_job_previous_chapter">Önceki sahne</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Sahnenin 3 saniyeden fazlası geçtiyse önce sahnenin başına döner</string>
     <string name="remote_buttons_job_leave">Oynatıcıdan çık</string>
     <string name="remote_buttons_job_show_details">Ayrıntıları göster</string>
     <string name="remote_buttons_job_show_details_desc">Duraklatır ve başlığı, özeti ve oyuncuları hemen gösterir. Kapatmak için aynı tuşa veya Geri tuşuna basın</string>

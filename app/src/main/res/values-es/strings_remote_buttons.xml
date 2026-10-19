@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Saltar por el vídeo</string>
     <string name="remote_buttons_job_skip_intro_or_next">Saltar introducción o siguiente episodio</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Salta cuando aparece el botón Saltar; si no, reproduce el siguiente episodio</string>
+    <string name="remote_buttons_job_next_chapter">Siguiente capítulo</string>
+    <string name="remote_buttons_job_previous_chapter">Capítulo anterior</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Primero vuelve al inicio del capítulo si llevas más de 3 segundos en él</string>
     <string name="remote_buttons_job_leave">Salir del reproductor</string>
     <string name="remote_buttons_job_show_details">Mostrar detalles</string>
     <string name="remote_buttons_job_show_details_desc">Pausa y muestra al instante el título, la sinopsis y el elenco. Pulsa de nuevo o Atrás para cerrarla</string>

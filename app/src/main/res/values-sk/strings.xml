@@ -3562,6 +3562,7 @@
     <string name="layout_watched_titles_hide_desc">Pozreté filmy a celé pozreté seriály sa nezobrazia v riadkoch na domovskej obrazovke ani v banneri. Pokračovať v sledovaní sa nemení.</string>
     <string name="layout_trailer_logo">Logo cez trailer v karte</string>
     <string name="layout_trailer_logo_sub">Zobraziť logo titulu cez trailer prehrávaný v karte.</string>
+    <string name="layout_preset_extra_large">Veľmi veľké</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Odporúčania TV</string>
     <string name="mdblist_account_title">Účet</string>
     <string name="mdblist_account_subtitle">Vaše používateľské meno MDBList. Výberom obnovíte.</string>

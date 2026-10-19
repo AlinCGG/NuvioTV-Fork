@@ -3357,6 +3357,7 @@
     <string name="layout_watched_titles_hide_desc">Odgledani filmovi i potpuno odgledane serije izostavljaju se iz redova Početne i banera. Nastavi gledanje se ne menja.</string>
     <string name="layout_trailer_logo">Logo preko trejlera na kartici</string>
     <string name="layout_trailer_logo_sub">Prikaži logo naslova preko trejlera koji se pušta na kartici.</string>
+    <string name="layout_preset_extra_large">Veoma veliko</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV preporuke</string>
     <string name="mdblist_account_title">Nalog</string>
     <string name="mdblist_account_subtitle">Vaše MDBList korisničko ime. Izaberite za osvežavanje.</string>

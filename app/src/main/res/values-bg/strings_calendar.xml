@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">Кратко съобщение в ъгъла, когато сериал със звънче има нов епизод</string>
     <string name="calendar_setting_lists">Включи моите списъци</string>
     <string name="calendar_setting_lists_sub">Следи и заглавията от твоите списъци в Trakt и MDBList. Дългите списъци претрупват календара.</string>
+    <string name="calendar_setting_other_services">Следи и другите ми услуги</string>
+    <string name="calendar_setting_other_services_sub">Следи и Trakt, Simkl, MDBList и библиотеката ти в Nuvio, не само източника на библиотеката.</string>
     <string name="calendar_setting_hidden">Скрити сериали</string>
     <string name="calendar_setting_hidden_sub">Заглавия, които си скрил от календара. Избери едно, за да го покажеш отново.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">Нов</string>
     <string name="calendar_coming_up_today_at">Днес в %1$s</string>
     <string name="calendar_coming_up_tonight_at">Довечера в %1$s</string>
+    <string name="calendar_coming_up_hide">Скрий от „Скоро“</string>
+    <string name="calendar_coming_up_hidden">Скрити от „Скоро“</string>
+    <string name="calendar_coming_up_hidden_sub">Сериали, които си скрил от реда „Скоро“. Остават в Календара и Библиотеката.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Избери сериал, за да се върне в „Скоро“</string>
+    <string name="calendar_coming_up_unhide_all">Покажи всички</string>
     <string name="calendar_reminder_title_one">Нов епизод</string>
     <string name="calendar_reminder_title_one_film">Нов филм</string>
     <string name="calendar_reminder_title_one_release">Ново заглавие</string>

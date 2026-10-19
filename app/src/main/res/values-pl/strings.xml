@@ -3621,6 +3621,7 @@
     <string name="layout_watched_titles_hide_desc">Obejrzane filmy i w całości obejrzane seriale nie pojawiają się w wierszach strony głównej ani w banerze. Nie dotyczy to sekcji Kontynuuj oglądanie.</string>
     <string name="layout_trailer_logo">Logo na zwiastunie w karcie</string>
     <string name="layout_trailer_logo_sub">Pokazuj logo tytułu na zwiastunie odtwarzanym w karcie.</string>
+    <string name="layout_preset_extra_large">Bardzo duży</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Rekomendacje TV</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Twoja nazwa użytkownika MDBList. Wybierz, aby odświeżyć.</string>

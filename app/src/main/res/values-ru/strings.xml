@@ -3304,6 +3304,7 @@
     <string name="layout_watched_titles_hide_desc">Просмотренные фильмы и полностью просмотренные сериалы не показываются в рядах главного экрана и в баннере. На «Продолжить просмотр» это не влияет.</string>
     <string name="layout_trailer_logo">Логотип поверх трейлера в карточке</string>
     <string name="layout_trailer_logo_sub">Показывать логотип тайтла поверх трейлера в карточке.</string>
+    <string name="layout_preset_extra_large">Очень большой</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Рекомендации ТВ</string>
     <string name="mdblist_account_title">Аккаунт</string>
     <string name="mdblist_account_subtitle">Ваше имя пользователя MDBList. Выберите, чтобы обновить.</string>

@@ -3560,6 +3560,7 @@
     <string name="layout_watched_titles_hide_desc">İzlenen filmler ve tamamen izlenen diziler Ana Sayfa satırlarında ve banner\'da gösterilmez. İzlemeye Devam Et etkilenmez.</string>
     <string name="layout_trailer_logo">Kart Fragmanı Üzerinde Logo</string>
     <string name="layout_trailer_logo_sub">Kartta oynatılan fragmanın üzerinde başlık logosunu göster.</string>
+    <string name="layout_preset_extra_large">Çok büyük</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV Önerileri</string>
     <string name="mdblist_account_title">Hesap</string>
     <string name="mdblist_account_subtitle">MDBList kullanıcı adınız. Yenilemek için seçin.</string>

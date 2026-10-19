@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">Rövid üzenet a sarokban, ha egy bekapcsolt csengős sorozatnak új epizódja jelent meg</string>
     <string name="calendar_setting_lists">Saját listáim is</string>
     <string name="calendar_setting_lists_sub">A saját Trakt- és MDBList-listáid címeit is követi. A hosszú listák zsúfolttá teszik a Naptárt.</string>
+    <string name="calendar_setting_other_services">A többi szolgáltatásom is</string>
+    <string name="calendar_setting_other_services_sub">A Trakt, a Simkl és az MDBList szolgáltatást és a Nuvio-könyvtáradat is követi, nem csak a könyvtár forrását.</string>
     <string name="calendar_setting_hidden">Rejtett sorozatok</string>
     <string name="calendar_setting_hidden_sub">A Naptárból elrejtett címek. Válassz egyet, hogy újra megjelenjen.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">Új</string>
     <string name="calendar_coming_up_today_at">Ma %1$s</string>
     <string name="calendar_coming_up_tonight_at">Ma este %1$s</string>
+    <string name="calendar_coming_up_hide">Elrejtés a Következik sorból</string>
+    <string name="calendar_coming_up_hidden">Elrejtve a Következik sorból</string>
+    <string name="calendar_coming_up_hidden_sub">A Következik sorból elrejtett sorozatok. A Naptárban és a Könyvtárban maradnak.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Válassz egy sorozatot, hogy visszakerüljön a Következik sorba</string>
+    <string name="calendar_coming_up_unhide_all">Összes megjelenítése</string>
     <string name="calendar_reminder_title_one">Új epizód</string>
     <string name="calendar_reminder_title_one_film">Új film</string>
     <string name="calendar_reminder_title_one_release">Új megjelenés</string>

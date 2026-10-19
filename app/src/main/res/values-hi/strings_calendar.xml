@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">घंटी चालू वाले शो का नया एपिसोड आने पर कोने में छोटा संदेश</string>
     <string name="calendar_setting_lists">मेरी अपनी लिस्ट शामिल करें</string>
     <string name="calendar_setting_lists_sub">आपकी अपनी Trakt और MDBList लिस्ट के टाइटल भी फ़ॉलो करता है। लंबी लिस्ट से कैलेंडर भर जाता है।</string>
+    <string name="calendar_setting_other_services">मेरी दूसरी सेवाएँ भी फ़ॉलो करें</string>
+    <string name="calendar_setting_other_services_sub">सिर्फ़ आपका लाइब्रेरी सोर्स नहीं, Trakt, Simkl, MDBList और आपकी Nuvio लाइब्रेरी को भी फ़ॉलो करता है।</string>
     <string name="calendar_setting_hidden">छुपाए गए शो</string>
     <string name="calendar_setting_hidden_sub">जो टाइटल आपने कैलेंडर से छुपाए। फिर से दिखाने के लिए एक चुनें।</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">नया</string>
     <string name="calendar_coming_up_today_at">आज %1$s</string>
     <string name="calendar_coming_up_tonight_at">आज रात %1$s</string>
+    <string name="calendar_coming_up_hide">\"जल्द आ रहे\" से छुपाएँ</string>
+    <string name="calendar_coming_up_hidden">\"जल्द आ रहे\" से छुपाए गए</string>
+    <string name="calendar_coming_up_hidden_sub">जो शो आपने \"जल्द आ रहे\" रो से छुपाए। ये कैलेंडर और लाइब्रेरी में बने रहते हैं।</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">\"जल्द आ रहे\" में वापस लाने के लिए शो चुनें</string>
+    <string name="calendar_coming_up_unhide_all">सभी दिखाएँ</string>
     <string name="calendar_reminder_title_one">नया एपिसोड</string>
     <string name="calendar_reminder_title_one_film">नई फ़िल्म</string>
     <string name="calendar_reminder_title_one_release">नई रिलीज़</string>

@@ -95,6 +95,8 @@
     <string name="calendar_setting_corner_sub">Krátká zpráva v rohu, když má seriál se zapnutým zvonkem novou epizodu</string>
     <string name="calendar_setting_lists">Zahrnout mé vlastní seznamy</string>
     <string name="calendar_setting_lists_sub">Sleduje i tituly z vašich seznamů Trakt a MDBList. Dlouhé seznamy Kalendář zahltí.</string>
+    <string name="calendar_setting_other_services">Sledovat i mé další služby</string>
+    <string name="calendar_setting_other_services_sub">Sleduje i Trakt, Simkl, MDBList a vaši knihovnu Nuvio, nejen váš zdroj knihovny.</string>
     <string name="calendar_setting_hidden">Skryté seriály</string>
     <string name="calendar_setting_hidden_sub">Tituly, které jste skryli z Kalendáře. Vyberte titul a znovu se zobrazí.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -113,6 +115,11 @@
     <string name="calendar_coming_up_new">Nový</string>
     <string name="calendar_coming_up_today_at">Dnes %1$s</string>
     <string name="calendar_coming_up_tonight_at">Dnes večer %1$s</string>
+    <string name="calendar_coming_up_hide">Skrýt z řádku Již brzy</string>
+    <string name="calendar_coming_up_hidden">Skryté z řádku Již brzy</string>
+    <string name="calendar_coming_up_hidden_sub">Seriály, které jste skryli z řádku Již brzy. Zůstávají v Kalendáři i Knihovně.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Vyberte seriál a vrátí se do řádku Již brzy</string>
+    <string name="calendar_coming_up_unhide_all">Zobrazit vše</string>
     <string name="calendar_reminder_title_one">Nová epizoda</string>
     <string name="calendar_reminder_title_one_film">Nový film</string>
     <string name="calendar_reminder_title_one_release">Novinka</string>

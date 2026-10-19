@@ -3530,6 +3530,7 @@
     <string name="layout_watched_titles_hide_desc">Las películas vistas y las series vistas por completo no aparecen en las filas de Inicio ni en el banner. Seguir Viendo no se ve afectado.</string>
     <string name="layout_trailer_logo">Logo sobre el tráiler de la tarjeta</string>
     <string name="layout_trailer_logo_sub">Mostrar el logo del título sobre el tráiler que se reproduce en una tarjeta.</string>
+    <string name="layout_preset_extra_large">Muy grande</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recomendaciones de TV</string>
     <string name="mdblist_account_title">Cuenta</string>
     <string name="mdblist_account_subtitle">Tu nombre de usuario de MDBList. Selecciona para actualizar.</string>

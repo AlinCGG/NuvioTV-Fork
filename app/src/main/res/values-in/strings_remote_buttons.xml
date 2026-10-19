@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Pindah ke bagian video</string>
     <string name="remote_buttons_job_skip_intro_or_next">Lewati intro, atau episode berikutnya</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Melewati saat tombol Lewati muncul, jika tidak memutar episode berikutnya</string>
+    <string name="remote_buttons_job_next_chapter">Bab berikutnya</string>
+    <string name="remote_buttons_job_previous_chapter">Bab sebelumnya</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Kembali dulu ke awal bab jika sudah lebih dari 3 detik berjalan</string>
     <string name="remote_buttons_job_leave">Keluar dari pemutar</string>
     <string name="remote_buttons_job_show_details">Tampilkan detail</string>
     <string name="remote_buttons_job_show_details_desc">Menjeda dan langsung menampilkan judul, sinopsis, dan pemeran. Tekan lagi atau Kembali untuk menutupnya</string>

@@ -3327,6 +3327,7 @@
     <string name="layout_watched_titles_hide_desc">Bekeken films en volledig bekeken series worden weggelaten uit de rijen op Home en de banner. Verder kijken verandert niet.</string>
     <string name="layout_trailer_logo">Logo over kaarttrailer</string>
     <string name="layout_trailer_logo_sub">Toon het titellogo over een trailer die in een kaart speelt.</string>
+    <string name="layout_preset_extra_large">Extra groot</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-aanbevelingen</string>
     <string name="mdblist_account_title">Account</string>
     <string name="mdblist_account_subtitle">Je MDBList-gebruikersnaam. Selecteer om te vernieuwen.</string>

@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Кретање кроз видео</string>
     <string name="remote_buttons_job_skip_intro_or_next">Прескочи увод или следећа епизода</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Прескаче када се прикаже дугме за прескакање, иначе пушта следећу епизоду</string>
+    <string name="remote_buttons_job_next_chapter">Следеће поглавље</string>
+    <string name="remote_buttons_job_previous_chapter">Претходно поглавље</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Прво се враћа на почетак поглавља ако је прошло више од 3 секунде</string>
     <string name="remote_buttons_job_leave">Изађи из плејера</string>
     <string name="remote_buttons_job_show_details">Прикажи детаље</string>
     <string name="remote_buttons_job_show_details_desc">Паузира и одмах приказује наслов, опис и глумачку поделу. Поновни притисак или Назад затвара приказ</string>

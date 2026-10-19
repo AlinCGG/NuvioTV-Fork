@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">Σύντομο μήνυμα στη γωνία όταν μια σειρά με ενεργό καμπανάκι έχει νέο επεισόδιο</string>
     <string name="calendar_setting_lists">Συμπερίληψη των λιστών μου</string>
     <string name="calendar_setting_lists_sub">Ακολουθεί και τίτλους από τις δικές σας λίστες Trakt και MDBList. Οι μεγάλες λίστες γεμίζουν το Ημερολόγιο.</string>
+    <string name="calendar_setting_other_services">Παρακολούθηση και των άλλων υπηρεσιών μου</string>
+    <string name="calendar_setting_other_services_sub">Ακολουθεί και τα Trakt, Simkl, MDBList και τη βιβλιοθήκη σας στο Nuvio, όχι μόνο την πηγή βιβλιοθήκης σας.</string>
     <string name="calendar_setting_hidden">Κρυφές σειρές</string>
     <string name="calendar_setting_hidden_sub">Τίτλοι που αποκρύψατε από το Ημερολόγιο. Επιλέξτε έναν για να εμφανιστεί ξανά.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">Νέο</string>
     <string name="calendar_coming_up_today_at">Σήμερα στις %1$s</string>
     <string name="calendar_coming_up_tonight_at">Απόψε στις %1$s</string>
+    <string name="calendar_coming_up_hide">Απόκρυψη από «Νέα και επερχόμενα»</string>
+    <string name="calendar_coming_up_hidden">Κρυφά από «Νέα και επερχόμενα»</string>
+    <string name="calendar_coming_up_hidden_sub">Σειρές που αποκρύψατε από τα «Νέα και επερχόμενα». Παραμένουν στο Ημερολόγιο και στη Βιβλιοθήκη.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Επιλέξτε μια σειρά για να εμφανιστεί ξανά στα «Νέα και επερχόμενα»</string>
+    <string name="calendar_coming_up_unhide_all">Εμφάνιση όλων</string>
     <string name="calendar_reminder_title_one">Νέο επεισόδιο</string>
     <string name="calendar_reminder_title_one_film">Νέα ταινία</string>
     <string name="calendar_reminder_title_one_release">Νέα κυκλοφορία</string>

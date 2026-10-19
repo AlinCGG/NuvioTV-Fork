@@ -3222,6 +3222,7 @@
     <string name="layout_watched_titles_hide_desc">تُستبعد الأفلام التي تمت مشاهدتها والمسلسلات التي شوهدت بالكامل من صفوف الرئيسية والقسم المميز. لا تتأثر متابعة المشاهدة.</string>
     <string name="layout_trailer_logo">الشعار فوق إعلان البطاقة</string>
     <string name="layout_trailer_logo_sub">إظهار شعار العنوان فوق الإعلان المعروض داخل البطاقة.</string>
+    <string name="layout_preset_extra_large">كبير جدًا</string>
     <string name="layout_custom_poster_screen_tv_recommendations">توصيات التلفزيون</string>
     <string name="mdblist_account_title">الحساب</string>
     <string name="mdblist_account_subtitle">اسم مستخدمك في MDBList. اختر للتحديث.</string>

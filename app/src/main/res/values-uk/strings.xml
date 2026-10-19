@@ -2920,6 +2920,7 @@
     <string name="layout_watched_titles_hide_desc">Переглянуті фільми та повністю переглянуті серіали не показуються в рядах головного екрана й у банері. На «Продовжити перегляд» це не впливає.</string>
     <string name="layout_trailer_logo">Логотип поверх трейлера в картці</string>
     <string name="layout_trailer_logo_sub">Показувати логотип тайтлу поверх трейлера в картці.</string>
+    <string name="layout_preset_extra_large">Дуже великий</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Рекомендації ТБ</string>
     <string name="mdblist_account_title">Акаунт</string>
     <string name="mdblist_account_subtitle">Ваше ім\'я користувача MDBList. Виберіть, щоб оновити.</string>

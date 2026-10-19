@@ -85,6 +85,8 @@
     <string name="calendar_setting_corner_sub">En kort melding i hjørnet når en serie med påminnelse på får en ny episode</string>
     <string name="calendar_setting_lists">Ta med mine egne lister</string>
     <string name="calendar_setting_lists_sub">Følger også titler i dine egne Trakt- og MDBList-lister. Lange lister gjør Kalenderen rotete.</string>
+    <string name="calendar_setting_other_services">Følg også de andre tjenestene mine</string>
+    <string name="calendar_setting_other_services_sub">Følger også Trakt, Simkl, MDBList og Nuvio-biblioteket ditt, ikke bare bibliotekskilden din.</string>
     <string name="calendar_setting_hidden">Skjulte serier</string>
     <string name="calendar_setting_hidden_sub">Titler du har skjult i Kalenderen. Velg en for å vise den igjen.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -101,6 +103,11 @@
     <string name="calendar_coming_up_new">Ny</string>
     <string name="calendar_coming_up_today_at">I dag %1$s</string>
     <string name="calendar_coming_up_tonight_at">I kveld %1$s</string>
+    <string name="calendar_coming_up_hide">Skjul i Snart</string>
+    <string name="calendar_coming_up_hidden">Skjult i Snart</string>
+    <string name="calendar_coming_up_hidden_sub">Serier du har skjult i raden Snart. De blir værende i Kalenderen og Biblioteket.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Velg en serie for å vise den i Snart igjen</string>
+    <string name="calendar_coming_up_unhide_all">Vis alle</string>
     <string name="calendar_reminder_title_one">Ny episode</string>
     <string name="calendar_reminder_title_one_film">Ny film</string>
     <string name="calendar_reminder_title_one_release">Ny utgivelse</string>

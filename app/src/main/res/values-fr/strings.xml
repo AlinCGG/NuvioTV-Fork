@@ -3084,6 +3084,7 @@
     <string name="layout_watched_titles_hide_desc">Les films vus et les séries entièrement vues sont retirés des rangées de l\'accueil et de la bannière. Continuer à regarder n\'est pas concerné.</string>
     <string name="layout_trailer_logo">Logo sur la bande-annonce de la carte</string>
     <string name="layout_trailer_logo_sub">Afficher le logo du titre sur la bande-annonce lue dans une carte.</string>
+    <string name="layout_preset_extra_large">Très grand</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recommandations TV</string>
     <string name="mdblist_account_title">Compte</string>
     <string name="mdblist_account_subtitle">Votre nom d\'utilisateur MDBList. Sélectionnez pour actualiser.</string>

@@ -1799,6 +1799,7 @@
     <string name="layout_watched_titles_hide_desc">Sedda filmer och färdigsedda serier utelämnas från raderna på Hem och bannern. Fortsätt titta påverkas inte.</string>
     <string name="layout_trailer_logo">Logotyp över korttrailer</string>
     <string name="layout_trailer_logo_sub">Visa titellogotypen över en trailer som spelas i ett kort.</string>
+    <string name="layout_preset_extra_large">Extra stor</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-rekommendationer</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Ditt användarnamn på MDBList. Välj för att uppdatera.</string>

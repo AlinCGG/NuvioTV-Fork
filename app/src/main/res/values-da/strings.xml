@@ -2886,6 +2886,7 @@
     <string name="layout_watched_titles_hide_desc">Sete film og færdigsete serier udelades fra rækkerne på Hjem og banneret. Fortsæt med at se påvirkes ikke.</string>
     <string name="layout_trailer_logo">Logo over korttrailer</string>
     <string name="layout_trailer_logo_sub">Vis titellogoet over en trailer, der afspilles i et kort.</string>
+    <string name="layout_preset_extra_large">Ekstra stor</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-anbefalinger</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Dit MDBList-brugernavn. Vælg for at opdatere.</string>

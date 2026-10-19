@@ -53,6 +53,9 @@
     <string name="remote_buttons_job_jump_percent">Im Video springen</string>
     <string name="remote_buttons_job_skip_intro_or_next">Intro überspringen oder nächste Folge</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Überspringt, wenn die Überspringen-Taste zu sehen ist, sonst startet die nächste Folge</string>
+    <string name="remote_buttons_job_next_chapter">Nächstes Kapitel</string>
+    <string name="remote_buttons_job_previous_chapter">Vorheriges Kapitel</string>
+    <string name="remote_buttons_job_previous_chapter_desc">Springt zuerst an den Anfang des Kapitels, wenn du schon mehr als 3 Sekunden darin bist</string>
     <string name="remote_buttons_job_leave">Player verlassen</string>
     <string name="remote_buttons_job_show_details">Details anzeigen</string>
     <string name="remote_buttons_job_show_details_desc">Pausiert und zeigt sofort Titel, Handlung und Besetzung. Erneut drücken oder Zurück, um sie zu schließen</string>

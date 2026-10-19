@@ -1183,6 +1183,7 @@
     <string name="layout_watched_titles_hide_desc">देखी गई मूवी और पूरे देखे गए शो होम की रो और बैनर में नहीं दिखते। \"देखना जारी रखें\" पर असर नहीं पड़ता।</string>
     <string name="layout_trailer_logo">कार्ड ट्रेलर पर लोगो</string>
     <string name="layout_trailer_logo_sub">कार्ड में चल रहे ट्रेलर के ऊपर टाइटल लोगो दिखाएँ।</string>
+    <string name="layout_preset_extra_large">एक्स्ट्रा लार्ज</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV सुझाव</string>
     <string name="mdblist_account_title">अकाउंट</string>
     <string name="mdblist_account_subtitle">आपका MDBList यूज़रनेम। रीफ्रेश करने के लिए चुनें।</string>

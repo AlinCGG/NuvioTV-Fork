@@ -1308,6 +1308,7 @@
     <string name="layout_watched_titles_hide_desc">Sette filmer og ferdigsette serier utelates fra radene på Hjem og banneret. Fortsett å se påvirkes ikke.</string>
     <string name="layout_trailer_logo">Logo over korttrailer</string>
     <string name="layout_trailer_logo_sub">Vis tittellogoen over en trailer som spilles i et kort.</string>
+    <string name="layout_preset_extra_large">Ekstra stor</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-anbefalinger</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">MDBList-brukernavnet ditt. Velg for å oppdatere.</string>
