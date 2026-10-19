@@ -64,6 +64,7 @@ class TraktLibraryService @Inject constructor(
     private val refreshingState = MutableStateFlow(false)
     private val refreshMutex = Mutex()
     private var lastRefreshMs: Long = 0L
+    @Volatile private var writeSequence = 0L
 
     private val cacheTtlMs = 60_000L
     private val listFetchConcurrency = 3
@@ -112,28 +113,47 @@ class TraktLibraryService @Inject constructor(
 
     suspend fun getMembershipSnapshot(item: LibraryEntryInput): ListMembershipSnapshot {
         ensureFresh()
-        val snapshot = snapshotState.value
-        val key = contentKey(item.itemId, item.itemType)
-        val memberships = snapshot.membershipByContent[key].orEmpty()
-        val map = snapshot.listTabs.associate { tab ->
-            tab.key to memberships.contains(tab.key)
-        }
-        return ListMembershipSnapshot(listMembership = map)
+        return cachedMembership(item)
     }
 
+    /**
+     * Membership for the Add to library button: the loaded lists as they are shown, so the press acts
+     * at once. Before the first load only the watchlist is read.
+     */
+    suspend fun getDefaultMembershipSnapshot(item: LibraryEntryInput): ListMembershipSnapshot {
+        if (hasLoadedLists()) return cachedMembership(item)
+        val watchlist = rebuildSnapshot(emptyList(), mapOf(WATCHLIST_KEY to fetchWatchlistEntries()))
+        val inWatchlist = WATCHLIST_KEY in watchlist.membershipByContent[contentKey(item.itemId, item.itemType)].orEmpty()
+        return ListMembershipSnapshot(listMembership = mapOf(WATCHLIST_KEY to inWatchlist))
+    }
+
+    /** Writes against the loaded lists straight away; the lists are refreshed in the background afterwards. */
     suspend fun applyMembershipChanges(
         item: LibraryEntryInput,
         changes: ListMembershipChanges
     ) {
-        ensureFresh()
-        val current = getMembershipSnapshot(item).listMembership
+        try {
+            applyMembershipChangesNow(item, changes)
+        } finally {
+            scope.launch { ensureFresh() }
+        }
+    }
+
+    private suspend fun applyMembershipChangesNow(
+        item: LibraryEntryInput,
+        changes: ListMembershipChanges
+    ) {
+        val loaded = hasLoadedLists()
+        val current = if (loaded) cachedMembership(item).listMembership else emptyMap()
         val desired = changes.desiredMembership
         val keys = (current.keys + desired.keys).distinct()
 
         keys.forEach { listKey ->
             val before = current[listKey] == true
             val after = desired[listKey] == true
-            if (before == after) return@forEach
+            // Before the first load the current state is unknown, so every requested change is sent.
+            if (loaded && before == after) return@forEach
+            if (!loaded && listKey !in desired) return@forEach
 
             if (listKey == WATCHLIST_KEY) {
                 if (after) {
@@ -320,6 +340,16 @@ class TraktLibraryService @Inject constructor(
         refresh(force = false)
     }
 
+    private fun hasLoadedLists(): Boolean = snapshotState.value.listTabs.isNotEmpty()
+
+    private fun cachedMembership(item: LibraryEntryInput): ListMembershipSnapshot {
+        val snapshot = snapshotState.value
+        val memberships = snapshot.membershipByContent[contentKey(item.itemId, item.itemType)].orEmpty()
+        return ListMembershipSnapshot(listMembership = snapshot.listTabs.associate { tab ->
+            tab.key to memberships.contains(tab.key)
+        })
+    }
+
     private suspend fun refresh(force: Boolean): Boolean {
         val now = System.currentTimeMillis()
         return refreshMutex.withLock {
@@ -329,9 +359,14 @@ class TraktLibraryService @Inject constructor(
 
             refreshingState.value = true
             try {
-                val previous = snapshotState.value
+                val writesBefore = writeSequence
                 val refreshed = runCatching { fetchSnapshot() }.getOrNull()
-                val snapshotToUse = refreshed ?: previous
+                if (refreshed != null && writeSequence != writesBefore) {
+                    // A write landed while the lists were downloading; keep it and load again next time.
+                    lastRefreshMs = 0L
+                    return@withLock false
+                }
+                val snapshotToUse = refreshed ?: snapshotState.value
                 snapshotState.value = snapshotToUse
                 lastRefreshMs = now
                 refreshed != null
@@ -347,12 +382,15 @@ class TraktLibraryService @Inject constructor(
     ) {
         val before = snapshotState.value
         val optimisticSnapshot = optimistic(before)
+        writeSequence++
         snapshotState.value = optimisticSnapshot
         try {
             mutation()
         } catch (error: Throwable) {
             snapshotState.value = before
             throw error
+        } finally {
+            writeSequence++
         }
     }
 

@@ -191,7 +191,7 @@ class LibraryRepositoryImpl @Inject constructor(
         val provider = sourceMode.first().providerId?.let(trackingProviders::provider)
         if (provider != null) {
             if (item.isServerItem) throw IllegalStateException(appContext.getString(R.string.library_server_title_unsupported))
-            val currentMembership = provider.getMembershipSnapshot(item).listMembership
+            val currentMembership = provider.getDefaultMembershipSnapshot(item).listMembership
             val changes = ListMembershipChanges(
                 provider.toggledDefaultMembership(currentMembership)
             )

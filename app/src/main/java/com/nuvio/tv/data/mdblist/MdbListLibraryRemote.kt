@@ -22,7 +22,10 @@ internal class MdbListLibraryRemote(private val api: MdbListApiClient, private v
         val previousUpdatedAt = previous?.lists.orEmpty().associate { it.key to it.updatedAt } +
             previous?.dynamicLists.orEmpty().associate { it.key to it.updatedAt }
         val addedOrders = previous?.addedOrders.orEmpty().toMutableMap().apply { remove(MDBLIST_WATCHLIST_KEY) }
-        val hidden = previous?.hiddenListKeys.orEmpty()
+        val known = previous?.tabs().orEmpty().mapTo(mutableSetOf()) { it.key }
+        val hidden = previous?.hiddenListKeys.orEmpty().toMutableSet()
+        // Dynamic and liked lists can hold thousands of titles each, so new ones start hidden until turned on in settings.
+        dynamicLists.filterNot { it.key in known }.mapTo(hidden) { it.key }
         for ((key, updatedAt) in lists.map { it.key to it.updatedAt } + dynamicLists.map { it.key to it.updatedAt }) {
             // Hidden lists are not shown anywhere, so skip downloading their items.
             if (key in hidden) {
@@ -31,10 +34,10 @@ internal class MdbListLibraryRemote(private val api: MdbListApiClient, private v
             }
             items[key] = cachedOrFetched(previous, key, updatedAt, previousUpdatedAt[key], reuseItems, addedOrders)
         }
-        val externalLists = synchronizeOptional("External", previous, previous?.externalLists.orEmpty(), hidden, reuseItems,
-            items, addedOrders) { decodeMdbListExternalLists(api.get("/external/lists/user", scope = scope).body) }
-        val likedLists = synchronizeOptional("Liked", previous, previous?.likedLists.orEmpty(), hidden, reuseItems,
-            items, addedOrders) { likedLists(accountId) }
+        val externalLists = synchronizeOptional("External", previous, previous?.externalLists.orEmpty(), hidden, null,
+            reuseItems, items, addedOrders) { decodeMdbListExternalLists(api.get("/external/lists/user", scope = scope).body) }
+        val likedLists = synchronizeOptional("Liked", previous, previous?.likedLists.orEmpty(), hidden, known,
+            reuseItems, items, addedOrders) { likedLists(accountId) }
         val snapshot = MdbListLibrarySnapshot(lists, items, now, addedOrders = addedOrders.filterKeys { it in items },
             itemsOrder = MDBLIST_ITEMS_ORDER, externalLists = externalLists, dynamicLists = dynamicLists,
             likedLists = likedLists)
@@ -48,7 +51,9 @@ internal class MdbListLibraryRemote(private val api: MdbListApiClient, private v
         label: String,
         previous: MdbListLibrarySnapshot?,
         previousLists: List<T>,
-        hidden: Set<String>,
+        hidden: MutableSet<String>,
+        // Lists missing from these keys start hidden; null keeps new lists shown.
+        knownKeys: Set<String>?,
         reuseItems: Boolean,
         items: MutableMap<String, List<MdbListLibraryItem>>,
         addedOrders: MutableMap<String, Map<String, List<MdbListLibraryOrderItem>>>,
@@ -59,6 +64,7 @@ internal class MdbListLibraryRemote(private val api: MdbListApiClient, private v
             val lists = fetchLists()
             val previousUpdatedAt = previousLists.associate { it.key to it.updatedAt }
             for (list in lists) {
+                if (knownKeys != null && list.key !in knownKeys) hidden += list.key
                 if (list.key in hidden) {
                     addedOrders.remove(list.key)
                     continue
@@ -119,18 +125,22 @@ internal class MdbListLibraryRemote(private val api: MdbListApiClient, private v
             else mapOf("sort" to sort, "order" to order)
         var query = initial
         val visited = mutableSetOf<Map<String, String>>()
-        val items = mutableListOf<MdbListLibraryItem>()
+        val items = linkedMapOf<String, MdbListLibraryItem>()
+        val readOnly = isMdbListReadOnlyListKey(key)
         repeat(1_000) {
             if (!visited.add(query)) throw MdbListDecodingException()
             val response = api.get(path, query, scope)
             val page = decodeMdbListLibraryPage(response.body)
-            items += page.items
+            val before = items.size
+            page.items.forEach { item -> if (item.key !in items) items[item.key] = item }
+            // A read-only list page that repeats earlier titles means the server is looping, so stop there.
+            if (readOnly && items.size == before) return items.values.toList()
             val nextCursor = page.nextCursor ?: response.header("X-Next-Cursor")?.takeIf { it.isNotBlank() }
             query = when {
                 nextCursor != null -> initial + ("cursor" to nextCursor)
                 page.nextOffset != null -> initial + ("offset" to page.nextOffset.toString())
                 response.header("X-Has-More").equals("true", ignoreCase = true) -> throw MdbListDecodingException()
-                else -> return items.distinctBy { it.key }
+                else -> return items.values.toList()
             }
         }
         throw MdbListDecodingException()

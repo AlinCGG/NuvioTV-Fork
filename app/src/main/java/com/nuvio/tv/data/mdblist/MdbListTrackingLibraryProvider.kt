@@ -31,6 +31,8 @@ class MdbListTrackingLibraryProvider @Inject constructor(
 
     override suspend fun getMembershipSnapshot(item: LibraryEntryInput) = service.getMembershipSnapshot(item)
 
+    override suspend fun getDefaultMembershipSnapshot(item: LibraryEntryInput) = service.getDefaultMembershipSnapshot(item)
+
     override suspend fun applyMembershipChanges(item: LibraryEntryInput, changes: ListMembershipChanges, destructiveRemovalConfirmed: Boolean) =
         service.applyMembershipChanges(item, changes)
 

@@ -80,6 +80,7 @@ import com.nuvio.tv.domain.model.MDBListRatings
 import com.nuvio.tv.domain.model.Video
 import com.nuvio.tv.domain.model.NextToWatch
 import com.nuvio.tv.ui.components.ImdbRatingSourceLabel
+import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.components.MDBListRatingsRow
 import com.nuvio.tv.ui.components.SynopsisDescription
 import com.nuvio.tv.ui.theme.NuvioTheme
@@ -109,6 +110,7 @@ fun HeroContentSection(
     isPlayEnabled: Boolean = true,
     onPlayLongPress: (() -> Unit)? = null,
     isInLibrary: Boolean,
+    isLibraryPending: Boolean = false,
     onToggleLibrary: () -> Unit,
     onLibraryLongPress: () -> Unit,
     isMovieWatched: Boolean,
@@ -334,6 +336,7 @@ fun HeroContentSection(
                             contentDescription = if (isInLibrary) stringResource(R.string.hero_remove_from_library) else stringResource(R.string.hero_add_to_library),
                             onClick = onToggleLibrary,
                             onLongPress = onLibraryLongPress,
+                            busy = isLibraryPending,
                             onFocused = onHeroActionFocused
                         )
 
@@ -641,13 +644,18 @@ private fun ActionIconButton(
     selected: Boolean = false,
     selectedContainerColor: Color = Color(0xFF7CFF9B),
     selectedContentColor: Color = Color.Black,
+    busy: Boolean = false,
     onFocused: () -> Unit = {},
     focusRequester: FocusRequester? = null
 ) {
     val isV2 = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null
     if (isV2) {
         V2DetailGlassAction(contentDescription, onClick, onFocused, enabled, onLongPress) {
-            if (icon != null) Icon(icon, null, Modifier.size(17.dp)) else if (painter != null) Icon(painter, null, Modifier.size(17.dp))
+            when {
+                busy -> LoadingIndicator(Modifier.size(17.dp), color = androidx.tv.material3.LocalContentColor.current)
+                icon != null -> Icon(icon, null, Modifier.size(17.dp))
+                painter != null -> Icon(painter, null, Modifier.size(17.dp))
+            }
         }
         return
     }
@@ -721,6 +729,10 @@ private fun ActionIconButton(
         )
     ) {
         when {
+            busy -> LoadingIndicator(
+                modifier = Modifier.size(22.dp),
+                color = androidx.tv.material3.LocalContentColor.current
+            )
             painter != null -> Icon(
                 painter = painter,
                 contentDescription = contentDescription,
