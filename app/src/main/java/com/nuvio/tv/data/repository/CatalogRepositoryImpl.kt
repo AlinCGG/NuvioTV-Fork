@@ -11,6 +11,7 @@ import com.nuvio.tv.core.util.canonicalizeAddonUrl
 import com.nuvio.tv.core.poster.withCustomPosterUrls
 import com.nuvio.tv.data.mapper.toDomainOrNull
 import com.nuvio.tv.data.local.LayoutPreferenceDataStore
+import com.nuvio.tv.data.mediaserver.ArtworkOnDemand
 import com.nuvio.tv.data.mediaserver.ServerCatalog
 import com.nuvio.tv.data.mediaserver.messageRes
 import com.nuvio.tv.data.mediaserver.serverFailure
@@ -26,6 +27,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -137,7 +139,7 @@ class CatalogRepositoryImpl @Inject constructor(
             emit(NetworkResult.Success(row))
             // Same first-page condition as the disk cache below, whose callers already take a
             // second row for the same request.
-            if (skip == 0 && extraArgs.isEmpty()) {
+            if (skip == 0 && extraArgs.isEmpty() && currentCoroutineContext()[ArtworkOnDemand.Key] == null) {
                 serverCatalog.settledArtwork(row, posterPattern)?.let { emit(NetworkResult.Success(it)) }
             }
             return@flow

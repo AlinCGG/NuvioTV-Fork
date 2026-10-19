@@ -6,7 +6,8 @@ enum class AddonHealthLevel { HEALTHY, DEGRADED, DOWN, UNKNOWN }
 /**
  * Normalised per-request outcome. ADDON_MS ok/ok_inline -> SUCCESS, empty ->
  * EMPTY, timeout/error -> FAILURE; resolver Success -> SUCCESS, Error ->
- * FAILURE. Outcomes not the source's fault (cancelled, Stale) are not recorded.
+ * FAILURE; meta lookups go through [AddonHealthModel.metaOutcome]. Outcomes not
+ * the source's fault (cancelled, Stale) are not recorded.
  */
 enum class HealthOutcome { SUCCESS, EMPTY, FAILURE }
 
@@ -34,6 +35,16 @@ object AddonHealthModel {
     /** Metadata pipeline: a details page slower than this reads DEGRADED. */
     const val METADATA_SLOW_LATENCY_MS = 4_000L
     const val DEGRADED_EMPTY_RATE = 0.5
+
+    /**
+     * A meta answer without an entry for the title (404, or 2xx with no meta) is
+     * EMPTY. No answer at all ([httpCode] null) and any other status are FAILURE.
+     */
+    fun metaOutcome(httpCode: Int?, hasMeta: Boolean): HealthOutcome = when {
+        hasMeta -> HealthOutcome.SUCCESS
+        httpCode != null && (httpCode == 404 || httpCode in 200..299) -> HealthOutcome.EMPTY
+        else -> HealthOutcome.FAILURE
+    }
 
     fun applySample(record: HealthRecord, sample: HealthSample): HealthRecord {
         val samples = (record.samples + sample).takeLast(MAX_SAMPLES)

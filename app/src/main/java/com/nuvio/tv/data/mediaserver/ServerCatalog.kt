@@ -25,9 +25,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -258,6 +260,17 @@ class ServerCatalog internal constructor(
         return if (items == row.items) row else row.copy(items = items)
     }
 
+    val artworkUpdates: StateFlow<Long> get() = artwork.updates
+
+    /** Rows as (row addon base URL, titles about to be shown), most wanted first. */
+    fun requestArtwork(rows: List<Pair<String?, List<MetaPreview>>>) {
+        val items = rows.flatMap { (baseUrl, titles) ->
+            val connection = baseUrl?.let(::connectionId)?.let(repository::connection)
+            if (connection?.useCatalogMetadata == true) titles else emptyList()
+        }
+        if (items.isNotEmpty()) artwork.request(items)
+    }
+
     suspend fun awaitArtwork(row: CatalogRow) {
         artwork.settle(row.items, ARTWORK_SETTLE_MS)
     }
@@ -431,7 +444,11 @@ class ServerCatalog internal constructor(
     }
 
     private suspend fun withAddonArtwork(connection: ServerConnection, items: List<MetaPreview>): List<MetaPreview> =
-        if (connection.useCatalogMetadata) artwork.resolve(items, ARTWORK_WAIT_MS) else items
+        when {
+            !connection.useCatalogMetadata -> items
+            currentCoroutineContext()[ArtworkOnDemand.Key] != null -> artwork.cached(items)
+            else -> artwork.resolve(items, ARTWORK_WAIT_MS)
+        }
 
     private suspend fun presenter(connection: ServerConnection): (ServerTitle) -> MetaPreview {
         if (!connection.useCatalogMetadata) return ServerTitle::preview

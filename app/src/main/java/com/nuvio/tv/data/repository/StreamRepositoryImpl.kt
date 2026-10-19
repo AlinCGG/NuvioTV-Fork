@@ -20,6 +20,8 @@ import com.nuvio.tv.data.mediaserver.ServerStreamSource
 import com.nuvio.tv.data.mediaserver.ServerStreams
 import com.nuvio.tv.data.mediaserver.messageRes
 import com.nuvio.tv.data.mediaserver.serverFailure
+import com.nuvio.tv.data.mediaserver.serverSourceLogLine
+import com.nuvio.tv.data.mediaserver.serverSourceOutcome
 import com.nuvio.tv.data.remote.api.AddonApi
 import com.nuvio.tv.domain.model.Addon
 import com.nuvio.tv.domain.model.AddonStreams
@@ -261,6 +263,7 @@ class StreamRepositoryImpl @Inject constructor(
         emit(NetworkResult.Loading)
         // Timing: whole-scrape wall time. Grep anchor: SCRAPE_TOTAL.
         val scrapeT0 = android.os.SystemClock.elapsedRealtime()
+        serverStreams.logSkippedSources(type, videoId, season, episode)
 
         try {
             // Filter addons that support streams for this type and id
@@ -393,9 +396,19 @@ class StreamRepositoryImpl @Inject constructor(
 
                 serverSources.forEach { source ->
                     launch {
+                        val serverT0 = android.os.SystemClock.elapsedRealtime()
+                        var finished = false
+                        var timedOut = false
+                        var streamCount = 0
+                        var failure: Throwable? = null
                         try {
                             val streams = withTimeoutOrNull(ADDON_STREAM_FETCH_TIMEOUT_MS) { source.load() }
-                                ?: throw ServerException(ServerFailure.UNREACHABLE)
+                                ?: run {
+                                    timedOut = true
+                                    throw ServerException(ServerFailure.UNREACHABLE)
+                                }
+                            streamCount = streams.size
+                            finished = true
                             if (streams.isNotEmpty()) {
                                 resultChannel.send(AddonStreams(addonName = source.name, addonLogo = null, streams = streams))
                             } else {
@@ -407,12 +420,29 @@ class StreamRepositoryImpl @Inject constructor(
                             }
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e
+                            finished = true
+                            if (!timedOut) failure = e
                             attemptedFailures += StreamAttemptFailure(
                                 addonName = source.name,
                                 kind = StreamFailureKind.REQUEST_FAILED,
                                 detail = context.getString(e.serverFailure().messageRes())
                             )
                         } finally {
+                            val outcome = if (finished) {
+                                serverSourceOutcome(streamCount, source.matchedItems, failure, timedOut)
+                            } else {
+                                "cancelled"
+                            }
+                            Log.i(
+                                ServerStreams.TAG,
+                                serverSourceLogLine(
+                                    source.name,
+                                    android.os.SystemClock.elapsedRealtime() - serverT0,
+                                    streamCount,
+                                    outcome,
+                                    failure
+                                )
+                            )
                             if (completedJobs.incrementAndGet() >= totalJobs) {
                                 resultChannel.close()
                             }

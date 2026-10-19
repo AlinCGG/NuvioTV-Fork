@@ -180,6 +180,7 @@ class StreamRepositoryPluginIsolationTest {
                     every { isNativeRequest(any()) } returns false
                     every { revision } returns 0
                     every { sources(any(), any(), any(), any(), any()) } returns emptyList()
+                    every { logSkippedSources(any(), any(), any(), any()) } returns Unit
                 }
             ),
             api = api,

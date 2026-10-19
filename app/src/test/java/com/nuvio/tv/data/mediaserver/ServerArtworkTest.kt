@@ -1,6 +1,7 @@
 package com.nuvio.tv.data.mediaserver
 
 import com.nuvio.tv.core.network.NetworkResult
+import com.nuvio.tv.data.repository.MetaCaller
 import com.nuvio.tv.domain.model.ContentType
 import com.nuvio.tv.domain.model.Meta
 import com.nuvio.tv.domain.model.MetaPreview
@@ -10,6 +11,7 @@ import dagger.Lazy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -23,9 +25,11 @@ import org.junit.Test
 internal class FakeMetaRepository(
     private val metas: Map<String, Meta> = emptyMap(),
     private val delayMs: Long = 0,
-    private val cachedMetas: Map<String, Meta> = emptyMap()
+    private val cachedMetas: Map<String, Meta> = emptyMap(),
+    private val failing: Set<String> = emptySet()
 ) : MetaRepository {
     val requested = mutableListOf<String>()
+    val callers = mutableListOf<String?>()
     private var active = 0
     var maxActive = 0
         private set
@@ -35,13 +39,20 @@ internal class FakeMetaRepository(
 
     override fun getMetaFromAllAddons(type: String, id: String, sourceAddonBaseUrl: String?): Flow<NetworkResult<Meta>> = flow {
         requested += id
+        callers += currentCoroutineContext()[MetaCaller]?.name
         active++
         maxActive = maxOf(maxActive, active)
         try {
             emit(NetworkResult.Loading)
             if (delayMs > 0) delay(delayMs)
             val meta = metas[id]
-            emit(if (meta != null) NetworkResult.Success(meta) else NetworkResult.Error("missing", NetworkResult.META_NOT_FOUND_CODE))
+            emit(
+                when {
+                    id in failing -> NetworkResult.Error("HTTP 429")
+                    meta != null -> NetworkResult.Success(meta)
+                    else -> NetworkResult.Error("missing", NetworkResult.META_NOT_FOUND_CODE)
+                }
+            )
         } finally {
             active--
         }
@@ -57,8 +68,9 @@ internal class FakeMetaRepository(
 
 internal fun serverArtwork(
     metaRepository: MetaRepository = FakeMetaRepository(),
-    scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined)
-) = ServerArtwork(Lazy { metaRepository }, scope)
+    scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+    nowMs: () -> Long = System::currentTimeMillis
+) = ServerArtwork(Lazy { metaRepository }, scope, nowMs)
 
 internal fun addonMeta(id: String, name: String = "Addon $id") =
     meta(id, ServerMediaKind.MOVIE, name).copy(
@@ -181,5 +193,118 @@ class ServerArtworkTest {
         assertEquals(original, first)
         artwork.settle(listOf(original), timeoutMs = 10_000)
         assertEquals("https://addon.example/tt1/poster.jpg", artwork.cached(listOf(original)).single().poster)
+    }
+
+    @Test
+    fun aFailedLookupIsAskedAgainSoonButAGenuineMissWaits() = runTest {
+        var now = 1_000_000L
+        val repository = FakeMetaRepository(mapOf("tt1" to addonMeta("tt1")), failing = setOf("tt1"))
+        val artwork = serverArtwork(repository, nowMs = { now })
+        val items = listOf(item("tt1"), item("tt404"))
+
+        artwork.resolve(items, waitMs = 1_000)
+        artwork.resolve(items, waitMs = 1_000)
+        assertEquals(listOf("tt1", "tt404"), repository.requested)
+
+        now += 61_000L
+        artwork.resolve(items, waitMs = 1_000)
+        assertEquals(listOf("tt1", "tt404", "tt1"), repository.requested)
+
+        now += 10 * 60_000L
+        artwork.resolve(items, waitMs = 1_000)
+        assertEquals(listOf("tt1", "tt404", "tt1", "tt1", "tt404"), repository.requested)
+    }
+
+    @Test
+    fun requestsAreTaggedAsServerArtwork() = runTest {
+        val repository = FakeMetaRepository(mapOf("tt1" to addonMeta("tt1")))
+
+        serverArtwork(repository).resolve(listOf(item("tt1")), waitMs = 1_000)
+
+        assertEquals(listOf<String?>("server-art"), repository.callers)
+    }
+
+    @Test
+    fun aHomeFullOfServerRowsStaysCached() = runTest {
+        val ids = (1..1_500).map { "tt$it" }
+        val repository = FakeMetaRepository(ids.associateWith(::addonMeta))
+        val artwork = serverArtwork(repository)
+        val items = ids.map(::item)
+
+        artwork.resolve(items, waitMs = 1_000)
+        artwork.resolve(items, waitMs = 1_000)
+
+        assertEquals(ids.size, repository.requested.size)
+        assertTrue(artwork.cached(items).all { it.poster == "https://addon.example/${it.id}/poster.jpg" })
+    }
+    @Test
+    fun requestLooksUpOnlyTheGivenTitlesAndSkipsCachedOnes() = runTest {
+        val ids = (1..6).map { "tt$it" }
+        val repository = FakeMetaRepository(
+            ids.associateWith(::addonMeta),
+            cachedMetas = mapOf("tt2" to addonMeta("tt2"))
+        )
+        val artwork = serverArtwork(repository)
+        val items = ids.map(::item)
+
+        artwork.request(items.take(3))
+        assertEquals(listOf("tt1", "tt3"), repository.requested)
+
+        artwork.request(items.take(3))
+        assertEquals(listOf("tt1", "tt3"), repository.requested)
+
+        artwork.request(items.drop(3))
+        assertEquals(listOf("tt1", "tt3", "tt4", "tt5", "tt6"), repository.requested)
+        assertTrue(artwork.cached(items).all { it.poster == "https://addon.example/${it.id}/poster.jpg" })
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun requestRunsFourAtATimeAndTheNewestRequestGoesFirst() = runTest {
+        val ids = (1..12).map { "tt$it" }
+        val repository = FakeMetaRepository(ids.associateWith(::addonMeta), delayMs = 1_000)
+        val artwork = serverArtwork(repository, backgroundScope)
+        val items = ids.map(::item)
+
+        artwork.request(items.take(8))
+        testScheduler.runCurrent()
+        assertEquals(listOf("tt1", "tt2", "tt3", "tt4"), repository.requested)
+
+        artwork.request(items.drop(8))
+        testScheduler.advanceTimeBy(10_000)
+        testScheduler.runCurrent()
+
+        assertEquals(4, repository.maxActive)
+        assertEquals(ids.take(4) + ids.drop(8) + ids.subList(4, 8), repository.requested)
+        assertTrue(artwork.cached(items).all { it.poster == "https://addon.example/${it.id}/poster.jpg" })
+    }
+
+    @Test
+    fun newArtworkMovesTheUpdateCounter() = runTest {
+        val repository = FakeMetaRepository(mapOf("tt1" to addonMeta("tt1")))
+        val artwork = serverArtwork(repository)
+
+        artwork.request(listOf(item("tt404")))
+        assertEquals(0L, artwork.updates.value)
+        artwork.request(listOf(item("tt1")))
+        assertEquals(1L, artwork.updates.value)
+    }
+
+    @Test
+    fun aCardKeepsAddonArtworkWhenARefreshFails() = runTest {
+        var now = 1_000_000L
+        val metas = mapOf("tt1" to addonMeta("tt1"))
+        val first = FakeMetaRepository(metas)
+        var repository: MetaRepository = first
+        val artwork = ServerArtwork(Lazy { repository }, CoroutineScope(Dispatchers.Unconfined)) { now }
+        val items = listOf(item("tt1"))
+
+        artwork.request(items)
+        now += 46 * 60_000L
+        assertEquals("https://addon.example/tt1/poster.jpg", artwork.cached(items).single().poster)
+
+        repository = FakeMetaRepository(metas, failing = setOf("tt1"))
+        artwork.request(items)
+        assertEquals("https://addon.example/tt1/poster.jpg", artwork.cached(items).single().poster)
     }
 }

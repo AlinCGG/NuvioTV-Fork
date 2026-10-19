@@ -416,6 +416,41 @@ class ServerCatalogTest {
     }
 
     @Test
+    fun homeRowsOnDemandOnlyLookUpTheTitlesAskedFor() = runTest {
+        val provider = FakeServerProvider().apply {
+            indexedIds["0"] = TrackingExternalIds(tmdb = 278)
+            indexedIds["1"] = TrackingExternalIds(tmdb = 550)
+        }
+        val metaRepository = FakeMetaRepository(mapOf("tmdb:278" to addonMeta("tmdb:278"), "tmdb:550" to addonMeta("tmdb:550")))
+        val (catalog, repository, connection) = catalog(provider, metaRepository = metaRepository)
+        repository.setCatalogMetadata(connection.id, true)
+
+        val row = withContext(ArtworkOnDemand) { catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0) }
+        assertTrue(metaRepository.requested.isEmpty())
+        assertNull(row.items[0].poster)
+
+        catalog.requestArtwork(listOf(row.addonBaseUrl to row.items.take(1)))
+        assertEquals(listOf("tmdb:278"), metaRepository.requested)
+        val updated = catalog.withArtwork(row, "")
+        assertEquals("https://addon.example/tmdb:278/poster.jpg", updated.items[0].poster)
+        assertNull(updated.items[1].poster)
+    }
+
+    @Test
+    fun onDemandRequestsSkipServersWithoutCatalogMetadata() = runTest {
+        val provider = FakeServerProvider().apply { indexedIds["0"] = TrackingExternalIds(tmdb = 278) }
+        val metaRepository = FakeMetaRepository(mapOf("tmdb:278" to addonMeta("tmdb:278")))
+        val (catalog, repository, connection) = catalog(provider, metaRepository = metaRepository)
+        repository.setCatalogMetadata(connection.id, true)
+        val row = withContext(ArtworkOnDemand) { catalog.page(connection, FakeServerProvider.MOVIE_LIBRARY.id, skip = 0) }
+        repository.setCatalogMetadata(connection.id, false)
+
+        catalog.requestArtwork(listOf(row.addonBaseUrl to row.items, "https://addon.example" to row.items))
+
+        assertTrue(metaRepository.requested.isEmpty())
+    }
+
+    @Test
     fun settledArtworkOnlyAnswersWhenARowChanges() = runTest {
         val provider = FakeServerProvider().apply { indexedIds["0"] = TrackingExternalIds(tmdb = 278) }
         val metaRepository = FakeMetaRepository(cachedMetas = mapOf("tmdb:278" to addonMeta("tmdb:278")))
