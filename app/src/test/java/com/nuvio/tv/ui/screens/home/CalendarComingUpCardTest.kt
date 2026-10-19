@@ -68,6 +68,11 @@ class CalendarComingUpCardTest {
         assertTrue(calendarComingUpCard(item(CalendarComingUpWhen.NEW), text, formats)!!.info.hasAired)
     }
 
+    @Test fun onlyACardForAShowOnlyUpcomingKnowsCanBeRemoved() {
+        assertFalse(calendarComingUpCard(item(CalendarComingUpWhen.TONIGHT), text, formats)!!.info.upcomingOnly)
+        assertTrue(calendarComingUpCard(item(CalendarComingUpWhen.TONIGHT), text, formats, upcomingOnly = true)!!.info.upcomingOnly)
+    }
+
     @Test fun aFilmCardOpensTheFilm() {
         val film = CalendarTitleRecord(key = "movie:tmdb:9", type = CalendarTitleType.MOVIE, ids = CalendarIds(tmdb = 9), name = "Kestrel")
         val entry = CalendarEntry(kind = CalendarEntryKind.MOVIE_DIGITAL, airDate = "2026-11-05")

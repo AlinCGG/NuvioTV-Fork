@@ -85,8 +85,11 @@ class CalendarSettingsViewModel @Inject constructor(
     fun setZone(zone: String?) = viewModelScope.launch { data.setZoneOverride(zone) }
     fun setCornerMessage(enabled: Boolean) = viewModelScope.launch { data.setCornerMessage(enabled) }
     fun setIncludePersonalLists(include: Boolean) = viewModelScope.launch { data.setIncludePersonalLists(include) }
+    fun setFollowOtherServices(follow: Boolean) = viewModelScope.launch { data.setFollowOtherServices(follow) }
     fun setComingUpRow(enabled: Boolean) = viewModelScope.launch { data.setComingUpRow(enabled) }
     fun unhide(titleKey: String) = viewModelScope.launch { data.setHidden(titleKey, hidden = false, name = null) }
+    fun unhideFromComingUp(titleKey: String) = viewModelScope.launch { data.setHiddenFromComingUp(titleKey, hidden = false) }
+    fun unhideAllFromComingUp() = viewModelScope.launch { data.unhideAllFromComingUp() }
 
     suspend fun zoneOptions(locale: Locale, regionNames: Map<String, String>): List<CalendarZoneOption> =
         withContext(Dispatchers.Default) {
@@ -111,6 +114,75 @@ internal fun CalendarComingUpRowSetting(viewModel: CalendarSettingsViewModel = h
         checked = current.comingUpRow,
         onToggle = { viewModel.setComingUpRow(!current.comingUpRow) }
     )
+    if (!current.comingUpRow) return
+    var open by remember { mutableStateOf(false) }
+    val hiddenCount = current.comingUpHiddenKeys.size
+    SettingsActionRow(
+        title = stringResource(R.string.calendar_coming_up_hidden),
+        subtitle = stringResource(R.string.calendar_coming_up_hidden_sub),
+        value = if (hiddenCount == 0) stringResource(R.string.action_none)
+        else pluralStringResource(R.plurals.calendar_setting_hidden_value, hiddenCount, hiddenCount),
+        onClick = { open = true }
+    )
+    if (open) {
+        ComingUpHiddenDialog(
+            settings = current,
+            onUnhide = { key ->
+                viewModel.unhideFromComingUp(key)
+                if (hiddenCount <= 1) open = false
+            },
+            onUnhideAll = {
+                viewModel.unhideAllFromComingUp()
+                open = false
+            },
+            onDismiss = { open = false }
+        )
+    }
+}
+
+@Composable
+private fun ComingUpHiddenDialog(
+    settings: CalendarSettings,
+    onUnhide: (String) -> Unit,
+    onUnhideAll: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val first = remember { FocusRequester() }
+    val names = settings.comingUpHiddenNames
+    val keys = settings.comingUpHiddenKeys.sortedBy { (names[it] ?: it).lowercase() }
+    LaunchedEffect(keys.isEmpty()) { if (keys.isNotEmpty()) first.requestFocusAfterFrames() }
+    NuvioDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.calendar_coming_up_hidden),
+        subtitle = stringResource(R.string.calendar_coming_up_hidden_dialog_subtitle)
+    ) {
+        if (keys.isEmpty()) {
+            Text(
+                text = stringResource(R.string.calendar_hidden_none),
+                style = MaterialTheme.typography.bodyMedium,
+                color = NuvioTheme.colors.TextSecondary
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp),
+                verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)
+            ) {
+                itemsIndexed(keys, key = { _, key -> key }) { index, key ->
+                    PanelActionRow(
+                        label = names[key] ?: key,
+                        onClick = { onUnhide(key) },
+                        focusRequester = if (index == 0) first else null
+                    )
+                }
+            }
+            if (keys.size > 1) {
+                PanelActionRow(
+                    label = stringResource(R.string.calendar_coming_up_unhide_all),
+                    onClick = onUnhideAll
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -155,6 +227,12 @@ internal fun LayoutCalendarSection(viewModel: CalendarSettingsViewModel = hiltVi
         subtitle = stringResource(R.string.calendar_setting_lists_sub),
         checked = current.includePersonalLists,
         onToggle = { viewModel.setIncludePersonalLists(!current.includePersonalLists) }
+    )
+    SettingsToggleRow(
+        title = stringResource(R.string.calendar_setting_other_services),
+        subtitle = stringResource(R.string.calendar_setting_other_services_sub),
+        checked = current.followOtherServices,
+        onToggle = { viewModel.setFollowOtherServices(!current.followOtherServices) }
     )
     val hiddenCount = current.hiddenTitleKeys.size
     SettingsActionRow(

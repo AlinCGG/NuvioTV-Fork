@@ -27,6 +27,7 @@ data class CalendarSettings(
     val profileId: Int? = null,
     val menuVisible: Boolean = true,
     val includePersonalLists: Boolean = false,
+    val followOtherServices: Boolean = false,
     val windowDays: Int = CALENDAR_DEFAULT_WINDOW_DAYS,
     val zoneOverride: String? = null,
     val cornerMessage: Boolean = true,
@@ -34,12 +35,16 @@ data class CalendarSettings(
     val hiddenTitleKeys: Set<String> = emptySet(),
     val bellOn: Set<String> = emptySet(),
     /** Names of hidden titles, so they can be listed after the Calendar has dropped them. */
-    val hiddenTitleNames: Map<String, String> = emptyMap()
+    val hiddenTitleNames: Map<String, String> = emptyMap(),
+    /** Shows left out of the Home Coming up row only; the Calendar still follows them. */
+    val comingUpHiddenKeys: Set<String> = emptySet(),
+    val comingUpHiddenNames: Map<String, String> = emptyMap()
 )
 
 internal object CalendarSettingsKeys {
     val menuVisible = booleanPreferencesKey("calendar_menu_visible")
     val includePersonalLists = booleanPreferencesKey("calendar_include_personal_lists")
+    val followOtherServices = booleanPreferencesKey("calendar_follow_other_services")
     val windowDays = intPreferencesKey("calendar_window_days")
     val zoneOverride = stringPreferencesKey("calendar_zone_override")
     val cornerMessage = booleanPreferencesKey("calendar_corner_message")
@@ -47,6 +52,8 @@ internal object CalendarSettingsKeys {
     val hiddenTitleKeys = stringSetPreferencesKey("calendar_hidden_titles")
     val bellOn = stringSetPreferencesKey("calendar_bell_on")
     val hiddenTitleNames = stringSetPreferencesKey("calendar_hidden_names")
+    val comingUpHiddenKeys = stringSetPreferencesKey("calendar_coming_up_hidden")
+    val comingUpHiddenNames = stringSetPreferencesKey("calendar_coming_up_hidden_names")
 }
 
 private const val NAME_SEPARATOR = '\u001F'
@@ -70,6 +77,7 @@ fun normalizeCalendarZoneOverride(zone: String?): String? =
 internal fun Preferences.toCalendarSettings() = CalendarSettings(
     menuVisible = this[CalendarSettingsKeys.menuVisible] ?: true,
     includePersonalLists = this[CalendarSettingsKeys.includePersonalLists] ?: false,
+    followOtherServices = this[CalendarSettingsKeys.followOtherServices] ?: false,
     windowDays = normalizeCalendarWindowDays(this[CalendarSettingsKeys.windowDays]),
     zoneOverride = normalizeCalendarZoneOverride(this[CalendarSettingsKeys.zoneOverride]),
     cornerMessage = this[CalendarSettingsKeys.cornerMessage] ?: true,
@@ -77,7 +85,10 @@ internal fun Preferences.toCalendarSettings() = CalendarSettings(
     hiddenTitleKeys = this[CalendarSettingsKeys.hiddenTitleKeys].orEmpty(),
     bellOn = this[CalendarSettingsKeys.bellOn].orEmpty(),
     hiddenTitleNames = decodeCalendarHiddenNames(this[CalendarSettingsKeys.hiddenTitleNames])
-        .filterKeys { it in this[CalendarSettingsKeys.hiddenTitleKeys].orEmpty() }
+        .filterKeys { it in this[CalendarSettingsKeys.hiddenTitleKeys].orEmpty() },
+    comingUpHiddenKeys = this[CalendarSettingsKeys.comingUpHiddenKeys].orEmpty(),
+    comingUpHiddenNames = decodeCalendarHiddenNames(this[CalendarSettingsKeys.comingUpHiddenNames])
+        .filterKeys { it in this[CalendarSettingsKeys.comingUpHiddenKeys].orEmpty() }
 )
 
 /** Turning a title off also removes keys that name the same title by another of its ids. */
@@ -89,6 +100,20 @@ internal fun Set<String>.withTitleKey(titleKey: String, present: Boolean): Set<S
 
 internal fun MutablePreferences.toggleInSet(key: Preferences.Key<Set<String>>, value: String, present: Boolean) {
     this[key] = this[key].orEmpty().withTitleKey(value, present)
+}
+
+private fun MutablePreferences.toggleNamed(
+    keys: Preferences.Key<Set<String>>,
+    names: Preferences.Key<Set<String>>,
+    titleKey: String,
+    present: Boolean,
+    name: String?
+) {
+    toggleInSet(keys, titleKey, present)
+    val current = this[keys].orEmpty()
+    val kept = decodeCalendarHiddenNames(this[names]).filterKeys { it in current }
+        .let { if (present && !name.isNullOrBlank()) it + (titleKey to name.trim()) else it }
+    this[names] = encodeCalendarHiddenNames(kept)
 }
 
 @Singleton
@@ -114,6 +139,9 @@ class CalendarSettingsDataStore @Inject constructor(
     suspend fun setIncludePersonalLists(include: Boolean) =
         store().edit { it[CalendarSettingsKeys.includePersonalLists] = include }
 
+    suspend fun setFollowOtherServices(follow: Boolean) =
+        store().edit { it[CalendarSettingsKeys.followOtherServices] = follow }
+
     suspend fun setWindowDays(days: Int) =
         store().edit { it[CalendarSettingsKeys.windowDays] = normalizeCalendarWindowDays(days) }
 
@@ -127,12 +155,17 @@ class CalendarSettingsDataStore @Inject constructor(
 
     suspend fun setComingUpRow(enabled: Boolean) = store().edit { it[CalendarSettingsKeys.comingUpRow] = enabled }
 
-    suspend fun setTitleHidden(titleKey: String, hidden: Boolean, name: String? = null) = store().edit { preferences ->
-        preferences.toggleInSet(CalendarSettingsKeys.hiddenTitleKeys, titleKey, hidden)
-        val keys = preferences[CalendarSettingsKeys.hiddenTitleKeys].orEmpty()
-        val names = decodeCalendarHiddenNames(preferences[CalendarSettingsKeys.hiddenTitleNames]).filterKeys { it in keys }
-            .let { current -> if (hidden && !name.isNullOrBlank()) current + (titleKey to name.trim()) else current }
-        preferences[CalendarSettingsKeys.hiddenTitleNames] = encodeCalendarHiddenNames(names)
+    suspend fun setTitleHidden(titleKey: String, hidden: Boolean, name: String? = null) = store().edit {
+        it.toggleNamed(CalendarSettingsKeys.hiddenTitleKeys, CalendarSettingsKeys.hiddenTitleNames, titleKey, hidden, name)
+    }
+
+    suspend fun setHiddenFromComingUp(titleKey: String, hidden: Boolean, name: String? = null) = store().edit {
+        it.toggleNamed(CalendarSettingsKeys.comingUpHiddenKeys, CalendarSettingsKeys.comingUpHiddenNames, titleKey, hidden, name)
+    }
+
+    suspend fun unhideAllFromComingUp() = store().edit {
+        it.remove(CalendarSettingsKeys.comingUpHiddenKeys)
+        it.remove(CalendarSettingsKeys.comingUpHiddenNames)
     }
 
     suspend fun setBell(titleKey: String, on: Boolean) =

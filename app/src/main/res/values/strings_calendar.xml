@@ -93,6 +93,8 @@
     <string name="calendar_setting_corner_sub">A short message in the corner when a show with the bell on has a new episode out</string>
     <string name="calendar_setting_lists">Include my own lists</string>
     <string name="calendar_setting_lists_sub">Also follows titles in your own Trakt and MDBList lists. Long lists make the Calendar busy.</string>
+    <string name="calendar_setting_other_services">Also follow my other services</string>
+    <string name="calendar_setting_other_services_sub">Follows Trakt, Simkl, MDBList and your Nuvio library too, not just your library source.</string>
     <string name="calendar_setting_hidden">Hidden shows</string>
     <string name="calendar_setting_hidden_sub">Titles you hid from the Calendar. Select one to show it again.</string>
     <plurals name="calendar_setting_hidden_value">
@@ -110,6 +112,11 @@
     <string name="calendar_coming_up_new">New</string>
     <string name="calendar_coming_up_today_at">Today %1$s</string>
     <string name="calendar_coming_up_tonight_at">Tonight %1$s</string>
+    <string name="calendar_coming_up_hide">Hide from Coming up</string>
+    <string name="calendar_coming_up_hidden">Hidden from Coming up</string>
+    <string name="calendar_coming_up_hidden_sub">Shows you hid from the Coming up row. They stay in the Calendar and your Library.</string>
+    <string name="calendar_coming_up_hidden_dialog_subtitle">Select a show to bring it back to Coming up</string>
+    <string name="calendar_coming_up_unhide_all">Unhide all</string>
 
     <string name="calendar_reminder_title_one">New episode</string>
     <string name="calendar_reminder_title_one_film">New film</string>

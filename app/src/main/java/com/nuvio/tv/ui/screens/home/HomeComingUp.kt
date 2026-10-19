@@ -97,7 +97,8 @@ fun calendarComingUpCard(
     item: CalendarComingUpItem,
     text: CalendarComingUpText,
     formats: CalendarFormats,
-    art: (type: String, ids: List<String>) -> Pair<String?, String?> = { _, _ -> null to null }
+    art: (type: String, ids: List<String>) -> Pair<String?, String?> = { _, _ -> null to null },
+    upcomingOnly: Boolean = false
 ): ContinueWatchingItem.NextUp? {
     val title = item.title
     val ids = calendarContentIds(title)
@@ -129,10 +130,17 @@ fun calendarComingUpCard(
             lastWatched = 0L,
             sortTimestamp = entry.sortInstant()?.toEpochMilli() ?: 0L,
             releaseTimestamp = entry.airInstantMs,
-            badgeLabel = calendarComingUpLabel(item, text, formats)
+            badgeLabel = calendarComingUpLabel(item, text, formats),
+            upcomingOnly = upcomingOnly,
+            comingUpKey = title.key
         )
     )
 }
+
+/** Leaves out the titles hidden from Coming up; the Calendar keeps its own list. */
+fun calendarTitlesShownInComingUp(titles: List<CalendarTitleRecord>, hiddenKeys: Set<String>): List<CalendarTitleRecord> =
+    if (hiddenKeys.isEmpty()) titles
+    else titles.filterNot { title -> title.key in hiddenKeys || hiddenKeys.any { calendarKeyMatches(it, title.type, title.ids) } }
 
 /** Films and Coming up episodes without numbers show no "S1 E1". */
 val NextUpInfo.showsEpisodeCode: Boolean
@@ -275,11 +283,14 @@ class CalendarComingUpSource @Inject constructor(
                 val minutes = active.distinctUntilChanged().flatMapLatest { if (it) minutes() else emptyFlow() }
                 val upcomingCards = upcoming.distinctUntilChanged { old, new -> upcomingCardSources(old) == upcomingCardSources(new) }
                 val withUpcoming = combine(shownKeys, upcomingCards) { shown, items -> shown to items }
-                combine(calendar.state, zoneProvider.zones, withUpcoming, minutes) { state, zone, (shown, upcomingItems), now ->
+                val hiddenHere = settingsStore.settings.map { it?.comingUpHiddenKeys.orEmpty() }.distinctUntilChanged()
+                combine(calendar.state, zoneProvider.zones, withUpcoming, minutes, hiddenHere) { state, zone, (shown, upcomingItems), now, comingUpHidden ->
                     val ready = state.loaded && state.watched != null
                     if (!ready && upcomingItems.isEmpty()) return@combine emptyList()
                     val hidden = settingsStore.settings.value?.hiddenTitleKeys.orEmpty()
-                    val titles = calendarTitlesWithUpcoming(if (ready) state.titles else emptyList(), upcomingItems, zone, hidden)
+                    val calendarTitles = if (ready) state.titles else emptyList()
+                    val calendarKeys = calendarTitles.mapTo(HashSet()) { it.key }
+                    val titles = calendarTitlesShownInComingUp(calendarTitlesWithUpcoming(calendarTitles, upcomingItems, zone, hidden), comingUpHidden)
                     val localContext = localizedContext()
                     val locale = localContext.resources.configuration.locales[0] ?: java.util.Locale.getDefault()
                     val formats = CalendarFormats.forDevice(localContext, locale)
@@ -287,7 +298,7 @@ class CalendarComingUpSource @Inject constructor(
                     buildCalendarComingUp(titles, state.watched, now, zone, { title, entry ->
                         calendarEntryInKeys(shown, title, entry)
                     }, CALENDAR_COMING_UP_MAX + upcomingItems.size)
-                        .mapNotNull { calendarComingUpCard(it, text, formats, ::cachedArt) }
+                        .mapNotNull { calendarComingUpCard(it, text, formats, ::cachedArt, upcomingOnly = it.title.key !in calendarKeys) }
                         .distinctBy { Triple(it.info.contentId, it.info.season, it.info.episode) }
                 }.onStart { if (calendar.state.value.watched == null) calendar.reloadWatched() }
             }
@@ -295,6 +306,12 @@ class CalendarComingUpSource @Inject constructor(
             .flowOn(Dispatchers.Default)
 
     val rowOn: Flow<Boolean> = settingsStore.settings.map { it?.comingUpRow == true }.distinctUntilChanged()
+
+    suspend fun hide(card: ContinueWatchingItem) {
+        val info = (card as? ContinueWatchingItem.NextUp)?.info ?: return
+        val key = info.comingUpKey ?: return
+        settingsStore.setHiddenFromComingUp(key, hidden = true, name = info.name)
+    }
 
     /** Something was watched: a "New" card for it should go. */
     suspend fun reloadWatched() {
@@ -348,6 +365,15 @@ internal fun HomeViewModel.observeComingUpRow() {
                 _uiState.update { state -> if (state.comingUpItems == items) state else state.copy(comingUpItems = items) }
             }
     }
+}
+
+internal fun HomeViewModel.hideFromComingUp(card: ContinueWatchingItem) {
+    val source = calendarComingUp ?: return
+    val key = (card as? ContinueWatchingItem.NextUp)?.info?.comingUpKey ?: return
+    _uiState.update { state ->
+        state.copy(comingUpItems = state.comingUpItems.filterNot { (it as? ContinueWatchingItem.NextUp)?.info?.comingUpKey == key })
+    }
+    viewModelScope.launch { source.hide(card) }
 }
 
 private const val COMING_UP_WAIT_MS = 10_000L

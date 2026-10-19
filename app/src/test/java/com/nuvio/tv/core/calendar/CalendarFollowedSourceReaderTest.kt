@@ -90,7 +90,7 @@ class CalendarFollowedSourceReaderTest {
             mockk<MdbListSyncRepository>(), traktSettings, enrichment, tracking, mockk<MetaRepository>(relaxed = true)
         )
 
-        val snapshot = reader.read(1)
+        val snapshot = reader.read(1, followOtherServices = true)
         assertFalse(snapshot.traktWatchedLoaded)
         assertFalse(snapshot.complete)
         assertEquals(

@@ -7,6 +7,7 @@ import com.nuvio.tv.core.player.ScreensaverController
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.tracking.TrackingProviderId
 import com.nuvio.tv.core.tracking.TrackingProviderRegistry
+import com.nuvio.tv.data.repository.MetaCaller
 import com.nuvio.tv.domain.repository.MetaRepository
 import java.time.Clock
 import java.time.Duration
@@ -104,7 +105,8 @@ class DefaultCalendarRefreshInputs @Inject constructor(
     override val appVisible: StateFlow<Boolean> = appVisibility.visible
     override val settings = settingsStore.settings
     override suspend fun settings(profileId: Int) = settingsStore.current(profileId)
-    override suspend fun followed(profileId: Int) = sourceReader.read(profileId)
+    override suspend fun followed(profileId: Int) =
+        sourceReader.read(profileId, settingsStore.current(profileId).followOtherServices)
     override fun traktSignedIn() = trackingProviders.isAuthenticated(TrackingProviderId.TRAKT)
     override suspend fun traktCalendar(today: LocalDate) = traktCalendarClient.myShows(today)
     override suspend fun refreshConcurrency() = deviceTier.refreshConcurrency()
@@ -114,7 +116,9 @@ class DefaultCalendarRefreshInputs @Inject constructor(
         for (id in ids) {
             val result = try {
                 withTimeoutOrNull(ART_FETCH_MS) {
-                    metaRepository.getMetaFromAllAddons(type, id).first { it !is NetworkResult.Loading }
+                    withContext(MetaCaller("calendar-art")) {
+                        metaRepository.getMetaFromAllAddons(type, id).first { it !is NetworkResult.Loading }
+                    }
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -308,7 +312,7 @@ class CalendarRefresher internal constructor(
                 null
             }
             val traktCandidates = when {
-                !traktSignedIn || !sources.traktWatchedLoaded -> emptyList()
+                !traktSignedIn || !sources.traktFollowed || !sources.traktWatchedLoaded -> emptyList()
                 traktItems != null -> traktCalendarCandidates(traktItems)
                 else -> snapshot.titles.filter { CalendarOrigin.TRAKT_CALENDAR in it.origins }.map {
                     CalendarTitleCandidate(it.ids, it.type, CalendarOrigin.TRAKT_CALENDAR, name = it.name)

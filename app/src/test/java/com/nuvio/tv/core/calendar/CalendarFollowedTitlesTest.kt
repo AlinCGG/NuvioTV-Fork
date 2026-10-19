@@ -256,4 +256,20 @@ class CalendarFollowedTitlesTest {
         assertTrue(hidden.titles.isEmpty())
         assertEquals(CalendarLeftOutReason.HIDDEN, hidden.leftOut.single().reason)
     }
+
+    @Test fun startedShowsWithNoDateCountAsIdleUnlessSavedOrBelled() {
+        val result = followCalendarTitles(
+            listOf(
+                show(CalendarOrigin.SIMKL_COMPLETED, CalendarIds(imdb = "tt1"), name = "Imported"),
+                show(CalendarOrigin.MDBLIST_WATCHED, CalendarIds(imdb = "tt2")),
+                show(CalendarOrigin.MDBLIST_WATCHLIST, CalendarIds(imdb = "tt2")),
+                show(CalendarOrigin.WATCHED, CalendarIds(imdb = "tt3")),
+                show(CalendarOrigin.TRAKT_WATCHLIST, CalendarIds(imdb = "tt4"))
+            ),
+            CalendarFollowRules(bellOn = setOf("series:imdb:tt3")),
+            now
+        )
+        assertEquals(setOf("series:imdb:tt2", "series:imdb:tt3", "series:imdb:tt4"), result.titles.map { it.key }.toSet())
+        assertEquals(CalendarLeftOut("series:imdb:tt1", "Imported", CalendarLeftOutReason.IDLE, null), result.leftOut.single())
+    }
 }

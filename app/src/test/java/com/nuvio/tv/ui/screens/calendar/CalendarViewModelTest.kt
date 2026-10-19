@@ -53,7 +53,10 @@ class CalendarViewModelTest {
         override suspend fun setZoneOverride(zone: String?) = Unit
         override suspend fun setCornerMessage(enabled: Boolean) = Unit
         override suspend fun setIncludePersonalLists(include: Boolean) = Unit
+        override suspend fun setFollowOtherServices(follow: Boolean) = Unit
         override suspend fun setComingUpRow(enabled: Boolean) = Unit
+        override suspend fun setHiddenFromComingUp(titleKey: String, hidden: Boolean) = Unit
+        override suspend fun unhideAllFromComingUp() = Unit
         override val openAtJustAired = MutableStateFlow(false)
         override fun consumeOpenAtJustAired() { openAtJustAired.value = false }
         var cachedSynopsis: String? = "story"

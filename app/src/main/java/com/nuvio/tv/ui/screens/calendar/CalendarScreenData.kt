@@ -51,7 +51,10 @@ interface CalendarScreenData {
     suspend fun setZoneOverride(zone: String?)
     suspend fun setCornerMessage(enabled: Boolean)
     suspend fun setIncludePersonalLists(include: Boolean)
+    suspend fun setFollowOtherServices(follow: Boolean)
     suspend fun setComingUpRow(enabled: Boolean)
+    suspend fun setHiddenFromComingUp(titleKey: String, hidden: Boolean)
+    suspend fun unhideAllFromComingUp()
     /** From what the app already holds; with [fetch] the title's details are asked for once when they are missing. */
     suspend fun details(row: CalendarRow, fetch: Boolean = false): CalendarRowDetails?
 
@@ -100,10 +103,20 @@ class DefaultCalendarScreenData @Inject constructor(
     override suspend fun setComingUpRow(enabled: Boolean) {
         settingsStore.setComingUpRow(enabled)
     }
+    override suspend fun setHiddenFromComingUp(titleKey: String, hidden: Boolean) {
+        settingsStore.setHiddenFromComingUp(titleKey, hidden)
+    }
+    override suspend fun unhideAllFromComingUp() {
+        settingsStore.unhideAllFromComingUp()
+    }
     override val openAtJustAired: StateFlow<Boolean> get() = reminders.openAtJustAired
     override fun consumeOpenAtJustAired() = reminders.consumeCalendarRequest()
     override suspend fun setIncludePersonalLists(include: Boolean) {
         settingsStore.setIncludePersonalLists(include)
+        refresher.requestRefresh(CalendarRefreshReason.SETTINGS_CHANGED)
+    }
+    override suspend fun setFollowOtherServices(follow: Boolean) {
+        settingsStore.setFollowOtherServices(follow)
         refresher.requestRefresh(CalendarRefreshReason.SETTINGS_CHANGED)
     }
 

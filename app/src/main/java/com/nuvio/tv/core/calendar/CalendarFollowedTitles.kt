@@ -59,7 +59,8 @@ data class CalendarFollowResult(
 
 /**
  * Hidden titles are always left out. Unless the bell is on, so are dropped titles, titles removed from Continue
- * Watching, started shows idle for [CalendarFollowRules.staleAfter] and films that were only watched, not saved.
+ * Watching, started shows idle for [CalendarFollowRules.staleAfter] (or with no date and not saved anywhere) and films
+ * that were only watched, not saved.
  */
 fun followCalendarTitles(
     candidates: List<CalendarTitleCandidate>,
@@ -91,7 +92,8 @@ fun followCalendarTitles(
             CalendarOrigin.DROPPED in origins -> CalendarLeftOutReason.DROPPED
             type == CalendarTitleType.SERIES && ids.aliases().any { it in removedAliases } ->
                 CalendarLeftOutReason.REMOVED_FROM_CONTINUE_WATCHING
-            origins.any { it.started } && lastActivity != null && lastActivity.isBefore(staleBefore) -> CalendarLeftOutReason.IDLE
+            origins.any { it.started } && (lastActivity?.isBefore(staleBefore) ?: origins.none { it.savesFilms }) ->
+                CalendarLeftOutReason.IDLE
             type == CalendarTitleType.MOVIE && origins.none { it.savesFilms } -> CalendarLeftOutReason.FILM_NOT_SAVED
             else -> null
         }
