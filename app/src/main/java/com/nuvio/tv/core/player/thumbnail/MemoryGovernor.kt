@@ -78,6 +78,11 @@ internal object MemoryGovernor {
     private const val FUNDED_FLOOR_DEFAULT_MB = 150L
     /** Funded decodes still stop just above lmkd's swap-low line (about 40 MB on the Fire TV Stick). */
     private const val FUNDED_SWAP_FLOOR_MB = 48L
+    /**
+     * On a 3 GB or bigger box the swap floors only count once MemAvailable is within this much of the decode floor: a
+     * Shield with full swap still had 583-794 MB available, and lmkd does not kill on swap alone while that much is free.
+     */
+    private const val STRONG_SWAP_ROOM_MB = 200L
     /** 2.5 GiB: boxes sold as 3 GB report about 2.7-2.9 GB, 2 GB boxes stay below. */
     private const val STRONG_BOX_TOTAL_BYTES = 2_560L * 1024 * 1024
     /** The smallest Java heap limit (dalvik.vm.heapsize) the strong 4K path has run on. */
@@ -216,18 +221,24 @@ internal object MemoryGovernor {
         am?.getMemoryInfo(info)
         val mem = readMeminfo()
         return pressureReason(am != null && info.lowMemory, mem?.availableMb ?: -1L, mem?.swapTotalMb ?: 0L,
-            mem?.swapFreeMb ?: 0L, if (lowRam) FLOOR_LOW_RAM_MB else FLOOR_DEFAULT_MB)
+            mem?.swapFreeMb ?: 0L, if (lowRam) FLOOR_LOW_RAM_MB else FLOOR_DEFAULT_MB, strongHardware)
     }
 
     internal fun pressureReason(
         lowMemory: Boolean, availMb: Long, swapTotalMb: Long, swapFreeMb: Long, floorMb: Long,
+        strongHardware: Boolean = false,
     ): String? =
         when {
             lowMemory -> "system low on memory"
             availMb in 0 until floorMb -> "MemAvailable $availMb MB < $floorMb"
-            swapTotalMb > 0 && swapFreeMb < SWAP_FLOOR_MB -> "SwapFree $swapFreeMb MB < $SWAP_FLOOR_MB"
+            swapTotalMb > 0 && swapFreeMb < SWAP_FLOOR_MB && !roomBesideSwap(availMb, floorMb, strongHardware) ->
+                "SwapFree $swapFreeMb MB < $SWAP_FLOOR_MB"
             else -> null
         }
+
+    /** A strong box with MemAvailable well above [floorMb] (after the decode's charge) is not held back by swap. */
+    internal fun roomBesideSwap(availAfterMb: Long, floorMb: Long, strongHardware: Boolean): Boolean =
+        strongHardware && availAfterMb >= floorMb + STRONG_SWAP_ROOM_MB
 
     private const val PRELOAD_STRONG_BYTES = 32L * 1024 * 1024
     private const val PRELOAD_SMALL_BYTES = 6L * 1024 * 1024
@@ -279,7 +290,7 @@ internal object MemoryGovernor {
             }
         }
         val mem = readMeminfo() ?: return GovernorVerdict(true, "meminfo unavailable")
-        return decodeVerdict(mem, if (decoderWarm) 0L else tier.rssMb.toLong(), funded, lowRam)
+        return decodeVerdict(mem, if (decoderWarm) 0L else tier.rssMb.toLong(), funded, lowRam, strongHardware)
     }
 
     /**
@@ -297,21 +308,29 @@ internal object MemoryGovernor {
         (reserveFunded || naturalFunded || (screenHolds && tier == DecodeTier.SW_UP_TO_1080P && !lowRam))
 
     /** Swap is only checked where the box has some. */
-    internal fun decodeVerdict(mem: Meminfo, chargeMb: Long, funded: Boolean, lowRam: Boolean): GovernorVerdict {
-        val floor = when {
-            funded -> if (lowRam) FUNDED_FLOOR_LOW_RAM_MB else FUNDED_FLOOR_DEFAULT_MB
-            else -> if (lowRam) FLOOR_LOW_RAM_MB else FLOOR_DEFAULT_MB
-        }
+    internal fun decodeVerdict(
+        mem: Meminfo, chargeMb: Long, funded: Boolean, lowRam: Boolean, strongHardware: Boolean = false,
+    ): GovernorVerdict {
+        val floor = decodeFloorMb(funded, lowRam)
         val availAfter = mem.availableMb - chargeMb
         if (availAfter < floor) return GovernorVerdict(false, "MemAvailable ${mem.availableMb} MB - $chargeMb < floor $floor")
-        swapVerdict(mem, funded)?.let { return it }
+        swapVerdict(mem, funded, lowRam, strongHardware, chargeMb)?.let { return it }
         return GovernorVerdict(true, "ok avail=${mem.availableMb} swapFree=${mem.swapFreeMb}${if (funded) " funded" else ""}")
     }
 
+    private fun decodeFloorMb(funded: Boolean, lowRam: Boolean): Long = when {
+        funded -> if (lowRam) FUNDED_FLOOR_LOW_RAM_MB else FUNDED_FLOOR_DEFAULT_MB
+        else -> if (lowRam) FLOOR_LOW_RAM_MB else FLOOR_DEFAULT_MB
+    }
+
     /** The swap part of [decodeVerdict] alone: a refusal, or null. */
-    internal fun swapVerdict(mem: Meminfo, funded: Boolean): GovernorVerdict? {
+    internal fun swapVerdict(
+        mem: Meminfo, funded: Boolean, lowRam: Boolean = true, strongHardware: Boolean = false, chargeMb: Long = 0L,
+    ): GovernorVerdict? {
         val swapFloor = if (funded) FUNDED_SWAP_FLOOR_MB else SWAP_FLOOR_MB
-        if (mem.swapTotalMb > 0 && mem.swapFreeMb < swapFloor) {
+        if (mem.swapTotalMb > 0 && mem.swapFreeMb < swapFloor &&
+            !roomBesideSwap(mem.availableMb - chargeMb, decodeFloorMb(funded, lowRam), strongHardware)
+        ) {
             return GovernorVerdict(false, "SwapFree ${mem.swapFreeMb} MB < $swapFloor", mem.swapFreeMb)
         }
         return null
@@ -320,7 +339,7 @@ internal object MemoryGovernor {
     /** SwapFree read again just before a decode starts, after its keyframe was fetched. */
     fun swapAllows(funded: Boolean): GovernorVerdict {
         val mem = readMeminfo() ?: return GovernorVerdict(true, "meminfo unavailable")
-        return swapVerdict(mem, funded) ?: GovernorVerdict(true, "ok swapFree=${mem.swapFreeMb}")
+        return swapVerdict(mem, funded, lowRam, strongHardware) ?: GovernorVerdict(true, "ok swapFree=${mem.swapFreeMb}")
     }
 
     /** Below this SwapFree a smaller box closes its decoders rather than trimming them. */

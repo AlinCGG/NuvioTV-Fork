@@ -60,6 +60,44 @@ class ThumbSwapHoldTest {
         assertTrue(MemoryGovernor.decodeVerdict(mem(availMb = 1_500, swapFreeMb = 900), 80, false, lowRam = false).allowed)
     }
 
+    private fun shield(availMb: Long, swapFreeMb: Long = 0, funded: Boolean = false, chargeMb: Long = 35) =
+        MemoryGovernor.decodeVerdict(mem(availMb = availMb, swapFreeMb = swapFreeMb), chargeMb, funded, lowRam = false,
+            strongHardware = true)
+
+    @Test
+    fun aThreeGbBoxWithFullSwapButPlentyAvailableKeepsDecoding() {
+        assertTrue("Shield log: MemAvailable 583 MB, SwapFree 0", shield(availMb = 583).allowed)
+        assertTrue(shield(availMb = 794, funded = true).allowed)
+        assertTrue("charge included: 535 - 35 = 500", shield(availMb = 535).allowed)
+        val tight = shield(availMb = 534)
+        assertFalse(tight.allowed)
+        assertTrue("near the floor swap counts again", tight.swapLow)
+        assertTrue(shield(availMb = 385, funded = true).allowed)
+        assertTrue(shield(availMb = 384, funded = true).swapLow)
+    }
+
+    @Test
+    fun smallBoxesKeepTheSwapFloorsWhateverMemAvailableSays() {
+        val fire = MemoryGovernor.decodeVerdict(mem(availMb = 900, swapFreeMb = 0), 35, false, lowRam = true,
+            strongHardware = false)
+        assertTrue(fire.swapLow)
+        val twoGbNotLowRam = MemoryGovernor.decodeVerdict(mem(availMb = 900, swapFreeMb = 0), 35, true, lowRam = false,
+            strongHardware = false)
+        assertTrue(twoGbNotLowRam.swapLow)
+        assertNotNull(MemoryGovernor.swapVerdict(mem(availMb = 900, swapFreeMb = 0), funded = true))
+    }
+
+    @Test
+    fun theSwapCheckAfterTheFetchAndTheTitleStopFollowTheSameRoom() {
+        assertNull(MemoryGovernor.swapVerdict(mem(availMb = 600, swapFreeMb = 0), funded = false, lowRam = false,
+            strongHardware = true))
+        assertNotNull(MemoryGovernor.swapVerdict(mem(availMb = 499, swapFreeMb = 0), funded = false, lowRam = false,
+            strongHardware = true))
+        assertNull(MemoryGovernor.pressureReason(false, 583, 1_024, 0, 300, strongHardware = true))
+        assertTrue(MemoryGovernor.pressureReason(false, 450, 1_024, 0, 300, strongHardware = true)!!.startsWith("SwapFree"))
+        assertTrue(MemoryGovernor.pressureReason(false, 900, 1_024, 0, 200, strongHardware = false)!!.startsWith("SwapFree"))
+    }
+
     @Test
     fun aSwapRefusalClosesTheDecodersOnSmallBoxesOnly() {
         val swap = fireStick(swapFreeMb = 10, funded = true)
