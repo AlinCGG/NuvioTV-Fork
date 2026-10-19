@@ -3,6 +3,9 @@ package com.nuvio.tv.core.sync.androidtv
 import com.nuvio.tv.data.local.CachedInProgressItem
 import com.nuvio.tv.data.local.CachedNextUpItem
 import com.nuvio.tv.data.local.TraktSettingsDataStore
+import com.nuvio.tv.domain.model.Meta
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -180,5 +183,26 @@ class LauncherChannelItemsTest {
         assertFalse(launcherChannelsSupported(hasLeanback = true, isFireTv = true))
         assertFalse(launcherChannelsSupported(hasLeanback = false, isFireTv = false))
         assertFalse(launcherChannelsSupported(hasLeanback = false, isFireTv = true))
+    }
+
+    @Test
+    fun `channel synopsis uses the cached episode text before any meta`() {
+        val episode = inProgress("tt1", now, season = 1, episode = 3).copy(episodeDescription = "Episode text")
+        val movie = inProgress("tt2", now - day)
+        val upNext = nextUp("tt3", now - 2 * day)
+        val items = buildChannelItems(listOf(episode, movie), listOf(upNext), settings(), now)
+        val lookups = mutableListOf<String>()
+        val movieMeta = mockk<Meta> {
+            every { description } returns "Movie text"
+            every { videos } returns emptyList()
+        }
+
+        val text = channelDescriptions(items, listOf(episode, movie), listOf(upNext)) { _, id ->
+            lookups += id
+            if (id == "tt2") movieMeta else null
+        }
+
+        assertEquals(mapOf("tt1:1:3" to "Episode text", "tt2" to "Movie text"), text)
+        assertEquals(listOf("tt2", "tt3"), lookups)
     }
 }

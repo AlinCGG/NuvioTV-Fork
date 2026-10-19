@@ -44,6 +44,7 @@ class AndroidTvChannelManager @Inject constructor(
         val duration: Int?,
         val imageUri: String?,
         val logoUri: String?,
+        val description: String?,
         val sortOrder: Int,
         val season: Int?,
         val episode: Int?,
@@ -138,7 +139,10 @@ class AndroidTvChannelManager @Inject constructor(
      * Syncs [items] to the Continue Watching channel: upserts present items and
      * removes rows that are no longer in the list (completed or dismissed).
      */
-    suspend fun reconcile(items: List<WatchProgress>) = withContext(Dispatchers.IO) {
+    suspend fun reconcile(
+        items: List<WatchProgress>,
+        descriptions: Map<String, String> = emptyMap()
+    ) = withContext(Dispatchers.IO) {
         if (!isSupported()) return@withContext
         runCatching {
             // Nothing to show yet: no channel is created and no browsable prompt raised.
@@ -180,6 +184,7 @@ class AndroidTvChannelManager @Inject constructor(
                     duration = progress.duration.toInt(),
                     imageUri = imageUri,
                     logoUri = progress.logo,
+                    description = descriptions[progress.videoId],
                     sortOrder = index,
                     season = progress.season,
                     episode = progress.episode,
@@ -191,6 +196,7 @@ class AndroidTvChannelManager @Inject constructor(
                     oldFingerprint.title == newFingerprint.title &&
                     oldFingerprint.imageUri == newFingerprint.imageUri &&
                     oldFingerprint.logoUri == newFingerprint.logoUri &&
+                    oldFingerprint.description == newFingerprint.description &&
                     oldFingerprint.sortOrder == newFingerprint.sortOrder &&
                     oldFingerprint.season == newFingerprint.season &&
                     oldFingerprint.episode == newFingerprint.episode &&
@@ -201,7 +207,7 @@ class AndroidTvChannelManager @Inject constructor(
                     return@forEachIndexed
                 }
 
-                val values = buildProgramValues(progress, channelId, index, key)
+                val values = buildProgramValues(progress, channelId, index, key, newFingerprint.description)
                 if (!rowIds.isNullOrEmpty()) {
                     val primaryRowId = rowIds.first()
                     // UPDATE the existing program row in place, keeping its row ID stable.
@@ -278,7 +284,8 @@ class AndroidTvChannelManager @Inject constructor(
         progress: WatchProgress,
         channelId: Long,
         sortOrder: Int,
-        key: String
+        key: String,
+        description: String?
     ): ContentValues {
         val intentUri = Uri.parse(
             Intent(context, MainActivity::class.java).apply {
@@ -310,6 +317,7 @@ class AndroidTvChannelManager @Inject constructor(
             .setIntentUri(intentUri)
             .setInternalProviderId(key)
             .setWeight(Int.MAX_VALUE - sortOrder)
+            .setDescription(description)
 
         // Backdrop/poster fills the tile via posterArt; logo goes to the dedicated logo column
         // so the launcher renders it as a small badge overlay on focus.

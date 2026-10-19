@@ -9,6 +9,7 @@ import com.nuvio.tv.core.recommendations.TvRecommendationManager
 import com.nuvio.tv.data.local.ContinueWatchingEnrichmentCache
 import com.nuvio.tv.data.local.LayoutPreferenceDataStore
 import com.nuvio.tv.data.local.TraktSettingsDataStore
+import com.nuvio.tv.domain.repository.MetaRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +48,8 @@ class AndroidTvChannelSyncService @Inject constructor(
     private val cwEnrichmentCache: ContinueWatchingEnrichmentCache,
     private val layoutPreferenceDataStore: LayoutPreferenceDataStore,
     private val traktSettingsDataStore: TraktSettingsDataStore,
-    private val tvRecommendationManager: TvRecommendationManager
+    private val tvRecommendationManager: TvRecommendationManager,
+    private val metaRepository: MetaRepository
 ) {
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO +
@@ -158,17 +160,18 @@ class AndroidTvChannelSyncService @Inject constructor(
         )
         val channelItems = buildChannelItems(inProgressItems, nextUpItems, resolvedSettings)
             .withCustomPosterArt(posterPattern)
+        val descriptions = channelDescriptions(channelItems, inProgressItems, nextUpItems, metaRepository::getCachedMeta)
 
         Log.d(
             TAG,
             "Reconciling from cache: ${channelItems.size} items " +
                 "(${inProgressItems.size} in-progress, ${nextUpItems.size} next-up raw)"
         )
-        manager.reconcile(channelItems)
+        manager.reconcile(channelItems, descriptions)
 
         if (!withWatchNext) return
         runCatching {
-            tvRecommendationManager.updateWatchNext(channelItems)
+            tvRecommendationManager.updateWatchNext(channelItems, descriptions)
         }
     }
 }

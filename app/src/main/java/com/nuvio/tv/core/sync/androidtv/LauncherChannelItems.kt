@@ -1,8 +1,10 @@
 package com.nuvio.tv.core.sync.androidtv
 
+import com.nuvio.tv.core.recommendations.watchNextDescription
 import com.nuvio.tv.data.local.CachedInProgressItem
 import com.nuvio.tv.data.local.CachedNextUpItem
 import com.nuvio.tv.data.local.TraktSettingsDataStore
+import com.nuvio.tv.domain.model.Meta
 import com.nuvio.tv.domain.model.WatchProgress
 
 data class ChannelSettingsSnapshot(
@@ -120,4 +122,23 @@ internal fun CachedNextUpItem.toWatchProgress(useEpisodeThumbnails: Boolean): Wa
         duration = 0,
         lastWatched = sortTimestamp
     )
+}
+
+/** Synopsis per video id: the cached episode text first, then whatever meta is already in memory. */
+internal fun channelDescriptions(
+    items: List<WatchProgress>,
+    inProgress: List<CachedInProgressItem>,
+    nextUp: List<CachedNextUpItem>,
+    cachedMeta: (type: String, id: String) -> Meta?
+): Map<String, String> {
+    val episodeText = HashMap<String, String>()
+    nextUp.forEach { item -> item.episodeDescription?.takeIf { it.isNotBlank() }?.let { episodeText[item.videoId] = it } }
+    inProgress.forEach { item -> item.episodeDescription?.takeIf { it.isNotBlank() }?.let { episodeText[item.videoId] = it } }
+    return buildMap {
+        items.forEach { item ->
+            val known = episodeText[item.videoId]
+            val meta = if (known == null) cachedMeta(item.contentType, item.contentId) else null
+            watchNextDescription(item, meta, known)?.let { put(item.videoId, it) }
+        }
+    }
 }

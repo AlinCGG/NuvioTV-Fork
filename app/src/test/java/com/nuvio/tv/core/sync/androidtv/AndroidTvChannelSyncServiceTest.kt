@@ -9,6 +9,7 @@ import com.nuvio.tv.data.local.ContinueWatchingEnrichmentCache
 import com.nuvio.tv.data.local.LayoutPreferenceDataStore
 import com.nuvio.tv.data.local.TraktSettingsDataStore
 import com.nuvio.tv.domain.model.WatchProgress
+import com.nuvio.tv.domain.repository.MetaRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -31,6 +32,7 @@ class AndroidTvChannelSyncServiceTest {
     private val layout: LayoutPreferenceDataStore = mockk(relaxed = true)
     private val trakt: TraktSettingsDataStore = mockk(relaxed = true)
     private val recommendations: TvRecommendationManager = mockk(relaxed = true)
+    private val metaRepository: MetaRepository = mockk(relaxed = true)
 
     private lateinit var service: AndroidTvChannelSyncService
 
@@ -48,7 +50,7 @@ class AndroidTvChannelSyncServiceTest {
         coEvery { cache.getInProgressSnapshot() } returns listOf(inProgress("tt1", 2_000L), inProgress("tt2", 1_000L))
         coEvery { cache.getNextUpSnapshot() } returns listOf(nextUp("tt3", 1_500L))
         TvRecommendationManager.isPlaybackActive.value = false
-        service = AndroidTvChannelSyncService(context, manager, cache, layout, trakt, recommendations)
+        service = AndroidTvChannelSyncService(context, manager, cache, layout, trakt, recommendations, metaRepository)
     }
 
     @After
@@ -61,8 +63,8 @@ class AndroidTvChannelSyncServiceTest {
     fun `channel and Watch Next get the same list as the Home row`() = runTest {
         val channelItems = slot<List<WatchProgress>>()
         val watchNextItems = slot<List<WatchProgress>>()
-        coEvery { manager.reconcile(capture(channelItems)) } returns Unit
-        coEvery { recommendations.updateWatchNext(capture(watchNextItems)) } returns Unit
+        coEvery { manager.reconcile(capture(channelItems), any()) } returns Unit
+        coEvery { recommendations.updateWatchNext(capture(watchNextItems), any()) } returns Unit
 
         service.reconcileFromCache()
 
@@ -76,8 +78,8 @@ class AndroidTvChannelSyncServiceTest {
 
         service.reconcileFromCache()
 
-        coVerify(exactly = 0) { manager.reconcile(any()) }
-        coVerify(exactly = 0) { recommendations.updateWatchNext(any()) }
+        coVerify(exactly = 0) { manager.reconcile(any(), any()) }
+        coVerify(exactly = 0) { recommendations.updateWatchNext(any(), any()) }
         coVerify(exactly = 0) { cache.getInProgressSnapshot() }
     }
 
@@ -87,8 +89,8 @@ class AndroidTvChannelSyncServiceTest {
 
         service.reconcileFromCache()
 
-        coVerify(exactly = 0) { manager.reconcile(any()) }
-        coVerify(exactly = 0) { recommendations.updateWatchNext(any()) }
+        coVerify(exactly = 0) { manager.reconcile(any(), any()) }
+        coVerify(exactly = 0) { recommendations.updateWatchNext(any(), any()) }
         coVerify(exactly = 0) { cache.getInProgressSnapshot() }
     }
 
@@ -96,14 +98,14 @@ class AndroidTvChannelSyncServiceTest {
     fun `the catch-up after a pause updates the channel and leaves Watch Next to the player`() = runTest {
         service.reconcileFromCache(withWatchNext = false)
 
-        coVerify(exactly = 1) { manager.reconcile(any()) }
-        coVerify(exactly = 0) { recommendations.updateWatchNext(any()) }
+        coVerify(exactly = 1) { manager.reconcile(any(), any()) }
+        coVerify(exactly = 0) { recommendations.updateWatchNext(any(), any()) }
     }
 
     @Test
     fun `settings passed in are used as they are`() = runTest {
         val channelItems = slot<List<WatchProgress>>()
-        coEvery { manager.reconcile(capture(channelItems)) } returns Unit
+        coEvery { manager.reconcile(capture(channelItems), any()) } returns Unit
 
         service.reconcileFromCache(ChannelSettingsSnapshot(daysCap = 0, dismissedNextUp = setOf("tt3_s1e1"), useEpisodeThumbnails = false))
 
@@ -144,4 +146,19 @@ class AndroidTvChannelSyncServiceTest {
         seedSeason = 1,
         seedEpisode = 1
     )
+
+    @Test
+    fun `cached episode synopsis reaches the channel and Watch Next`() = runTest {
+        every { metaRepository.getCachedMeta(any(), any()) } returns null
+        coEvery { cache.getNextUpSnapshot() } returns listOf(nextUp("tt3", 1_500L).copy(episodeDescription = "Episode synopsis"))
+        val channelText = slot<Map<String, String>>()
+        val watchNextText = slot<Map<String, String>>()
+        coEvery { manager.reconcile(any(), capture(channelText)) } returns Unit
+        coEvery { recommendations.updateWatchNext(any(), capture(watchNextText)) } returns Unit
+
+        service.reconcileFromCache()
+
+        assertEquals(mapOf("tt3:1:2" to "Episode synopsis"), channelText.captured)
+        assertEquals(channelText.captured, watchNextText.captured)
+    }
 }

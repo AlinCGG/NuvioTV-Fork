@@ -244,4 +244,21 @@ class AndroidTvChannelManagerTest {
         duration = 5_400_000L,
         lastWatched = System.currentTimeMillis()
     )
+
+    @Test
+    fun `a new synopsis rewrites the channel program, an unchanged one does not`() = runTest {
+        setupLeanback()
+        setupChannelExists()
+        val item = fakeProgress("tt001", "movie")
+
+        stubProgramQuery(existingRows = mapOf("tt001" to 99L))
+        manager.reconcile(listOf(item), mapOf("tt001" to "First synopsis"))
+        stubProgramQuery(existingRows = mapOf("tt001" to 99L))
+        manager.reconcile(listOf(item), mapOf("tt001" to "First synopsis"))
+        verify(exactly = 1) { contentResolver.update(any(), any(), null, null) }
+
+        stubProgramQuery(existingRows = mapOf("tt001" to 99L))
+        manager.reconcile(listOf(item), mapOf("tt001" to "Second synopsis"))
+        verify(exactly = 2) { contentResolver.update(any(), any(), null, null) }
+    }
 }
