@@ -279,6 +279,10 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setSkipIntroEnabled(enabled)
     }
 
+    suspend fun setChaptersEnabled(enabled: Boolean) {
+        playerSettingsDataStore.setChaptersEnabled(enabled)
+    }
+
     suspend fun setParentalGuideEnabled(enabled: Boolean) {
         playerSettingsDataStore.setParentalGuideEnabled(enabled)
     }

@@ -4,7 +4,7 @@ import com.nuvio.tv.core.build.IssueReports
 
 /** Stable preference IDs, independent of enum names and UI/theme implementations. */
 enum class PlayerControlAction(val id: String) {
-    PLAY_PAUSE("play_pause"), RESTART("restart"), EPISODES("episodes"), NEXT_EPISODE("next_episode"),
+    PLAY_PAUSE("play_pause"), RESTART("restart"), EPISODES("episodes"), CHAPTERS("chapters"), NEXT_EPISODE("next_episode"),
     STATS("stats"), AUDIO("audio"), SUBTITLES("subtitles"), SOURCES("sources"), WATCH_PARTY("watch_party"),
     MORE("more"), SPEED("speed"), ASPECT("aspect"), EXTERNAL("external"), ENGINE("engine"), REPORT("report"),
     INFO("info");
@@ -94,7 +94,7 @@ class PlayerControlLayout private constructor(private val placements: List<Playe
         private val defaults = PlayerControlAction.entries.map { action ->
             PlayerControlPlacement(action,
                 if (action in setOf(PlayerControlAction.PLAY_PAUSE, PlayerControlAction.RESTART,
-                    PlayerControlAction.EPISODES, PlayerControlAction.NEXT_EPISODE)) PlayerControlGroup.LEFT else PlayerControlGroup.RIGHT,
+                    PlayerControlAction.EPISODES, PlayerControlAction.CHAPTERS, PlayerControlAction.NEXT_EPISODE)) PlayerControlGroup.LEFT else PlayerControlGroup.RIGHT,
                 visible = action != PlayerControlAction.INFO)
         }
 
@@ -106,16 +106,17 @@ class PlayerControlLayout private constructor(private val placements: List<Playe
         /** Editor's untouched template follows the actual legacy theme action set; extra actions remain editable ghosts. */
         fun original(v2: Boolean): PlayerControlLayout {
             val shown = setOf(PlayerControlAction.PLAY_PAUSE, PlayerControlAction.RESTART, PlayerControlAction.EPISODES,
-                PlayerControlAction.NEXT_EPISODE, PlayerControlAction.STATS, PlayerControlAction.AUDIO,
+                PlayerControlAction.CHAPTERS, PlayerControlAction.NEXT_EPISODE, PlayerControlAction.STATS, PlayerControlAction.AUDIO,
                 PlayerControlAction.SUBTITLES, PlayerControlAction.SOURCES, PlayerControlAction.WATCH_PARTY,
                 PlayerControlAction.MORE,
                 PlayerControlAction.SPEED, PlayerControlAction.ASPECT, PlayerControlAction.EXTERNAL,
                 PlayerControlAction.ENGINE, PlayerControlAction.REPORT)
+            val v2Utilities = listOf(PlayerControlAction.EPISODES, PlayerControlAction.CHAPTERS)
             val entries = defaults.map { entry -> entry.copy(
-                group = if (v2 && entry.action == PlayerControlAction.EPISODES) PlayerControlGroup.RIGHT else entry.group,
+                group = if (v2 && entry.action in v2Utilities) PlayerControlGroup.RIGHT else entry.group,
                 visible = entry.action in shown) }
-            val ordered = if (v2) entries.filter { it.action != PlayerControlAction.EPISODES }.toMutableList().apply {
-                add(indexOfFirst { it.action == PlayerControlAction.WATCH_PARTY }, entries.single { it.action == PlayerControlAction.EPISODES })
+            val ordered = if (v2) entries.filter { it.action !in v2Utilities }.toMutableList().apply {
+                addAll(indexOfFirst { it.action == PlayerControlAction.WATCH_PARTY }, entries.filter { it.action in v2Utilities })
             } else entries
             return normalized(ordered)
         }

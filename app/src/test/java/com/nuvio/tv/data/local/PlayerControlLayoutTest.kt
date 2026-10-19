@@ -38,7 +38,7 @@ class PlayerControlLayoutTest {
     @Test fun `move crosses hidden siblings but cannot reorder another group`() {
         val start = PlayerControlLayout.default().withVisibility(PlayerControlAction.RESTART, false)
         val changed = start.move(PlayerControlAction.EPISODES, -1)
-        assertEquals(listOf(play, PlayerControlAction.EPISODES, PlayerControlAction.RESTART, PlayerControlAction.NEXT_EPISODE), changed.entries.filter { it.group == left }.map { it.action })
+        assertEquals(listOf(play, PlayerControlAction.EPISODES, PlayerControlAction.RESTART, PlayerControlAction.CHAPTERS, PlayerControlAction.NEXT_EPISODE), changed.entries.filter { it.group == left }.map { it.action })
         assertEquals(start.entries.filter { it.group == right }, changed.entries.filter { it.group == right })
         assertFalse(changed.entries.single { it.action == PlayerControlAction.RESTART }.visible)
     }

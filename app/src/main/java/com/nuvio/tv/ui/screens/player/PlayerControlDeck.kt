@@ -160,7 +160,7 @@ internal fun PlayerControlChrome(v2: Boolean, modifier: Modifier = Modifier, rig
 @Composable
 private fun PlayerStyledControlButton(action: PlayerControlAction, style: PlayerControlButtonStyle, playing: Boolean, label: String, onClick: () -> Unit, modifier: Modifier) {
     val v2 = LocalV2Appearance.current != null
-    val transport = action in setOf(PlayerControlAction.PLAY_PAUSE, PlayerControlAction.RESTART, PlayerControlAction.NEXT_EPISODE) || (!v2 && action == PlayerControlAction.EPISODES)
+    val transport = action in setOf(PlayerControlAction.PLAY_PAUSE, PlayerControlAction.RESTART, PlayerControlAction.NEXT_EPISODE) || (!v2 && (action == PlayerControlAction.EPISODES || action == PlayerControlAction.CHAPTERS))
     val icon = playerControlIcon(action, playing)
     if (style == PlayerControlButtonStyle.LABELLED) {
         PillControlButton(icon, playerControlPainter(action, playing), label, onClick,

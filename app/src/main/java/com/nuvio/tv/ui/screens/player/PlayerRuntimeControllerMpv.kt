@@ -177,7 +177,9 @@ internal fun PlayerRuntimeController.initializeMpvPlayer(
                 audioTracks = emptyList(),
                 subtitleTracks = emptyList(),
                 selectedAudioTrackIndex = -1,
-                selectedSubtitleTrackIndex = -1
+                selectedSubtitleTrackIndex = -1,
+                chapters = emptyList(),
+                showChaptersPanel = false
             )
         }
         cancelPauseOverlay()
@@ -243,6 +245,7 @@ internal fun PlayerRuntimeController.pauseForLifecycle() {
     // Mark as user-paused so autoplay logic doesn't resume playback.
     userPausedManually = true
     shouldEnforceAutoplayOnFirstReady = false
+    finishSeekSettle(seek = false, reason = "background")
     logScrobbleDiagnostic("lifecycle_pause", "userPaused=$userPausedManually")
 
     if (isUsingMpvEngine()) {

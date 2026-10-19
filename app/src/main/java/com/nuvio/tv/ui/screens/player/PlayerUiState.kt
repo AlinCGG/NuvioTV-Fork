@@ -140,6 +140,8 @@ data class PlayerUiState(
     val installedSubtitleAddonOrder: List<String> = emptyList(),
     // Episodes/streams side panel (for series)
     val showEpisodesPanel: Boolean = false,
+    val showChaptersPanel: Boolean = false,
+    val chapters: List<PlayerChapter> = emptyList(),
     val isLoadingEpisodes: Boolean = false,
     val episodesError: String? = null,
     val episodesAll: List<Video> = emptyList(),
@@ -352,6 +354,11 @@ sealed class PlayerEvent {
     data object OnDismissMoreDialog : PlayerEvent()
     data object OnShowEpisodesPanel : PlayerEvent()
     data object OnDismissEpisodesPanel : PlayerEvent()
+    data object OnShowChaptersPanel : PlayerEvent()
+    data object OnDismissChaptersPanel : PlayerEvent()
+    data class OnSelectChapter(val startMs: Long) : PlayerEvent()
+    data object OnNextChapter : PlayerEvent()
+    data object OnPreviousChapter : PlayerEvent()
     data object OnBackFromEpisodeStreams : PlayerEvent()
     data class OnEpisodeSeasonSelected(val season: Int) : PlayerEvent()
     data class OnEpisodeSelected(val video: Video) : PlayerEvent()

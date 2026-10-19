@@ -18,6 +18,7 @@ internal fun playerControlAvailability(
     if (!state.isServerStream) add(PlayerControlAction.EXTERNAL)
     if (!timeline.isLive && timeline.duration > 0L) add(PlayerControlAction.RESTART)
     if (state.currentSeason != null && state.currentEpisode != null) add(PlayerControlAction.EPISODES)
+    if (state.chapters.isNotEmpty()) add(PlayerControlAction.CHAPTERS)
     if (state.nextEpisode?.hasAired == true && (state.postPlayMode as? PostPlayMode.AutoPlay)?.let {
         !it.searching && it.countdownSec == null
     } != false) add(PlayerControlAction.NEXT_EPISODE)

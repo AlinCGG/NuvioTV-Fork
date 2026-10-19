@@ -68,6 +68,7 @@ internal fun playerControlLabel(action: PlayerControlAction, playing: Boolean = 
     PlayerControlAction.PLAY_PAUSE -> if (playing) R.string.player_pill_pause else R.string.player_pill_play
     PlayerControlAction.RESTART -> R.string.player_pill_restart
     PlayerControlAction.EPISODES -> R.string.player_pill_episodes
+    PlayerControlAction.CHAPTERS -> R.string.player_chapters
     PlayerControlAction.NEXT_EPISODE -> R.string.player_pill_next_episode
     PlayerControlAction.STATS -> R.string.cd_playback_stats
     PlayerControlAction.AUDIO -> R.string.cd_audio_tracks
@@ -87,6 +88,7 @@ internal fun playerControlIcon(action: PlayerControlAction, playing: Boolean): I
     PlayerControlAction.PLAY_PAUSE -> if (playing) Icons.Default.Pause else Icons.Default.PlayArrow
     PlayerControlAction.RESTART -> Icons.Default.RestartAlt
     PlayerControlAction.EPISODES -> Icons.AutoMirrored.Filled.List
+    PlayerControlAction.CHAPTERS -> Icons.Default.Bookmarks
     PlayerControlAction.NEXT_EPISODE -> Icons.Default.SkipNext
     PlayerControlAction.STATS -> Icons.Default.Equalizer
     PlayerControlAction.AUDIO -> Icons.Default.Speaker
@@ -117,6 +119,7 @@ private fun actionCallback(action: PlayerControlAction, actions: V2PlayerActions
     PlayerControlAction.PLAY_PAUSE -> actions.playPause
     PlayerControlAction.RESTART -> actions.seekToStart
     PlayerControlAction.EPISODES -> actions.episodes
+    PlayerControlAction.CHAPTERS -> actions.chapters
     PlayerControlAction.NEXT_EPISODE -> actions.playNext
     PlayerControlAction.STATS -> actions.stats
     PlayerControlAction.AUDIO -> actions.audio
@@ -168,7 +171,7 @@ internal fun PlayerCustomControls(
         state.resizeMode == androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT) {
         (band - with(density) { rowHeight.toDp() } - bottomPadding).coerceAtLeast(8.dp)
     } else 8.dp
-    val panelVisible = state.showStreamInfoOverlay || state.showEpisodesPanel ||
+    val panelVisible = state.showStreamInfoOverlay || state.showEpisodesPanel || state.showChaptersPanel ||
         state.showSourcesPanel || state.showAudioOverlay || state.showSubtitleOverlay || state.showSubtitleStylePanel ||
         state.showSubtitleTimingDialog || state.showSubtitleDelayOverlay || state.showSpeedDialog ||
         state.showPartyPanel || state.postPlayMode is PostPlayMode.StillWatching
@@ -203,7 +206,7 @@ internal fun PlayerCustomControls(
         PlayerControlChrome(v2, Modifier.align(Alignment.BottomCenter).verticalScroll(rememberScrollState()),
             gap = gap,
             title = {
-            if (state.activeSkipInterval == null) {
+            if (state.activeSkipInterval == null) Column(Modifier.hideUnderSeekThumbnails(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val title = state.contentName ?: state.title
                 var failed by remember(state.logo) { mutableStateOf(false) }
                 if (!state.logo.isNullOrBlank() && !failed) AsyncImage(state.logo, title,
@@ -211,7 +214,7 @@ internal fun PlayerCustomControls(
                     alignment = Alignment.CenterStart, onError = { failed = true })
                 else Text(title, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleLarge)
-                PlayerSecondaryMetadata(state)
+                PlayerSecondaryMetadata(state, chapter = rememberCurrentChapter(viewModel, state.chapters))
             }
             }, timeline = {
             if (hasSeekTimeline) Box(Modifier.fillMaxWidth().onGloballyPositioned { coordinates ->

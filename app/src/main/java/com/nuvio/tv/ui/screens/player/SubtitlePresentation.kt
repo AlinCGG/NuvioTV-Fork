@@ -6,7 +6,6 @@ import android.text.Spanned
 import android.text.style.AbsoluteSizeSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.TypefaceSpan
-import android.text.style.StyleSpan
 import android.text.style.ForegroundColorSpan
 import androidx.media3.common.C
 import androidx.media3.common.Format
@@ -43,6 +42,10 @@ internal fun resizedSubtitleAnchor(position: Float, before: Float, after: Float,
     return position + (before - after) * (reference - fraction)
 }
 
+/** The user's font and size replace authored ones; italic, bold and underline stay. */
+internal fun isAuthoredFontSpan(span: Any): Boolean =
+    span is AbsoluteSizeSpan || span is RelativeSizeSpan || span is TypefaceSpan
+
 internal class SubtitlePresentation {
     // Work happens at cue changes, never on a video frame. Bound retained bitmap memory.
     private val originals = java.util.WeakHashMap<Cue, Cue>()
@@ -58,8 +61,7 @@ internal class SubtitlePresentation {
             val result = SpannableString(text)
             var changed = false
             for (span in result.getSpans(0, result.length, Any::class.java)) {
-                if (!preserveAss && (span is AbsoluteSizeSpan || span is RelativeSizeSpan ||
-                    span is TypefaceSpan || span is StyleSpan)) {
+                if (!preserveAss && isAuthoredFontSpan(span)) {
                     result.removeSpan(span)
                     changed = true
                 } else if (dim && span is ForegroundColorSpan) {

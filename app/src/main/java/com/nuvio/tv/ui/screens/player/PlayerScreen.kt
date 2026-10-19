@@ -81,6 +81,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.ClosedCaption
@@ -199,7 +200,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import androidx.compose.ui.graphics.graphicsLayer
 
 private fun PlayerUiState.returnFocusSeasonEpisode(completed: Boolean): Pair<Int?, Int?> {
     val next = nextEpisode?.takeIf {
@@ -383,6 +383,7 @@ fun PlayerScreen(
 
     val handleBackPress = handleBackPress@{
         if (externalHandoffInProgress) return@handleBackPress
+        if (viewModel.cancelSeekSettle()) return@handleBackPress
         // "Generate thumbnails before play": Back = start watching now.
         if (SeekThumbnails.prepareUi.value !is SeekThumbnails.PrepareUi.Hidden) {
             SeekThumbnails.startWatchingNow()
@@ -424,6 +425,8 @@ fun PlayerScreen(
             } else {
                 viewModel.onEvent(PlayerEvent.OnDismissSourcesPanel)
             }
+        } else if (uiState.showChaptersPanel) {
+            viewModel.onEvent(PlayerEvent.OnDismissChaptersPanel)
         } else if (uiState.showEpisodesPanel) {
             if (uiState.showEpisodeStreams) {
                 viewModel.onEvent(PlayerEvent.OnBackFromEpisodeStreams)
@@ -646,6 +649,7 @@ fun PlayerScreen(
     LaunchedEffect(
         uiState.showControls,
         uiState.showEpisodesPanel,
+        uiState.showChaptersPanel,
         uiState.showSourcesPanel,
         uiState.showSubtitleStylePanel,
         uiState.showSubtitleDelayOverlay,
@@ -662,13 +666,13 @@ fun PlayerScreen(
     ) {
         val pauseOnTimeline = PauseOnTimeline.focusesTimeline(uiState.pauseFocusRequest, seenPauseFocus, customHasTimeline)
         seenPauseFocus = uiState.pauseFocusRequest
-        if (!uiState.showControls) customFocus.controlsHidden(panelOpen = uiState.showEpisodesPanel ||
+        if (!uiState.showControls) customFocus.controlsHidden(panelOpen = uiState.showEpisodesPanel || uiState.showChaptersPanel ||
             uiState.showSourcesPanel || uiState.showAudioOverlay || uiState.showSubtitleOverlay ||
             uiState.showSubtitleStylePanel || uiState.showSubtitleDelayOverlay || uiState.showSubtitleTimingDialog ||
             uiState.showSpeedDialog || uiState.showStreamInfoOverlay || uiState.showPartyPanel)
         if (shouldConfirmNextEpisodeOnEnd || postPlayRecommendationState.isVisible) return@LaunchedEffect
         if (uiState.error != null) return@LaunchedEffect
-        if (uiState.showControls && !uiState.showEpisodesPanel && !uiState.showSourcesPanel &&
+        if (uiState.showControls && !uiState.showEpisodesPanel && !uiState.showChaptersPanel && !uiState.showSourcesPanel &&
             !uiState.showAudioOverlay && !uiState.showSubtitleOverlay &&
             !uiState.showSubtitleStylePanel && !uiState.showSubtitleDelayOverlay &&
             !uiState.showSubtitleTimingDialog &&
@@ -786,7 +790,7 @@ fun PlayerScreen(
         }
     }
     val remoteButtonsReady = uiState.error == null &&
-        !uiState.showEpisodesPanel && !uiState.showSourcesPanel &&
+        !uiState.showEpisodesPanel && !uiState.showChaptersPanel && !uiState.showSourcesPanel &&
         !uiState.showAudioOverlay && !uiState.showSubtitleOverlay &&
         !uiState.showSubtitleStylePanel && !uiState.showSpeedDialog &&
         !uiState.showSubtitleDelayOverlay && !uiState.showSubtitleTimingDialog &&
@@ -861,6 +865,8 @@ fun PlayerScreen(
                 true
             }
             RemoteButtonJob.EPISODES -> whenAvailable(PlayerControlAction.EPISODES, PlayerEvent.OnShowEpisodesPanel)
+            RemoteButtonJob.NEXT_CHAPTER -> whenAvailable(PlayerControlAction.CHAPTERS, PlayerEvent.OnNextChapter)
+            RemoteButtonJob.PREVIOUS_CHAPTER -> whenAvailable(PlayerControlAction.CHAPTERS, PlayerEvent.OnPreviousChapter)
             RemoteButtonJob.AUDIO -> whenAvailable(PlayerControlAction.AUDIO, PlayerEvent.OnShowAudioOverlay)
             RemoteButtonJob.SUBTITLES -> whenAvailable(PlayerControlAction.SUBTITLES, PlayerEvent.OnShowSubtitleOverlay)
             RemoteButtonJob.ASPECT -> whenAvailable(PlayerControlAction.ASPECT, PlayerEvent.OnToggleAspectRatio)
@@ -1117,7 +1123,7 @@ fun PlayerScreen(
                 if (uiState.showSubtitleDelayOverlay) {
                     viewModel.onEvent(PlayerEvent.OnHideSubtitleDelayOverlay)
                 } else if (
-                    !uiState.showEpisodesPanel &&
+                    !uiState.showEpisodesPanel && !uiState.showChaptersPanel &&
                     !uiState.showSourcesPanel &&
                     !uiState.showAudioOverlay &&
                     !uiState.showSubtitleOverlay &&
@@ -1241,7 +1247,7 @@ fun PlayerScreen(
                 }
 
                 // When a side panel or dialog is open, let it handle all keys
-                val panelOrDialogOpen = uiState.showEpisodesPanel || uiState.showSourcesPanel ||
+                val panelOrDialogOpen = uiState.showEpisodesPanel || uiState.showChaptersPanel || uiState.showSourcesPanel ||
                         uiState.showAudioOverlay || uiState.showSubtitleOverlay ||
                         uiState.showSubtitleStylePanel || uiState.showSpeedDialog ||
                         uiState.showSubtitleDelayOverlay || uiState.showSubtitleTimingDialog ||
@@ -1452,7 +1458,7 @@ fun PlayerScreen(
                 !uiState.showLoadingOverlay &&
                 !uiState.showPauseOverlay &&
                 !uiState.showStreamInfoOverlay &&
-                !uiState.showEpisodesPanel &&
+                !uiState.showEpisodesPanel && !uiState.showChaptersPanel &&
                 !uiState.showSourcesPanel &&
                 !uiState.showPartyPanel &&
                 !uiState.showAudioOverlay &&
@@ -1474,7 +1480,7 @@ fun PlayerScreen(
             !uiState.showPartyPanel &&
             !uiState.showSubtitleStylePanel &&
             !uiState.showSubtitleDelayOverlay &&
-            !uiState.showEpisodesPanel &&
+            !uiState.showEpisodesPanel && !uiState.showChaptersPanel &&
             !uiState.showSourcesPanel &&
             !uiState.showAudioOverlay &&
             !uiState.showSubtitleOverlay &&
@@ -1620,7 +1626,7 @@ fun PlayerScreen(
 
         // Keep recommendation trailers and the small video window outside the UI dim layer.
         // Controls remain above that window, preserving the existing overlay ordering.
-        Box(Modifier.fillMaxSize().zIndex(3f).graphicsLayer { alpha = if (dimHdr) .70f else 1f }) {
+        Box(Modifier.fillMaxSize().zIndex(3f).hdrOverlayDim(dimHdr)) {
             LoadingOverlay(
                 visible = uiState.showLoadingOverlay && uiState.error == null && !postPlayRecommendationState.isVisible,
                 backdropUrl = uiState.backdrop,
@@ -1813,7 +1819,7 @@ fun PlayerScreen(
             // Keep the selected HUD mode, but give utility sheets exclusive visual space.
             val v2UtilityVisible = isV2 && (
                 uiState.showAudioOverlay || uiState.showSubtitleOverlay || uiState.showSubtitleStylePanel ||
-                    uiState.showSourcesPanel || uiState.showEpisodesPanel || uiState.showSpeedDialog ||
+                    uiState.showSourcesPanel || uiState.showEpisodesPanel || uiState.showChaptersPanel || uiState.showSpeedDialog ||
                     uiState.showStreamInfoOverlay || uiState.showSubtitleDelayOverlay || uiState.showSubtitleTimingDialog
                 )
             PlaybackStatsOverlay(
@@ -1972,7 +1978,7 @@ fun PlayerScreen(
                 uiState.error == null &&
                 !uiState.showLoadingOverlay &&
                 !uiState.showPauseOverlay &&
-                !uiState.showEpisodesPanel &&
+                !uiState.showEpisodesPanel && !uiState.showChaptersPanel &&
                 !uiState.showSourcesPanel &&
                 !uiState.showAudioOverlay &&
                 !uiState.showSubtitleOverlay &&
@@ -2029,6 +2035,7 @@ fun PlayerScreen(
                     onSeekBackward = { viewModel.onEvent(PlayerEvent.OnSeekBackward) },
                     onSeekTo = { viewModel.onEvent(PlayerEvent.OnSeekTo(it)) },
                     onShowEpisodesPanel = { viewModel.onEvent(PlayerEvent.OnShowEpisodesPanel) },
+                    onShowChaptersPanel = { viewModel.onEvent(PlayerEvent.OnShowChaptersPanel) },
                     onShowSourcesPanel = { viewModel.onEvent(PlayerEvent.OnShowSourcesPanel) },
                     onShowAudioDialog = { viewModel.onEvent(PlayerEvent.OnShowAudioOverlay) },
                     onShowSubtitleDialog = { viewModel.onEvent(PlayerEvent.OnShowSubtitleOverlay) },
@@ -2125,7 +2132,7 @@ fun PlayerScreen(
                     !uiState.showLoadingOverlay &&
                     !uiState.showPauseOverlay &&
                     !uiState.showSubtitleStylePanel &&
-                    !uiState.showEpisodesPanel &&
+                    !uiState.showEpisodesPanel && !uiState.showChaptersPanel &&
                     !uiState.showSourcesPanel &&
                     !uiState.showAudioOverlay &&
                     !uiState.showSubtitleOverlay &&
@@ -2209,6 +2216,33 @@ fun PlayerScreen(
                         onAddonFilterSelected = { viewModel.onEvent(PlayerEvent.OnEpisodeAddonFilterSelected(it)) },
                         onEpisodeSelected = { viewModel.onEvent(PlayerEvent.OnEpisodeSelected(it)) },
                         onStreamSelected = { viewModel.onEvent(PlayerEvent.OnEpisodeStreamSelected(it)) },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = uiState.showChaptersPanel && uiState.chapters.isNotEmpty() && uiState.error == null,
+                enter = fadeIn(animationSpec = tween(120)),
+                exit = fadeOut(animationSpec = tween(120))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = if (cinematicGlass) .08f else .45f))
+                )
+            }
+            AnimatedVisibility(
+                visible = uiState.showChaptersPanel && uiState.chapters.isNotEmpty() && uiState.error == null,
+                enter = slideInHorizontally(animationSpec = tween(220), initialOffsetX = { it }),
+                exit = slideOutHorizontally(animationSpec = tween(220), targetOffsetX = { it })
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    ChaptersSidePanel(
+                        chapters = uiState.chapters,
+                        currentPositionMs = viewModel.playbackTimeline.value.playbackPosition,
+                        onChapterSelected = { viewModel.onEvent(PlayerEvent.OnSelectChapter(it.startMs)) },
+                        onClose = { viewModel.onEvent(PlayerEvent.OnDismissChaptersPanel) },
                         modifier = Modifier.align(Alignment.CenterEnd)
                     )
                 }
@@ -2373,7 +2407,7 @@ fun PlayerScreen(
                     uiState.error == null &&
                     !uiState.showLoadingOverlay &&
                     !uiState.showPauseOverlay &&
-                    !uiState.showEpisodesPanel &&
+                    !uiState.showEpisodesPanel && !uiState.showChaptersPanel &&
                     !uiState.showSourcesPanel &&
                     !uiState.showAudioOverlay &&
                     !uiState.showSubtitleOverlay &&
@@ -2931,6 +2965,7 @@ private fun PlayerControlsOverlay(
     onSeekBackward: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onShowEpisodesPanel: () -> Unit,
+    onShowChaptersPanel: () -> Unit,
     onShowSourcesPanel: () -> Unit,
     onShowAudioDialog: () -> Unit,
     onShowSubtitleDialog: () -> Unit,
@@ -2964,7 +2999,7 @@ private fun PlayerControlsOverlay(
                 playPause = onPlayPause, playNext = onPlayNextEpisode, seekToStart = {
                     onSeekTo(0L)
                     if (!customIsV2 && !uiState.isPlaying) onPlayPause()
-                }, episodes = onShowEpisodesPanel, sources = onShowSourcesPanel,
+                }, episodes = onShowEpisodesPanel, chapters = onShowChaptersPanel, sources = onShowSourcesPanel,
                 audio = onShowAudioDialog, subtitles = onShowSubtitleDialog, speed = onShowSpeedDialog,
                 aspect = onToggleAspectRatio, engine = onSwitchPlayerEngine, report = onReportPlaybackIssue,
                 more = onToggleMoreActions, external = onOpenInExternalPlayer, info = onShowStreamInfo,
@@ -2978,7 +3013,7 @@ private fun PlayerControlsOverlay(
             streamInfoFocusRequester, progressBarUpFocusRequester, reportSkipAnchor,
             V2PlayerActions(
                 playPause = onPlayPause, playNext = onPlayNextEpisode, seekToStart = { onSeekTo(0L) },
-                episodes = onShowEpisodesPanel, sources = onShowSourcesPanel,
+                episodes = onShowEpisodesPanel, chapters = onShowChaptersPanel, sources = onShowSourcesPanel,
                 audio = onShowAudioDialog, subtitles = onShowSubtitleDialog, speed = onShowSpeedDialog,
                 aspect = onToggleAspectRatio, engine = onSwitchPlayerEngine, report = onReportPlaybackIssue,
                 more = onToggleMoreActions, external = onOpenInExternalPlayer, info = onShowStreamInfo,
@@ -3112,7 +3147,7 @@ private fun PlayerControlsOverlay(
                 enter = fadeIn(animationSpec = tween(NuvioMotion.tokens.durations.fast)),
                 exit = fadeOut(animationSpec = tween(NuvioMotion.tokens.durations.fast))
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().hideUnderSeekThumbnails()) {
                     val displayName = if (uiState.currentSeason != null && uiState.currentEpisode != null) {
                         uiState.contentName ?: uiState.title
                     } else {
@@ -3143,7 +3178,7 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
-                    PlayerSecondaryMetadata(uiState)
+                    PlayerSecondaryMetadata(uiState, chapter = rememberCurrentChapter(viewModel, uiState.chapters))
                 }
             }
                 }
@@ -3338,6 +3373,16 @@ private fun PlayerControlsOverlay(
                         onFocused = onResetHideTimer
                     )
                     }
+                    if (uiState.chapters.isNotEmpty()) {
+                    PillControlButton(
+                        icon = Icons.Default.Bookmarks,
+                        label = stringResource(R.string.player_chapters),
+                        onClick = onShowChaptersPanel,
+                        upFocusRequester = progressBarFocusRequester,
+                        onDownKey = onHideControls,
+                        onFocused = onResetHideTimer
+                    )
+                    }
                     if (showNextEpisodeButton) {
                     PillControlButton(
                         icon = Icons.Default.SkipNext,
@@ -3372,6 +3417,7 @@ internal fun PlayerControlsProgressBarHost(
 ) {
     val playbackTimeline by viewModel.playbackTimeline.collectAsState()
     val gliding = ScrubGlide.active
+    val chapterFractions = rememberChapterFractions(viewModel, playbackTimeline.duration)
 
     ProgressBar(
         currentPosition = if (gliding) ScrubGlide.positionMs else playbackTimeline.currentPosition,
@@ -3393,7 +3439,8 @@ internal fun PlayerControlsProgressBarHost(
         onUpKey = onUpKey,
         onFocused = onFocused,
         onClick = onClick,
-        bufferedPosition = playbackTimeline.bufferedPosition
+        bufferedPosition = playbackTimeline.bufferedPosition,
+        chapterFractions = chapterFractions
     )
 }
 
@@ -3620,7 +3667,8 @@ private fun ProgressBar(
     onClick: (() -> Unit)? = null,
     /** Position (ms) up to which content is buffered. Pass 0 to skip the overlay. */
     bufferedPosition: Long = 0L,
-    playbackPosition: Long = currentPosition
+    playbackPosition: Long = currentPosition,
+    chapterFractions: List<Float> = emptyList()
 ) {
     val v2ProgressBrush = if (com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null) {
         com.nuvio.tv.ui.theme.createThemeBrush(com.nuvio.tv.ui.v2.appearance.v2AccentColors())
@@ -3766,6 +3814,7 @@ private fun ProgressBar(
                     bufferedColor = Color.White,
                     playedBrush = v2ProgressBrush
                 )
+                .chapterGaps(chapterFractions)
         ) {
         // A lighter fill between playback and the seek cursor shows how far the seek goes.
         if (geometry.isPreviewing) {
@@ -3821,7 +3870,9 @@ private fun SeekOverlay(
     duration: Long,
     playbackPosition: Long = currentPosition,
     bufferedPosition: Long = 0L,
-    gliding: Boolean = false
+    gliding: Boolean = false,
+    chapterFractions: List<Float> = emptyList(),
+    chapterText: String? = null
 ) {
     Column(
         modifier = Modifier
@@ -3836,16 +3887,27 @@ private fun SeekOverlay(
                 onSeekCommit = {},
                 gliding = gliding,
                 playbackPosition = playbackPosition,
-                bufferedPosition = bufferedPosition
+                bufferedPosition = bufferedPosition,
+                chapterFractions = chapterFractions
             )
 
             Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (chapterText != null) {
+                    Text(
+                        text = chapterText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.9f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
                 Text(
                     text = "${formatSeekTime(currentPosition)} / ${formatSeekTime(duration)}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -3866,7 +3928,9 @@ private fun SeekOverlayHost(viewModel: PlayerViewModel) {
         playbackPosition = playbackTimeline.playbackPosition,
         duration = playbackTimeline.duration,
         bufferedPosition = playbackTimeline.bufferedPosition,
-        gliding = gliding
+        gliding = gliding,
+        chapterFractions = rememberChapterFractions(viewModel, playbackTimeline.duration),
+        chapterText = rememberSeekChapter(viewModel)?.takeUnless { SeekThumbnailOverlay.visible }?.let { chapterLabel(it) }
     )
 }
 
@@ -3898,6 +3962,7 @@ private fun PlayerClockOverlay(
         "--:--"
     }
 
+    val clockShadow = playerClockShadow(LocalDensity.current.density)
     Column(
         modifier = Modifier
             .padding(horizontal = NuvioTheme.spacing.xxs, vertical = NuvioTheme.spacing.xxs),
@@ -3906,15 +3971,20 @@ private fun PlayerClockOverlay(
         Text(
             text = timeFormatter.format(Date(nowMs)),
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = PLAYER_CLOCK_FONT_SIZE,
+                fontWeight = FontWeight.SemiBold,
+                shadow = clockShadow
             ),
             color = Color.White.copy(alpha = 0.96f)
         )
         Text(
             text = stringResource(R.string.player_ends_at, endTimeText),
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 10.sp),
-            color = Color.White.copy(alpha = 0.78f)
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = PLAYER_ENDS_AT_FONT_SIZE,
+                fontWeight = FontWeight.Medium,
+                shadow = clockShadow
+            ),
+            color = Color.White.copy(alpha = PLAYER_ENDS_AT_ALPHA)
         )
     }
 }

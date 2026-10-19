@@ -78,6 +78,7 @@ internal fun PlayerUiState.blocksPostPlayRecommendation(): Boolean {
         showPauseOverlay ||
         showStreamInfoOverlay ||
         showEpisodesPanel ||
+        showChaptersPanel ||
         showSourcesPanel ||
         showPartyPanel ||
         showAudioOverlay ||

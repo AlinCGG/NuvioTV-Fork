@@ -41,7 +41,7 @@ import com.nuvio.tv.ui.screens.player.*
 import com.nuvio.tv.ui.v2.appearance.LocalV2Appearance
 import com.nuvio.tv.ui.v2.components.*
 
-enum class V2PlayerControl { INFO, STATS, AUDIO, SUBTITLES, SOURCES, EPISODES, RESTART, MORE, SPEED, ASPECT, EXTERNAL, ENGINE, REPORT }
+enum class V2PlayerControl { INFO, STATS, AUDIO, SUBTITLES, SOURCES, EPISODES, CHAPTERS, RESTART, MORE, SPEED, ASPECT, EXTERNAL, ENGINE, REPORT }
 
 /** Owned by PlayerScreen, so requesters survive a utility panel replacing the control deck. */
 @Stable
@@ -59,7 +59,8 @@ data class V2PlayerActions(
     val aspect: () -> Unit, val engine: () -> Unit, val report: () -> Unit,
     val more: () -> Unit, val external: () -> Unit, val info: () -> Unit,
     val stats: () -> Unit, val interaction: () -> Unit, val hide: () -> Unit,
-    val party: () -> Unit = {}
+    val party: () -> Unit = {},
+    val chapters: () -> Unit = {}
 )
 
 private data class Utility(val id: V2PlayerControl, val icon: ImageVector, val label: String, val action: () -> Unit, val panel: Boolean = false, val enabled: Boolean = true)
@@ -90,6 +91,7 @@ fun V2PlayerControls(
         if (uiState.subtitleTracks.isNotEmpty() || uiState.addonSubtitles.isNotEmpty()) add(Utility(V2PlayerControl.SUBTITLES, Icons.Default.Subtitles, stringResource(R.string.cd_subtitles), actions.subtitles, true))
         add(Utility(V2PlayerControl.SOURCES, Icons.Default.Cloud, stringResource(R.string.cd_sources), actions.sources, true))
         if (uiState.currentSeason != null && uiState.currentEpisode != null) add(Utility(V2PlayerControl.EPISODES, Icons.AutoMirrored.Filled.List, stringResource(R.string.player_pill_episodes), actions.episodes, true))
+        if (uiState.chapters.isNotEmpty()) add(Utility(V2PlayerControl.CHAPTERS, Icons.Default.Bookmarks, stringResource(R.string.player_chapters), actions.chapters, true))
         add(Utility(V2PlayerControl.MORE, Icons.Default.MoreHoriz, stringResource(R.string.player_more_actions_title), actions.more))
     }
     val more = buildList {
@@ -108,7 +110,7 @@ fun V2PlayerControls(
         Column(Modifier.align(Alignment.BottomCenter)
             .padding(start = 32.dp, end = 32.dp, bottom = 24.dp)
             .fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (uiState.activeSkipInterval == null) {
+            if (uiState.activeSkipInterval == null) Column(Modifier.hideUnderSeekThumbnails(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val title = uiState.contentName ?: uiState.title
                 var logoFailed by remember(uiState.logo) { mutableStateOf(false) }
                 if (!uiState.logo.isNullOrBlank() && !logoFailed) {
@@ -116,7 +118,7 @@ fun V2PlayerControls(
                         contentScale = ContentScale.Fit, alignment = Alignment.CenterStart, onError = { logoFailed = true })
                 } else Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 12.dp))
-                PlayerSecondaryMetadata(uiState, Modifier.padding(start = 12.dp))
+                PlayerSecondaryMetadata(uiState, Modifier.padding(start = 12.dp), rememberCurrentChapter(viewModel, uiState.chapters))
             }
             Column(Modifier.fillMaxWidth()
                 .then(if (deck) Modifier.nuvioGlass(GlassRole.CONTROL, shape = RoundedCornerShape(12.dp)) else Modifier)

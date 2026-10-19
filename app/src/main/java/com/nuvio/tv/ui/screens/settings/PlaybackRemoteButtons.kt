@@ -152,8 +152,13 @@ internal fun PlaybackRemoteButtonsSection(
 
     editing?.let { (key, kind) ->
         val current = map.bindingFor(key, kind) ?: RemoteButtonBinding.NOTHING
+        val usualPress = kind == RemotePressKind.PRESS && RemoteButtonMap.isHiddenControlsKey(key)
         val options = RemoteButtonMap.jobsFor(key, kind).map {
-            SettingsPickerOption(it, remoteJobLabel(context, it), remoteJobDescription(context, it, kind))
+            if (usualPress && it == RemoteButtonJob.NOTHING) {
+                SettingsPickerOption(it, stringResource(R.string.remote_buttons_hold_not_set))
+            } else {
+                SettingsPickerOption(it, remoteJobLabel(context, it), remoteJobDescription(context, it, kind))
+            }
         }
         SettingsSingleChoiceDialog(
             title = stringResource(

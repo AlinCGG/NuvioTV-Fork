@@ -4,6 +4,14 @@ import androidx.media3.common.C
 import androidx.media3.common.Format
 import org.junit.Assert.*
 import android.graphics.Bitmap
+import android.graphics.Typeface
+import android.text.style.AbsoluteSizeSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
+import android.text.style.UnderlineSpan
 import androidx.media3.common.text.Cue
 import com.nuvio.tv.data.local.SubtitleStyleSettings
 import io.mockk.mockk
@@ -29,6 +37,16 @@ class SubtitlePresentationTest {
         assertEquals(.2f, restored.position, .00001f)
         val text = Cue.Builder().setText("English text").build()
         assertSame(text, presentation.apply(text, style, false, false))
+    }
+
+    @Test fun `text cues keep italic bold and underline but not authored fonts or sizes`() {
+        for (span in listOf(StyleSpan(Typeface.ITALIC), StyleSpan(Typeface.BOLD), StyleSpan(Typeface.BOLD_ITALIC),
+            UnderlineSpan(), StrikethroughSpan(), ForegroundColorSpan(0))) {
+            assertFalse(span.javaClass.simpleName, isAuthoredFontSpan(span))
+        }
+        for (span in listOf(AbsoluteSizeSpan(30), RelativeSizeSpan(2f), TypefaceSpan("serif"))) {
+            assertTrue(span.javaClass.simpleName, isAuthoredFontSpan(span))
+        }
     }
 
     @Test fun `bitmap detection uses codec not SDH label`() {

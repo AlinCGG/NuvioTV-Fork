@@ -136,6 +136,13 @@ internal fun PlaybackPlayerInterfaceSection(
     val internalPlayer = settings.playerPreference != PlayerPreference.EXTERNAL
 
     SettingsToggleRow(
+        title = stringResource(R.string.playback_chapters),
+        subtitle = stringResource(R.string.playback_chapters_sub),
+        checked = settings.chaptersEnabled,
+        onToggle = { onUpdate { setChaptersEnabled(!settings.chaptersEnabled) } },
+        enabled = internalPlayer
+    )
+    SettingsToggleRow(
         title = stringResource(R.string.playback_loading_overlay),
         subtitle = stringResource(R.string.playback_loading_overlay_sub),
         checked = settings.loadingOverlayEnabled,

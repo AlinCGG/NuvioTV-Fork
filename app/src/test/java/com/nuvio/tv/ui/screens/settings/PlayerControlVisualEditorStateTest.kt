@@ -91,7 +91,7 @@ class PlayerControlVisualEditorStateTest {
         PlayerControlAction.entries.forEach { draft = draft.group(it, PlayerControlGroup.LEFT) }
         var s = PlayerControlVisualEditorState(draft, info).beginMove()
         repeat(35) { s = s.step(1) }; repeat(35) { s = s.step(-1) }
-        assertEquals(16, s.draft.preview.entries.size); assertEquals(16, s.draft.preview.entries.map { it.action }.distinct().size)
+        assertEquals(PlayerControlAction.entries.size, s.draft.preview.entries.size); assertEquals(PlayerControlAction.entries.size, s.draft.preview.entries.map { it.action }.distinct().size)
         assertSame(draft, s.cancelMove().draft)
     }
 }

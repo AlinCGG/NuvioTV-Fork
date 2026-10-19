@@ -43,6 +43,7 @@ internal fun PlayerRuntimeController.showSeekOverlayTemporarily() {
     _uiState.update { it.copy(showSeekOverlay = true) }
     hideSeekOverlayJob = scope.launch {
         delay(1500)
+        while (seekSettle.open) delay(250)
         _uiState.update { it.copy(showSeekOverlay = false) }
     }
 }
@@ -784,7 +785,27 @@ internal fun PlayerRuntimeController.rememberAddonSubtitleSelection(subtitle: Su
 }
 
 private fun PlayerRuntimeController.currentTrackPreferenceForPersistence(): PlayerRuntimeController.TrackPreference {
-    return rememberedTrackPreference ?: persistedTrackPreference ?: PlayerRuntimeController.TrackPreference()
+    return trackPreferenceForPersistence(
+        remembered = rememberedTrackPreference,
+        pending = persistedTrackPreference,
+        loaded = loadedTrackPreference?.takeIf { it.first == contentId }?.second
+    )
+}
+
+/**
+ * What gets saved for the title. A restore drops the fields it has applied (or could not match on this stream) from
+ * [pending], so the loaded copy fills them back in and a later save keeps them.
+ */
+internal fun trackPreferenceForPersistence(
+    remembered: PlayerRuntimeController.TrackPreference?,
+    pending: PlayerRuntimeController.TrackPreference?,
+    loaded: PlayerRuntimeController.TrackPreference?
+): PlayerRuntimeController.TrackPreference {
+    if (remembered != null) return remembered
+    return PlayerRuntimeController.TrackPreference(
+        audio = pending?.audio ?: loaded?.audio,
+        subtitle = pending?.subtitle ?: loaded?.subtitle
+    )
 }
 
 internal fun PlayerRuntimeController.persistTrackPreference() {

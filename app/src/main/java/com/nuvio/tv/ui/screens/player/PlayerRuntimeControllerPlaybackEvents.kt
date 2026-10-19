@@ -1129,7 +1129,7 @@ fun PlayerRuntimeController.scheduleHideControls() {
             !_uiState.value.showSpeedDialog && !_uiState.value.showMoreDialog &&
             !_uiState.value.showSubtitleDelayOverlay &&
             !_uiState.value.showSubtitleTimingDialog &&
-            !_uiState.value.showEpisodesPanel && !_uiState.value.showSourcesPanel &&
+            !_uiState.value.showEpisodesPanel && !_uiState.value.showChaptersPanel && !_uiState.value.showSourcesPanel &&
             !_uiState.value.showStreamInfoOverlay && !_uiState.value.showPartyPanel) {
             _uiState.update { it.copy(showControls = false) }
         }
@@ -1236,7 +1236,7 @@ internal fun PlayerRuntimeController.schedulePauseOverlay() {
         delay(pauseOverlayDelayMs)
         val s = _uiState.value
         val anyPanelOpen = s.showSubtitleOverlay || s.showSubtitleStylePanel ||
-            s.showSpeedDialog || s.showMoreDialog || s.showEpisodesPanel ||
+            s.showSpeedDialog || s.showMoreDialog || s.showEpisodesPanel || s.showChaptersPanel ||
             s.showSourcesPanel || s.showAudioOverlay || s.showStreamInfoOverlay ||
             s.showSubtitleTimingDialog || s.showSubtitleDelayOverlay || s.showPartyPanel
         if (!s.isPlaying && s.pauseOverlayEnabled && s.error == null && !anyPanelOpen) {
@@ -1285,6 +1285,7 @@ internal fun PlayerRuntimeController.toggleDetails() {
         return
     }
     if (!hasRenderedFirstFrame || state.error != null || state.showLoadingOverlay || state.playbackEnded) return
+    finishSeekSettle(seek = true, reason = "details")
     val playing = hasActivePlayIntent()
     if (playing) {
         if (isPlaybackCurrentlyPlaying()) {
@@ -1334,6 +1335,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
     }
     when (event) {
         PlayerEvent.OnPlayPause -> {
+            if (finishSeekSettle(seek = true, reason = "ok")) return
             // A play/pause press during a held scrub is the user's own choice from here on.
             scrubHoldPaused = false
             dropPausedThumbnail()
@@ -1389,6 +1391,7 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         }
         is PlayerEvent.OnSeekBy -> {
             if (_playbackTimeline.value.isLive) return
+            dropSeekSettle()
             stopScrubGlide()
             releaseScrubHold()
             pendingPreviewSeekPosition = null
@@ -1417,7 +1420,10 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             if (_playbackTimeline.value.isLive) return
             val holdStart = scrubHoldClock.repeat(event.eventTime, event.downTime)
             if (holdStart == null) {
-                if (scrubHoldClock.takeUndoTap()) undoScrubTap()
+                if (scrubHoldClock.takeUndoTap()) {
+                    undoScrubTap()
+                    seekSettle.undoPress()
+                }
                 return
             }
             if (scrubGlideJob?.isActive == true && scrubGlideForward == event.forward) return
@@ -1426,19 +1432,25 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         is PlayerEvent.OnPreviewSeekBy -> {
             if (_playbackTimeline.value.isLive) return
             stopScrubGlide()
+            seekSettleJob?.cancel()
             scrubHoldClock.press(android.os.SystemClock.uptimeMillis())
             scrubTapFrom = pendingPreviewSeekPosition
             val maxDuration = currentPlaybackDurationMs().takeIf { it >= 0 } ?: Long.MAX_VALUE
-            val basePosition = pendingPreviewSeekPosition ?: currentPlaybackPositionMs()?.coerceAtLeast(0L) ?: 0L
-            if (scrubTapBase == null) scrubTapBase = basePosition
+            val playbackPosition = currentPlaybackPositionMs()?.coerceAtLeast(0L) ?: 0L
+            if (seekSettleApplies()) seekSettle.press(playbackPosition)
+            if (scrubTapBase == null) scrubTapBase = pendingPreviewSeekPosition ?: playbackPosition
             // With thumbnails on, every step lands on the 10 s thumbnail grid.
-            val target = (SeekThumbnails.gridStep(basePosition, event.deltaMs) ?: (basePosition + event.deltaMs))
-                .coerceAtLeast(0L)
-                .coerceAtMost(maxDuration)
+            val target = SeekSettle.target(
+                pendingMs = pendingPreviewSeekPosition,
+                playbackMs = playbackPosition,
+                deltaMs = event.deltaMs,
+                durationMs = maxDuration,
+                gridStep = SeekThumbnails::gridStep
+            )
             pendingPreviewSeekPosition = target
             _uiState.update { it.copy(pendingPreviewSeekPosition = target, previewThumbPositionMs = target) }
-            // Paused, the tapped spot is decoded first.
-            if (userPausedManually) SeekThumbnails.notePriority(target)
+            // Paused or held, the tapped spot is decoded first.
+            if (userPausedManually || seekSettle.open) SeekThumbnails.notePriority(target)
             schedulePendingPreviewSeekExpiry()
             updatePlaybackTimeline(
                 currentPosition = previewDisplayPosition() ?: target,
@@ -1454,37 +1466,16 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
             if (_playbackTimeline.value.isLive) return
             stopScrubGlide()
             scrubHoldClock.release(android.os.SystemClock.uptimeMillis())
-            val target = pendingPreviewSeekPosition
-            val tapBase = scrubTapBase
-            scrubTapBase = null
-            if (target != null) {
-                pendingPreviewSeekExpiryJob?.cancel()
-                // Land on the keyframe whose thumbnail was shown; a tap without one steps past the one playing.
-                val landing = SeekLanding.of(
-                    targetMs = target,
-                    keyframeMs = SeekThumbnails.landingFor(target),
-                    tapDeltaMs = tapBase?.let { target - it },
-                    durationMs = currentPlaybackDurationMs()
-                )
-                seekPlaybackTo(landing.positionMs, landing.parameters)
-                releaseScrubHold()
-                updatePlaybackTimeline(currentPosition = landing.positionMs)
-                pendingPreviewSeekPosition = null
-                // Paused, the thumbnail of the landing stays up; playing on, nothing is left to show.
-                val shownAfter = if (userPausedManually) target else null
-                _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = shownAfter) }
-                scheduleProgressSyncAfterSeek()
-                if (_uiState.value.showControls) {
-                    showControlsTemporarily()
-                } else {
-                    showSeekOverlayTemporarily()
-                }
-            } else {
-                releaseScrubHold()
+            if (seekSettle.open && !userPausedManually) {
+                if (pendingPreviewSeekPosition != null) startSeekSettle() else finishSeekSettle(seek = false, reason = "empty")
+                return
             }
+            dropSeekSettle()
+            commitPendingSeek()
         }
         is PlayerEvent.OnSeekTo -> {
             if (_playbackTimeline.value.isLive) return
+            dropSeekSettle()
             stopScrubGlide()
             releaseScrubHold()
             pendingPreviewSeekPosition = null
@@ -1789,6 +1780,11 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         PlayerEvent.OnDismissEpisodesPanel -> {
             dismissEpisodesPanel()
         }
+        PlayerEvent.OnShowChaptersPanel -> showChaptersPanel()
+        PlayerEvent.OnDismissChaptersPanel -> dismissChaptersPanel()
+        is PlayerEvent.OnSelectChapter -> selectChapter(event.startMs)
+        PlayerEvent.OnNextChapter -> jumpChapter(forward = true)
+        PlayerEvent.OnPreviousChapter -> jumpChapter(forward = false)
         PlayerEvent.OnBackFromEpisodeStreams -> {
             _uiState.update {
                 it.copy(
@@ -2181,13 +2177,121 @@ private fun formatTorrentSpeed(context: android.content.Context, bytesPerSec: Lo
 internal fun PlayerRuntimeController.previewDisplayPosition(): Long? =
     pendingPreviewSeekPosition?.let { SeekThumbnails.landingFor(it) ?: it }
 
+/** Seeks to the pending target, if any, and lets a held playback go on. */
+private fun PlayerRuntimeController.commitPendingSeek() {
+    val target = pendingPreviewSeekPosition
+    val tapBase = scrubTapBase
+    scrubTapBase = null
+    if (target == null) {
+        releaseScrubHold()
+        return
+    }
+    pendingPreviewSeekExpiryJob?.cancel()
+    // Land on the keyframe whose thumbnail was shown; a tap without one steps past the one playing.
+    val landing = SeekLanding.of(
+        targetMs = target,
+        keyframeMs = SeekThumbnails.landingFor(target),
+        tapDeltaMs = tapBase?.let { target - it },
+        durationMs = currentPlaybackDurationMs()
+    )
+    seekPlaybackTo(landing.positionMs, landing.parameters)
+    releaseScrubHold()
+    updatePlaybackTimeline(currentPosition = landing.positionMs)
+    pendingPreviewSeekPosition = null
+    // Paused, the thumbnail of the landing stays up; playing on, nothing is left to show.
+    val shownAfter = if (userPausedManually) target else null
+    _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = shownAfter) }
+    scheduleProgressSyncAfterSeek()
+    if (_uiState.value.showControls) {
+        showControlsTemporarily()
+    } else {
+        showSeekOverlayTemporarily()
+    }
+}
+
+/** Seek keys while playing settle first ([SeekSettle]); paused or in a party they seek on release. */
+private fun PlayerRuntimeController.seekSettleApplies(): Boolean =
+    seekSettle.open || (!userPausedManually && partyBridge?.inParty != true && hasActivePlayIntent())
+
+/** The last key of a run came up: playback holds on the target for [SeekSettle.SETTLE_MS], then seeks. */
+private fun PlayerRuntimeController.startSeekSettle() {
+    pendingPreviewSeekExpiryJob?.cancel()
+    holdPlaybackForScrub(always = true)
+    // A glide publishes a few times a second; the bar and the thumbnail take its last position.
+    pendingPreviewSeekPosition?.let { target ->
+        _uiState.update { it.copy(pendingPreviewSeekPosition = target, previewThumbPositionMs = target) }
+        updatePlaybackTimeline(
+            currentPosition = previewDisplayPosition() ?: target,
+            playbackPosition = currentPlaybackPositionMs() ?: _playbackTimeline.value.playbackPosition
+        )
+    }
+    seekSettleJob?.cancel()
+    seekSettleJob = scope.launch {
+        kotlinx.coroutines.delay(SeekSettle.SETTLE_MS)
+        seekSettleJob = null
+        finishSeekSettle(seek = true, reason = "timeout")
+    }
+    if (_uiState.value.showControls) showControlsTemporarily() else showSeekOverlayTemporarily()
+}
+
+/** Ends an open settle: [seek] goes to the target, otherwise playback goes on where it was. False when none was open. */
+internal fun PlayerRuntimeController.finishSeekSettle(seek: Boolean, reason: String): Boolean {
+    if (!seekSettle.open) return false
+    seekSettleJob?.let { job ->
+        seekSettleJob = null
+        job.cancel()
+    }
+    stopScrubGlide()
+    val target = pendingPreviewSeekPosition
+    val run = seekSettle.end() ?: return false
+    android.util.Log.d(
+        PlayerRuntimeController.TAG,
+        "SEEK_SETTLE: ${if (seek && target != null) "seek" else "cancel"} reason=$reason targetMs=${target ?: -1L} " +
+            "fromMs=${run.fromMs} taps=${run.presses}"
+    )
+    if (seek) {
+        commitPendingSeek()
+        return true
+    }
+    scrubTapBase = null
+    pendingPreviewSeekExpiryJob?.cancel()
+    pendingPreviewSeekPosition = null
+    _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }
+    releaseScrubHold()
+    currentPlaybackPositionMs()?.let { updatePlaybackTimeline(currentPosition = it) }
+    if (!_uiState.value.showControls) {
+        hideSeekOverlayJob?.cancel()
+        _uiState.update { it.copy(showSeekOverlay = false) }
+    }
+    return true
+}
+
+/** Back during a settle: no seek, playback goes on where it was. */
+internal fun PlayerRuntimeController.cancelSeekSettle(): Boolean = finishSeekSettle(seek = false, reason = "back")
+
+/** Forgets an open settle without touching playback or the pending target. */
+internal fun PlayerRuntimeController.dropSeekSettle() {
+    seekSettleJob?.let { job ->
+        seekSettleJob = null
+        job.cancel()
+    }
+    seekSettle.end()
+}
+
 /**
  * Pauses playback while a seek key is held, so the CPU goes to the thumbnails (a small box decodes one in about
  * 0.6 s paused, up to 5 s while playing). Not a user pause; released at the commit, a cancel or the expiry.
  */
-internal fun PlayerRuntimeController.holdPlaybackForScrub() {
-    if (scrubHoldPaused || isUsingMpvEngine()) return
-    if (!SeekThumbnails.pausesPlaybackWhileScrubbing()) return
+internal fun PlayerRuntimeController.holdPlaybackForScrub(always: Boolean = false) {
+    if (scrubHoldPaused) return
+    if (isUsingMpvEngine()) {
+        if (!always || mpvView?.isPlayingNow() != true) return
+        scrubHoldPaused = true
+        setPlaybackPaused(true)
+        android.util.Log.d("ThumbWorker", "scrub: playback held while seeking")
+        return
+    }
+    if (!always && !SeekThumbnails.pausesPlaybackWhileScrubbing()) return
     val player = _exoPlayer ?: return
     if (!player.playWhenReady) return
     scrubHoldPaused = true
@@ -2206,7 +2310,11 @@ internal fun PlayerRuntimeController.releaseScrubHold() {
     if (!scrubHoldPaused) return
     scrubHoldPaused = false
     if (userPausedManually) return
-    _exoPlayer?.takeIf { !it.playWhenReady }?.play()
+    if (isUsingMpvEngine()) {
+        if (mpvView?.isPlayingNow() == false) setPlaybackPaused(false)
+    } else {
+        _exoPlayer?.takeIf { !it.playWhenReady }?.play()
+    }
     android.util.Log.d("ThumbWorker", "scrub: playback resumed")
 }
 
@@ -2284,6 +2392,7 @@ internal fun PlayerRuntimeController.schedulePendingPreviewSeekExpiry() {
     pendingPreviewSeekExpiryJob = scope.launch {
         kotlinx.coroutines.delay(3_000L)
         if (pendingPreviewSeekPosition != null) {
+            dropSeekSettle()
             stopScrubGlide()
             releaseScrubHold()
             pendingPreviewSeekPosition = null
@@ -2340,7 +2449,12 @@ private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs
             roomBytes = AutoSpeedup.roomBytes(nowMs) {
                 free ?: com.nuvio.tv.core.player.BufferSizing.read(context.applicationContext)
             },
-            swapLow = AutoSpeedup.swapLow(nowMs) { com.nuvio.tv.core.player.thumbnail.MemoryGovernor.readMeminfo() }
+            swapLow = AutoSpeedup.swapLow(nowMs) { com.nuvio.tv.core.player.thumbnail.MemoryGovernor.readMeminfo() },
+            fileBitrate = AutoSpeedup.fileBitrate(
+                PlaybackByteCounter.contentLengthFor(currentStreamUrl),
+                currentVideoSize,
+                player.duration
+            )
         )
     )
     if (!changed) return

@@ -57,7 +57,7 @@ class PlayerControlDeckGeometryTest {
     @Test fun `all hidden runtime stays empty while every ghost remains reachable in the preview`() {
         val l = all.fold(PlayerControlLayout.default()) { value,a -> value.withVisibility(a,false) }
         assertTrue(plan(l).cells.isEmpty());assertEquals(0,plan(l).height)
-        val p=plan(l,ghost=true);assertEquals(16,p.cells.size);assertEquals(0,p.mainHeight);assertEquals(0,p.hiddenLabelY)
+        val p=plan(l,ghost=true);assertEquals(PlayerControlAction.entries.size,p.cells.size);assertEquals(0,p.mainHeight);assertEquals(0,p.hiddenLabelY)
         assertTrue(p.cells.all { it.hidden });assertNotNull(p.neighbour(play,PlayerControlDirection.RIGHT))
     }
     @Test fun `measured label widths determine wrapping rather than a fixed column count`() {
@@ -74,9 +74,9 @@ class PlayerControlDeckGeometryTest {
     }
     @Test fun `one region containing all actions wraps without overlap or lost identities`() {
         val l=all.fold(PlayerControlLayout.default()) { value,a -> value.withGroup(a,PlayerControlGroup.RIGHT).withVisibility(a,true) }
-        val p=plan(l);assertEquals(16,p.cells.size);assertEquals(80,p.height)
+        val p=plan(l);assertEquals(all.size,p.cells.size);assertEquals(80,p.height)
         for (c in p.cells) assertTrue(c.x>=0 && c.x+c.width<=320)
-        assertEquals(16,p.cells.map { it.action }.distinct().size)
+        assertEquals(all.size,p.cells.map { it.action }.distinct().size)
     }
     @Test fun `ghost focus links return into the bottom live row`() {
         val p=plan(layout(play to PlayerControlGroup.LEFT),ghost=true)
@@ -92,7 +92,7 @@ class PlayerControlDeckGeometryTest {
         val l=PlayerControlLayout.default()
         for (width in 0..35) {
             val p=plan(l,width=width,ghost=true)
-            assertEquals(16,p.cells.size)
+            assertEquals(all.size,p.cells.size)
             assertTrue(p.cells.all { it.x>=0 && it.width>=0 && it.x+it.width<=width && it.y>=0 && it.y+it.height<=p.height })
         }
     }

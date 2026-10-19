@@ -426,6 +426,7 @@ internal fun PlayerRuntimeController.initializePlayer(
             // stream - a leaked value would commit the *new* episode to the old
             // preview position on the next gesture.
             pendingPreviewSeekExpiryJob?.cancel()
+            dropSeekSettle()
             stopScrubGlide()
             pendingPreviewSeekPosition = null
             _uiState.update { it.copy(pendingPreviewSeekPosition = null, previewThumbPositionMs = null) }
@@ -1656,7 +1657,14 @@ internal fun PlayerRuntimeController.initializePlayer(
                 // resume position is resolved. Runway to here is the whole
                 // player build; SAVED_PROGRESS_AWAIT prices the residual.
                 awaitSavedProgressLoad()
-                val initialResumePosition = startPositionMs ?: resolvePendingInitialResumePosition()
+                val carriedOver = _uiState.value.pendingSeekPosition?.takeIf { it > 0L && startPositionMs == null }
+                if (carriedOver != null) {
+                    pendingResumeProgress = null
+                    _uiState.update { it.copy(pendingSeekPosition = null) }
+                }
+                val initialResumePosition = PlayerStartPosition.choose(startPositionMs, carriedOver) {
+                    resolvePendingInitialResumePosition()
+                }
                 playbackAnalyticsDiagnostics.setStartupStartPosition(initialResumePosition)
                 val playerInitLine =
                     "PLAYER_INIT: engine=EXOPLAYER host=${url.safeHost()} " +
@@ -2050,6 +2058,19 @@ internal fun PlayerRuntimeController.initializePlayer(
 
                     override fun onTracksChanged(tracks: Tracks) {
                         updateAvailableTracks(tracks)
+                    }
+
+                    override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
+                        if (isReleasingPlayer) return
+                        val saved = pendingResumeProgress ?: return
+                        val player = this@apply
+                        if (PlayerStartPosition.percentResumeDue(saved.position, saved.progressPercent,
+                                player.duration, player.isCurrentMediaItemSeekable, hasRenderedFirstFrame)
+                        ) {
+                            Log.i(PlayerRuntimeController.TAG,
+                                "RESUME_EARLY: percent=${saved.progressPercent} durationMs=${player.duration}")
+                            tryApplyPendingResumeProgress(player)
+                        }
                     }
 
                     override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {

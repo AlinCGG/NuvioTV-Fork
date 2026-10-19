@@ -639,6 +639,8 @@ class PlayerRuntimeController(
     internal var scrubTapFrom: Long? = null
     /** Playback position at the first tap of a run of seek taps, until the commit or a hold; null without one. */
     internal var scrubTapBase: Long? = null
+    internal val seekSettle = SeekSettle()
+    internal var seekSettleJob: Job? = null
 
     internal var isInBackground: Boolean = false
 
@@ -650,6 +652,7 @@ class PlayerRuntimeController(
 
     internal var skipIntervals: List<SkipInterval> = emptyList()
     internal var skipIntroEnabled: Boolean = true
+    internal var chaptersEnabled: Boolean = true
     internal var parentalGuideEnabled: Boolean = false
     internal var autoSkipSegmentTypes: Set<AutoSkipSegmentType> = emptySet()
     internal var playerSettingsInitialized: Boolean = false
@@ -670,6 +673,8 @@ class PlayerRuntimeController(
     internal var pendingAudioSelectionAfterSubtitleRefresh: PendingAudioSelection? = null
     internal var rememberedTrackPreference: TrackPreference? = null
     internal var persistedTrackPreference: TrackPreference? = null
+    /** The saved choice as loaded for a content id; restoring trims [persistedTrackPreference] but not this. */
+    internal var loadedTrackPreference: Pair<String, TrackPreference>? = null
 
     /**
      * The lossless audio default runs at most once per stream, and only when
@@ -1015,6 +1020,7 @@ class PlayerRuntimeController(
 
     fun onCleared() {
         scrubGlideJob?.cancel()
+        seekSettleJob?.cancel()
         ScrubGlide.stop()
         playerSession.close()
         stopServerPlayback()

@@ -286,6 +286,7 @@ data class PlayerSettings(
     val dimHdrOverlays: Boolean = false,
     val osdClockEnabled: Boolean = true,
     val skipIntroEnabled: Boolean = true,
+    val chaptersEnabled: Boolean = true,
     val parentalGuideEnabled: Boolean = true,
     val autoSkipSegmentTypes: Set<AutoSkipSegmentType> = emptySet(),
     // Dolby Vision settings (libdovi conversion). dv7HandlingMode == HDR10_BASE_LAYER
@@ -691,6 +692,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val pauseOverlayEnabledKey = booleanPreferencesKey("pause_overlay_enabled")
     private val osdClockEnabledKey = booleanPreferencesKey("osd_clock_enabled")
     private val skipIntroEnabledKey = booleanPreferencesKey("skip_intro_enabled")
+    private val chaptersEnabledKey = booleanPreferencesKey("player_chapters_enabled")
     private val parentalGuideEnabledKey = booleanPreferencesKey("parental_guide_enabled")
     private val autoSkipSegmentTypesKey = stringSetPreferencesKey("auto_skip_segment_types")
 
@@ -1181,6 +1183,7 @@ class PlayerSettingsDataStore @Inject constructor(
                 dimHdrOverlays = prefs[dimHdrOverlaysKey] ?: false,
                 osdClockEnabled = prefs[osdClockEnabledKey] ?: true,
                 skipIntroEnabled = prefs[skipIntroEnabledKey] ?: true,
+                chaptersEnabled = prefs[chaptersEnabledKey] ?: true,
                 parentalGuideEnabled = prefs[parentalGuideEnabledKey] ?: true,
                 autoSkipSegmentTypes = prefs[autoSkipSegmentTypesKey]
                     ?.mapNotNull(AutoSkipSegmentType::fromStoredValue)
@@ -1706,6 +1709,12 @@ class PlayerSettingsDataStore @Inject constructor(
     suspend fun setSkipIntroEnabled(enabled: Boolean) {
         store().edit { prefs ->
             prefs[skipIntroEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setChaptersEnabled(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[chaptersEnabledKey] = enabled
         }
     }
 

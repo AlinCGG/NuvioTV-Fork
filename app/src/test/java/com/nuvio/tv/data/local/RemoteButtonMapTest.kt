@@ -216,6 +216,41 @@ class RemoteButtonMapTest {
     }
 
     @Test
+    fun `up and down set to do nothing on a press keep opening the controls and keep the hold job`() {
+        val down = KeyEvent.KEYCODE_DPAD_DOWN
+        val sources = RemoteButtonBinding(RemoteButtonJob.SOURCES)
+        val picked = default.withHold(down, sources).with(down, RemoteButtonBinding.NOTHING)
+        assertEquals(default.withHold(down, sources), picked)
+        assertNull(picked.bindingFor(down))
+        val jobs = picked.takeOver(down, controlsHidden = true)
+        assertNull(jobs?.press)
+        assertEquals(sources, jobs?.hold)
+        assertTrue(down in picked.rowKeys)
+
+        val saved = RemoteButtonMap.decode("digits=1,$down=nothing,${down}h=sources")
+        assertEquals(picked, saved)
+        assertNull(saved.takeOver(down, controlsHidden = true)?.press)
+        assertEquals(sources, saved.holdFor(down))
+        assertNull(RemoteButtonMap.decode("digits=1,${KeyEvent.KEYCODE_DPAD_UP}=nothing").takeOver(KeyEvent.KEYCODE_DPAD_UP))
+
+        val audio = picked.with(down, RemoteButtonBinding(RemoteButtonJob.AUDIO))
+        assertEquals(RemoteButtonJob.AUDIO, audio.takeOver(down)?.press?.job)
+        assertEquals(picked, audio.with(down, RemoteButtonBinding.NOTHING))
+        assertEquals(default, picked.without(down))
+    }
+
+    @Test
+    fun `do nothing stays a real choice on keys without a built in job`() {
+        val menu = default.with(KeyEvent.KEYCODE_MENU, RemoteButtonBinding.NOTHING)
+        assertEquals(RemoteButtonBinding.NOTHING, menu.overrideFor(KeyEvent.KEYCODE_MENU))
+        val playPause = default.with(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, RemoteButtonBinding.NOTHING)
+        assertEquals(RemoteButtonBinding.NOTHING, playPause.overrideFor(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+        val red = RemoteButtonMap.decode("digits=1,${KeyEvent.KEYCODE_PROG_RED}=nothing")
+        assertEquals(RemoteButtonBinding.NOTHING, red.overrideFor(KeyEvent.KEYCODE_PROG_RED))
+        assertEquals(red, RemoteButtonMap.decode(red.encode()))
+    }
+
+    @Test
     fun `settings page starts with the starting set and the number keys row`() {
         val rows = default.rowKeys
         assertEquals(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, rows.first())

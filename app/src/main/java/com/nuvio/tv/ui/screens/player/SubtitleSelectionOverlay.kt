@@ -615,8 +615,8 @@ private fun SubtitleStyleRail(
                 ) {
                     StepperRow(
                         value = subtitleStyle.verticalOffset.toString(),
-                        onDecrease = { dispatchStyleEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset - 5)) },
-                        onIncrease = { dispatchStyleEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset + 5)) },
+                        onDecrease = { dispatchStyleEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset - 1)) },
+                        onIncrease = { dispatchStyleEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset + 1)) },
                         onMoveLeft = onMoveLeft,
                         decrementFocusRequester = focusRequesters[StyleFocusKey.OffsetDecrease],
                         incrementFocusRequester = focusRequesters[StyleFocusKey.OffsetIncrease],

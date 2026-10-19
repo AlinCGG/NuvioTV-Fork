@@ -19,6 +19,8 @@ enum class RemoteButtonJob(val id: String) {
     SKIP_FORWARD("skip_forward"),
     SKIP_BACK("skip_back"),
     JUMP_TO_PERCENT("jump_percent"),
+    NEXT_CHAPTER("next_chapter"),
+    PREVIOUS_CHAPTER("previous_chapter"),
     SKIP_INTRO_OR_NEXT("skip_intro_or_next"),
     NEXT_EPISODE("next_episode"),
     RESTART("restart"),
@@ -109,9 +111,12 @@ class RemoteButtonMap private constructor(
 
     fun isCustomKey(keyCode: Int): Boolean = keyCode !in DEFAULT_ROW_KEYS
 
+    /** Up and Down set to do nothing on a press keep opening the controls, as they do with no job at all. */
     fun with(keyCode: Int, binding: RemoteButtonBinding): RemoteButtonMap {
         val starting = if (isNumberKey(keyCode)) null else DEFAULTS[keyCode]
-        val next = if (binding == starting && keyCode in DEFAULT_ROW_KEYS) custom - keyCode else custom + (keyCode to binding)
+        val usual = (binding == starting && keyCode in DEFAULT_ROW_KEYS) ||
+            (binding.job == RemoteButtonJob.NOTHING && isHiddenControlsKey(keyCode))
+        val next = if (usual) custom - keyCode else custom + (keyCode to binding)
         return RemoteButtonMap(next, holds, numberKeysJump)
     }
 
@@ -266,7 +271,7 @@ class RemoteButtonMap private constructor(
                 if (!canLearn(code) || code in SEPARATE_PLAY_KEYS) return@forEach
                 val job = RemoteButtonJob.fromId(value.substringBefore('@')) ?: return@forEach
                 if (job !in jobsFor(code, if (hold) RemotePressKind.HOLD else RemotePressKind.PRESS)) return@forEach
-                if (hold && job == RemoteButtonJob.NOTHING) return@forEach
+                if (job == RemoteButtonJob.NOTHING && (hold || isHiddenControlsKey(code))) return@forEach
                 val skipMs = if (job.needsSkipSize) {
                     value.substringAfter('@', "").toLongOrNull()?.takeIf { it in SKIP_SIZES_MS } ?: DEFAULT_SKIP_MS
                 } else 0L

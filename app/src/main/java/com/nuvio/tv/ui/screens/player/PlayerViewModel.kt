@@ -679,6 +679,7 @@ class PlayerViewModel @Inject constructor(
         }
         // A zero is an idle counted interval, not proof of starvation or a full buffer.
         rows += StatsRow("Speed", speedText, StatsDot.NONE)
+        rows += StatsRow("Connections", PlaybackLanes.connectionsText(hud.lanes), StatsDot.NONE)
         lastPingMs?.takeIf { it.matches(hud.transfer) }?.let { ping ->
             rows += StatsRow("Server latency", "${ping.elapsedMs} ms", StatsDot.NONE)
         }
@@ -1066,6 +1067,8 @@ class PlayerViewModel @Inject constructor(
     fun hideControls() {
         controller.hideControls()
     }
+
+    fun cancelSeekSettle(): Boolean = controller.cancelSeekSettle()
 
     fun attachHostActivity(activity: android.app.Activity?) {
         controller.attachHostActivity(activity)

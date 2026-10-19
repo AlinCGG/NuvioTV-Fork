@@ -268,12 +268,12 @@ internal fun SubtitleStyleSidePanel(
                     SubtitleStyleSettingRow {
                         SubtitleStyleStepperButton(
                             icon = Icons.Default.Remove,
-                            onClick = { onEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset - 5)) }
+                            onClick = { onEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset - 1)) }
                         )
                         SubtitleStyleValueDisplay(text = subtitleStyle.verticalOffset.toString())
                         SubtitleStyleStepperButton(
                             icon = Icons.Default.Add,
-                            onClick = { onEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset + 5)) }
+                            onClick = { onEvent(PlayerEvent.OnSetSubtitleVerticalOffset(subtitleStyle.verticalOffset + 1)) }
                         )
                     }
                 }
