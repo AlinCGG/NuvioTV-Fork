@@ -424,6 +424,14 @@ internal class PlayerMediaSourceFactory(
             LedgerDataSourceFactory(httpDataSourceFactory)
         }
         if (networkProgressiveFactory !is AutoSpeedupDataSource.Factory) AutoSpeedup.end()
+        when {
+            useChunkSessionSource -> PlaybackLanes.useManual(
+                chunkSessionShape.effectiveConnections,
+                chunkSessionShape.effectiveChunkBytes
+            )
+            networkProgressiveFactory is AutoSpeedupDataSource.Factory -> PlaybackLanes.useAuto(AutoSpeedup.limits.holdBytes)
+            else -> PlaybackLanes.clear()
+        }
         val progressiveUpstreamFactory: DataSource.Factory =
             RedirectReportingDataSource.Factory(networkProgressiveFactory, url) { resolvedUrl ->
                 onStreamRedirected?.invoke(url, resolvedUrl)

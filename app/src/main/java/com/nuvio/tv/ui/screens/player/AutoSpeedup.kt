@@ -15,6 +15,7 @@ internal object AutoSpeedup {
     private const val MB = 1024L * 1024L
     private const val ROOM_READ_MS = 2_000L
     private const val SWAP_MIN_MB = 50L
+    private const val MAX_FILE_BITRATE = 400_000_000L
 
     data class Limits(val maxDownloads: Int, val holdBytes: Long)
 
@@ -102,6 +103,16 @@ internal object AutoSpeedup {
         policy = null
         url = null
         if (wasOn) ParallelRangeDataSource.releaseRetainedSessionIfIdle()
+    }
+
+    /**
+     * The film's average bitrate in bits per second, from the size the server gave (else the add-on's) over the length;
+     * 0 while either is unknown, or when the figures cannot both be right.
+     */
+    fun fileBitrate(serverBytes: Long?, addonBytes: Long?, durationMs: Long): Long {
+        val bytes = serverBytes?.takeIf { it > 0L } ?: addonBytes
+        val bps = PlayerBitrateEstimator.fileBitrateBps(bytes, durationMs)?.toLong() ?: return 0L
+        return if (bps <= MAX_FILE_BITRATE) bps else 0L
     }
 
     /** Bytes the extra downloads may hold now: each one in flight plus the piece being read. */

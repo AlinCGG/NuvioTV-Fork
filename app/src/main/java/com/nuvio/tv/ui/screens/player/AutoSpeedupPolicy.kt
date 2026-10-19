@@ -5,7 +5,9 @@ package com.nuvio.tv.ui.screens.player
  * film runs short, kept only when it raises the delivered rate by [GAIN_PERCENT] % (or the buffer starts to grow),
  * and handed back once the buffer has been comfortable for a while. One more is only tried while the box has the memory
  * it would hold free above its low-memory line and its swap is not nearly used up, and one is handed back as soon as
- * free memory drops below that line.
+ * free memory drops below that line. A film whose bitrate is known and high starts on [startDownloads] at once,
+ * judged like any other try against what the single download managed before the switch; if they do not help, the
+ * film goes back to one and climbs the usual way if it runs short.
  */
 internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: Long = 0L) {
 
@@ -14,6 +16,7 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
      * [bufferFull] = the buffer holds all the memory it may, so a flat buffer says nothing about the network.
      * [roomBytes] = free memory above the box's low-memory line and margin; below zero the box is short.
      * [swapLow] = the box's swap is nearly used up: no download is added, none is handed back for it.
+     * [fileBitrate] = the film's average bitrate in bits per second from its size and length, 0 while unknown.
      */
     data class Sample(
         val nowMs: Long,
@@ -26,7 +29,8 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         val bufferFull: Boolean = false,
         val multiActive: Boolean = true,
         val roomBytes: Long = Long.MAX_VALUE,
-        val swapLow: Boolean = false
+        val swapLow: Boolean = false,
+        val fileBitrate: Long = 0L
     )
 
     @Volatile
@@ -43,6 +47,10 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
     private var trialLengthMs = TRIAL_MS
     private var trialNeedsSwitch = false
     private var trialBaselineBps = 0L
+    private var trialBackTo = 1
+    private var trialNeedRate = 0L
+    private var triedAny = false
+    private var firstSampleMs = -1L
     private var nextStepAtMs = 0L
     private var blockedUntilMs = 0L
     private var comfortableSinceMs = -1L
@@ -58,6 +66,7 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         samples.addLast(s)
         while (samples.size > 1 && s.nowMs - samples.first().nowMs > HISTORY_MS) samples.removeFirst()
         if (!s.swapLow) heldForSwap = false
+        if (firstSampleMs < 0L) firstSampleMs = s.nowMs
 
         if (s.memoryShort) {
             if (downloads > 1) change(1, s.nowMs, "memory short")
@@ -83,12 +92,22 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
                 } else if (s.nowMs - trialStartMs >= SWITCH_WAIT_MS) {
                     trialStartMs = -1L
                     blockedUntilMs = s.nowMs + FAILED_BLOCK_MS
-                    change(downloads - 1, s.nowMs, "never switched")
+                    change(trialBackTo, s.nowMs, "never switched")
                 }
             } else if (s.nowMs - trialFromMs >= trialLengthMs) {
                 finishTrial(s)
             }
             return downloads
+        }
+
+        if (!triedAny && s.fileBitrate > 0L && downloads == 1 && s.nowMs >= blockedUntilMs && !s.swapLow) {
+            var start = startDownloads(s.fileBitrate, maxDownloads)
+            while (start > 1 && s.roomBytes < lentBytes(start, pieceBytes)) start--
+            if (start > 1) {
+                startTrial(s, start, TRIAL_MS, "start fileKbps=${s.fileBitrate / 1000}")
+                trialNeedRate = s.fileBitrate / 8
+                return downloads
+            }
         }
 
         val starving = starving(s)
@@ -102,13 +121,11 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
                 return downloads
             }
             if (mayAdd) {
-                trialBaselineBps = rateBps(s.nowMs - STARVE_WINDOW_MS, s.nowMs)
-                trialStartMs = s.nowMs
-                trialFromMs = -1L
-                trialNeedsSwitch = downloads == 1
-                trialLengthMs = trialLength(trialBaselineBps)
+                val baseline = rateBps(s.nowMs - STARVE_WINDOW_MS, s.nowMs)
+                val early = !triedAny && s.nowMs - firstSampleMs < EARLY_MS && s.aheadMs < EARLY_LOW_AHEAD_MS
+                val length = if (early) EARLY_TRIAL_MS else trialLength(baseline)
                 if (s.nowMs - lastDropAtMs < KEEP_AFTER_DROP_MS) keepForFilm = true
-                change(downloads + 1, s.nowMs, "trial baselineKbps=${trialBaselineBps * 8 / 1000}")
+                startTrial(s, downloads + 1, length, "trial baselineKbps=${baseline * 8 / 1000}" + if (early) " early" else "")
             }
             return downloads
         }
@@ -126,6 +143,18 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         return downloads
     }
 
+    private fun startTrial(s: Sample, to: Int, lengthMs: Long, why: String) {
+        trialBaselineBps = rateBps(s.nowMs - STARVE_WINDOW_MS, s.nowMs)
+        trialStartMs = s.nowMs
+        trialFromMs = -1L
+        trialNeedsSwitch = downloads == 1
+        trialBackTo = downloads
+        trialNeedRate = 0L
+        trialLengthMs = lengthMs
+        triedAny = true
+        change(to, s.nowMs, why)
+    }
+
     /** Long enough for two of the new download's pieces at the old rate, so slow links are not judged on one. */
     private fun trialLength(baselineBps: Long): Long {
         if (pieceBytes <= 0L || baselineBps <= 0L) return TRIAL_MS
@@ -138,15 +167,19 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         val playedThrough = samples.filter { it.nowMs >= from }.all { it.playing }
         val grew = playedThrough && s.aheadMs - aheadAt(from) >= GROWTH_PASS_MS
         val waited = loadingShare(from, s.nowMs) < LOADING_PASS_PERCENT
-        val faster = trialBaselineBps > 0L && trialBps * 100 >= trialBaselineBps * (100 + GAIN_PERCENT)
+        val faster = if (trialBaselineBps > 0L) {
+            trialBps * 100 >= trialBaselineBps * (100 + GAIN_PERCENT)
+        } else {
+            trialNeedRate > 0L && trialBps >= trialNeedRate
+        }
         trialStartMs = -1L
         val detail = "kbps=${trialBps * 8 / 1000} baselineKbps=${trialBaselineBps * 8 / 1000}"
         if (faster || grew || waited) {
             nextStepAtMs = s.nowMs + STEP_GAP_MS
             lastChange = "kept downloads=$downloads $detail grew=$grew waited=$waited"
         } else {
-            blockedUntilMs = s.nowMs + FAILED_BLOCK_MS
-            change(downloads - 1, s.nowMs, "no gain $detail")
+            blockedUntilMs = s.nowMs + if (trialNeedRate > 0L) STEP_GAP_MS else FAILED_BLOCK_MS
+            change(trialBackTo, s.nowMs, "no gain $detail")
         }
     }
 
@@ -192,6 +225,29 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         /** Memory the extra downloads hold at [downloads]: each one in flight plus the piece being read. */
         fun lentBytes(downloads: Int, pieceBytes: Long): Long = if (downloads > 1) (downloads + 1) * pieceBytes else 0L
 
+        /**
+         * Downloads a film starts on from its average bitrate. One long download on a TV box's network carried about
+         * 30 to 85 Mbit/s in the box tests, enough for 1080p and streaming 4K (under 40) but not for a 4K remux.
+         * Never above 3, so TorBox's 4 connections still leave one for thumbnails, and 2 on boxes allowed 4 (2 GB),
+         * where three 16 MB downloads ran the Fire Stick short of memory.
+         */
+        fun startDownloads(fileBitrate: Long, maxDownloads: Int): Int {
+            val want = when {
+                fileBitrate >= START_THREE_BPS -> 3
+                fileBitrate >= START_TWO_BPS -> 2
+                else -> 1
+            }
+            val cap = if (maxDownloads <= 4) 2 else START_MAX
+            return minOf(want, cap, maxDownloads).coerceAtLeast(1)
+        }
+
+        const val START_TWO_BPS = 40_000_000L
+        const val START_THREE_BPS = 60_000_000L
+        const val START_MAX = 3
+        /** The first try of a film that is already short this early is judged sooner. */
+        const val EARLY_MS = 90_000L
+        const val EARLY_LOW_AHEAD_MS = 5_000L
+        const val EARLY_TRIAL_MS = 7_000L
         const val GAIN_PERCENT = 15
         const val STARVE_AHEAD_MS = 15_000L
         const val STARVE_WINDOW_MS = 8_000L

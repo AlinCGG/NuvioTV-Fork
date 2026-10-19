@@ -489,7 +489,8 @@ internal fun PlaybackMemoryUsageCard(settings: PlayerSettings) {
         0
     }
     val totalUsageMb = effectiveBufferMb + downloadsMb + seekThumbsMb
-    val ramKnown = NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context) > 0L
+    val totalRamBytes = NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context)
+    val ramKnown = totalRamBytes > 0L
     val stutterLimitMb = if (settings.nuvioPerformanceModeEnabled) {
         BufferSettingsNumbers.stutterLimitMb(
             true, ramKnown, NuvioExoPlayerPerformanceHelper.getAutoBufferMb(context),
@@ -508,7 +509,11 @@ internal fun PlaybackMemoryUsageCard(settings: PlayerSettings) {
         (((MemoryBudget.budgetMb * 1.25f).toInt() - parallelOverheadMb) / MemoryBudget.BUFFER_STEP_MB * MemoryBudget.BUFFER_STEP_MB)
             .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
     }
-    val usageColor = when (BufferSettingsNumbers.bufferStatus(effectiveBufferMb, automaticTarget, stutterLimitMb, dangerMb)) {
+    val usageStatus = BufferSettingsNumbers.cardStatus(
+        BufferSettingsNumbers.bufferStatus(effectiveBufferMb, automaticTarget, stutterLimitMb, dangerMb),
+        BufferSettingsNumbers.totalStatus(totalUsageMb, totalRamBytes)
+    )
+    val usageColor = when (usageStatus) {
         MemoryUsageStatus.DANGER -> Color(0xFFF44336)
         MemoryUsageStatus.WARNING -> Color(0xFFFF9800)
         MemoryUsageStatus.SAFE -> Color(0xFF4CAF50)

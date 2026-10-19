@@ -205,6 +205,8 @@ internal class ParallelRangeDataSource(
         internal fun prefetchDepth(prefetchDepthChunks: Int, parallelConnections: Int): Int =
             prefetchDepthChunks.coerceAtLeast(parallelConnections + 1)
 
+        private val heapChunkLogged = java.util.concurrent.atomic.AtomicBoolean(false)
+
         @VisibleForTesting
         internal var allocateChunk: (Int) -> Allocation? = { DefaultAllocatorNative.createAllocation(it) }
         @VisibleForTesting
@@ -2282,6 +2284,9 @@ internal class ParallelRangeDataSource(
         return if (allocation != null && allocBuffer != null) {
             PooledBuffer(allocation, allocBuffer)
         } else {
+            if (heapChunkLogged.compareAndSet(false, true)) {
+                Log.w(TAG, "chunk buffers on the Java heap: native allocation failed (${chunkSize / 1024 / 1024} MB chunks)")
+            }
             PooledBuffer(null, ByteBuffer.allocate(chunkSize.toInt()))
         }
     }

@@ -82,7 +82,7 @@ private val STATS_GROUP_BY_LABEL: Map<String, StatsGroup> = buildMap {
         .forEach { put(it, StatsGroup.VIDEO) }
     listOf("Audio", "A bitrate", "Underruns", "Route", "A jitter")
         .forEach { put(it, StatsGroup.AUDIO) }
-    listOf("Buffer", "Speed", "Ping", "Request", "Rate limit", "Hedge", "Load errors", "Loaded", "Rebuffers", "Pos. freeze", "Server latency", "Mux estimate")
+    listOf("Buffer", "Speed", "Connections", "Ping", "Request", "Rate limit", "Hedge", "Load errors", "Loaded", "Rebuffers", "Pos. freeze", "Server latency", "Mux estimate")
         .forEach { put(it, StatsGroup.NETWORK) }
     listOf("App CPU", "Memory", CHIP_TEMP_LABEL, DEVICE_TEMP_LABEL, "CPU clock")
         .forEach { put(it, StatsGroup.SYSTEM) }
@@ -191,7 +191,7 @@ internal val StatsPanelWidth = 380.dp
 /** Compact is a view of the same sample; full mode always retains every row. */
 internal fun visibleStatsSections(sections: List<StatsSection>, compact: Boolean): List<StatsSection> {
     if (!compact) return sections
-    val labels = setOf("Position", "Video", "HDR", "DV", "DV HDR", "Audio", "Route", "Speed", "Buffer", "Dropped", "Underruns", "Display")
+    val labels = setOf("Position", "Video", "HDR", "DV", "DV HDR", "Audio", "Route", "Speed", "Connections", "Buffer", "Dropped", "Underruns", "Display")
     return sections.mapNotNull { section ->
         section.rows.filter { it.label in labels }.takeIf { it.isNotEmpty() }
             ?.let { section.copy(rows = it) }

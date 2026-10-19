@@ -42,6 +42,21 @@ class AutoSpeedupLimitsTest {
     }
 
     @Test
+    fun `film bitrate comes from the server's size over the length`() {
+        // 60 GB over 100 minutes is 80 Mbit/s.
+        assertEquals(80_000_000L, AutoSpeedup.fileBitrate(60_000_000_000L, 1L, 6_000_000L))
+        assertEquals(80_000_000L, AutoSpeedup.fileBitrate(null, 60_000_000_000L, 6_000_000L))
+        assertEquals(80_000_000L, AutoSpeedup.fileBitrate(0L, 60_000_000_000L, 6_000_000L))
+    }
+
+    @Test
+    fun `film bitrate is unknown without a length or with figures that cannot be right`() {
+        assertEquals(0L, AutoSpeedup.fileBitrate(60_000_000_000L, null, Long.MIN_VALUE + 1))
+        assertEquals(0L, AutoSpeedup.fileBitrate(null, null, 6_000_000L))
+        assertEquals(0L, AutoSpeedup.fileBitrate(60_000_000_000L, null, 60_000L))
+    }
+
+    @Test
     fun `lent memory is each download plus the piece being read`() {
         assertEquals(0L, AutoSpeedupPolicy.lentBytes(1, 16L * mb))
         assertEquals(48L * mb, AutoSpeedupPolicy.lentBytes(2, 16L * mb))

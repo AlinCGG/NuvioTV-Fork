@@ -14,6 +14,10 @@ internal object BufferSettingsNumbers {
 
     private const val MB = 1024L * 1024L
 
+    /** Android, the launcher and the app's own screens, decoders and video output, before any playback memory. */
+    const val SYSTEM_SHARE_MB = 800
+    private const val UNKNOWN_RAM_MB = 2048
+
     fun secondsHeld(bufferMb: Int): Int = (bufferMb / REMUX_MB_PER_SECOND).coerceAtLeast(0)
 
     /** Seconds for the line under Max buffer duration, or null when the setting is not longer than the size holds. */
@@ -47,13 +51,32 @@ internal object BufferSettingsNumbers {
             .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
     }
 
-    /** The memory card's colour, from the buffer alone: the downloads are shown next to it, not counted against it. */
+    /** The buffer's own colour: a size the user set above the stutter or danger line. An automatic size fits itself. */
     fun bufferStatus(bufferMb: Int, automaticSize: Boolean, stutterLimitMb: Int, dangerMb: Int): MemoryUsageStatus = when {
         automaticSize -> MemoryUsageStatus.SAFE
         bufferMb > dangerMb -> MemoryUsageStatus.DANGER
         bufferMb > stutterLimitMb -> MemoryUsageStatus.WARNING
         else -> MemoryUsageStatus.SAFE
     }
+
+    /**
+     * The colour of the total the card shows (buffer + downloads + thumbnails), against what the box has beyond
+     * [SYSTEM_SHARE_MB]: amber past half of it, red past 70 %. An automatic buffer counts at its shown size: it only
+     * shrinks at playback when the rest crowds it out.
+     */
+    fun totalStatus(totalMb: Int, totalRamBytes: Long): MemoryUsageStatus {
+        val ramMb = if (totalRamBytes > 0L) (totalRamBytes / MB).toInt() else UNKNOWN_RAM_MB
+        val spareMb = (ramMb - SYSTEM_SHARE_MB).coerceAtLeast(ramMb / 4)
+        return when {
+            totalMb * 10L > spareMb * 7L -> MemoryUsageStatus.DANGER
+            totalMb * 2L > spareMb -> MemoryUsageStatus.WARNING
+            else -> MemoryUsageStatus.SAFE
+        }
+    }
+
+    /** The memory card's colour: the worse of the buffer's own colour and the total's. */
+    fun cardStatus(bufferStatus: MemoryUsageStatus, totalStatus: MemoryUsageStatus): MemoryUsageStatus =
+        maxOf(bufferStatus, totalStatus)
 
     /** The amber line under Connection count: boxes with 2 GB or less, more than 2 connections. */
     fun connectionCountTooHigh(totalRamBytes: Long, connections: Int): Boolean =

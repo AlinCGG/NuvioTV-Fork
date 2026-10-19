@@ -57,14 +57,81 @@ class BufferSettingsNumbersTest {
     }
 
     @Test
-    fun `the memory card is coloured by the buffer only`() {
-        // 2 GB box: 150 MB buffer plus 96 MB of chunks used to turn the card orange.
+    fun `the buffer's own colour leaves an automatic size alone`() {
         assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.bufferStatus(150, true, 150, 325))
         assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.bufferStatus(150, false, 150, 325))
         assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.bufferStatus(250, false, 150, 325))
         assertEquals(MemoryUsageStatus.DANGER, BufferSettingsNumbers.bufferStatus(400, false, 150, 325))
         // Managed custom buffers: the buffer is the automatic size less the chunks.
         assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.bufferStatus(86, true, 75, 225))
+    }
+
+    private val fireStick4kMax = 1_710_032L * 1024L
+    private val box3gb = 2_936_000L * 1024L
+    private val am9 = 3_801_816L * 1024L
+
+    private fun card(bufferMb: Int, automatic: Boolean, stutterMb: Int, dangerMb: Int, totalMb: Int, ram: Long) =
+        BufferSettingsNumbers.cardStatus(
+            BufferSettingsNumbers.bufferStatus(bufferMb, automatic, stutterMb, dangerMb),
+            BufferSettingsNumbers.totalStatus(totalMb, ram)
+        )
+
+    @Test
+    fun `default settings stay green on 2, 3 and 4 GB boxes`() {
+        // Fire Stick 4K Max: 150 MB buffer and thumbnails, with and without native memory and Custom network 2 x 16 MB.
+        assertEquals(MemoryUsageStatus.SAFE, card(150, false, 150, 325, 150 + 50, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.SAFE, card(150, true, 150, 325, 150 + 95, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.SAFE, card(150, true, 150, 325, 150 + 96 + 95, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.SAFE, card(86, true, 75, 225, 86 + 64 + 95, fireStick4kMax))
+        // 3 GB: 500 MB automatic buffer, thumbnails, Custom network 4 x 16 MB.
+        assertEquals(MemoryUsageStatus.SAFE, card(500, true, 500, 650, 500 + 125, box3gb))
+        assertEquals(MemoryUsageStatus.SAFE, card(500, true, 500, 650, 500 + 160 + 125, box3gb))
+        // 4 GB: 1000 MB automatic buffer, thumbnails, Custom network 4 x 16 MB.
+        assertEquals(MemoryUsageStatus.SAFE, card(1000, true, 1000, 1200, 1000 + 125, am9))
+        assertEquals(MemoryUsageStatus.SAFE, card(1000, true, 1000, 1200, 1000 + 160 + 125, am9))
+    }
+
+    @Test
+    fun `16 connections of 32 MB on a 4 GB box turn the card red`() {
+        assertEquals(MemoryUsageStatus.DANGER, card(1000, true, 1000, 1200, 1000 + 1088 + 125, am9))
+        assertEquals(MemoryUsageStatus.DANGER, BufferSettingsNumbers.totalStatus(2213, am9))
+    }
+
+    @Test
+    fun `an automatic buffer still counts at its shown size in the total`() {
+        assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.bufferStatus(1000, true, 1000, 1200))
+        // 16 x 16 MB beside the 1000 MB automatic buffer.
+        assertEquals(MemoryUsageStatus.WARNING, card(1000, true, 1000, 1200, 1000 + 544 + 125, am9))
+        // Fire Stick, 150 MB automatic buffer with 224 MB of downloads and 4K thumbnails.
+        assertEquals(MemoryUsageStatus.WARNING, card(150, true, 150, 325, 150 + 224 + 95, fireStick4kMax))
+    }
+
+    @Test
+    fun `the total sets the amber and red lines by the box's memory`() {
+        // Fire Stick 4K Max: 869 MB beyond the system share.
+        assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.totalStatus(434, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.totalStatus(435, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.totalStatus(608, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.DANGER, BufferSettingsNumbers.totalStatus(609, fireStick4kMax))
+        // 3 GB: 2067 MB beyond it.
+        assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.totalStatus(1033, box3gb))
+        assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.totalStatus(1034, box3gb))
+        assertEquals(MemoryUsageStatus.DANGER, BufferSettingsNumbers.totalStatus(1447, box3gb))
+        // AM9: 2912 MB beyond it.
+        assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.totalStatus(1456, am9))
+        assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.totalStatus(1457, am9))
+        assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.totalStatus(2038, am9))
+        assertEquals(MemoryUsageStatus.DANGER, BufferSettingsNumbers.totalStatus(2039, am9))
+        // Unknown memory is taken as 2 GB.
+        assertEquals(MemoryUsageStatus.SAFE, BufferSettingsNumbers.totalStatus(624, 0L))
+        assertEquals(MemoryUsageStatus.WARNING, BufferSettingsNumbers.totalStatus(625, 0L))
+    }
+
+    @Test
+    fun `a user buffer past its own lines keeps the card at least that colour`() {
+        assertEquals(MemoryUsageStatus.DANGER, card(400, false, 150, 325, 400 + 95, fireStick4kMax))
+        assertEquals(MemoryUsageStatus.WARNING, card(1100, false, 1000, 1200, 1100 + 125, am9))
+        assertEquals(MemoryUsageStatus.DANGER, card(1100, false, 1000, 1200, 1100 + 1088, am9))
     }
 
     @Test

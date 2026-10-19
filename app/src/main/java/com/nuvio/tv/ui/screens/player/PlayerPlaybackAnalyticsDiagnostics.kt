@@ -148,7 +148,8 @@ internal class PlayerPlaybackAnalyticsDiagnostics {
         val startPositionMs: Long?,
         val transferredBytesTotal: Long,
         val transferredNetworkBytes: Long,
-        val transfer: PlaybackTransferSnapshot
+        val transfer: PlaybackTransferSnapshot,
+        val lanes: PlaybackLanes? = null
     )
 
     fun hudSample(): HudSample {
@@ -178,7 +179,8 @@ internal class PlayerPlaybackAnalyticsDiagnostics {
         startPositionMs = startPositionMs,
         transferredBytesTotal = transfer.readBytes,
         transferredNetworkBytes = transfer.networkBytes,
-        transfer = transfer
+        transfer = transfer,
+        lanes = PlaybackLanes.current()
         )
     }
 
