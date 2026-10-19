@@ -914,6 +914,7 @@ fun MetaDetailsScreen(
                     selectedSeason = uiState.selectedSeason,
                     episodesForSeason = uiState.episodesForSeason,
                     isInLibrary = uiState.isInLibrary,
+                    isLibraryPending = uiState.defaultLibraryTogglePending,
                     librarySourceMode = uiState.librarySourceMode,
                     nextToWatch = uiState.nextToWatch,
                     episodeProgressMap = uiState.episodeProgressMap,
@@ -1256,6 +1257,7 @@ private fun MetaDetailsContent(
     selectedSeason: Int,
     episodesForSeason: List<Video>,
     isInLibrary: Boolean,
+    isLibraryPending: Boolean = false,
     librarySourceMode: LibrarySourceMode,
     nextToWatch: NextToWatch?,
     episodeProgressMap: Map<Pair<Int, Int>, WatchProgress>,
@@ -2600,6 +2602,7 @@ private fun MetaDetailsContent(
                             null
                         },
                         isInLibrary = isInLibrary,
+                        isLibraryPending = isLibraryPending,
                         onToggleLibrary = onToggleLibrary,
                         onLibraryLongPress = onLibraryLongPress,
                         isMovieWatched = isMovieWatched,

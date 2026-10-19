@@ -34,6 +34,8 @@ import com.nuvio.tv.domain.model.ContentType
 import com.nuvio.tv.domain.model.LibraryEntryInput
 import com.nuvio.tv.domain.model.LibrarySourceMode
 import com.nuvio.tv.domain.model.ListMembershipChanges
+import com.nuvio.tv.core.tracking.TrackingMembershipApplyResult
+import com.nuvio.tv.core.tracking.TrackingProviderId
 import com.nuvio.tv.core.tracking.TrackingMembershipRemovalConfirmation
 import com.nuvio.tv.core.tracking.toggleTrackingMembershipSelection
 import com.nuvio.tv.core.tracking.TrackingProgressRefreshCoordinator
@@ -212,13 +214,16 @@ class MetaDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             val isSeries = rawMeta.videos.any { it.season != null }
             val target: StreamPrefetchTarget? = if (isSeries) {
-                val progressMap = watchProgressRepository
-                    .getAllEpisodeProgress(_effectiveContentId.value)
-                    .first()
-                val watchedEpisodes = watchedItemsPreferences
-                    .getWatchedEpisodesForContent(_effectiveContentId.value)
-                    .first()
-                val ntw = computeNextToWatch(rawMeta, progressMap, watchedEpisodes)
+                val (progressMap, watchedEpisodes) = nextToWatchSnapshotInputs()
+                val current = _uiState.value.nextToWatch
+                val ntw = if (
+                    current != null && nextToWatchFromData &&
+                    !hasNextToWatchData(progressMap, watchedEpisodes, serverStates.size)
+                ) {
+                    current
+                } else {
+                    computeNextToWatch(rawMeta, progressMap, watchedEpisodes)
+                }
                 // Fork: caught-up suppresses the hero
                 // source line entirely - no early scrape, no hero key. The
                 // Play button still targets the last episode; a press pays a
@@ -405,6 +410,8 @@ class MetaDetailsViewModel @Inject constructor(
     val lastFocusedEpisodeIdBySeason = androidx.compose.runtime.mutableStateMapOf<Int, String>()
     private var episodeRatingsJob: Job? = null
     private var nextToWatchJob: Job? = null
+    @Volatile
+    private var nextToWatchFromData = false
 
     @Volatile
     private var serverStates: List<com.nuvio.tv.data.mediaserver.ServerUserState> = emptyList()
@@ -567,7 +574,18 @@ class MetaDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun updateNextToWatch(nextToWatch: NextToWatch) {
+    private fun updateNextToWatch(nextToWatch: NextToWatch, source: String, fromData: Boolean) {
+        val current = _uiState.value.nextToWatch
+        if (!shouldReplaceNextToWatch(current, nextToWatchFromData, nextToWatch, fromData)) {
+            if (current == nextToWatch) {
+                if (fromData) nextToWatchFromData = true
+            } else {
+                Log.d(TAG, "nextToWatch $source kept S${current?.nextSeason}E${current?.nextEpisode}, no data for S${nextToWatch.nextSeason}E${nextToWatch.nextEpisode}")
+            }
+            return
+        }
+        Log.d(TAG, "nextToWatch $source -> S${nextToWatch.nextSeason}E${nextToWatch.nextEpisode} resume=${nextToWatch.isResume} data=$fromData")
+        nextToWatchFromData = fromData
         _uiState.update { state ->
             if (state.nextToWatch == nextToWatch) return@update state
             val nextSeason = nextToWatch.nextSeason
@@ -1336,15 +1354,9 @@ class MetaDetailsViewModel @Inject constructor(
         // Queue now, but the job waits for hero readiness (or explicit Down navigation).
         if (!isServerItem) loadMoreLikeThisAsync(meta)
         awaitHeroPresentation()
-        val progressMap = watchProgressRepository
-            .getAllEpisodeProgress(_effectiveContentId.value)
-            .first()
-        val watchedEpisodes = watchedItemsPreferences
-            .getWatchedEpisodesForContent(_effectiveContentId.value)
-            .first()
         // Stabilize the local season/episode target before revealing the existing row.
         // Remote progress refinement still runs after enrichment.
-        updateNextToWatch(computeNextToWatch(meta, progressMap, watchedEpisodes))
+        refreshNextToWatchFromSnapshot(meta, "meta")
         loadServerEpisodeStates(meta)
         // Existing episodes/cast can appear with the hero; remote enrichment must not hold them back.
         secondaryContentReady.value = true
@@ -1361,8 +1373,7 @@ class MetaDetailsViewModel @Inject constructor(
 
         // Pre-compute nextToWatch before applyMeta so the PlayButton text is stable
         // from the first composition. This prevents focus invalidation from late recomposition.
-        val precomputedNextToWatch = computeNextToWatch(enriched, progressMap, watchedEpisodes)
-        updateNextToWatch(precomputedNextToWatch)
+        refreshNextToWatchFromSnapshot(enriched, "enriched")
 
         android.util.Log.i(
             "MetaTiming",
@@ -1380,19 +1391,14 @@ class MetaDetailsViewModel @Inject constructor(
         // land before the remote provider (Simkl/Trakt) has finished its initial
         // sync, seeding an empty progress map and a wrong "Play S1E1" instead of
         // "Resume". First paint stays fast (above); once remote signals loaded we
-        // re-read, bounded, and refine. updateNextToWatch no-ops when the value is
+        // refine from the observed state. updateNextToWatch no-ops when the value is
         // unchanged, so this is free on the common local-only path.
         viewModelScope.launch {
-            val cid = _effectiveContentId.value
             watchProgressRepository.observeRemoteProgressLoaded().first { it }
-            val refreshedProgress = withTimeoutOrNull(150L) {
-                watchProgressRepository.getAllEpisodeProgress(cid).first { it.isNotEmpty() }
-            } ?: watchProgressRepository.getAllEpisodeProgress(cid).first()
-            val refreshedWatched = watchedItemsPreferences
-                .getWatchedEpisodesForContent(cid)
-                .first()
-            val refined = computeNextToWatch(enriched, refreshedProgress, refreshedWatched)
-            updateNextToWatch(refined)
+            withTimeoutOrNull(150L) {
+                _uiState.first { it.episodeProgressMap.isNotEmpty() || it.watchedEpisodes.isNotEmpty() }
+            }
+            refreshNextToWatchFromSnapshot(enriched, "remote_refine")
         }
         if (isServerItem) return
         // Episode ratings and MDBList are independent — launch both without waiting.
@@ -2266,21 +2272,42 @@ class MetaDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun calculateNextToWatch() {
+    private fun calculateNextToWatch(source: String = "observer") {
         val meta = _uiState.value.meta ?: return
         val progressMap = _uiState.value.episodeProgressMap
         val watchedEpisodes = _uiState.value.watchedEpisodes
+        val fromData = hasNextToWatchData(progressMap, watchedEpisodes, serverStates.size)
         // Don't let an observer-driven recompute from empty progress
         // clobber a good nextToWatch that the applyMetaWithEnrichment refine already set.
-        if (progressMap.isEmpty() && watchedEpisodes.isEmpty() && _uiState.value.nextToWatch != null) {
+        if (!fromData && _uiState.value.nextToWatch != null) {
             return
         }
         nextToWatchJob?.cancel()
 
         nextToWatchJob = viewModelScope.launch {
             val nextToWatch = computeNextToWatch(meta, progressMap, watchedEpisodes)
-            updateNextToWatch(nextToWatch)
+            updateNextToWatch(nextToWatch, source, fromData)
         }
+    }
+
+    private suspend fun nextToWatchSnapshotInputs(): Pair<Map<Pair<Int, Int>, WatchProgress>, Set<Pair<Int, Int>>> {
+        val cid = _effectiveContentId.value
+        val state = _uiState.value
+        return pickNextToWatchInputs(
+            observedProgress = state.episodeProgressMap,
+            observedWatched = state.watchedEpisodes,
+            readProgress = { watchProgressRepository.getAllEpisodeProgress(cid).first() },
+            readWatched = { watchedItemsPreferences.getWatchedEpisodesForContent(cid).first() }
+        )
+    }
+
+    private suspend fun refreshNextToWatchFromSnapshot(meta: Meta, source: String) {
+        val (progressMap, watchedEpisodes) = nextToWatchSnapshotInputs()
+        updateNextToWatch(
+            computeNextToWatch(meta, progressMap, watchedEpisodes),
+            source,
+            hasNextToWatchData(progressMap, watchedEpisodes, serverStates.size)
+        )
     }
 
     private fun onWatchedEpisodesChangedForServer() {
@@ -2301,9 +2328,7 @@ class MetaDetailsViewModel @Inject constructor(
             }.orEmpty()
             if (states.isEmpty()) return@launch
             serverStates = states
-            val progress = watchProgressRepository.getAllEpisodeProgress(contentId).first()
-            val watched = watchedItemsPreferences.getWatchedEpisodesForContent(contentId).first()
-            updateNextToWatch(computeNextToWatch(_uiState.value.meta ?: meta, progress, watched))
+            calculateNextToWatch("server_states")
         }
     }
 
@@ -2645,7 +2670,7 @@ class MetaDetailsViewModel @Inject constructor(
             val wasInLibrary = _uiState.value.isInLibrary
             _uiState.update { it.copy(defaultLibraryTogglePending = true) }
             runCatching {
-                libraryRepository.toggleDefault(input)
+                toggleDefaultWithTimeout(input)
             }.onSuccess { result ->
                 if (result.requiresRemovalConfirmation) {
                     pendingDefaultLibraryToggle = input
@@ -2675,6 +2700,14 @@ class MetaDetailsViewModel @Inject constructor(
             }
         }
     }
+
+    private suspend fun toggleDefaultWithTimeout(
+        input: LibraryEntryInput,
+        confirmedRemovalProviders: Set<TrackingProviderId> = emptySet()
+    ): TrackingMembershipApplyResult =
+        withLibraryToggleTimeout({ context.getString(com.nuvio.tv.R.string.detail_error_update_library_failed) }) {
+            libraryRepository.toggleDefault(input, confirmedRemovalProviders)
+        }
 
     private fun openListPicker() {
         val meta = _uiState.value.meta ?: return
@@ -2817,8 +2850,8 @@ class MetaDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(defaultLibraryTogglePending = true) }
             runCatching {
-                libraryRepository.toggleDefault(
-                    item = input,
+                toggleDefaultWithTimeout(
+                    input = input,
                     confirmedRemovalProviders = confirmations.mapTo(
                         linkedSetOf(),
                         TrackingMembershipRemovalConfirmation::providerId
