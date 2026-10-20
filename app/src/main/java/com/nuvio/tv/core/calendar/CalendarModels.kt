@@ -197,7 +197,9 @@ data class CalendarTitleRecord(
     val posterCheckedAtMs: Long = 0L,
     val backdrop: String? = null,
     val logo: String? = null,
-    val backdropCheckedAtMs: Long = 0L
+    val backdropCheckedAtMs: Long = 0L,
+    val rating: Double? = null,
+    val genre: String? = null
 ) {
     val entries: List<CalendarEntry> by lazy { mergeCalendarEntries(sources.values.flatten(), sourceFetchedAtMs) }
 

@@ -6,6 +6,14 @@
     <string name="calendar_title">Kalendorius</string>
     <string name="calendar_view_list">Sąrašas</string>
     <string name="calendar_view_month">Mėnuo</string>
+    <string name="calendar_view_week">Savaitė</string>
+    <string name="calendar_filter_all">Viskas</string>
+    <string name="calendar_filter_shows">Serialai</string>
+    <string name="calendar_filter_films">Filmai</string>
+    <string name="calendar_week_empty">Šią savaitę nieko</string>
+    <string name="calendar_cd_week_previous">Ankstesnė savaitė</string>
+    <string name="calendar_cd_week_next">Kita savaitė</string>
+    <string name="calendar_next_from">Toliau iš „%1$s“</string>
     <string name="calendar_times_in">Laikas: %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Serijų laikas iš „TVmaze“</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Datos dar nėra</string>
     <string name="calendar_section_no_date_hint">Grįžta arba gaminamas</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">Kino teatruose</string>
     <string name="calendar_film_digital">Srautinis ir skaitmeninis leidimas</string>

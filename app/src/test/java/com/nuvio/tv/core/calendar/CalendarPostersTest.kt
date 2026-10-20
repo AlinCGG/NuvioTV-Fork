@@ -126,33 +126,37 @@ class CalendarPostersTest {
         )
     )
 
-    @Test fun onlyComingUpTitlesWithoutABackdropAreAskedFor() {
+    @Test fun titlesWhoseArtIsDueAreAskedForSoonestFirst() {
+        val day = Duration.ofDays(1).toMillis()
         val titles = listOf(
-            upcoming(1, 1),
-            upcoming(2, 2, backdrop = "has.jpg"),
-            upcoming(3, 3, checkedAtMs = now.minus(Duration.ofHours(2)).toEpochMilli()),
-            upcoming(4, 4, checkedAtMs = now.minus(Duration.ofDays(2)).toEpochMilli()),
-            upcoming(5, 30),
+            upcoming(1, 3),
+            upcoming(2, 2, backdrop = "has.jpg", checkedAtMs = now.toEpochMilli() - 2 * day),
+            upcoming(3, 1, checkedAtMs = now.minus(Duration.ofHours(2)).toEpochMilli()),
+            upcoming(4, 4, checkedAtMs = now.toEpochMilli() - 2 * day),
+            upcoming(5, 30, backdrop = "full.jpg", checkedAtMs = now.toEpochMilli() - 8 * day),
+            upcoming(7, 1, backdrop = "cw.jpg"),
             CalendarTitleRecord("series:imdb:tt6", CalendarTitleType.SERIES, CalendarIds(imdb = "tt6"))
         )
-        val wanted = calendarBackdropsWanted(titles, null, now, ZoneOffset.UTC, max = 4)
-        assertEquals(listOf("series:imdb:tt1", "series:imdb:tt4"), wanted.map { it.key })
+        val wanted = calendarBackdropsWanted(titles, now, max = 4)
+        assertEquals(listOf("series:imdb:tt7", "series:imdb:tt1", "series:imdb:tt4", "series:imdb:tt5"), wanted.map { it.key })
     }
 
-    @Test fun aFetchWithoutABackdropIsNotedSoItWaitsADay() {
-        val title = upcoming(1, 1).copy(logo = "old.png")
+    @Test fun aLookupIsNotedWhateverItFound() {
+        val title = upcoming(1, 1).copy(logo = "old.png", rating = 7.0, genre = "Drama")
         val missed = title.withFetchedArt(null, now)
         assertNull(missed.backdrop)
         assertEquals(now.toEpochMilli(), missed.backdropCheckedAtMs)
         assertEquals("old.png", missed.logo)
-        val noBackdrop = title.withFetchedArt(CalendarArt(null, "new.png"), now)
-        assertEquals(now.toEpochMilli(), noBackdrop.backdropCheckedAtMs)
-        assertEquals("new.png", noBackdrop.logo)
-        val found = title.withFetchedArt(CalendarArt("fetched.jpg", null), now)
+        assertEquals(7.0, missed.rating!!, 0.0)
+        val found = title.withFetchedArt(CalendarArt("fetched.jpg", null, 8.4, "Crime"), now)
         assertEquals("fetched.jpg", found.backdrop)
         assertEquals("old.png", found.logo)
-        assertEquals(0L, found.backdropCheckedAtMs)
-        assertTrue(calendarBackdropsWanted(listOf(missed), null, now.plus(Duration.ofHours(23)), ZoneOffset.UTC).isEmpty())
-        assertEquals(1, calendarBackdropsWanted(listOf(missed), null, now.plus(Duration.ofHours(24)), ZoneOffset.UTC).size)
+        assertEquals(8.4, found.rating!!, 0.0)
+        assertEquals("Crime", found.genre)
+        assertEquals(now.toEpochMilli(), found.backdropCheckedAtMs)
+        assertTrue(calendarBackdropsWanted(listOf(missed), now.plus(Duration.ofHours(23))).isEmpty())
+        assertEquals(1, calendarBackdropsWanted(listOf(missed), now.plus(Duration.ofHours(24))).size)
+        assertTrue(calendarBackdropsWanted(listOf(found), now.plus(Duration.ofDays(6))).isEmpty())
+        assertEquals(1, calendarBackdropsWanted(listOf(found), now.plus(Duration.ofDays(7))).size)
     }
 }

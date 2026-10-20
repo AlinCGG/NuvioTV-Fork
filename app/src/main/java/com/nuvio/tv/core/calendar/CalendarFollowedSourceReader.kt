@@ -302,7 +302,7 @@ class CalendarFollowedSourceReader @Inject constructor(
             }
             calendarCachedArt(
                 usable,
-                metaArt = { type, id -> metaRepository.getCachedMeta(type, id)?.let { CalendarArt(it.background, it.logo) } },
+                metaArt = { type, id -> metaRepository.getCachedMeta(type, id)?.let(::calendarArtOf) },
                 continueWatchingArt = nextUp.map { it.contentId to CalendarArt(it.backdrop, it.logo) } +
                     inProgress.map { it.contentId to CalendarArt(it.backdrop, it.logo) }
             )

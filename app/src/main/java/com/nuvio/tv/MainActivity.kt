@@ -196,6 +196,7 @@ import com.nuvio.tv.ui.components.ProfileAvatarCircle
 import com.nuvio.tv.ui.navigation.NuvioNavHost
 import com.nuvio.tv.ui.navigation.ProfileNavigationViewModelStoreOwner
 import com.nuvio.tv.ui.navigation.Screen
+import com.nuvio.tv.ui.screens.calendar.openCalendarWatchTarget
 import com.nuvio.tv.ui.membership.LocalMemberAccess
 import com.nuvio.tv.ui.screens.account.AuthQrSignInScreen
 import com.nuvio.tv.ui.screens.addon.EssentialAddonSetupScreen
@@ -1383,38 +1384,7 @@ open class MainActivity : ComponentActivity() {
                                 playerVisible = playbackUiActive,
                                 currentRoute = actualRoute,
                                 resolveWatch = { reminder -> calendarEpisodeResolver.get().resolve(reminder) },
-                                onWatchTarget = { target ->
-                                    val series = target.contentType.equals("series", ignoreCase = true)
-                                    val videoId = target.videoId
-                                    if (videoId != null) {
-                                        navController.navigate(
-                                            Screen.Stream.createRoute(
-                                                videoId = videoId,
-                                                contentType = target.contentType,
-                                                title = target.name,
-                                                poster = target.poster,
-                                                backdrop = target.backdrop,
-                                                logo = target.logo,
-                                                season = target.season,
-                                                episode = target.episode,
-                                                episodeName = target.episodeTitle,
-                                                contentId = target.contentId,
-                                                contentName = target.name,
-                                                returnToDetailOnBack = series,
-                                                returnToHomeOnBack = true
-                                            )
-                                        )
-                                    } else {
-                                        navController.navigate(
-                                            Screen.Detail.createRoute(
-                                                itemId = target.contentId,
-                                                itemType = target.contentType,
-                                                returnFocusSeason = target.season,
-                                                returnFocusEpisode = target.episode
-                                            )
-                                        )
-                                    }
-                                },
+                                onWatchTarget = { target -> navController.openCalendarWatchTarget(target) },
                                 onOpenTitle = { reminder ->
                                     val ids = com.nuvio.tv.core.calendar.calendarContentIds(reminder.title)
                                     ids.firstOrNull()?.let { id ->

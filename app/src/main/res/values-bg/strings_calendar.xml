@@ -6,6 +6,14 @@
     <string name="calendar_title">Календар</string>
     <string name="calendar_view_list">Списък</string>
     <string name="calendar_view_month">Месец</string>
+    <string name="calendar_view_week">Седмица</string>
+    <string name="calendar_filter_all">Всички</string>
+    <string name="calendar_filter_shows">Сериали</string>
+    <string name="calendar_filter_films">Филми</string>
+    <string name="calendar_week_empty">Нищо тази седмица</string>
+    <string name="calendar_cd_week_previous">Предишна седмица</string>
+    <string name="calendar_cd_week_next">Следваща седмица</string>
+    <string name="calendar_next_from">Следващи от %1$s</string>
     <string name="calendar_times_in">Часова зона: %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">График на епизодите: TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Още без дата</string>
     <string name="calendar_section_no_date_hint">Подновен или в продукция</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">В кината</string>
     <string name="calendar_film_digital">Стрийминг и дигитално издание</string>

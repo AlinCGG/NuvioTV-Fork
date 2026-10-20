@@ -6,6 +6,14 @@
     <string name="calendar_title">Calendar</string>
     <string name="calendar_view_list">Listă</string>
     <string name="calendar_view_month">Lună</string>
+    <string name="calendar_view_week">Săptămână</string>
+    <string name="calendar_filter_all">Toate</string>
+    <string name="calendar_filter_shows">Seriale</string>
+    <string name="calendar_filter_films">Filme</string>
+    <string name="calendar_week_empty">Nimic săptămâna aceasta</string>
+    <string name="calendar_cd_week_previous">Săptămâna anterioară</string>
+    <string name="calendar_cd_week_next">Săptămâna următoare</string>
+    <string name="calendar_next_from">Urmează din %1$s</string>
     <string name="calendar_times_in">Ore în %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Orele episoadelor de la TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Încă fără dată</string>
     <string name="calendar_section_no_date_hint">Revin sau sunt în producție</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">La cinema</string>
     <string name="calendar_film_digital">Streaming și lansare digitală</string>

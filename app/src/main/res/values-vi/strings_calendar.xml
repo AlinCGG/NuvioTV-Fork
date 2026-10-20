@@ -6,6 +6,14 @@
     <string name="calendar_title">Lịch</string>
     <string name="calendar_view_list">Danh sách</string>
     <string name="calendar_view_month">Tháng</string>
+    <string name="calendar_view_week">Tuần</string>
+    <string name="calendar_filter_all">Tất cả</string>
+    <string name="calendar_filter_shows">Phim bộ</string>
+    <string name="calendar_filter_films">Phim lẻ</string>
+    <string name="calendar_week_empty">Tuần này không có gì</string>
+    <string name="calendar_cd_week_previous">Tuần trước</string>
+    <string name="calendar_cd_week_next">Tuần sau</string>
+    <string name="calendar_next_from">Tiếp theo của %1$s</string>
     <string name="calendar_times_in">Giờ theo %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Giờ phát sóng từ TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Chưa có ngày</string>
     <string name="calendar_section_no_date_hint">Sẽ trở lại hoặc đang sản xuất</string>
     <string name="calendar_episode_code">M%1$d T%2$d</string>
+    <string name="calendar_episode_range">M%1$d T%2$d–T%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">Ngoài rạp</string>
     <string name="calendar_film_digital">Phát trực tuyến và bản kỹ thuật số</string>

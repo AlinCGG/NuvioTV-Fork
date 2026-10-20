@@ -168,14 +168,14 @@ class CalendarUiModelTest {
         assertEquals(LocalDate.of(2026, 9, 27), calendarMonthGrid(YearMonth.of(2026, 10), DayOfWeek.SUNDAY).first())
     }
 
-    @Test fun monthKeysMoveDaysLeaveAtTheEdgesAndTurnTheMonth() {
+    @Test fun monthKeysMoveDaysLeaveAtTheSidesAndTurnTheMonthUpAndDown() {
         val october = YearMonth.of(2026, 10)
         val move = { date: LocalDate, key: CalendarMonthKey -> calendarMonthMove(date, october, DayOfWeek.MONDAY, key) }
         assertEquals(CalendarMonthMove.To(LocalDate.of(2026, 10, 7)), move(today, CalendarMonthKey.RIGHT))
         assertEquals(CalendarMonthMove.To(LocalDate.of(2026, 10, 13)), move(today, CalendarMonthKey.DOWN))
         assertEquals(CalendarMonthMove.Leave(CalendarMonthKey.LEFT), move(LocalDate.of(2026, 10, 5), CalendarMonthKey.LEFT))
         assertEquals(CalendarMonthMove.Leave(CalendarMonthKey.RIGHT), move(LocalDate.of(2026, 10, 11), CalendarMonthKey.RIGHT))
-        assertEquals(CalendarMonthMove.Leave(CalendarMonthKey.UP), move(LocalDate.of(2026, 10, 1), CalendarMonthKey.UP))
+        assertEquals(CalendarMonthMove.To(LocalDate.of(2026, 9, 24)), move(LocalDate.of(2026, 10, 1), CalendarMonthKey.UP))
         assertEquals(CalendarMonthMove.To(LocalDate.of(2026, 9, 30)), move(LocalDate.of(2026, 10, 1), CalendarMonthKey.LEFT))
         assertEquals(CalendarMonthMove.To(LocalDate.of(2026, 11, 12)), move(LocalDate.of(2026, 11, 5), CalendarMonthKey.DOWN))
     }

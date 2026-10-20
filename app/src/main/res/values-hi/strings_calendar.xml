@@ -6,6 +6,14 @@
     <string name="calendar_title">कैलेंडर</string>
     <string name="calendar_view_list">सूची</string>
     <string name="calendar_view_month">महीना</string>
+    <string name="calendar_view_week">सप्ताह</string>
+    <string name="calendar_filter_all">सभी</string>
+    <string name="calendar_filter_shows">शो</string>
+    <string name="calendar_filter_films">फ़िल्में</string>
+    <string name="calendar_week_empty">इस सप्ताह कुछ नहीं</string>
+    <string name="calendar_cd_week_previous">पिछला सप्ताह</string>
+    <string name="calendar_cd_week_next">अगला सप्ताह</string>
+    <string name="calendar_next_from">%1$s के अगले एपिसोड</string>
     <string name="calendar_times_in">समय: %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">एपिसोड का समय TVmaze से</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">अभी कोई तारीख नहीं</string>
     <string name="calendar_section_no_date_hint">लौट रहा है या प्रोडक्शन में</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">सिनेमाघरों में</string>
     <string name="calendar_film_digital">स्ट्रीमिंग और डिजिटल रिलीज़</string>

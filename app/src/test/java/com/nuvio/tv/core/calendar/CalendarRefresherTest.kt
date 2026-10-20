@@ -152,13 +152,13 @@ class CalendarRefresherTest {
         state.loaded && !state.refreshing && state.titles.isNotEmpty() && state.titles.none { it.isDue(now) }
     }
 
-    @Test fun comingUpTitlesWithoutABackdropAreAskedOnceAndTheBackdropIsSaved() = runBlocking {
+    @Test fun everyTitleIsAskedOnceAndWhatItFindsIsSaved() = runBlocking {
         inputs.followed[1] = shows(1, 2, 3).copy(cachedArt = mapOf("tmdb:2" to CalendarArt("continue-watching.jpg")))
         inputs.art = { ids -> if ("tt1" in ids) CalendarArt("fetched.jpg", "logo.png") else null }
         refresher.requestRefresh(CalendarRefreshReason.CALENDAR_OPENED)
         awaitIdle()
 
-        assertEquals(listOf("series:tt1", "series:tt3"), inputs.artCalls.sorted())
+        assertEquals(listOf("series:tt1", "series:tt2", "series:tt3"), inputs.artCalls.sorted())
         val titles = titles()
         assertEquals("fetched.jpg", titles.getValue(1).backdrop)
         assertEquals("logo.png", titles.getValue(1).logo)
@@ -171,7 +171,7 @@ class CalendarRefresherTest {
 
         refresher.requestRefresh(CalendarRefreshReason.CALENDAR_OPENED)
         until("the second refresh") { inputs.reads.get() >= 2 && !refresher.state.value.refreshing }
-        assertEquals(2, inputs.artCalls.size)
+        assertEquals(3, inputs.artCalls.size)
         assertEquals("fetched.jpg", titles().getValue(1).backdrop)
     }
 

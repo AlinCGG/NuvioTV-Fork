@@ -1,8 +1,9 @@
 package com.nuvio.tv.core.calendar
 
+import com.nuvio.tv.domain.model.Meta
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneId
+import kotlin.math.abs
 
 /**
  * Posters for titles none of their sources gave one, by id alias. The addon's own poster comes first when the
@@ -38,10 +39,23 @@ fun List<CalendarFollowedTitle>.withCachedPosters(posters: Map<String, String>):
         title.ids.aliases().firstNotNullOfOrNull(posters::get)?.let { title.copy(poster = it) } ?: title
     }
 
-data class CalendarArt(val backdrop: String?, val logo: String? = null)
+data class CalendarArt(
+    val backdrop: String?,
+    val logo: String? = null,
+    val rating: Double? = null,
+    val genre: String? = null
+)
+
+fun calendarArtOf(meta: Meta): CalendarArt = CalendarArt(
+    backdrop = meta.background,
+    logo = meta.logo,
+    rating = meta.imdbRating?.toDouble()?.takeIf { it > 0 },
+    genre = meta.genres.firstOrNull { it.isNotBlank() }
+)
 
 val CALENDAR_BACKDROP_RECHECK: Duration = Duration.ofDays(1)
-const val CALENDAR_BACKDROP_FETCH_MAX = 20
+val CALENDAR_ART_REFRESH: Duration = Duration.ofDays(7)
+const val CALENDAR_BACKDROP_FETCH_MAX = 40
 
 /**
  * Backdrops by id alias: the addon's own when the title's details are already in memory, then the one Continue
@@ -75,24 +89,38 @@ fun List<CalendarTitleRecord>.withCachedArt(art: Map<String, CalendarArt>): List
     if (art.isEmpty()) this else map { record ->
         val found = record.ids.aliases().firstNotNullOfOrNull(art::get) ?: return@map record
         val logo = found.logo?.takeIf(String::isNotBlank) ?: record.logo
-        if (found.backdrop == record.backdrop && logo == record.logo) record else record.copy(backdrop = found.backdrop, logo = logo)
+        val rating = found.rating ?: record.rating
+        val genre = found.genre?.takeIf(String::isNotBlank) ?: record.genre
+        if (found.backdrop == record.backdrop && logo == record.logo && rating == record.rating && genre == record.genre) record
+        else record.copy(backdrop = found.backdrop, logo = logo, rating = rating, genre = genre)
     }
 
-/** Coming up titles still without a backdrop, at most [max]; a title is tried again a day after its last try. */
+/**
+ * Every followed title with a date whose details are due, soonest release first, at most [max]. A title without a
+ * backdrop is tried again a day after its last try; one with everything is read again after a week for its rating.
+ */
 fun calendarBackdropsWanted(
     titles: List<CalendarTitleRecord>,
-    watched: CalendarWatchedIndex?,
     now: Instant,
-    zone: ZoneId,
     max: Int = CALENDAR_BACKDROP_FETCH_MAX
-): List<CalendarTitleRecord> =
-    buildCalendarComingUp(titles, watched, now, zone, max = max)
-        .map { it.title }
-        .filter { it.backdrop.isNullOrBlank() && now.toEpochMilli() - it.backdropCheckedAtMs >= CALENDAR_BACKDROP_RECHECK.toMillis() }
-
-fun CalendarTitleRecord.withFetchedArt(art: CalendarArt?, now: Instant): CalendarTitleRecord {
-    val logo = art?.logo?.takeIf(String::isNotBlank) ?: logo
-    val backdrop = art?.backdrop?.takeIf(String::isNotBlank)
-        ?: return copy(logo = logo, backdropCheckedAtMs = now.toEpochMilli())
-    return copy(backdrop = backdrop, logo = logo)
+): List<CalendarTitleRecord> {
+    val nowMs = now.toEpochMilli()
+    return titles.asSequence()
+        .filter { it.entries.isNotEmpty() }
+        .filter { title ->
+            val wait = if (title.backdrop.isNullOrBlank() || title.backdropCheckedAtMs == 0L) CALENDAR_BACKDROP_RECHECK else CALENDAR_ART_REFRESH
+            nowMs - title.backdropCheckedAtMs >= wait.toMillis()
+        }
+        .sortedBy { title -> title.entries.mapNotNull { it.sortInstant()?.toEpochMilli() }.minOfOrNull { abs(it - nowMs) } ?: Long.MAX_VALUE }
+        .take(max)
+        .toList()
 }
+
+/** The lookup is noted whatever it found, so the next one waits; what it did not find keeps what was saved. */
+fun CalendarTitleRecord.withFetchedArt(art: CalendarArt?, now: Instant): CalendarTitleRecord = copy(
+    backdrop = art?.backdrop?.takeIf(String::isNotBlank) ?: backdrop,
+    logo = art?.logo?.takeIf(String::isNotBlank) ?: logo,
+    rating = art?.rating?.takeIf { it > 0 } ?: rating,
+    genre = art?.genre?.takeIf(String::isNotBlank) ?: genre,
+    backdropCheckedAtMs = now.toEpochMilli()
+)

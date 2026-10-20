@@ -6,6 +6,14 @@
     <string name="calendar_title">Kalender</string>
     <string name="calendar_view_list">Daftar</string>
     <string name="calendar_view_month">Bulan</string>
+    <string name="calendar_view_week">Minggu</string>
+    <string name="calendar_filter_all">Semua</string>
+    <string name="calendar_filter_shows">Serial</string>
+    <string name="calendar_filter_films">Film</string>
+    <string name="calendar_week_empty">Kosong minggu ini</string>
+    <string name="calendar_cd_week_previous">Minggu sebelumnya</string>
+    <string name="calendar_cd_week_next">Minggu berikutnya</string>
+    <string name="calendar_next_from">Berikutnya dari %1$s</string>
     <string name="calendar_times_in">Waktu %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Jadwal episode dari TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Belum ada tanggal</string>
     <string name="calendar_section_no_date_hint">Akan kembali atau dalam produksi</string>
     <string name="calendar_episode_code">M%1$d E%2$d</string>
+    <string name="calendar_episode_range">M%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">Di bioskop</string>
     <string name="calendar_film_digital">Rilis streaming dan digital</string>

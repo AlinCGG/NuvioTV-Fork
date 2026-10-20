@@ -45,7 +45,11 @@ data class CalendarRow(
     val status: CalendarRowStatus = CalendarRowStatus.NONE,
     val showStatus: CalendarShowStatus = CalendarShowStatus.UNKNOWN,
     val network: String? = null,
-    val section: CalendarSectionKind = CalendarSectionKind.DAY
+    val section: CalendarSectionKind = CalendarSectionKind.DAY,
+    val backdrop: String? = null,
+    val logo: String? = null,
+    val rating: Double? = null,
+    val genre: String? = null
 ) {
     val dimmed: Boolean get() = status == CalendarRowStatus.WATCHED
     val isFilm: Boolean get() = type == CalendarTitleType.MOVIE
@@ -148,7 +152,11 @@ fun calendarRow(
         status = calendarRowStatus(title, entry, now, bells, watched),
         showStatus = title.status,
         network = calendarNetworkName(title.network),
-        section = section
+        section = section,
+        backdrop = title.backdrop?.takeIf(String::isNotBlank),
+        logo = title.logo?.takeIf(String::isNotBlank),
+        rating = title.rating,
+        genre = title.genre
     )
 }
 
@@ -237,13 +245,13 @@ enum class CalendarMonthKey { LEFT, RIGHT, UP, DOWN }
 
 sealed interface CalendarMonthMove {
     data class To(val date: LocalDate) : CalendarMonthMove
-    /** Focus leaves the grid: left to the menu, up to the header, right into the day's list. */
+    /** Focus leaves the grid: left to the menu, right into the day's list. */
     data class Leave(val key: CalendarMonthKey) : CalendarMonthMove
 }
 
 /**
- * Moves the focused day. Left from the first column and up from the top week leave the grid; down from the last week
- * and any move onto a day of another month turn the month.
+ * Moves the focused day. Left from the first column and right from the last leave the grid; up from the top week, down
+ * from the last week and any move onto a day of another month turn the month.
  */
 fun calendarMonthMove(focused: LocalDate, month: YearMonth, firstDay: DayOfWeek, key: CalendarMonthKey): CalendarMonthMove {
     val grid = calendarMonthGrid(month, firstDay)
@@ -253,7 +261,7 @@ fun calendarMonthMove(focused: LocalDate, month: YearMonth, firstDay: DayOfWeek,
     return when (key) {
         CalendarMonthKey.LEFT -> if (column == 0) CalendarMonthMove.Leave(key) else CalendarMonthMove.To(focused.minusDays(1))
         CalendarMonthKey.RIGHT -> if (column == 6) CalendarMonthMove.Leave(key) else CalendarMonthMove.To(focused.plusDays(1))
-        CalendarMonthKey.UP -> if (row == 0) CalendarMonthMove.Leave(key) else CalendarMonthMove.To(focused.minusWeeks(1))
+        CalendarMonthKey.UP -> CalendarMonthMove.To(focused.minusWeeks(1))
         CalendarMonthKey.DOWN -> CalendarMonthMove.To(focused.plusWeeks(1))
     }
 }

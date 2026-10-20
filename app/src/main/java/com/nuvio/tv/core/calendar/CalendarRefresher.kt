@@ -125,7 +125,7 @@ class DefaultCalendarRefreshInputs @Inject constructor(
             } catch (_: Exception) {
                 null
             }
-            if (result is NetworkResult.Success) return CalendarArt(result.data.background, result.data.logo)
+            if (result is NetworkResult.Success) return calendarArtOf(result.data)
         }
         return null
     }
@@ -374,7 +374,7 @@ class CalendarRefresher internal constructor(
                 }
             }
             try {
-                fetchComingUpArt(current, settings)
+                fetchCalendarArt(current, settings)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -418,13 +418,12 @@ class CalendarRefresher internal constructor(
     }
 
     /**
-     * One details read at a time for the Coming up titles that still have no backdrop. The new backdrops are
+     * One details read at a time for the titles whose art is due. The new backdrops are
      * published together at the end, so the row is rebuilt once instead of once per title.
      */
-    private suspend fun fetchComingUpArt(current: Owner, settings: CalendarSettings) {
+    private suspend fun fetchCalendarArt(current: Owner, settings: CalendarSettings) {
         val now = clock.instant()
-        val zone = inputs.zone()
-        val wanted = withOwner(current) { calendarBackdropsWanted(data.titles.visible(settings), watched, now, zone) } ?: return
+        val wanted = withOwner(current) { calendarBackdropsWanted(data.titles.visible(settings), now) } ?: return
         if (wanted.isEmpty()) return
         var found = 0
         for (title in wanted) {

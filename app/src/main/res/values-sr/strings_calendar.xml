@@ -6,6 +6,14 @@
     <string name="calendar_title">Календар</string>
     <string name="calendar_view_list">Листа</string>
     <string name="calendar_view_month">Месец</string>
+    <string name="calendar_view_week">Недеља</string>
+    <string name="calendar_filter_all">Све</string>
+    <string name="calendar_filter_shows">Серије</string>
+    <string name="calendar_filter_films">Филмови</string>
+    <string name="calendar_week_empty">Ништа ове недеље</string>
+    <string name="calendar_cd_week_previous">Претходна недеља</string>
+    <string name="calendar_cd_week_next">Следећа недеља</string>
+    <string name="calendar_next_from">Следеће из: %1$s</string>
     <string name="calendar_times_in">Временска зона: %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Распоред епизода: TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Још без датума</string>
     <string name="calendar_section_no_date_hint">Обновљена или у продукцији</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">У биоскопима</string>
     <string name="calendar_film_digital">Стриминг и дигитално издање</string>

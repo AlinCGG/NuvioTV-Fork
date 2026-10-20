@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-enum class CalendarViewMode { LIST, MONTH }
+enum class CalendarViewMode { WEEK, LIST, MONTH }
 
 enum class CalendarPhase { LOADING, BUILDING, NOTHING_FOLLOWED, ALL_QUIET, READY }
 
@@ -46,7 +46,8 @@ data class CalendarUiState(
     val today: LocalDate? = null,
     val windowDays: Int = CALENDAR_DEFAULT_WINDOW_DAYS,
     val list: CalendarListModel = CalendarListModel(),
-    val days: Map<LocalDate, List<CalendarRow>> = emptyMap()
+    val days: Map<LocalDate, List<CalendarRow>> = emptyMap(),
+    val byTitle: Map<String, List<CalendarRow>> = emptyMap()
 )
 
 @Immutable
@@ -101,11 +102,18 @@ class CalendarViewModel internal constructor(
             .flowOn(computeDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), CalendarUiState())
 
-    private val _viewMode = MutableStateFlow(CalendarViewMode.LIST)
+    private val _viewMode = MutableStateFlow(CalendarViewMode.WEEK)
     val viewMode: StateFlow<CalendarViewMode> = _viewMode.asStateFlow()
 
     private val _month = MutableStateFlow(CalendarMonthState())
     val month: StateFlow<CalendarMonthState> = _month.asStateFlow()
+
+    /** The first day of the week on show; null for this week. */
+    private val _weekStart = MutableStateFlow<LocalDate?>(null)
+    val weekStart: StateFlow<LocalDate?> = _weekStart.asStateFlow()
+
+    private val _filter = MutableStateFlow(CalendarFilter.ALL)
+    val filter: StateFlow<CalendarFilter> = _filter.asStateFlow()
 
     private val _focus = MutableStateFlow<CalendarFocus?>(null)
     val focus: StateFlow<CalendarFocus?> = _focus.asStateFlow()
@@ -148,7 +156,18 @@ class CalendarViewModel internal constructor(
     /** The menu entry chosen while the Calendar is already open. */
     fun showToday() {
         _month.value = CalendarMonthState()
+        _weekStart.value = null
     }
+
+    fun shiftWeek(current: LocalDate, weeks: Long) {
+        _weekStart.value = current.plusWeeks(weeks)
+    }
+
+    fun setFilter(filter: CalendarFilter) {
+        _filter.value = filter
+    }
+
+    suspend fun watchTarget(row: CalendarRow) = runCatching { data.watchTarget(row) }.getOrNull()
 
     private fun build(inputs: CalendarInputs): CalendarUiState {
         val (state, settings, zone, now) = inputs
@@ -166,12 +185,13 @@ class CalendarViewModel internal constructor(
             today = now.atZone(zone).toLocalDate(),
             windowDays = windowDays,
             list = list,
-            days = days
+            days = days,
+            byTitle = calendarRowsByTitle(days)
         )
     }
 
     fun setViewMode(mode: CalendarViewMode) {
-        if (mode == CalendarViewMode.MONTH && _viewMode.value != CalendarViewMode.MONTH) showToday()
+        if (mode != CalendarViewMode.LIST && _viewMode.value != mode) showToday()
         _viewMode.value = mode
     }
 
@@ -183,6 +203,24 @@ class CalendarViewModel internal constructor(
     fun openDayInList(date: LocalDate) {
         _pendingListKey.value = uiState.value.list.rowKeyFor(date)
         _viewMode.value = CalendarViewMode.LIST
+    }
+
+    /** Set when OK on a month day opens the Week on it; the Week clears it once it has focused that day. */
+    private val _pendingWeekDay = MutableStateFlow<LocalDate?>(null)
+    val pendingWeekDay: StateFlow<LocalDate?> = _pendingWeekDay.asStateFlow()
+
+    /** OK on a month day with something on: the Week of that day, focused on its first card. An empty day does nothing. */
+    fun openDayInWeek(date: LocalDate, weekStart: LocalDate) {
+        val rows = uiState.value.days[date].orEmpty()
+        if (rows.isEmpty()) return
+        if (rows.none(_filter.value::keeps)) _filter.value = CalendarFilter.ALL
+        _weekStart.value = weekStart
+        _pendingWeekDay.value = date
+        _viewMode.value = CalendarViewMode.WEEK
+    }
+
+    fun consumePendingWeekDay() {
+        _pendingWeekDay.value = null
     }
 
     fun consumePendingListKey() {

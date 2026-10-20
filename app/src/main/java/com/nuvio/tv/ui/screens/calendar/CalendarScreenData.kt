@@ -1,6 +1,9 @@
 package com.nuvio.tv.ui.screens.calendar
 
 import com.nuvio.tv.core.calendar.CalendarClock
+import com.nuvio.tv.core.calendar.CalendarEpisodeResolver
+import com.nuvio.tv.core.calendar.CalendarReminder
+import com.nuvio.tv.core.calendar.CalendarWatchTarget
 import com.nuvio.tv.core.calendar.CalendarIds
 import com.nuvio.tv.core.calendar.CalendarRefreshReason
 import com.nuvio.tv.core.calendar.CalendarRefresher
@@ -32,8 +35,15 @@ data class CalendarRowDetails(
     val synopsis: String? = null,
     val runtimeMinutes: Int? = null,
     /** A film's runtime as its addon gave it. */
-    val filmRuntime: String? = null
+    val filmRuntime: String? = null,
+    val logo: String? = null,
+    val rating: Double? = null,
+    val genre: String? = null,
+    /** Episode pictures by "season:episode". */
+    val stills: Map<String, String> = emptyMap()
 ) {
+    fun still(season: Int?, episode: Int?): String? = if (season == null || episode == null) null else stills["$season:$episode"]
+
     val complete: Boolean get() = backdrop != null && synopsis != null
 }
 
@@ -58,6 +68,9 @@ interface CalendarScreenData {
     /** From what the app already holds; with [fetch] the title's details are asked for once when they are missing. */
     suspend fun details(row: CalendarRow, fetch: Boolean = false): CalendarRowDetails?
 
+    /** Where Watch now goes for an aired row; null when the episode cannot be found. */
+    suspend fun watchTarget(row: CalendarRow): CalendarWatchTarget? = null
+
     /** Set when the reminder card asks the Calendar to open at Just aired. */
     val openAtJustAired: StateFlow<Boolean>
     fun consumeOpenAtJustAired()
@@ -70,6 +83,7 @@ class DefaultCalendarScreenData @Inject constructor(
     private val reminders: CalendarReminderCenter,
     private val metaRepository: MetaRepository,
     private val enrichmentCache: ContinueWatchingEnrichmentCache,
+    private val episodeResolver: CalendarEpisodeResolver,
     @CalendarClock private val clock: Clock
 ) : CalendarScreenData {
     override val state get() = refresher.state
@@ -137,9 +151,23 @@ class DefaultCalendarScreenData @Inject constructor(
             backdrop = meta?.background ?: next?.backdrop ?: started?.backdrop,
             synopsis = (episodeText ?: meta?.description)?.trim()?.takeIf(String::isNotEmpty),
             runtimeMinutes = video?.runtime?.takeIf { it > 0 },
-            filmRuntime = meta?.runtime?.takeIf { row.isFilm && it.isNotBlank() }
+            filmRuntime = meta?.runtime?.takeIf { row.isFilm && it.isNotBlank() },
+            logo = meta?.logo?.takeIf(String::isNotBlank) ?: next?.logo ?: started?.logo,
+            rating = meta?.imdbRating?.toDouble()?.takeIf { it > 0 },
+            genre = meta?.genres?.firstOrNull { it.isNotBlank() },
+            stills = meta?.videos.orEmpty().mapNotNull { v ->
+                val still = v.thumbnail?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+                if (v.season == null || v.episode == null) null else "${v.season}:${v.episode}" to still
+            }.toMap()
         )
         return details.takeIf { it.backdrop != null || it.synopsis != null || it.runtimeMinutes != null || it.filmRuntime != null }
+    }
+
+    override suspend fun watchTarget(row: CalendarRow): CalendarWatchTarget? {
+        val title = refresher.state.value.titles.firstOrNull { it.matchesKey(row.titleKey) } ?: return null
+        val slot = row.key.removePrefix("${row.titleKey}|").substringBefore('#')
+        val entry = title.entries.firstOrNull { it.slot == slot } ?: return null
+        return episodeResolver.resolve(CalendarReminder(title, entry, clock.instant()))
     }
 
     private suspend fun fetchMeta(type: String, ids: List<String>): com.nuvio.tv.domain.model.Meta? =

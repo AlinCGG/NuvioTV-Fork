@@ -6,6 +6,14 @@
     <string name="calendar_title">Kalendar</string>
     <string name="calendar_view_list">Popis</string>
     <string name="calendar_view_month">Mjesec</string>
+    <string name="calendar_view_week">Tjedan</string>
+    <string name="calendar_filter_all">Sve</string>
+    <string name="calendar_filter_shows">Serije</string>
+    <string name="calendar_filter_films">Filmovi</string>
+    <string name="calendar_week_empty">Ništa ovaj tjedan</string>
+    <string name="calendar_cd_week_previous">Prethodni tjedan</string>
+    <string name="calendar_cd_week_next">Sljedeći tjedan</string>
+    <string name="calendar_next_from">Sljedeće iz: %1$s</string>
     <string name="calendar_times_in">Vrijeme: %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Vremena epizoda pruža TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Još bez datuma</string>
     <string name="calendar_section_no_date_hint">Vraća se ili je u produkciji</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">U kinima</string>
     <string name="calendar_film_digital">Streaming i digitalno izdanje</string>

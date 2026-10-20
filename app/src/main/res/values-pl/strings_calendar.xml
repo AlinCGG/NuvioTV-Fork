@@ -6,6 +6,14 @@
     <string name="calendar_title">Kalendarz</string>
     <string name="calendar_view_list">Lista</string>
     <string name="calendar_view_month">Miesiąc</string>
+    <string name="calendar_view_week">Tydzień</string>
+    <string name="calendar_filter_all">Wszystko</string>
+    <string name="calendar_filter_shows">Seriale</string>
+    <string name="calendar_filter_films">Filmy</string>
+    <string name="calendar_week_empty">W tym tygodniu nic</string>
+    <string name="calendar_cd_week_previous">Poprzedni tydzień</string>
+    <string name="calendar_cd_week_next">Następny tydzień</string>
+    <string name="calendar_next_from">Dalej z: %1$s</string>
     <string name="calendar_times_in">Godziny w strefie %1$s</string>
     <string name="calendar_zone_with_city">%1$s (%2$s)</string>
     <string name="calendar_credit">Godziny odcinków z TVmaze</string>
@@ -18,6 +26,7 @@
     <string name="calendar_section_no_date">Jeszcze bez daty</string>
     <string name="calendar_section_no_date_hint">Powracające lub w produkcji</string>
     <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_episode_range">S%1$d E%2$d–E%3$d</string>
     <string name="calendar_line_join">%1$s · %2$s</string>
     <string name="calendar_film_cinema">W kinach</string>
     <string name="calendar_film_digital">Streaming i wydanie cyfrowe</string>
