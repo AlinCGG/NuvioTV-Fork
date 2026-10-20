@@ -267,6 +267,12 @@ class NuvioExoPlayerPerformanceHelperTest {
 
             helper.targetBufferSizeMb = 1000
             assertEquals(12_000_000L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
+
+            // A back buffer longer than half the minimum is kept when the memory allows it.
+            helper.minBufferMs = 15_000
+            helper.maxBufferMs = 15_000
+            helper.backBufferMs = 25_000
+            assertEquals(25_000_000L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
         } finally {
             helper.targetBufferSizeMb = old[0]
             helper.minBufferMs = old[1]

@@ -35,8 +35,10 @@ object BufferSizing {
     /** About 5 s of a 4K remux at 80 Mbit/s. */
     const val MIN_SIZED_BUFFER_MB = 50
 
-    /** The bitrate the back buffer is sized for, a 4K remux at about 80 Mbit/s. */
-    private const val BACK_BUFFER_BYTES_PER_SECOND = 10L * MB
+    /** The bitrate the back buffer is sized for while the film's is unknown, a 4K remux at about 80 Mbit/s. */
+    const val DEFAULT_BACK_BUFFER_BYTES_PER_SECOND = 10L * MB
+    /** 8 Mbit/s: a wrong file size cannot make the back buffer crowd out the buffer ahead. */
+    private const val MIN_BACK_BUFFER_BYTES_PER_SECOND = 1L * MB
     /** Buffer ahead that the back buffer always leaves room for. */
     const val MIN_AHEAD_MS = 5_000L
 
@@ -89,16 +91,32 @@ object BufferSizing {
         return spareMb(free, outsideBudgetMb, heldByPlayerMb).coerceIn(floor.toLong(), boxMb.toLong()).toInt()
     }
 
+    /** Bytes per second of the film from its average bitrate in bits per second; the 80 Mbit/s default while unknown. */
+    fun backBufferBytesPerSecond(fileBitrateBps: Long): Long =
+        if (fileBitrateBps <= 0L) DEFAULT_BACK_BUFFER_BYTES_PER_SECOND
+        else (fileBitrateBps / 8L).coerceAtLeast(MIN_BACK_BUFFER_BYTES_PER_SECOND)
+
     /**
      * Every byte of the back buffer counts against the target, and it moves with playback instead of shrinking.
-     * At [BACK_BUFFER_BYTES_PER_SECOND] it takes at most a third of [targetBytes] and leaves [MIN_AHEAD_MS] ahead.
+     * At [bytesPerSecond] it takes at most a third of [targetBytes] and leaves [MIN_AHEAD_MS] ahead.
      */
-    fun backBufferMsForTarget(backBufferMs: Int, targetBytes: Long): Int {
+    fun backBufferMsForTarget(
+        backBufferMs: Int,
+        targetBytes: Long,
+        bytesPerSecond: Long = DEFAULT_BACK_BUFFER_BYTES_PER_SECOND
+    ): Int {
         if (backBufferMs <= 0) return 0
-        val aheadBytes = MIN_AHEAD_MS * BACK_BUFFER_BYTES_PER_SECOND / 1000L
+        val rate = bytesPerSecond.takeIf { it > 0L } ?: DEFAULT_BACK_BUFFER_BYTES_PER_SECOND
+        val aheadBytes = MIN_AHEAD_MS * rate / 1000L
         val backBytes = minOf(targetBytes / 3, targetBytes - aheadBytes).coerceAtLeast(0L)
-        return backBufferMs.toLong().coerceAtMost(backBytes * 1000L / BACK_BUFFER_BYTES_PER_SECOND).toInt()
+        return backBufferMs.toLong().coerceAtMost(backBytes * 1000L / rate).toInt()
     }
+
+    /** The budget the back buffer was fitted to at the last player build, for the settings note. */
+    data class PlaybackBudget(val nativeMemory: Boolean, val automatic: Boolean, val budgetMb: Int)
+
+    @Volatile
+    var lastPlaybackBudget: PlaybackBudget? = null
 
     fun describe(boxMb: Int, sizedMb: Int, free: FreeMemory?, outsideBudgetMb: Int, heldByPlayerMb: Int): String =
         if (free == null) "boxMb=$boxMb sizedMb=$sizedMb free=unknown"

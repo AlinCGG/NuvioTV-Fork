@@ -27,6 +27,21 @@ internal object BufferSettingsNumbers {
     data class BackBufferKept(val seconds: Int, val mb: Int)
 
     /**
+     * The size the back buffer note works from: an automatic size is lowered at playback to what the box has free, so
+     * once a film has played on the same engine, the size it really got.
+     */
+    fun playbackBufferMb(
+        bufferMb: Int,
+        automaticSize: Boolean,
+        nativeMemory: Boolean,
+        lastPlayback: BufferSizing.PlaybackBudget?
+    ): Int {
+        if (!automaticSize || lastPlayback == null) return bufferMb
+        if (!lastPlayback.automatic || lastPlayback.nativeMemory != nativeMemory || lastPlayback.budgetMb <= 0) return bufferMb
+        return lastPlayback.budgetMb
+    }
+
+    /**
      * The back buffer the player keeps inside [bufferMb]. With native memory the player also holds it to half of
      * [minBufferMs]. Null when nothing is kept.
      */

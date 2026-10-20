@@ -16,4 +16,7 @@ interface BufferBudgetControl {
 
     /** The allocator target the load control would set now. */
     fun allocatorTargetBytes(): Int
+
+    /** The most buffer ahead the player loads. */
+    val maxBufferMs: Int
 }

@@ -667,6 +667,7 @@ class PlayerViewModel @Inject constructor(
                 else -> StatsDot.BAD
             }
             rows += StatsRow("Buffer", String.format("%.1f s ahead", aheadS), dot)
+            rows += StatsRow("Back buffer", backBufferKeptText(controller.effectiveBackBufferDurationMs), StatsDot.NONE)
         }
 
         val transferRate = transferRateSampler.sample(hud.transfer)

@@ -47,6 +47,8 @@ class BitrateAwareLoadControl(
 
     override val bufferAllocator: DefaultAllocator = allocator
 
+    override val maxBufferMs: Int = maxBufferMs
+
     // Effective byte budget when >= 0, else the constructed budget. Re-read on track
     // (re)selection, so this can change mid-playback.
     @Volatile

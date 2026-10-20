@@ -94,4 +94,38 @@ class BufferSizingTest {
             assertTrue("target $targetMb MB", backBytes <= targetMb * mb / 3)
         }
     }
+
+    @Test
+    fun `the back buffer follows the film's real bitrate`() {
+        val rate20 = BufferSizing.backBufferBytesPerSecond(20_000_000L)
+        assertEquals(2_500_000L, rate20)
+        // 2 GB box at 100 MB: about 3.5 s of an 80 Mbit/s remux, the 12 s set kept whole for a 20 Mbit/s film.
+        assertEquals(3_495, BufferSizing.backBufferMsForTarget(12_000, 100 * mb, BufferSizing.backBufferBytesPerSecond(80_000_000L)))
+        assertEquals(12_000, BufferSizing.backBufferMsForTarget(12_000, 100 * mb, rate20))
+        assertEquals(20_971, BufferSizing.backBufferMsForTarget(30_000, 150 * mb, rate20))
+        // 50 MB, the smallest size: a quarter of a second at 80 Mbit/s, about 7 s at 20 Mbit/s.
+        assertEquals(242, BufferSizing.backBufferMsForTarget(30_000, 50 * mb, BufferSizing.backBufferBytesPerSecond(80_000_000L)))
+        assertEquals(6_990, BufferSizing.backBufferMsForTarget(30_000, 50 * mb, rate20))
+        for (bps in listOf(5_000_000L, 20_000_000L, 60_000_000L, 90_000_000L, 120_000_000L)) {
+            val rate = BufferSizing.backBufferBytesPerSecond(bps)
+            for (targetMb in 50L..1000L step 10L) {
+                val backMs = BufferSizing.backBufferMsForTarget(120_000, targetMb * mb, rate)
+                val backBytes = backMs * rate / 1000
+                if (backMs > 0) assertTrue("$bps at $targetMb MB", backBytes + BufferSizing.MIN_AHEAD_MS * rate / 1000 <= targetMb * mb)
+                assertTrue("$bps at $targetMb MB", backBytes <= targetMb * mb / 3)
+            }
+        }
+    }
+
+    @Test
+    fun `an unknown or implausible bitrate falls back safely`() {
+        assertEquals(10 * mb, BufferSizing.backBufferBytesPerSecond(0L))
+        assertEquals(10 * mb, BufferSizing.backBufferBytesPerSecond(-1L))
+        assertEquals(1 * mb, BufferSizing.backBufferBytesPerSecond(1_000_000L))
+        assertEquals(5_000, BufferSizing.backBufferMsForTarget(12_000, 150 * mb, 0L))
+        assertEquals(
+            BufferSizing.backBufferMsForTarget(12_000, 150 * mb),
+            BufferSizing.backBufferMsForTarget(12_000, 150 * mb, BufferSizing.backBufferBytesPerSecond(0L))
+        )
+    }
 }

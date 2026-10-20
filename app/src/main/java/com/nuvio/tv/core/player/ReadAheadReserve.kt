@@ -165,6 +165,8 @@ class ReservableLoadControl(
 
     override val bufferAllocator: DefaultAllocator = allocator
 
+    override val maxBufferMs: Int = maxBufferMs
+
     override fun calculateTargetBufferBytes(trackSelectionArray: Array<out ExoTrackSelection?>): Int =
         super.calculateTargetBufferBytes(trackSelectionArray).also { computedTargetBytes = it }
 

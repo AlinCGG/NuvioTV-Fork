@@ -207,6 +207,17 @@ internal data class ExoConstructionFingerprint(
 )
 
 /**
+ * The film's bitrate as far as it is known before the player is built: the server's size when this stream played
+ * before (a rebuild) else the add-on's, over the length the last player saw or the title's runtime. 0 when unknown.
+ */
+private fun PlayerRuntimeController.fileBitrateBeforeBuild(url: String): Long {
+    val serverBytes = PlaybackByteCounter.contentLengthFor(url)
+    val seenMs = if (serverBytes != null) playbackTimeline.value.duration.takeIf { it > 0L } else null
+    val durationMs = seenMs ?: expectedRuntimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L } ?: 0L
+    return AutoSpeedup.fileBitrate(serverBytes, currentVideoSize, durationMs)
+}
+
+/**
  * Pushes the current player settings onto the shared media-source factory.
  *
  * Shared with the chunk-0 pre-start, which runs before initializePlayer,
@@ -813,6 +824,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                 playerSettings.useParallelConnections && !isTorrentStream
             val chunkMbForSizing = Math.ceil(MemoryBudget.customChunkKb(context, playerSettings) / 1024.0).toInt()
             var builtBudgetControl: BufferBudgetControl? = null
+            // The back buffer is read once when the player is built, before this stream's size arrives from the server.
+            val fileBitrateAtBuild = fileBitrateBeforeBuild(url)
             val loadControl = if (playerSettings.nuvioPerformanceModeEnabled) {
                 effectiveBackBufferDurationMs = NuvioExoPlayerPerformanceHelper.backBufferMs
                 currentBitrateAwareLoadControl = null
@@ -835,7 +848,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     "BUFFER_GATE: engine=exo-native-perf master=on; NuvioExoPlayerPerformanceHelper.buildLoadControl " +
                         "$sizing host=${url.safeHost()}"
                 )
-                NuvioExoPlayerPerformanceHelper.buildLoadControl(context)
+                NuvioExoPlayerPerformanceHelper.buildLoadControl(context, fileBitrateBps = fileBitrateAtBuild)
                     .also {
                         builtBudgetControl = it as? BufferBudgetControl
                         effectiveBackBufferDurationMs = NuvioExoPlayerPerformanceHelper.builtBackBufferMs
@@ -869,7 +882,12 @@ internal fun PlayerRuntimeController.initializePlayer(
                 // depend on the player re-polling the LoadControl). First frame only lowers it
                 // to 0 for confirmed DV7 on low-RAM; everything else keeps it.
                 configuredBackBufferMs = bufferSettings.backBufferDurationMs
-                val backBufferMsAtBuild = BufferSizing.backBufferMsForTarget(configuredBackBufferMs, customBufferBudgetBytes)
+                val backBufferMsAtBuild = BufferSizing.backBufferMsForTarget(
+                    configuredBackBufferMs, customBufferBudgetBytes, BufferSizing.backBufferBytesPerSecond(fileBitrateAtBuild)
+                )
+                BufferSizing.lastPlaybackBudget = BufferSizing.PlaybackBudget(
+                    nativeMemory = false, automatic = budgetManaged, budgetMb = budgetMbEffective
+                )
                 Log.i(
                     PlayerRuntimeController.TAG,
                     "BUFFER_GATE: engine=exo-custom master=on " +
@@ -880,6 +898,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                             "dv7conv=$libdoviConversionActive " +
                             "managed=$budgetManaged " +
                             "backBufferMsAtBuild=$backBufferMsAtBuild (set=$configuredBackBufferMs, fitted to the budget) " +
+                            "fileKbps=${fileBitrateAtBuild / 1000} " +
                             sizing +
                             "budgetMb=$budgetMbEffective host=${url.safeHost()}"
                 )

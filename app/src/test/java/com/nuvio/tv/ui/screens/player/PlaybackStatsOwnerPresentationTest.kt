@@ -25,4 +25,13 @@ class PlaybackStatsOwnerPresentationTest {
         val row = StatsRow("Mux estimate", "about 68 Mbit/s, measured")
         assertEquals(listOf(StatsSection(StatsGroup.NETWORK, listOf(row))), buildStatsSections(listOf(row)))
     }
+    @Test fun `back buffer row sits under Buffer in Network`() {
+        val buffer = StatsRow("Buffer", "9.3 s ahead")
+        val back = StatsRow("Back buffer", backBufferKeptText(12_000))
+        assertEquals(listOf(StatsSection(StatsGroup.NETWORK, listOf(buffer, back))), buildStatsSections(listOf(buffer, back)))
+        assertEquals("12 s kept", backBufferKeptText(12_000))
+        assertEquals("1.5 s kept", backBufferKeptText(1_500))
+        assertEquals("0 s kept", backBufferKeptText(0))
+        assertEquals("3.3 s kept", backBufferKeptText(3_333))
+    }
 }

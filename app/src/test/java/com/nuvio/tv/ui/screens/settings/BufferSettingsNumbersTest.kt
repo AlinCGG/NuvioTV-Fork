@@ -44,6 +44,17 @@ class BufferSettingsNumbersTest {
     }
 
     @Test
+    fun `the back buffer note uses the size the last film really got`() {
+        val native = com.nuvio.tv.core.player.BufferSizing.PlaybackBudget(nativeMemory = true, automatic = true, budgetMb = 100)
+        assertEquals(150, BufferSettingsNumbers.playbackBufferMb(150, true, true, null))
+        assertEquals(100, BufferSettingsNumbers.playbackBufferMb(150, true, true, native))
+        // A size the user set is what playback gets; another engine's or a user size's playback says nothing.
+        assertEquals(300, BufferSettingsNumbers.playbackBufferMb(300, false, true, native))
+        assertEquals(86, BufferSettingsNumbers.playbackBufferMb(86, true, false, native))
+        assertEquals(150, BufferSettingsNumbers.playbackBufferMb(150, true, true, native.copy(automatic = false)))
+    }
+
+    @Test
     fun `nothing is kept at the smallest size`() {
         assertNull(BufferSettingsNumbers.backBufferKept(12_000, 50, true, 200_000))
         assertNull(BufferSettingsNumbers.backBufferKept(0, 1000, true, 200_000))
