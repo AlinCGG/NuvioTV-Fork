@@ -239,6 +239,9 @@ private fun PlayerRuntimeController.commitSurroundResolution(
     val wasPlaying = hasActivePlayIntent() && !userPausedManually
     playbackSpeedAwareAudioSink?.notifyAudioProcessingRequirementChanged()
     _exoPlayer?.let { player ->
+        // Before the first tracks the new policy simply applies to the first selection; a reselect then has no
+        // playing period and fails inside the player.
+        if (player.currentTracks.isEmpty) return
         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().build()
         if (!wasPlaying || userPausedManually) {
             player.playWhenReady = false
