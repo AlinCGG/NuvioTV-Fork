@@ -1,5 +1,6 @@
 package com.nuvio.tv.data.mediaserver.silo
 
+import com.nuvio.tv.data.mediaserver.ServerChapter
 import com.nuvio.tv.data.mediaserver.ServerConnection
 import com.nuvio.tv.data.mediaserver.ServerException
 import com.nuvio.tv.data.mediaserver.ServerFailure
@@ -46,7 +47,10 @@ class SiloNativePlaybackTest {
            "video_tracks":[{"codec":"hevc","dv_profile":7,"dv_bl_compat_id":6,"video_range_type":"DOVIWithEL","interlaced":false,"dv_config_present":true,"dv_bl_compat_id_present":true}],
            "audio_tracks":[{"codec":"truehd","profile":"Dolby TrueHD + Dolby Atmos","layout":"7.1","channels":8,"language":"eng","default":true},
                            {"codec":"ac3","layout":"stereo","channels":2,"language":"ita","default":false}],
-           "marker_segments":[{"kind":"intro","start_seconds":30.5,"end_seconds":95},{"kind":"credits","start_seconds":7900,"end_seconds":8160},{"kind":"chapter","start_seconds":0,"end_seconds":1}]}]}"""
+           "marker_segments":[{"kind":"intro","start_seconds":30.5,"end_seconds":95},{"kind":"credits","start_seconds":7900,"end_seconds":8160},{"kind":"chapter","start_seconds":0,"end_seconds":1}],
+           "chapters":[{"index":1,"title":"Opening","start_seconds":0,"end_seconds":300,"source":"embedded"},
+                       {"index":2,"title":" The Lobby ","start_seconds":300.25,"end_seconds":900,"source":"embedded"},
+                       {"index":3,"title":"","start_seconds":900,"end_seconds":8160,"source":"embedded"}]}]}"""
 
     private fun decision(delivery: String = "original_http", seekable: Boolean = true) = """{"protocol_version":3,"server_features":[],"outcome":"playable","session_id":"s-1",
         "playback_plan":{"protocol_version":3,"plan_id":"plan:1","plan_attempt_key":"v3:1","session_id":"s-1","delivery":"$delivery",
@@ -376,6 +380,18 @@ class SiloNativePlaybackTest {
             segments
         )
         assertTrue(provider.segments(session(), "movie-unknown", "1").isEmpty())
+    }
+
+    @Test
+    fun chaptersComeFromThePlayedVersion() = runTest {
+        val (provider, _) = silo()
+
+        assertEquals(
+            listOf(ServerChapter(0L, "Opening"), ServerChapter(300_250L, "The Lobby"), ServerChapter(900_000L, null)),
+            provider.chapters(session(), "movie-tmdb-603", "43")
+        )
+        assertTrue(provider.chapters(session(), "movie-tmdb-603", "42").isEmpty())
+        assertTrue(provider.chapters(session(), "movie-unknown", "1").isEmpty())
     }
 
     @Test

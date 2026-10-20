@@ -62,6 +62,15 @@ internal class DolbyVisionExtractorsFactory(
         delegate.createExtractors(uri, responseHeaders).map(::wrap).toTypedArray()
 
     private fun wrap(extractor: Extractor): Extractor {
+        val wrapped = wrapForDolbyVision(extractor)
+        return if (extractor.javaClass.name == Mp4ChaptersExtractor.STOCK_MP4_EXTRACTOR) {
+            Mp4ChaptersExtractor(wrapped)
+        } else {
+            wrapped
+        }
+    }
+
+    private fun wrapForDolbyVision(extractor: Extractor): Extractor {
         // Matroska is swapped unconditionally: the vendored
         // extractor carries the DTS-HD MA / DTS:X first-sample sniff (mkvmerge
         // writes A_DTS for every DTS variant; stock media3 1.8 maps that to core

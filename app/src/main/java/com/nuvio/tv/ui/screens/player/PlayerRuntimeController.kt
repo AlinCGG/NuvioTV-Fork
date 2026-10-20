@@ -653,6 +653,9 @@ class PlayerRuntimeController(
     internal var skipIntervals: List<SkipInterval> = emptyList()
     internal var skipIntroEnabled: Boolean = true
     internal var chaptersEnabled: Boolean = true
+    internal var serverChapters: List<PlayerChapter> = emptyList()
+    internal var serverChaptersFetchedKey: String? = null
+    internal var chaptersLogKey: String? = null
     internal var parentalGuideEnabled: Boolean = false
     internal var autoSkipSegmentTypes: Set<AutoSkipSegmentType> = emptySet()
     internal var playerSettingsInitialized: Boolean = false

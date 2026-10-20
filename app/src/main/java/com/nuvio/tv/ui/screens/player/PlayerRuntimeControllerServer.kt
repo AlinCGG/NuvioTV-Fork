@@ -34,8 +34,10 @@ internal fun PlayerRuntimeController.reportServerPlayback() {
         reportedServerUrl = url.takeIf(serverPlayback::isServerSource)
         refreshServerTracks()
         if (reportedServerUrl == null) clearServerSkipIntervals()
+        clearServerChapters()
     }
     fetchServerSkipIntervals()
+    fetchServerChapters()
     if (reportedServerUrl != null && isPlaceholderPlayback()) return
     val state = _uiState.value
     serverPlayback.onPlaybackSnapshot(

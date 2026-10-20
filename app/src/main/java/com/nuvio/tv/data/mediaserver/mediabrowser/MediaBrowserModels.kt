@@ -104,6 +104,7 @@ internal data class TrickplayInfoDto(
 @Serializable
 internal data class ChapterInfo(
     @SerialName("StartPositionTicks") val startPositionTicks: Long? = null,
+    @SerialName("Name") val name: String? = null,
     @SerialName("MarkerType") val markerType: String? = null
 )
 

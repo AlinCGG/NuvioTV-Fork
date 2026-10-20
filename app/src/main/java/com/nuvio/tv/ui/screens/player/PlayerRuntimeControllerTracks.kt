@@ -172,7 +172,7 @@ internal fun PlayerRuntimeController.updateAvailableTracks(tracks: Tracks) {
 
     currentStreamHasVideoTrack = hasVideoTrack
     val effectiveVideoFormat = selectedVideoFormat ?: firstVideoFormat
-    val chapters = if (chaptersEnabled) PlayerChapters.fromTracks(tracks) else emptyList()
+    val chapters = chaptersFor(tracks)
     _uiState.update {
         it.copy(
             isHdrVideo = isHdrVideoFormat(selectedVideoFormat),

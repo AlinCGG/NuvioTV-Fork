@@ -1,5 +1,7 @@
 package com.nuvio.tv.ui.screens.player
 
+import android.util.Log
+import androidx.media3.common.Tracks
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -8,8 +10,48 @@ import kotlinx.coroutines.launch
 internal fun PlayerRuntimeController.applyChaptersEnabled(enabled: Boolean) {
     if (enabled == chaptersEnabled) return
     chaptersEnabled = enabled
-    val chapters = if (enabled) _exoPlayer?.currentTracks?.let { PlayerChapters.fromTracks(it) }.orEmpty() else emptyList()
+    refreshChapters()
+}
+
+/** The file's own chapters, else the media server's named chapters for the title. */
+internal fun PlayerRuntimeController.chaptersFor(tracks: Tracks?): List<PlayerChapter> {
+    if (!chaptersEnabled || isUsingMpvEngine()) return emptyList()
+    val (source, chapters) = tracks?.let { PlayerChapters.fileChapters(it) } ?: ("server" to serverChapters)
+    if (chapters.isNotEmpty()) {
+        val key = "$currentStreamUrl|$source|${chapters.size}"
+        if (key != chaptersLogKey) {
+            chaptersLogKey = key
+            Log.i(PlayerRuntimeController.TAG, "CHAPTERS: source=$source count=${chapters.size}")
+        }
+    }
+    return chapters
+}
+
+internal fun PlayerRuntimeController.refreshChapters() {
+    val chapters = chaptersFor(_exoPlayer?.currentTracks)
     _uiState.update { it.copy(chapters = chapters, showChaptersPanel = it.showChaptersPanel && chapters.isNotEmpty()) }
+}
+
+internal fun PlayerRuntimeController.fetchServerChapters() {
+    if (!chaptersEnabled) return
+    val url = reportedServerUrl ?: return
+    val session = serverPlayback.session(url) ?: return
+    val key = "${session.target.item.encode()}:${session.mediaSourceId}"
+    if (serverChaptersFetchedKey == key) return
+    serverChaptersFetchedKey = key
+    scope.launch {
+        val chapters = PlayerChapters.fromServer(serverPlayback.chapters(url))
+        if (serverChaptersFetchedKey != key) return@launch
+        serverChapters = chapters
+        if (chapters.isNotEmpty()) refreshChapters()
+    }
+}
+
+internal fun PlayerRuntimeController.clearServerChapters() {
+    serverChaptersFetchedKey = null
+    if (serverChapters.isEmpty()) return
+    serverChapters = emptyList()
+    refreshChapters()
 }
 
 internal fun PlayerRuntimeController.showChaptersPanel() {

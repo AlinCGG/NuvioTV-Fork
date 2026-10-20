@@ -9,9 +9,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/** The chapters of a Matroska file, in start order, carried on the track formats. */
+/** The chapters of a file, in start order, carried on the track formats. */
 @UnstableApi
 public final class ChaptersMetadata implements Metadata.Entry {
+
+  public static final String SOURCE_MKV = "mkv";
+  public static final String SOURCE_MP4 = "mp4";
 
   /** One chapter. Times are in microseconds; {@link C#TIME_UNSET} when the file gives no end. */
   public static final class Chapter {
@@ -74,8 +77,16 @@ public final class ChaptersMetadata implements Metadata.Entry {
 
   public final List<Chapter> chapters;
 
+  /** The container the chapters were read from, {@link #SOURCE_MKV} or {@link #SOURCE_MP4}. */
+  public final String source;
+
   public ChaptersMetadata(List<Chapter> chapters) {
+    this(chapters, SOURCE_MKV);
+  }
+
+  public ChaptersMetadata(List<Chapter> chapters, String source) {
     this.chapters = Collections.unmodifiableList(new ArrayList<>(chapters));
+    this.source = source;
   }
 
   @Override
@@ -86,16 +97,17 @@ public final class ChaptersMetadata implements Metadata.Entry {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    return chapters.equals(((ChaptersMetadata) o).chapters);
+    ChaptersMetadata that = (ChaptersMetadata) o;
+    return chapters.equals(that.chapters) && source.equals(that.source);
   }
 
   @Override
   public int hashCode() {
-    return chapters.hashCode();
+    return Objects.hash(chapters, source);
   }
 
   @Override
   public String toString() {
-    return "ChaptersMetadata: " + chapters.size() + " chapters";
+    return "ChaptersMetadata: " + chapters.size() + " chapters from " + source;
   }
 }

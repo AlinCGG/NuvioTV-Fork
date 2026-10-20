@@ -22,6 +22,7 @@ import com.nuvio.tv.data.mediaserver.ServerPlayerCapabilities
 import com.nuvio.tv.data.mediaserver.ServerProvider
 import com.nuvio.tv.data.mediaserver.ServerQuickConnect
 import com.nuvio.tv.data.mediaserver.ServerResumeEntry
+import com.nuvio.tv.data.mediaserver.ServerChapter
 import com.nuvio.tv.data.mediaserver.ServerSegment
 import com.nuvio.tv.data.mediaserver.ServerSegmentKind
 import com.nuvio.tv.data.mediaserver.ServerBytes
@@ -543,6 +544,20 @@ internal abstract class MediaBrowserProvider(
             }
 
     protected open fun segmentItemId(itemId: String, mediaSourceId: String?): String = itemId
+
+    /** Emby also lists its intro and credits markers as chapters; only plain chapters are kept. */
+    override suspend fun chapters(session: ServerSession, itemId: String, mediaSourceId: String?): List<ServerChapter> =
+        try {
+            item(session, itemId, "Chapters").chapters.mapNotNull { chapter ->
+                if (chapter.markerType != null && !chapter.markerType.equals("Chapter", ignoreCase = true)) {
+                    return@mapNotNull null
+                }
+                val start = chapter.startPositionTicks ?: return@mapNotNull null
+                ServerChapter(start / TICKS_PER_MS, chapter.name?.trim()?.takeIf { it.isNotEmpty() })
+            }
+        } catch (_: ServerException) {
+            emptyList()
+        }
 
     override suspend fun trickplay(session: ServerSession, itemId: String, mediaSourceId: String): ServerTrickplaySet? {
         if (thumbnailFormat != ServerThumbnailFormat.TRICKPLAY) return null

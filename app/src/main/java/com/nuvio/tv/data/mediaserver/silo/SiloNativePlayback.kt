@@ -45,6 +45,7 @@ internal data class WatchVersionWire(
     @SerialName("video_tracks") val videoTracks: List<VideoTrackWire> = emptyList(),
     @SerialName("audio_tracks") val audioTracks: List<AudioTrackWire> = emptyList(),
     @SerialName("marker_segments") val markerSegments: List<MarkerWire> = emptyList(),
+    val chapters: List<ChapterWire> = emptyList(),
     @SerialName("trickplay_available") val trickplayAvailable: Boolean = false
 )
 
@@ -65,6 +66,12 @@ internal data class AudioTrackWire(
     val language: String? = null,
     val title: String? = null,
     val default: Boolean = false
+)
+
+@Serializable
+internal data class ChapterWire(
+    val title: String? = null,
+    @SerialName("start_seconds") val startSeconds: Double? = null
 )
 
 @Serializable

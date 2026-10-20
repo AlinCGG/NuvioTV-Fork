@@ -1,6 +1,7 @@
 package com.nuvio.tv.data.mediaserver.mediabrowser
 
 import com.nuvio.tv.core.tracking.TrackingExternalIds
+import com.nuvio.tv.data.mediaserver.ServerChapter
 import com.nuvio.tv.data.mediaserver.ServerConnectTimeout
 import com.nuvio.tv.data.mediaserver.ServerConnection
 import com.nuvio.tv.data.mediaserver.ServerException
@@ -482,6 +483,39 @@ class MediaBrowserRequestTest {
         val request = http.requests.single()
         assertEquals("https://media.example.com/emby/Users/u1/Items/e1", request.url.toString().substringBefore('?'))
         assertEquals("Chapters", request.url.queryParameter("fields"))
+    }
+
+    @Test
+    fun embyChaptersLeaveOutItsMarkers() = runTest {
+        val http = TestHttp {
+            """{"Id": "e1", "Type": "Movie", "Chapters": [
+                 {"StartPositionTicks": 0, "Name": "Opening", "MarkerType": "Chapter"},
+                 {"StartPositionTicks": 300000000, "Name": "Intro", "MarkerType": "IntroStart"},
+                 {"StartPositionTicks": 1200000000, "Name": " The Harbour ", "MarkerType": "Chapter"},
+                 {"StartPositionTicks": 1500000000, "MarkerType": "IntroEnd"},
+                 {"StartPositionTicks": 2400000000, "Name": ""},
+                 {"Name": "No start", "MarkerType": "Chapter"}]}"""
+        }
+        val chapters = EmbyProvider(http.client, testIdentity).chapters(session("emby", "https://media.example.com"), "e1", "ms1")
+
+        assertEquals(
+            listOf(ServerChapter(0L, "Opening"), ServerChapter(120_000L, "The Harbour"), ServerChapter(240_000L, null)),
+            chapters
+        )
+        assertEquals("Chapters", http.requests.single().url.queryParameter("fields"))
+    }
+
+    @Test
+    fun jellyfinChaptersKeepTheirNames() = runTest {
+        val http = TestHttp {
+            """{"Id": "j1", "Type": "Movie", "Chapters": [
+                 {"StartPositionTicks": 0, "Name": "Opening", "ImageDateModified": "0001-01-01T00:00:00.0000000Z"},
+                 {"StartPositionTicks": 9000000000, "Name": "Night Train"}]}"""
+        }
+        val chapters = JellyfinProvider(http.client, testIdentity).chapters(session("jellyfin", "https://media.example.com/jellyfin"), "j1", "j1")
+
+        assertEquals(listOf(ServerChapter(0L, "Opening"), ServerChapter(900_000L, "Night Train")), chapters)
+        assertEquals("https://media.example.com/jellyfin/Items/j1", http.requests.single().url.toString().substringBefore('?'))
     }
 
     @Test

@@ -2,9 +2,12 @@ package com.nuvio.tv.ui.screens.player
 
 import androidx.media3.common.C
 import com.nuvio.tv.core.player.dvmkv.ChaptersMetadata
+import com.nuvio.tv.data.mediaserver.ServerChapter
 import java.util.Locale
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlayerChaptersTest {
@@ -70,6 +73,83 @@ class PlayerChaptersTest {
         assertEquals(
             listOf(PlayerChapter(1, 0L, "Prologue"), PlayerChapter(2, 90_500L, null)),
             PlayerChapters.fromMetadata(metadata, Locale.ENGLISH)
+        )
+    }
+
+    @Test
+    fun `server chapters are sorted, numbered and need two`() {
+        val server = listOf(
+            ServerChapter(600_000L, "The Harbour"),
+            ServerChapter(0L, "Arrival"),
+            ServerChapter(600_000L, "Duplicate"),
+            ServerChapter(-5L, "Before the start"),
+            ServerChapter(1_500_000L, "Chapter 3"),
+        )
+        assertEquals(
+            listOf(PlayerChapter(1, 0L, "Arrival"), PlayerChapter(2, 600_000L, "The Harbour"), PlayerChapter(3, 1_500_000L, null)),
+            PlayerChapters.fromServer(server, Locale.ENGLISH)
+        )
+        assertEquals(emptyList<PlayerChapter>(), PlayerChapters.fromServer(listOf(ServerChapter(0L, "Arrival")), Locale.ENGLISH))
+    }
+
+    @Test
+    fun `unnamed server chapters at a fixed interval are left out`() {
+        val filler = (0 until 6).map { ServerChapter(it * 300_000L, if (it % 2 == 0) null else "Chapter ${it + 1}") }
+        assertEquals(emptyList<PlayerChapter>(), PlayerChapters.fromServer(filler, Locale.ENGLISH))
+
+        val uneven = listOf(ServerChapter(0L, null), ServerChapter(250_000L, null), ServerChapter(910_000L, null))
+        assertEquals(3, PlayerChapters.fromServer(uneven, Locale.ENGLISH).size)
+
+        val named = filler.mapIndexed { index, chapter -> chapter.copy(name = "Part ${'A' + index}") }
+        assertEquals(6, PlayerChapters.fromServer(named, Locale.ENGLISH).size)
+    }
+
+    @Test
+    fun `recaps, intros and openings are segments, credits and previews are not`() {
+        val segments = listOf(
+            "Recap", "previously", "Previously on The Harbour", "Intro", "INTRO 2", "Opening", "Opening 1", "Opening Credits",
+            "OP", "OP2", "Vorspann", "Rückblick", "Générique", "GÉNÉRIQUE", "Résumé", "Riassunto", "Resumen", "Précédemment dans la série",
+        )
+        segments.forEach { assertTrue(it, PlayerChapters.isSegmentName(it)) }
+        val chapters = listOf(
+            "Credits", "End Credits", "Ending", "Preview", "Next time", "The Opening Night", "Intro to the Harbour", "Opera",
+            "Operation", "Chapter 1", "Introduction", "Recapture",
+        )
+        chapters.forEach { assertFalse(it, PlayerChapters.isSegmentName(it)) }
+    }
+
+    @Test
+    fun `hidden segments leave every source and the rest is renumbered`() {
+        val metadata = ChaptersMetadata(
+            listOf(
+                ChaptersMetadata.Chapter(0L, C.TIME_UNSET, listOf(ChaptersMetadata.Name("Previously on", "eng"))),
+                ChaptersMetadata.Chapter(60_000_000L, C.TIME_UNSET, listOf(ChaptersMetadata.Name("Opening", "eng"))),
+                ChaptersMetadata.Chapter(150_000_000L, C.TIME_UNSET, listOf(ChaptersMetadata.Name("The Harbour", "eng"))),
+                ChaptersMetadata.Chapter(900_000_000L, C.TIME_UNSET, emptyList()),
+                ChaptersMetadata.Chapter(1_500_000_000L, C.TIME_UNSET, listOf(ChaptersMetadata.Name("End Credits", "eng"))),
+            ),
+            ChaptersMetadata.SOURCE_MP4
+        )
+        assertEquals(
+            listOf(PlayerChapter(1, 150_000L, "The Harbour"), PlayerChapter(2, 900_000L, null), PlayerChapter(3, 1_500_000L, "End Credits")),
+            PlayerChapters.fromMetadata(metadata, Locale.ENGLISH)
+        )
+        val server = listOf(ServerChapter(0L, "Recap"), ServerChapter(90_000L, "Intro"), ServerChapter(200_000L, "Night Train"), ServerChapter(800_000L, "Credits"))
+        assertEquals(listOf(200_000L, 800_000L), PlayerChapters.fromServer(server, Locale.ENGLISH).map { it.startMs })
+    }
+
+    @Test
+    fun `fewer than two chapters left after hiding means none`() {
+        val metadata = ChaptersMetadata(
+            listOf(
+                ChaptersMetadata.Chapter(0L, C.TIME_UNSET, listOf(ChaptersMetadata.Name("Intro", "eng"))),
+                ChaptersMetadata.Chapter(90_000_000L, C.TIME_UNSET, listOf(ChaptersMetadata.Name("Episode", "eng"))),
+            )
+        )
+        assertEquals(emptyList<PlayerChapter>(), PlayerChapters.fromMetadata(metadata, Locale.ENGLISH))
+        assertEquals(
+            emptyList<PlayerChapter>(),
+            PlayerChapters.fromServer(listOf(ServerChapter(0L, "Opening"), ServerChapter(80_000L, "Main")), Locale.ENGLISH)
         )
     }
 }

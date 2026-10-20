@@ -103,6 +103,8 @@ interface ServerProvider {
 
     suspend fun segments(session: ServerSession, itemId: String, mediaSourceId: String?): List<ServerSegment> = emptyList()
 
+    suspend fun chapters(session: ServerSession, itemId: String, mediaSourceId: String?): List<ServerChapter> = emptyList()
+
     /** How this server serves seek thumbnails, null when it has none. */
     val thumbnailFormat: ServerThumbnailFormat?
         get() = null

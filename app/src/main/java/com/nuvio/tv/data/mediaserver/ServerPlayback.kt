@@ -33,6 +33,7 @@ class ServerPlayback internal constructor(
     private val lock = Any()
     private val active = mutableMapOf<String, ActivePlayback>()
     private val segmentCache = LinkedHashMap<String, List<ServerSegment>>()
+    private val chapterCache = LinkedHashMap<String, List<ServerChapter>>()
     private val scrobbledByUrl = LinkedHashMap<String, Set<String>>()
     private val stopped = LinkedHashMap<String, ActivePlayback>()
 
@@ -199,6 +200,29 @@ class ServerPlayback internal constructor(
             if (segmentCache.size > SEGMENT_CACHE_SIZE) segmentCache.remove(segmentCache.keys.first())
         }
         return segments
+    }
+
+    /** Named chapters for the item behind [url], fetched once per file version. */
+    suspend fun chapters(url: String?): List<ServerChapter> {
+        val current = url?.let { synchronized(lock) { active[it] } } ?: return emptyList()
+        val target = current.playback.target
+        val key = "${target.item.encode()}:${current.playback.mediaSourceId}"
+        synchronized(lock) { chapterCache[key] }?.let { return it }
+        val chapters = try {
+            withTimeoutOrNull(SEGMENTS_TIMEOUT_MS) {
+                current.provider.chapters(current.liveSession(), target.item.itemId, current.playback.mediaSourceId)
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w(TAG, "Chapters failed: ${error.serverFailure()}")
+            null
+        } ?: return emptyList()
+        synchronized(lock) {
+            chapterCache[key] = chapters
+            if (chapterCache.size > SEGMENT_CACHE_SIZE) chapterCache.remove(chapterCache.keys.first())
+        }
+        return chapters
     }
 
     /** The server's own watch state for the item behind [url]; null when it has none or does not answer in time. */

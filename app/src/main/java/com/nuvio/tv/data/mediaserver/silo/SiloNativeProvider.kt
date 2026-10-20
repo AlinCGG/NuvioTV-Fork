@@ -22,6 +22,7 @@ import com.nuvio.tv.data.mediaserver.ServerPlaybackEvent
 import com.nuvio.tv.data.mediaserver.ServerPlaybackEventType
 import com.nuvio.tv.data.mediaserver.ServerPlaybackTarget
 import com.nuvio.tv.data.mediaserver.ServerResumeEntry
+import com.nuvio.tv.data.mediaserver.ServerChapter
 import com.nuvio.tv.data.mediaserver.ServerSegment
 import com.nuvio.tv.data.mediaserver.ServerSegmentKind
 import com.nuvio.tv.data.mediaserver.ServerThumbnailFormat
@@ -833,6 +834,17 @@ class SiloNativeProvider internal constructor(
             val start = (marker.startSeconds * 1_000).toLong()
             val end = (marker.endSeconds * 1_000).toLong()
             ServerSegment(kind, start, end).takeIf { end > start }
+        }
+    } catch (_: ServerException) {
+        emptyList()
+    }
+
+    override suspend fun chapters(session: ServerSession, itemId: String, mediaSourceId: String?): List<ServerChapter> = try {
+        val versions = watchState(session, itemId).versions
+        val version = versions.firstOrNull { it.fileId == mediaSourceId } ?: versions.firstOrNull()
+        version?.chapters.orEmpty().mapNotNull { chapter ->
+            val start = chapter.startSeconds?.takeIf { it >= 0.0 } ?: return@mapNotNull null
+            ServerChapter((start * 1_000).toLong(), chapter.title?.trim()?.takeIf { it.isNotEmpty() })
         }
     } catch (_: ServerException) {
         emptyList()
