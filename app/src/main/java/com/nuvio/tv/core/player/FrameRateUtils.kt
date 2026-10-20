@@ -307,10 +307,23 @@ object FrameRateUtils {
         val modeId: Int,
         val width: Int,
         val height: Int,
-        val refreshRate: Float
+        val refreshRate: Float,
+        val alternativeRefreshRates: List<Float> = emptyList()
     )
 
-    private fun Display.Mode.toSpec() = DisplayModeSpec(modeId, physicalWidth, physicalHeight, refreshRate)
+    private fun Display.Mode.toSpec() = DisplayModeSpec(
+        modeId,
+        physicalWidth,
+        physicalHeight,
+        refreshRate,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) alternativeRefreshRates.toList() else emptyList()
+    )
+
+    private fun isSeamlessFrom(activeMode: DisplayModeSpec, mode: DisplayModeSpec): Boolean {
+        if (mode.modeId == activeMode.modeId) return true
+        if (mode.width != activeMode.width || mode.height != activeMode.height) return false
+        return activeMode.alternativeRefreshRates.any { matchesTargetRefresh(mode.refreshRate, it) }
+    }
 
     private fun matchesTargetRefresh(refreshRate: Float, target: Float): Boolean {
         val tolerance = max(REFRESH_MATCH_MIN_TOLERANCE_HZ, target * 0.003f)
@@ -424,6 +437,20 @@ object FrameRateUtils {
     internal fun prefersDoubleRefresh(frameRate: Float): Boolean = frameRate in 24.5f..30.5f
 
     private fun chooseBestModeForFrameRate(
+        activeMode: DisplayModeSpec,
+        modes: List<DisplayModeSpec>,
+        frameRate: Float
+    ): ModeChoice {
+        val choice = chooseBestCadence(activeMode, modes, frameRate)
+        if (activeMode.alternativeRefreshRates.isEmpty()) return choice
+        if (!choice.quality.isExactOrDouble() || isSeamlessFrom(activeMode, choice.mode)) return choice
+        val seamlessModes = modes.filter { isSeamlessFrom(activeMode, it) }
+        if (seamlessModes.isEmpty()) return choice
+        val seamless = chooseBestCadence(activeMode, seamlessModes, frameRate)
+        return if (seamless.quality.isExactOrDouble()) seamless else choice
+    }
+
+    private fun chooseBestCadence(
         activeMode: DisplayModeSpec,
         modes: List<DisplayModeSpec>,
         frameRate: Float
@@ -632,16 +659,25 @@ object FrameRateUtils {
             val display = window.decorView.display ?: return@withContext null
             val activeMode = display.mode
             val supportedModes = display.supportedModes.toList()
+            val activeSpec = activeMode.toSpec()
 
             val plan = planDisplayMode(
                 modes = supportedModes.map { it.toSpec() },
-                activeMode = activeMode.toSpec(),
+                activeMode = activeSpec,
                 frameRate = frameRate,
                 videoWidth = videoWidth,
                 videoHeight = videoHeight,
                 resolutionMatchingEnabled = resolutionMatchingEnabled
             )
             val candidateCount = plan.candidateCount
+            plan.choice?.let { choice ->
+                Log.d(
+                    TAG,
+                    "AFR: seamless rates=${activeSpec.alternativeRefreshRates} " +
+                        "from=${activeSpec.width}x${activeSpec.height}@${activeSpec.refreshRate} " +
+                        "picked=${choice.mode.refreshRate} seamless=${isSeamlessFrom(activeSpec, choice.mode)}"
+                )
+            }
             val modeBest = plan.choice?.let { choice ->
                 supportedModes.firstOrNull { it.modeId == choice.mode.modeId }
                     ?: activeMode.takeIf { it.modeId == choice.mode.modeId }
