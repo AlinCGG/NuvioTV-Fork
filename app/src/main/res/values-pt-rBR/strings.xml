@@ -3429,7 +3429,10 @@
     <string name="playback_net_custom_desc">Conexões definidas manualmente. Desligado, o app usa uma conexão e, em dispositivos com memória suficiente, a Aceleração automática adiciona mais quando um filme precisa.</string>
     <string name="playback_net_auto_speedup">Aceleração automática</string>
     <string name="playback_net_auto_speedup_sub">Ajuda filmes que ficam carregando muito em servidores distantes. O app pede ao dispositivo uma janela de download maior e, em dispositivos com memória suficiente, adiciona downloads extras se o filme continuar atrasado. Desligado: um download padrão.</string>
-    <string name="playback_net_auto_speedup_custom_note">Rede personalizada está ativada, então as conexões definidas manualmente são usadas. Só a janela de download maior continua valendo.</string>
+    <string name="playback_net_auto_speedup_custom_note">Quando Conexões está definido como um número, suas próprias configurações de conexão são usadas. Só a janela de download maior continua valendo.</string>
+    <string name="playback_net_connections">Conexões</string>
+    <string name="playback_net_connections_sub">Quantas conexões buscam um stream ao mesmo tempo. Automático usa uma e, em aparelhos com memória suficiente, a Aceleração automática adiciona mais quando um filme precisa delas.</string>
+    <string name="playback_net_connections_auto">Automático</string>
     <string name="playback_net_connection_count_small_box">Este dispositivo tem %1$s de memória. Mais de 2 conexões podem fazer a reprodução engasgar.</string>
     <string name="playback_net_chunk_size_small_note">Segmentos menores que 8 MB são lentos no Real-Debrid e podem ser recusados pelo TorBox.</string>
     <string name="diag_label_serving_host">Servidor de entrega</string>

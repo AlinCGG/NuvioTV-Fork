@@ -3621,7 +3621,10 @@
     <string name="playback_net_custom_desc">החיבורים מוגדרים ידנית. כשכבוי, האפליקציה משתמשת בחיבור אחד, ובמכשירים עם מספיק זיכרון האצה אוטומטית מוסיפה עוד כשסרט צריך.</string>
     <string name="playback_net_auto_speedup">האצה אוטומטית</string>
     <string name="playback_net_auto_speedup_sub">עוזרת לסרטים שנתקעים לטעינה משרתים רחוקים. האפליקציה מבקשת מהמכשיר חלון הורדה גדול יותר, ובמכשירים עם מספיק זיכרון מוסיפה הורדות נוספות אם הסרט עדיין מפגר. כבוי: הורדה רגילה אחת.</string>
-    <string name="playback_net_auto_speedup_custom_note">הורדה מהירה יותר (מתקדם) פעילה, לכן נעשה שימוש בחיבורים שהוגדרו ידנית. רק חלון ההורדה הגדול יותר עדיין חל.</string>
+    <string name="playback_net_auto_speedup_custom_note">כשחיבורים מוגדר למספר, נעשה שימוש בהגדרות החיבור שלכם. רק חלון ההורדה הגדול יותר עדיין חל.</string>
+    <string name="playback_net_connections">חיבורים</string>
+    <string name="playback_net_connections_sub">כמה חיבורים מורידים סטרים בו-זמנית. אוטומטי משתמש בחיבור אחד, ובמכשירים עם מספיק זיכרון האצה אוטומטית מוסיפה עוד כשסרט צריך אותם.</string>
+    <string name="playback_net_connections_auto">אוטומטי</string>
     <string name="playback_net_connection_count_small_box">במכשיר הזה יש %1$s זיכרון. יותר מ-2 חיבורים עלולים לגרום להפעלה לגמגם.</string>
     <string name="playback_net_chunk_size_small_note">מקטעים קטנים מ-8 MB איטיים ב-Real-Debrid ו-TorBox עלול לדחות אותם.</string>
     <string name="diag_label_serving_host">שרת מגיש</string>

@@ -3489,7 +3489,10 @@
     <string name="playback_net_custom_desc">手動設定連線。關閉時，應用程式使用一個連線；在記憶體充足的裝置上，自動加速會在影片需要時加開連線。</string>
     <string name="playback_net_auto_speedup">自動加速</string>
     <string name="playback_net_auto_speedup_sub">協助從遠端伺服器播放時經常緩衝的電影。應用程式會向裝置要求更大的下載視窗；在記憶體充足的裝置上，若電影仍跟不上，會加開額外下載。關閉：一般的單一下載。</string>
-    <string name="playback_net_auto_speedup_custom_note">已開啟自訂網路，因此使用手動設定的連線。只保留更大的下載視窗。</string>
+    <string name="playback_net_auto_speedup_custom_note">當連線設為一個數字時，會使用你自己的連線設定。只保留更大的下載視窗。</string>
+    <string name="playback_net_connections">連線</string>
+    <string name="playback_net_connections_sub">同時取得一個串流的連線數量。自動只使用一條連線，在記憶體足夠的裝置上，自動加速會在影片需要時增加更多連線。</string>
+    <string name="playback_net_connections_auto">自動</string>
     <string name="playback_net_connection_count_small_box">此裝置有 %1$s 記憶體。超過 2 個連線可能導致播放卡頓。</string>
     <string name="playback_net_chunk_size_small_note">小於 8 MB 的區塊在 Real-Debrid 上較慢，TorBox 可能會拒絕。</string>
     <string name="diag_label_serving_host">服務主機</string>

@@ -25,11 +25,12 @@ import java.util.concurrent.atomic.AtomicLong
 internal class AutoSpeedupDataSource(
     private val single: DataSource.Factory,
     private val multi: DataSource.Factory,
-    private val pieceBytes: Long,
+    private val pieceBytes: () -> Long,
     private val downloads: () -> Int,
     private val received: AtomicLong,
     private val onMultiClosed: () -> Unit = {},
-    private val multiOpen: AtomicInteger = AtomicInteger()
+    private val multiOpen: AtomicInteger = AtomicInteger(),
+    private val onFirstByte: (Long) -> Unit = {}
 ) : DataSource {
     private class Pending(val multi: Boolean, val atRead: Long, val source: DataSource, val opened: Future<*>)
 
@@ -54,7 +55,9 @@ internal class AutoSpeedupDataSource(
         if (!wantMulti) onMultiClosed()
         val source = create(wantMulti)
         current = source
+        val startNs = System.nanoTime()
         val length = source.open(dataSpec)
+        if (!wantMulti) onFirstByte((System.nanoTime() - startNs) / 1_000_000L)
         setMulti(wantMulti)
         return length
     }
@@ -81,7 +84,8 @@ internal class AutoSpeedupDataSource(
         if (readThisOpen < switchAfter) return 0L
         val open = spec ?: return 0L
         val position = open.position + readThisOpen
-        val toBoundary = (pieceBytes - position % pieceBytes) % pieceBytes
+        val piece = pieceBytes()
+        val toBoundary = (piece - position % piece) % piece
         val boundaryRead = readThisOpen + toBoundary
         if (open.length != C.LENGTH_UNSET.toLong() && boundaryRead >= open.length) return 0L
         var next = pending
@@ -158,14 +162,15 @@ internal class AutoSpeedupDataSource(
     class Factory(
         private val single: DataSource.Factory,
         private val multi: DataSource.Factory,
-        private val pieceBytes: Long,
+        private val pieceBytes: () -> Long,
         private val downloads: () -> Int,
         private val received: AtomicLong,
         private val onMultiClosed: () -> Unit = {},
-        private val multiOpen: AtomicInteger = AtomicInteger()
+        private val multiOpen: AtomicInteger = AtomicInteger(),
+        private val onFirstByte: (Long) -> Unit = {}
     ) : DataSource.Factory {
         override fun createDataSource(): DataSource =
-            AutoSpeedupDataSource(single, multi, pieceBytes, downloads, received, onMultiClosed, multiOpen)
+            AutoSpeedupDataSource(single, multi, pieceBytes, downloads, received, onMultiClosed, multiOpen, onFirstByte)
     }
 
     companion object {

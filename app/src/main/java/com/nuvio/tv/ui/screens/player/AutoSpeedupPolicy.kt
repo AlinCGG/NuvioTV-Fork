@@ -3,20 +3,29 @@ package com.nuvio.tv.ui.screens.player
 /**
  * How many downloads a progressive stream may use at once with Custom network off. One more is tried only while the
  * film runs short, kept only when it raises the delivered rate by [GAIN_PERCENT] % (or the buffer starts to grow),
- * and handed back once the buffer has been comfortable for a while. One more is only tried while the box has the memory
- * it would hold free above its low-memory line and its swap is not nearly used up, and one is handed back as soon as
- * free memory drops below that line. A film whose bitrate is known and high starts on [startDownloads] at once,
- * judged like any other try against what the single download managed before the switch; if they do not help, the
- * film goes back to one and climbs the usual way if it runs short.
+ * and handed back once the buffer has been comfortable for a while, or as full as the settings and memory let it get
+ * with the loader resting. One more is only tried while the box has the memory it would hold free above its low-memory
+ * line and its swap is not nearly used up, and one is handed back as soon as free memory drops below that line. A film
+ * whose bitrate is known and high first measures one download; only when that stays under [START_SINGLE_ENOUGH_PERCENT]
+ * % of the film's rate does it go to [startDownloads], judged like any other try against what the single download
+ * managed; if they do not help, the film goes back to one and climbs the usual way if it runs short.
  */
-internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: Long = 0L) {
+internal class AutoSpeedupPolicy(val maxDownloads: Int, pieceBytes: Long = 0L) {
+
+    @Volatile
+    var pieceBytes: Long = pieceBytes
+
 
     /**
      * One player sample. [bytes] (received from the network) and [rebuffers] are running totals for the stream.
      * [bufferFull] = the buffer holds all the memory it may, so a flat buffer says nothing about the network.
      * [roomBytes] = free memory above the box's low-memory line and margin; below zero the box is short.
+     * [idleBytes] = memory the buffer holds but does not use; adding a download shrinks the buffer and frees it.
+     * [userBudget] = the user set the buffer's memory target: the downloads are lent out of it, so free memory is not
+     * checked to add one or hand one back; only [memoryShort] and [swapLow] still stop them.
      * [swapLow] = the box's swap is nearly used up: no download is added, none is handed back for it.
      * [fileBitrate] = the film's average bitrate in bits per second from its size and length, 0 while unknown.
+     * [maxBufferMs] = the most buffer ahead the player loads (the user's Max buffer), 0 while unknown.
      */
     data class Sample(
         val nowMs: Long,
@@ -30,14 +39,17 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         val multiActive: Boolean = true,
         val roomBytes: Long = Long.MAX_VALUE,
         val swapLow: Boolean = false,
-        val fileBitrate: Long = 0L
+        val fileBitrate: Long = 0L,
+        val idleBytes: Long = 0L,
+        val userBudget: Boolean = false,
+        val maxBufferMs: Long = 0L
     )
 
     @Volatile
     var downloads: Int = 1
         private set
 
-    /** What the last change was, or that one more was held back for swap, for the log; null otherwise. */
+    /** What the last change was, or that a wanted one was held back, for the log; null otherwise. */
     var lastChange: String? = null
         private set
 
@@ -50,6 +62,7 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
     private var trialBackTo = 1
     private var trialNeedRate = 0L
     private var triedAny = false
+    private var startJudged = false
     private var firstSampleMs = -1L
     private var nextStepAtMs = 0L
     private var blockedUntilMs = 0L
@@ -57,6 +70,7 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
     private var lastDropAtMs = Long.MIN_VALUE / 2
     private var keepForFilm = false
     private var heldForSwap = false
+    private var heldFor: String? = null
 
     fun onSample(s: Sample): Int {
         lastChange = null
@@ -75,7 +89,7 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
             return downloads
         }
 
-        if (s.roomBytes < 0L && downloads > 1) {
+        if (!s.userBudget && s.roomBytes < 0L && downloads > 1) {
             if (s.nowMs >= nextStepAtMs) {
                 trialStartMs = -1L
                 blockedUntilMs = maxOf(blockedUntilMs, s.nowMs + MEMORY_BLOCK_MS)
@@ -100,21 +114,43 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
             return downloads
         }
 
-        if (!triedAny && s.fileBitrate > 0L && downloads == 1 && s.nowMs >= blockedUntilMs && !s.swapLow) {
+        if (!triedAny && !startJudged && s.fileBitrate > 0L && downloads == 1 && s.nowMs >= blockedUntilMs && !s.swapLow) {
             var start = startDownloads(s.fileBitrate, maxDownloads)
-            while (start > 1 && s.roomBytes < lentBytes(start, pieceBytes)) start--
-            if (start > 1) {
-                startTrial(s, start, TRIAL_MS, "start fileKbps=${s.fileBitrate / 1000}")
-                trialNeedRate = s.fileBitrate / 8
-                return downloads
+            while (!s.userBudget && start > 1 && s.roomBytes < lentBytes(start, pieceBytes)) start--
+            if (start > 1 && singleMeasured(s)) {
+                val singleBps = rateBps(s.nowMs - START_MEASURE_MS, s.nowMs)
+                val loadingPercent = loadingShare(s.nowMs - START_MEASURE_MS, s.nowMs)
+                val needBps = s.fileBitrate / 8
+                val detail = "fileKbps=${s.fileBitrate / 1000} singleKbps=${singleBps * 8 / 1000}"
+                if (loadingPercent < LOADING_PASS_PERCENT || singleBps * 100 >= needBps * START_SINGLE_ENOUGH_PERCENT) {
+                    startJudged = true
+                    lastChange = "start not needed $detail loading=$loadingPercent%"
+                } else {
+                    startTrial(s, start, TRIAL_MS, "start $detail" + budgetTag(s))
+                    trialNeedRate = needBps
+                    return downloads
+                }
             }
         }
 
         val starving = starving(s)
         if (starving) {
             comfortableSinceMs = -1L
-            val mayAdd = downloads < maxDownloads && s.nowMs >= nextStepAtMs && s.nowMs >= blockedUntilMs &&
-                s.roomBytes >= lentBytes(downloads + 1, pieceBytes) - lentBytes(downloads, pieceBytes)
+            val needBytes = lentBytes(downloads + 1, pieceBytes) - lentBytes(downloads, pieceBytes)
+            val idle = s.idleBytes.coerceAtLeast(0L)
+            val usable = if (s.userBudget || s.roomBytes > Long.MAX_VALUE - idle) Long.MAX_VALUE else s.roomBytes + idle
+            val wanted = downloads < maxDownloads && s.nowMs >= nextStepAtMs
+            val blocked = s.nowMs < blockedUntilMs
+            val mayAdd = wanted && !blocked && usable >= needBytes
+            if (wanted && !mayAdd) {
+                val state = "$downloads " + if (blocked) "blocked" else "room"
+                if (state != heldFor) {
+                    heldFor = state
+                    lastChange = "held downloads=$downloads roomMb=${s.roomBytes / MB} idleMb=${idle / MB} " +
+                        "needMb=${needBytes / MB} blockedS=${(blockedUntilMs - s.nowMs).coerceAtLeast(0L) / 1000} " +
+                        "userBudget=${s.userBudget}"
+                }
+            }
             if (mayAdd && s.swapLow) {
                 if (!heldForSwap) lastChange = "held downloads=$downloads swap low"
                 heldForSwap = true
@@ -125,7 +161,8 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
                 val early = !triedAny && s.nowMs - firstSampleMs < EARLY_MS && s.aheadMs < EARLY_LOW_AHEAD_MS
                 val length = if (early) EARLY_TRIAL_MS else trialLength(baseline)
                 if (s.nowMs - lastDropAtMs < KEEP_AFTER_DROP_MS) keepForFilm = true
-                startTrial(s, downloads + 1, length, "trial baselineKbps=${baseline * 8 / 1000}" + if (early) " early" else "")
+                startTrial(s, downloads + 1, length,
+                    "trial baselineKbps=${baseline * 8 / 1000}" + (if (early) " early" else "") + budgetTag(s))
             }
             return downloads
         }
@@ -154,6 +191,8 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         triedAny = true
         change(to, s.nowMs, why)
     }
+
+    private fun budgetTag(s: Sample): String = if (s.userBudget) " userBudget=true" else ""
 
     /** Long enough for two of the new download's pieces at the old rate, so slow links are not judged on one. */
     private fun trialLength(baselineBps: Long): Long {
@@ -185,6 +224,7 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
 
     private fun change(to: Int, nowMs: Long, why: String) {
         lastChange = "downloads ${downloads}->$to $why"
+        heldFor = null
         downloads = to.coerceIn(1, maxDownloads.coerceAtLeast(1))
         nextStepAtMs = maxOf(nextStepAtMs, nowMs + STEP_GAP_MS)
     }
@@ -199,10 +239,25 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         return s.aheadMs - oldest.aheadMs <= GROWTH_STARVE_MS
     }
 
-    /** An idle loader alone is not enough: with the buffer capped by memory it idles with only a few seconds ahead. */
-    private fun comfortable(s: Sample): Boolean =
-        s.aheadMs >= COMFORTABLE_AHEAD_MS ||
-            (s.aheadMs >= COMFORTABLE_IDLE_AHEAD_MS && loadingShare(s.nowMs - STARVE_WINDOW_MS, s.nowMs) < LOADING_PASS_PERCENT)
+    /**
+     * A long buffer, or a resting loader with 10 s ahead or with the buffer as full as it can get: at the user's Max
+     * buffer, or at the memory it may hold. Handing a download back then gives its memory to the buffer; if the film
+     * runs short again a download comes back and stays for the film.
+     */
+    private fun comfortable(s: Sample): Boolean {
+        if (s.aheadMs >= COMFORTABLE_AHEAD_MS) return true
+        val from = s.nowMs - STARVE_WINDOW_MS
+        if (loadingShare(from, s.nowMs) >= LOADING_PASS_PERCENT) return false
+        if (s.aheadMs >= COMFORTABLE_IDLE_AHEAD_MS) return true
+        return samples.any {
+            it.nowMs >= from && (it.bufferFull || (it.maxBufferMs > 0L && it.aheadMs >= it.maxBufferMs - FULL_SLACK_MS))
+        }
+    }
+
+    /** One download has run long enough, after the stream settled, to say what it carries. */
+    private fun singleMeasured(s: Sample): Boolean =
+        s.nowMs - firstSampleMs >= START_SETTLE_MS + START_MEASURE_MS &&
+            samples.first().nowMs <= s.nowMs - START_MEASURE_MS
 
     private fun rateBps(fromMs: Long, toMs: Long): Long {
         val a = samples.lastOrNull { it.nowMs <= fromMs } ?: samples.firstOrNull() ?: return 0L
@@ -244,6 +299,12 @@ internal class AutoSpeedupPolicy(val maxDownloads: Int, private val pieceBytes: 
         const val START_TWO_BPS = 40_000_000L
         const val START_THREE_BPS = 60_000_000L
         const val START_MAX = 3
+        /** One download carrying this share of the film's rate is enough; below it the film starts on more. */
+        const val START_SINGLE_ENOUGH_PERCENT = 130
+        const val START_SETTLE_MS = 2_000L
+        const val START_MEASURE_MS = 6_000L
+        /** Ahead within this of the Max buffer counts as full. */
+        const val FULL_SLACK_MS = 1_000L
         /** The first try of a film that is already short this early is judged sooner. */
         const val EARLY_MS = 90_000L
         const val EARLY_LOW_AHEAD_MS = 5_000L

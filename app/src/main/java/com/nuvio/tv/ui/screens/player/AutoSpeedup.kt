@@ -17,7 +17,11 @@ internal object AutoSpeedup {
     private const val SWAP_MIN_MB = 50L
     private const val MAX_FILE_BITRATE = 400_000_000L
 
-    data class Limits(val maxDownloads: Int, val holdBytes: Long)
+    private const val QUICK_FIRST_BYTE_MS = 400L
+    private const val FIRST_BYTE_SAMPLES = 2
+
+    /** [quickHoldBytes] = the piece used instead of [holdBytes] when the server sends its first byte quickly. */
+    data class Limits(val maxDownloads: Int, val holdBytes: Long, val quickHoldBytes: Long = holdBytes)
 
     /** Bytes received from the network for the stream that is playing, on either path. */
     val received = AtomicLong()
@@ -40,10 +44,51 @@ internal object AutoSpeedup {
     val active: Boolean get() = policy != null
 
     fun limitsFor(totalRamBytes: Long): Limits = when {
-        totalRamBytes in 1 until 2_560L * MB -> Limits(maxDownloads = 4, holdBytes = 16L * MB)
+        totalRamBytes in 1 until 2_560L * MB -> Limits(maxDownloads = 4, holdBytes = 16L * MB, quickHoldBytes = 8L * MB)
         totalRamBytes in 1 until 3_584L * MB -> Limits(maxDownloads = 5, holdBytes = 16L * MB)
         totalRamBytes > 0L -> Limits(maxDownloads = 6, holdBytes = 16L * MB)
         else -> Limits(maxDownloads = 1, holdBytes = 16L * MB)
+    }
+
+    /** A slow first byte costs a share of every piece, so smaller pieces only pay off on a quick server. */
+    fun pieceFor(limits: Limits, firstByteMs: Long): Long =
+        if (firstByteMs in 0 until QUICK_FIRST_BYTE_MS) limits.quickHoldBytes else limits.holdBytes
+
+    /** The piece size of the chunk session for this stream, fixed once the chunk session first opens. */
+    @Volatile
+    var pieceBytes: Long = limits.holdBytes
+        private set
+
+    private val pieceLock = Any()
+    private var pieceFixed = true
+    private var firstByteMs = -1L
+    private var firstByteSamples = 0
+
+    /** How long a request on the single download took to answer, while the piece size is still open. */
+    fun onFirstByte(ms: Long) {
+        synchronized(pieceLock) {
+            if (pieceFixed || policy == null || ms < 0L) return
+            firstByteMs = if (firstByteMs < 0L) ms else minOf(firstByteMs, ms)
+            pieceBytes = pieceFor(limits, firstByteMs)
+            policy?.pieceBytes = pieceBytes
+            if (++firstByteSamples >= FIRST_BYTE_SAMPLES) fixPieceLocked()
+        }
+    }
+
+    /** Fixes the piece size (the larger one while nothing was measured) and returns it. */
+    fun fixPiece(): Long = synchronized(pieceLock) {
+        if (!pieceFixed) fixPieceLocked()
+        pieceBytes
+    }
+
+    private fun fixPieceLocked() {
+        pieceFixed = true
+        logOn()
+    }
+
+    private fun logOn() {
+        val firstByte = if (firstByteMs >= 0L) " firstByteMs=$firstByteMs" else ""
+        Log.i(TAG, "AUTO_SPEEDUP: on maxDownloads=${limits.maxDownloads} holdMb=${pieceBytes / MB}$firstByte")
     }
 
     @Volatile
@@ -94,8 +139,14 @@ internal object AutoSpeedup {
         roomReadAtMs = Long.MIN_VALUE
         swapReadAtMs = Long.MIN_VALUE
         swapLowNow = false
-        policy = AutoSpeedupPolicy(limits.maxDownloads, limits.holdBytes)
-        Log.i(TAG, "AUTO_SPEEDUP: on maxDownloads=${limits.maxDownloads} holdMb=${limits.holdBytes / MB}")
+        synchronized(pieceLock) {
+            pieceBytes = limits.holdBytes
+            firstByteMs = -1L
+            firstByteSamples = 0
+            policy = AutoSpeedupPolicy(limits.maxDownloads, pieceBytes)
+            pieceFixed = limits.quickHoldBytes == limits.holdBytes
+            if (pieceFixed) logOn()
+        }
     }
 
     fun end() {
@@ -116,7 +167,7 @@ internal object AutoSpeedup {
     }
 
     /** Bytes the extra downloads may hold now: each one in flight plus the piece being read. */
-    fun lentBytes(): Long = AutoSpeedupPolicy.lentBytes(downloads, limits.holdBytes)
+    fun lentBytes(): Long = AutoSpeedupPolicy.lentBytes(downloads, pieceBytes)
 
     /** Returns true when the number of downloads changed. */
     fun onPlayerSample(sample: AutoSpeedupPolicy.Sample): Boolean {

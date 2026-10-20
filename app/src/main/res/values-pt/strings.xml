@@ -254,7 +254,10 @@
     <string name="playback_net_custom_desc">Ligações definidas manualmente. Desligado, a app usa uma ligação e, em dispositivos com memória suficiente, a Aceleração automática junta mais quando um filme precisa.</string>
     <string name="playback_net_auto_speedup">Aceleração automática</string>
     <string name="playback_net_auto_speedup_sub">Ajuda os filmes que fazem buffering com frequência a partir de servidores distantes. A app pede ao dispositivo uma janela de transferência maior e, em dispositivos com memória suficiente, junta transferências extra se um filme continuar a ficar para trás. Desligado: uma transferência normal.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network está ligado, por isso são usadas as ligações definidas manualmente. Só a janela de transferência maior continua a aplicar-se.</string>
+    <string name="playback_net_auto_speedup_custom_note">Quando Ligações está definido para um número, são usadas as suas próprias definições de ligação. Só a janela de transferência maior continua a aplicar-se.</string>
+    <string name="playback_net_connections">Ligações</string>
+    <string name="playback_net_connections_sub">Quantas ligações obtêm uma transmissão ao mesmo tempo. Automático usa uma e, em dispositivos com memória suficiente, a Aceleração automática acrescenta mais quando um filme precisa delas.</string>
+    <string name="playback_net_connections_auto">Automático</string>
     <string name="playback_net_connection_count_small_box">Este dispositivo tem %1$s de memória. Mais de 2 ligações podem causar pequenos cortes na reprodução.</string>
     <string name="playback_net_chunk_size_small_note">Blocos com menos de 8 MB são lentos no Real-Debrid e podem ser recusados pelo TorBox.</string>
     <string name="diag_label_serving_host">Servidor de entrega</string>

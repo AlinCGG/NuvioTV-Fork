@@ -2949,7 +2949,10 @@
     <string name="playback_net_custom_desc">Връзките се задават ръчно. Когато е изключено, приложението ползва една връзка, а на устройства с достатъчно памет Автоматично ускоряване добавя още, когато филмът има нужда.</string>
     <string name="playback_net_auto_speedup">Автоматично ускоряване</string>
     <string name="playback_net_auto_speedup_sub">Помага на филми, които често буферират от далечни сървъри. Приложението иска от устройството по-голям прозорец за изтегляне и на устройства с достатъчно памет добавя допълнителни изтегляния, ако филмът пак изостава. Изкл.: едно стандартно изтегляне.</string>
-    <string name="playback_net_auto_speedup_custom_note">Персонализирана мрежа е включена, затова се използват ръчно зададените връзки. Остава само по-големият прозорец за изтегляне.</string>
+    <string name="playback_net_auto_speedup_custom_note">Когато за Връзки е избрано число, се използват вашите собствени настройки за връзки. Остава само по-големият прозорец за изтегляне.</string>
+    <string name="playback_net_connections">Връзки</string>
+    <string name="playback_net_connections_sub">Колко връзки изтеглят потока едновременно. Автоматично използва една, а на устройства с достатъчно памет Автоматично ускоряване добавя още, когато филмът има нужда.</string>
+    <string name="playback_net_connections_auto">Автоматично</string>
     <string name="playback_net_connection_count_small_box">Това устройство има %1$s памет. При над 2 връзки възпроизвеждането може да насича.</string>
     <string name="playback_net_chunk_size_small_note">Chunks под 8 MB са бавни в Real-Debrid и може да бъдат отхвърлени от TorBox.</string>
     <string name="diag_label_serving_host">Обслужващ хост</string>

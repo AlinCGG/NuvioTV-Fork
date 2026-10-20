@@ -1257,7 +1257,10 @@
     <string name="playback_net_custom_desc">कनेक्शन हाथ से सेट होते हैं। बंद होने पर ऐप एक कनेक्शन इस्तेमाल करता है, और पर्याप्त मेमोरी वाले डिवाइस पर स्वचालित स्पीड-अप फ़िल्म को ज़रूरत होने पर और जोड़ता है।</string>
     <string name="playback_net_auto_speedup">स्वचालित स्पीड-अप</string>
     <string name="playback_net_auto_speedup_sub">दूर के सर्वर से बार-बार बफ़र होने वाली फ़िल्मों में मदद करता है। ऐप डिवाइस से बड़ी डाउनलोड विंडो माँगता है, और पर्याप्त मेमोरी वाले डिवाइस पर, अगर फ़िल्म फिर भी पीछे रहे, तो अतिरिक्त डाउनलोड जोड़ता है। बंद: एक सामान्य डाउनलोड।</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network चालू है, इसलिए हाथ से सेट किए गए कनेक्शन इस्तेमाल होते हैं। केवल बड़ी डाउनलोड विंडो लागू रहती है।</string>
+    <string name="playback_net_auto_speedup_custom_note">जब कनेक्शन में कोई संख्या चुनी हो, तो आपकी अपनी कनेक्शन सेटिंग्स इस्तेमाल होती हैं। केवल बड़ी डाउनलोड विंडो लागू रहती है।</string>
+    <string name="playback_net_connections">कनेक्शन</string>
+    <string name="playback_net_connections_sub">एक साथ कितने कनेक्शन स्ट्रीम लाते हैं। स्वचालित एक कनेक्शन इस्तेमाल करता है, और पर्याप्त मेमोरी वाले डिवाइस पर स्वचालित स्पीड-अप ज़रूरत पड़ने पर और जोड़ता है।</string>
+    <string name="playback_net_connections_auto">स्वचालित</string>
     <string name="playback_net_connection_count_small_box">इस डिवाइस में %1$s मेमोरी है। 2 से ज़्यादा कनेक्शन से प्लेबैक रुक-रुक कर चल सकता है।</string>
     <string name="playback_net_chunk_size_small_note">8 MB से छोटे चंक Real-Debrid पर धीमे होते हैं और TorBox उन्हें अस्वीकार कर सकता है।</string>
     <string name="diag_label_serving_host">सर्विंग होस्ट</string>

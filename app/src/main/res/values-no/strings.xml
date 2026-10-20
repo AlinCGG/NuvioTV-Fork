@@ -1382,7 +1382,10 @@
     <string name="playback_net_custom_desc">Tilkoblingene velges manuelt. Når den er av, bruker appen én tilkobling, og på bokser med nok minne legger Automatisk akselerasjon til flere når en film trenger dem.</string>
     <string name="playback_net_auto_speedup">Automatisk akselerasjon</string>
     <string name="playback_net_auto_speedup_sub">Hjelper filmer som ofte bufrer fra servere langt unna. Appen ber boksen om et større nedlastingsvindu, og på bokser med nok minne legger den til ekstra nedlastinger hvis en film fortsatt henger etter. Av: én vanlig nedlasting.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network er på, så de manuelt valgte tilkoblingene brukes. Bare det større nedlastingsvinduet gjelder fortsatt.</string>
+    <string name="playback_net_auto_speedup_custom_note">Når Tilkoblinger er satt til et tall, brukes dine egne tilkoblingsinnstillinger. Bare det større nedlastingsvinduet gjelder fortsatt.</string>
+    <string name="playback_net_connections">Tilkoblinger</string>
+    <string name="playback_net_connections_sub">Hvor mange tilkoblinger som henter en strøm samtidig. Automatisk bruker én, og på bokser med nok minne legger Automatisk akselerasjon til flere når en film trenger dem.</string>
+    <string name="playback_net_connections_auto">Automatisk</string>
     <string name="playback_net_connection_count_small_box">Denne boksen har %1$s minne. Flere enn 2 tilkoblinger kan få avspillingen til å hakke.</string>
     <string name="playback_net_chunk_size_small_note">Blokker under 8 MB er trege på Real-Debrid og kan bli avvist av TorBox.</string>
     <string name="diag_label_serving_host">Leverende vert</string>

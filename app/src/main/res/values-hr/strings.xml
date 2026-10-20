@@ -3563,7 +3563,10 @@
     <string name="playback_net_custom_desc">Veze se postavljaju ručno. Kad je isključeno, aplikacija koristi jednu vezu, a na uređajima s dovoljno memorije Automatsko ubrzanje dodaje još kad ih film treba.</string>
     <string name="playback_net_auto_speedup">Automatsko ubrzanje</string>
     <string name="playback_net_auto_speedup_sub">Pomaže filmovima kod kojih često dolazi do međuspremanja s udaljenih poslužitelja. Aplikacija od uređaja traži veći prozor za preuzimanje i, na uređajima s dovoljno memorije, dodaje dodatna preuzimanja ako filmu i dalje ponestaje. Isključeno: jedno standardno preuzimanje.</string>
-    <string name="playback_net_auto_speedup_custom_note">Prilagođena mreža je uključena, pa se koriste ručno postavljene veze. Ostaje samo veći prozor za preuzimanje.</string>
+    <string name="playback_net_auto_speedup_custom_note">Kad je za Veze odabran broj, koriste se tvoje postavke veza. Ostaje samo veći prozor za preuzimanje.</string>
+    <string name="playback_net_connections">Veze</string>
+    <string name="playback_net_connections_sub">Koliko veza istodobno preuzima stream. Automatski koristi jednu, a na uređajima s dovoljno memorije Automatsko ubrzanje dodaje još kad ih film treba.</string>
+    <string name="playback_net_connections_auto">Automatski</string>
     <string name="playback_net_connection_count_small_box">Ovaj uređaj ima %1$s memorije. S više od 2 veze reprodukcija može zastajkivati.</string>
     <string name="playback_net_chunk_size_small_note">Blokovi manji od 8 MB spori su na Real-Debrid i TorBox ih može odbiti.</string>
     <string name="diag_label_serving_host">Poslužitelj</string>

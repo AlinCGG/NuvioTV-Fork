@@ -3401,7 +3401,10 @@
     <string name="playback_net_custom_desc">Verbindingen handmatig instellen. Als dit uit staat, gebruikt de app één verbinding en voegt Automatische versnelling er op apparaten met genoeg geheugen meer toe als een film ze nodig heeft.</string>
     <string name="playback_net_auto_speedup">Automatische versnelling</string>
     <string name="playback_net_auto_speedup_sub">Helpt films die vaak bufferen vanaf servers ver weg. De app vraagt het apparaat om een groter downloadvenster en voegt op apparaten met genoeg geheugen extra downloads toe als een film nog steeds achterloopt. Uit: één gewone download.</string>
-    <string name="playback_net_auto_speedup_custom_note">Aangepast netwerk staat aan, dus de handmatig ingestelde verbindingen worden gebruikt. Alleen het grotere downloadvenster blijft gelden.</string>
+    <string name="playback_net_auto_speedup_custom_note">Als Verbindingen op een getal staat, worden je eigen verbindingsinstellingen gebruikt. Alleen het grotere downloadvenster blijft gelden.</string>
+    <string name="playback_net_connections">Verbindingen</string>
+    <string name="playback_net_connections_sub">Hoeveel verbindingen een stream tegelijk ophalen. Automatisch gebruikt er één en op apparaten met genoeg geheugen voegt Automatische versnelling er meer toe als een film ze nodig heeft.</string>
+    <string name="playback_net_connections_auto">Automatisch</string>
     <string name="playback_net_connection_count_small_box">Dit apparaat heeft %1$s geheugen. Meer dan 2 verbindingen kunnen het afspelen laten haperen.</string>
     <string name="playback_net_chunk_size_small_note">Blokken kleiner dan 8 MB zijn traag op Real-Debrid en kunnen door TorBox worden geweigerd.</string>
     <string name="diag_label_serving_host">Leverende host</string>

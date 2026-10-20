@@ -63,7 +63,7 @@ class AutoSpeedupDataSourceTest {
         val source = AutoSpeedupDataSource(
             single = { FakeSource("single", log) },
             multi = { FakeSource("multi", log) },
-            pieceBytes = MB,
+            pieceBytes = { MB },
             downloads = { downloads },
             received = received,
             onMultiClosed = { multiClosed++ }
@@ -95,7 +95,7 @@ class AutoSpeedupDataSourceTest {
         val source = AutoSpeedupDataSource(
             single = { FakeSource("single", log) },
             multi = { FakeSource("multi", log, fail = true) },
-            pieceBytes = MB,
+            pieceBytes = { MB },
             downloads = { downloads },
             received = AtomicLong()
         )
@@ -112,7 +112,7 @@ class AutoSpeedupDataSourceTest {
         val source = AutoSpeedupDataSource(
             single = { FakeSource("single", log) },
             multi = { FakeSource("multi", log) },
-            pieceBytes = MB,
+            pieceBytes = { MB },
             downloads = { downloads },
             received = AtomicLong()
         )
@@ -125,6 +125,28 @@ class AutoSpeedupDataSourceTest {
     }
 
     @Test
+    fun `only opens on the single path report how long the server took`() {
+        val log = mutableListOf<String>()
+        var downloads = 1
+        val times = mutableListOf<Long>()
+        val source = AutoSpeedupDataSource(
+            single = { FakeSource("single", log) },
+            multi = { FakeSource("multi", log) },
+            pieceBytes = { MB },
+            downloads = { downloads },
+            received = AtomicLong(),
+            onFirstByte = { times += it }
+        )
+        source.open(DataSpec(uri))
+        source.close()
+        downloads = 2
+        source.open(DataSpec(uri))
+        source.close()
+        assertEquals(1, times.size)
+        assertEquals(true, times[0] >= 0L)
+    }
+
+    @Test
     fun `the switch waits for the next piece boundary`() {
         val log = mutableListOf<String>()
         var downloads = 1
@@ -133,7 +155,7 @@ class AutoSpeedupDataSourceTest {
         val source = AutoSpeedupDataSource(
             single = { FakeSource("single", log) },
             multi = { soFarAtMultiOpen = soFar; FakeSource("multi", log) },
-            pieceBytes = 3 * MB,
+            pieceBytes = { 3 * MB },
             downloads = { downloads },
             received = AtomicLong()
         )

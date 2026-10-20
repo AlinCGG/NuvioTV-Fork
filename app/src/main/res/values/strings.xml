@@ -3502,9 +3502,12 @@
     <string name="playback_net_custom_desc">Set the connections yourself. When off, the app uses one connection and, on boxes with enough memory, Automatic speed-up adds more when a film needs them.</string>
     <string name="playback_net_auto_speedup">Automatic speed-up</string>
     <string name="playback_net_auto_speedup_sub">Helps films that keep buffering from far-away servers. The app asks the box for a bigger download window and, on boxes with enough memory, adds extra downloads if a film still runs short. Off: one standard download.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network is on, so your own connection settings are used. Only the bigger download window still applies.</string>
+    <string name="playback_net_auto_speedup_custom_note">When Connections is set to a number, your own connection settings are used. Only the bigger download window still applies.</string>
     <string name="playback_net_parallel">Parallel connections</string>
     <string name="playback_net_parallel_sub">Use multiple connections in parallel for fetching streams. Activate when you experience buffering although your download speed is definitely more than sufficient.</string>
+    <string name="playback_net_connections">Connections</string>
+    <string name="playback_net_connections_sub">How many connections fetch a stream at once. Automatic uses one and, on boxes with enough memory, Automatic speed-up adds more when a film needs them.</string>
+    <string name="playback_net_connections_auto">Automatic</string>
     <string name="playback_net_connection_count">Connection count</string>
     <string name="playback_net_connection_count_sub">Number of parallel TCP connections. Higher values increase memory usage and throughput but with diminishing returns.</string>
     <string name="playback_net_connection_count_small_box">This box has %1$s of memory. More than 2 connections can make playback stutter.</string>

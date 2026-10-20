@@ -3632,7 +3632,10 @@
     <string name="playback_net_custom_desc">Bağlantılar elle ayarlanır. Kapalıyken uygulama tek bağlantı kullanır, Otomatik hızlandırma ise yeterli belleği olan cihazlarda bir film ihtiyaç duyduğunda daha fazlasını ekler.</string>
     <string name="playback_net_auto_speedup">Otomatik hızlandırma</string>
     <string name="playback_net_auto_speedup_sub">Uzak sunuculardan oynarken sık sık arabelleğe alma için duran filmlere yardımcı olur. Uygulama cihazdan daha büyük bir indirme penceresi ister ve yeterli belleği olan cihazlarda, film yine de geride kalırsa ek indirmeler ekler. Kapalı: tek bir normal indirme.</string>
-    <string name="playback_net_auto_speedup_custom_note">Özel Ağ Yapılandırması açık, bu yüzden elle ayarlanan bağlantılar kullanılır. Yalnızca daha büyük indirme penceresi geçerli kalır.</string>
+    <string name="playback_net_auto_speedup_custom_note">Bağlantılar bir sayıya ayarlandığında kendi bağlantı ayarlarınız kullanılır. Yalnızca daha büyük indirme penceresi geçerli kalır.</string>
+    <string name="playback_net_connections">Bağlantılar</string>
+    <string name="playback_net_connections_sub">Bir yayını aynı anda kaç bağlantının indirdiği. Otomatik bir bağlantı kullanır; yeterli belleği olan cihazlarda Otomatik hızlandırma, film ihtiyaç duyduğunda daha fazlasını ekler.</string>
+    <string name="playback_net_connections_auto">Otomatik</string>
     <string name="playback_net_connection_count_small_box">Bu cihazda %1$s bellek var. 2\'den fazla bağlantı oynatmanın takılmasına yol açabilir.</string>
     <string name="playback_net_chunk_size_small_note">8 MB\'tan küçük parçalar Real-Debrid\'de yavaştır ve TorBox tarafından reddedilebilir.</string>
     <string name="diag_label_serving_host">Sunan sunucu</string>

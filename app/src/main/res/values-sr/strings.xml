@@ -255,7 +255,10 @@
     <string name="playback_net_custom_desc">Везе се подешавају ручно. Када је искључено, апликација користи једну везу, а на уређајима са довољно меморије Аутоматско убрзање додаје још када их филм треба.</string>
     <string name="playback_net_auto_speedup">Аутоматско убрзање</string>
     <string name="playback_net_auto_speedup_sub">Помаже филмовима који стално баферују са удаљених сервера. Апликација тражи од уређаја већи прозор за преузимање и, на уређајима са довољно меморије, додаје додатна преузимања ако филму и даље понестаје. Искључено: једно стандардно преузимање.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network је укључен, па се користе ручно подешене везе. Остаје само већи прозор за преузимање.</string>
+    <string name="playback_net_auto_speedup_custom_note">Када је за Везе изабран број, користе се ваша подешавања веза. Остаје само већи прозор за преузимање.</string>
+    <string name="playback_net_connections">Везе</string>
+    <string name="playback_net_connections_sub">Колико веза истовремено преузима стрим. Аутоматски користи једну, а на уређајима са довољно меморије Аутоматско убрзање додаје још када филм то затреба.</string>
+    <string name="playback_net_connections_auto">Аутоматски</string>
     <string name="playback_net_connection_count_small_box">Овај уређај има %1$s меморије. Са више од 2 везе репродукција може да сецка.</string>
     <string name="playback_net_chunk_size_small_note">Блокови мањи од 8 MB су спори на Real-Debrid и TorBox их може одбити.</string>
     <string name="diag_label_serving_host">Хост који испоручује</string>

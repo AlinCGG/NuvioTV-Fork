@@ -237,7 +237,10 @@
     <string name="playback_net_custom_desc">A kapcsolatok kézzel állíthatók be. Kikapcsolva az alkalmazás egy kapcsolatot használ, és elegendő memóriájú eszközökön az Automatikus gyorsítás többet ad hozzá, ha egy filmnek szüksége van rá.</string>
     <string name="playback_net_auto_speedup">Automatikus gyorsítás</string>
     <string name="playback_net_auto_speedup_sub">Segít a távoli szerverekről gyakran pufferelő filmeknél. Az alkalmazás nagyobb letöltési ablakot kér az eszköztől, és elegendő memóriájú eszközökön további letöltéseket ad hozzá, ha a film még mindig lemarad. Ki: egy normál letöltés.</string>
-    <string name="playback_net_auto_speedup_custom_note">A Custom network be van kapcsolva, ezért a kézzel beállított kapcsolatok érvényesek. Csak a nagyobb letöltési ablak marad érvényben.</string>
+    <string name="playback_net_auto_speedup_custom_note">Ha a Kapcsolatok egy számra van állítva, a saját kapcsolati beállításaid érvényesek. Csak a nagyobb letöltési ablak marad érvényben.</string>
+    <string name="playback_net_connections">Kapcsolatok</string>
+    <string name="playback_net_connections_sub">Hány kapcsolat tölti egyszerre a streamet. Az Automatikus egyet használ, és elég memóriával rendelkező eszközökön az Automatikus gyorsítás többet ad hozzá, ha egy filmnek szüksége van rá.</string>
+    <string name="playback_net_connections_auto">Automatikus</string>
     <string name="playback_net_connection_count_small_box">Ennek az eszköznek %1$s memóriája van. 2-nél több kapcsolat esetén a lejátszás akadozhat.</string>
     <string name="playback_net_chunk_size_small_note">A 8 MB-nál kisebb darabok lassúak a Real-Debriden, és a TorBox elutasíthatja őket.</string>
     <string name="diag_label_serving_host">Kiszolgáló gép</string>

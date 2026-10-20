@@ -3296,7 +3296,10 @@
     <string name="playback_net_custom_desc">تُضبط الاتصالات يدوياً. عند الإيقاف يستخدم التطبيق اتصالاً واحداً، وعلى الأجهزة التي فيها ذاكرة كافية يضيف التسريع التلقائي المزيد عندما يحتاجها الفيلم.</string>
     <string name="playback_net_auto_speedup">تسريع تلقائي</string>
     <string name="playback_net_auto_speedup_sub">يساعد الأفلام التي يتكرر توقفها للتخزين المؤقت من خوادم بعيدة. يطلب التطبيق من الجهاز نافذة تنزيل أكبر، وعلى الأجهزة التي فيها ذاكرة كافية يضيف تنزيلات إضافية إذا ظل الفيلم متأخراً. عند الإيقاف: تنزيل واحد عادي.</string>
-    <string name="playback_net_auto_speedup_custom_note">الشبكة المخصصة مفعّلة، لذا تُستخدم الاتصالات المضبوطة يدوياً. تبقى فقط نافذة التنزيل الأكبر.</string>
+    <string name="playback_net_auto_speedup_custom_note">عند ضبط الاتصالات على رقم، تُستخدم إعدادات الاتصال الخاصة بك. تبقى فقط نافذة التنزيل الأكبر.</string>
+    <string name="playback_net_connections">الاتصالات</string>
+    <string name="playback_net_connections_sub">عدد الاتصالات التي تجلب المصدر في الوقت نفسه. الوضع التلقائي يستخدم اتصالاً واحداً، وعلى الأجهزة ذات الذاكرة الكافية يضيف التسريع التلقائي المزيد عندما يحتاجها الفيلم.</string>
+    <string name="playback_net_connections_auto">تلقائي</string>
     <string name="playback_net_connection_count_small_box">في هذا الجهاز %1$s من الذاكرة. أكثر من اتصالين قد يجعل التشغيل يتقطع.</string>
     <string name="playback_net_chunk_size_small_note">القطع الأصغر من 8 م.ب بطيئة على Real-Debrid وقد يرفضها TorBox.</string>
     <string name="diag_label_serving_host">المضيف المزوِّد</string>

@@ -3158,7 +3158,10 @@
     <string name="playback_net_custom_desc">Connexions réglées à la main. Désactivé, l\'application utilise une connexion et, sur les boîtiers avec assez de mémoire, Accélération automatique en ajoute quand un film en a besoin.</string>
     <string name="playback_net_auto_speedup">Accélération automatique</string>
     <string name="playback_net_auto_speedup_sub">Aide les films qui s\'arrêtent souvent pour charger depuis des serveurs lointains. L\'application demande au boîtier une fenêtre de téléchargement plus grande et, sur les boîtiers avec assez de mémoire, ajoute des téléchargements si un film prend encore du retard. Désactivé&#160;: un seul téléchargement standard.</string>
-    <string name="playback_net_auto_speedup_custom_note">Réseau personnalisé est activé, donc les connexions réglées à la main sont utilisées. Seule la fenêtre de téléchargement plus grande reste appliquée.</string>
+    <string name="playback_net_auto_speedup_custom_note">Quand Connexions est réglé sur un nombre, vos propres réglages de connexion sont utilisés. Seule la fenêtre de téléchargement plus grande reste appliquée.</string>
+    <string name="playback_net_connections">Connexions</string>
+    <string name="playback_net_connections_sub">Le nombre de connexions qui récupèrent un flux en même temps. Automatique en utilise une et, sur les boîtiers avec assez de mémoire, Accélération automatique en ajoute quand un film en a besoin.</string>
+    <string name="playback_net_connections_auto">Automatique</string>
     <string name="playback_net_connection_count_small_box">Ce boîtier a %1$s de mémoire. Plus de 2 connexions peuvent faire saccader la lecture.</string>
     <string name="playback_net_chunk_size_small_note">Les blocs de moins de 8 Mo sont lents sur Real-Debrid et peuvent être refusés par TorBox.</string>
     <string name="diag_label_serving_host">Hôte de diffusion</string>

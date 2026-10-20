@@ -429,7 +429,7 @@ internal class PlayerMediaSourceFactory(
                 chunkSessionShape.effectiveConnections,
                 chunkSessionShape.effectiveChunkBytes
             )
-            networkProgressiveFactory is AutoSpeedupDataSource.Factory -> PlaybackLanes.useAuto(AutoSpeedup.limits.holdBytes)
+            networkProgressiveFactory is AutoSpeedupDataSource.Factory -> PlaybackLanes.useAuto()
             else -> PlaybackLanes.clear()
         }
         val progressiveUpstreamFactory: DataSource.Factory =
@@ -552,26 +552,30 @@ internal class PlayerMediaSourceFactory(
             setDefaultRequestProperties(headers)
             if (headers.none { it.key.equals("User-Agent", ignoreCase = true) }) setUserAgent(DEFAULT_USER_AGENT)
         }
-        val multi = ParallelRangeDataSource.Factory(
-            okHttpFactory,
-            limits.maxDownloads,
-            limits.holdBytes,
-            useNativeMemory = nuvioPerformanceModeEnabled,
-            prefetchDepthChunks = limits.maxDownloads,
-            allowContinuationReopen = true,
-            onResolvedUri = { resolved -> currentVodCacheResolvedUrl = resolved?.toString() },
-            defaultRequestHeaders = headers,
-            depthLimit = { AutoSpeedup.downloads },
-            receivedBytes = AutoSpeedup.received
-        )
+        // The piece size is fixed when the chunk session first opens, after the first requests were timed.
+        val multi by lazy {
+            ParallelRangeDataSource.Factory(
+                okHttpFactory,
+                limits.maxDownloads,
+                AutoSpeedup.fixPiece(),
+                useNativeMemory = nuvioPerformanceModeEnabled,
+                prefetchDepthChunks = limits.maxDownloads,
+                allowContinuationReopen = true,
+                onResolvedUri = { resolved -> currentVodCacheResolvedUrl = resolved?.toString() },
+                defaultRequestHeaders = headers,
+                depthLimit = { AutoSpeedup.downloads },
+                receivedBytes = AutoSpeedup.received
+            )
+        }
         return AutoSpeedupDataSource.Factory(
             single = single,
-            multi = multi,
-            pieceBytes = limits.holdBytes,
+            multi = { multi.createDataSource() },
+            pieceBytes = AutoSpeedup::fixPiece,
             downloads = { AutoSpeedup.downloads },
             received = AutoSpeedup.received,
             onMultiClosed = ParallelRangeDataSource::releaseRetainedSessionIfIdle,
-            multiOpen = AutoSpeedup.multiOpen
+            multiOpen = AutoSpeedup.multiOpen,
+            onFirstByte = AutoSpeedup::onFirstByte
         )
     }
 

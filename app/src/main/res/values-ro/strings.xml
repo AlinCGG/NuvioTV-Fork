@@ -1090,7 +1090,10 @@
     <string name="playback_net_custom_desc">Conexiunile se setează manual. Când e oprit, aplicația folosește o conexiune, iar pe dispozitivele cu suficientă memorie Accelerare automată adaugă altele când un film are nevoie.</string>
     <string name="playback_net_auto_speedup">Accelerare automată</string>
     <string name="playback_net_auto_speedup_sub">Ajută filmele care fac des buffering de pe servere îndepărtate. Aplicația cere dispozitivului o fereastră de descărcare mai mare și, pe dispozitivele cu suficientă memorie, adaugă descărcări suplimentare dacă filmul tot rămâne în urmă. Oprit: o singură descărcare obișnuită.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network este pornit, deci se folosesc conexiunile setate manual. Rămâne doar fereastra de descărcare mai mare.</string>
+    <string name="playback_net_auto_speedup_custom_note">Când Conexiuni este setat la un număr, se folosesc propriile tale setări de conexiune. Rămâne doar fereastra de descărcare mai mare.</string>
+    <string name="playback_net_connections">Conexiuni</string>
+    <string name="playback_net_connections_sub">Câte conexiuni descarcă un flux în același timp. Automat folosește una, iar pe dispozitivele cu memorie suficientă Accelerare automată adaugă mai multe când un film are nevoie.</string>
+    <string name="playback_net_connections_auto">Automat</string>
     <string name="playback_net_connection_count_small_box">Acest dispozitiv are %1$s de memorie. Peste 2 conexiuni, redarea poate fi sacadată.</string>
     <string name="playback_net_chunk_size_small_note">Fragmentele mai mici de 8 MB sunt lente pe Real-Debrid și pot fi refuzate de TorBox.</string>
     <string name="diag_label_serving_host">Gazdă de livrare</string>

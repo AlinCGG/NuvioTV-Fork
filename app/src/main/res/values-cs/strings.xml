@@ -3096,7 +3096,10 @@
     <string name="playback_net_custom_desc">Spojení se nastavují ručně. Když je vypnuto, aplikace použije jedno spojení a na zařízeních s dostatkem paměti Automatické zrychlení přidá další, když je film potřebuje.</string>
     <string name="playback_net_auto_speedup">Automatické zrychlení</string>
     <string name="playback_net_auto_speedup_sub">Pomáhá filmům, které se ze vzdálených serverů často bufferují. Aplikace požádá zařízení o větší okno pro stahování a na zařízeních s dostatkem paměti přidá další stahování, když film stále nestíhá. Vypnuto: jedno běžné stahování.</string>
-    <string name="playback_net_auto_speedup_custom_note">Vlastní síť je zapnutá, proto se použijí ručně nastavená spojení. Zůstává jen větší okno pro stahování.</string>
+    <string name="playback_net_auto_speedup_custom_note">Když je u Spojení nastaveno číslo, použijí se vaše vlastní nastavení spojení. Zůstává jen větší okno pro stahování.</string>
+    <string name="playback_net_connections">Spojení</string>
+    <string name="playback_net_connections_sub">Kolik spojení stahuje stream najednou. Automaticky používá jedno a na zařízeních s dostatkem paměti přidá Automatické zrychlení další, když je film potřebuje.</string>
+    <string name="playback_net_connections_auto">Automaticky</string>
     <string name="playback_net_connection_count_small_box">Toto zařízení má %1$s paměti. Více než 2 spojení mohou způsobit trhání přehrávání.</string>
     <string name="playback_net_chunk_size_small_note">Bloky menší než 8 MB jsou na Real-Debrid pomalé a TorBox je může odmítnout.</string>
     <string name="diag_label_serving_host">Obsluhující hostitel</string>

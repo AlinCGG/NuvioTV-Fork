@@ -3616,7 +3616,10 @@
     <string name="playback_net_custom_desc">Kết nối được đặt thủ công. Khi tắt, ứng dụng dùng một kết nối và, trên thiết bị có đủ bộ nhớ, Tăng tốc tự động thêm kết nối khi phim cần.</string>
     <string name="playback_net_auto_speedup">Tăng tốc tự động</string>
     <string name="playback_net_auto_speedup_sub">Giúp các phim hay bị tải đệm khi phát từ máy chủ ở xa. Ứng dụng yêu cầu thiết bị một cửa sổ tải lớn hơn và, trên thiết bị có đủ bộ nhớ, thêm các lượt tải phụ nếu phim vẫn bị chậm. Tắt: một lượt tải thông thường.</string>
-    <string name="playback_net_auto_speedup_custom_note">Mạng tùy chỉnh đang bật nên các kết nối đặt thủ công được dùng. Chỉ cửa sổ tải lớn hơn vẫn được áp dụng.</string>
+    <string name="playback_net_auto_speedup_custom_note">Khi Kết nối được đặt thành một con số, các thiết lập kết nối của riêng bạn được dùng. Chỉ cửa sổ tải lớn hơn vẫn được áp dụng.</string>
+    <string name="playback_net_connections">Kết nối</string>
+    <string name="playback_net_connections_sub">Số kết nối cùng lúc tải một luồng. Tự động dùng một kết nối, và trên thiết bị có đủ bộ nhớ, Tăng tốc tự động thêm kết nối khi phim cần.</string>
+    <string name="playback_net_connections_auto">Tự động</string>
     <string name="playback_net_connection_count_small_box">Thiết bị này có %1$s bộ nhớ. Hơn 2 kết nối có thể làm video bị giật.</string>
     <string name="playback_net_chunk_size_small_note">Phân đoạn nhỏ hơn 8 MB sẽ chậm trên Real-Debrid và có thể bị TorBox từ chối.</string>
     <string name="diag_label_serving_host">Máy chủ phục vụ</string>

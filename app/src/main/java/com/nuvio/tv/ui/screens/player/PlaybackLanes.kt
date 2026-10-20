@@ -17,27 +17,27 @@ internal data class PlaybackLanes(val connections: Int, val chunkBytes: Long, va
         private const val MB = 1024L * 1024L
 
         @Volatile private var manual: PlaybackLanes? = null
-        @Volatile private var autoChunkBytes = 0L
+        @Volatile private var auto = false
 
         fun useManual(connections: Int, chunkBytes: Long) {
-            autoChunkBytes = 0L
+            auto = false
             manual = PlaybackLanes(connections, chunkBytes, auto = false)
         }
 
-        fun useAuto(chunkBytes: Long) {
+        fun useAuto() {
             manual = null
-            autoChunkBytes = chunkBytes
+            auto = true
         }
 
         fun clear() {
             manual = null
-            autoChunkBytes = 0L
+            auto = false
         }
 
         fun current(): PlaybackLanes? {
             manual?.let { return it }
-            val chunk = autoChunkBytes
-            if (chunk <= 0L || !AutoSpeedup.active) return null
+            val chunk = AutoSpeedup.pieceBytes
+            if (!auto || chunk <= 0L || !AutoSpeedup.active) return null
             val downloads = if (AutoSpeedup.multiOpen.get() > 0) AutoSpeedup.downloads else 1
             return PlaybackLanes(downloads, chunk, auto = true)
         }

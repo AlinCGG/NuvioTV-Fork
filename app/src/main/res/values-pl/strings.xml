@@ -3693,7 +3693,10 @@
     <string name="playback_net_custom_desc">Połączenia ustawiane ręcznie. Gdy wyłączone, aplikacja używa jednego połączenia, a na urządzeniach z wystarczającą ilością pamięci Automatyczne przyspieszenie dodaje kolejne, gdy film ich potrzebuje.</string>
     <string name="playback_net_auto_speedup">Automatyczne przyspieszenie</string>
     <string name="playback_net_auto_speedup_sub">Pomaga filmom, które z odległych serwerów często się buforują. Aplikacja prosi urządzenie o większe okno pobierania, a na urządzeniach z wystarczającą ilością pamięci dodaje kolejne pobierania, gdy film nadal nie nadąża. Wyłączone: jedno zwykłe pobieranie.</string>
-    <string name="playback_net_auto_speedup_custom_note">Niestandardowa sieć jest włączona, więc używane są połączenia ustawione ręcznie. Działa tylko większe okno pobierania.</string>
+    <string name="playback_net_auto_speedup_custom_note">Gdy Połączenia mają ustawioną liczbę, używane są Twoje własne ustawienia połączeń. Działa tylko większe okno pobierania.</string>
+    <string name="playback_net_connections">Połączenia</string>
+    <string name="playback_net_connections_sub">Ile połączeń jednocześnie pobiera strumień. Automatycznie używa jednego, a na urządzeniach z wystarczającą pamięcią Automatyczne przyspieszenie dodaje kolejne, gdy film ich potrzebuje.</string>
+    <string name="playback_net_connections_auto">Automatycznie</string>
     <string name="playback_net_connection_count_small_box">To urządzenie ma %1$s pamięci. Przy więcej niż 2 połączeniach odtwarzanie może się zacinać.</string>
     <string name="playback_net_chunk_size_small_note">Fragmenty mniejsze niż 8 MB są wolne w Real-Debrid i TorBox może je odrzucić.</string>
     <string name="diag_label_serving_host">Host serwujący</string>

@@ -2531,7 +2531,10 @@
     <string name="playback_net_custom_desc">Verbindungen von Hand festlegen. Wenn aus, nutzt die App eine Verbindung, und auf Geräten mit genug Speicher fügt Automatische Beschleunigung weitere hinzu, wenn ein Film sie braucht.</string>
     <string name="playback_net_auto_speedup">Automatische Beschleunigung</string>
     <string name="playback_net_auto_speedup_sub">Hilft Filmen, die von weit entfernten Servern immer wieder puffern. Die App fordert vom Gerät ein größeres Download-Fenster an und fügt auf Geräten mit genug Speicher zusätzliche Downloads hinzu, wenn ein Film trotzdem nicht hinterherkommt. Aus: ein normaler Download.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network ist an, daher werden die von Hand gewählten Verbindungen genutzt. Nur das größere Download-Fenster gilt weiterhin.</string>
+    <string name="playback_net_auto_speedup_custom_note">Wenn bei Verbindungen eine Zahl gewählt ist, gelten Ihre eigenen Verbindungseinstellungen. Nur das größere Download-Fenster gilt weiterhin.</string>
+    <string name="playback_net_connections">Verbindungen</string>
+    <string name="playback_net_connections_sub">Wie viele Verbindungen einen Stream gleichzeitig laden. Automatisch nutzt eine, und auf Geräten mit genug Speicher fügt Automatische Beschleunigung weitere hinzu, wenn ein Film sie braucht.</string>
+    <string name="playback_net_connections_auto">Automatisch</string>
     <string name="playback_net_connection_count_small_box">Dieses Gerät hat %1$s Speicher. Mehr als 2 Verbindungen können die Wiedergabe ruckeln lassen.</string>
     <string name="playback_net_chunk_size_small_note">Blöcke unter 8 MB sind bei Real-Debrid langsam und können von TorBox abgelehnt werden.</string>
     <string name="diag_label_serving_host">Ausliefernder Host</string>

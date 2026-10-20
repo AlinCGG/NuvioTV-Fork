@@ -2434,7 +2434,16 @@ private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs
     } else {
         null
     }
-    val memoryShort = bufferMemoryKeeper?.let { it.pressureLevel > 0 } ?: (free?.lowMemory == true)
+    val userBudget = bufferMemoryKeeper?.budgetManaged == false
+    val roomBytes = AutoSpeedup.roomBytes(nowMs) {
+        free ?: com.nuvio.tv.core.player.BufferSizing.read(context.applicationContext)
+    }
+    val memoryShort = if (userBudget) {
+        bufferMemoryKeeper?.pressureLevel == com.nuvio.tv.core.player.BufferMemoryKeeper.LEVEL_CRITICAL ||
+            roomBytes < -com.nuvio.tv.core.player.BufferSizing.SYSTEM_MARGIN_MB * 1024L * 1024L
+    } else {
+        bufferMemoryKeeper?.let { it.pressureLevel > 0 } ?: (free?.lowMemory == true)
+    }
     val before = AutoSpeedup.downloads
     val changed = AutoSpeedup.onPlayerSample(
         AutoSpeedupPolicy.Sample(
@@ -2446,15 +2455,16 @@ private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs
             memoryShort = memoryShort,
             playing = player.isPlaying,
             bufferFull = bufferFull,
-            roomBytes = AutoSpeedup.roomBytes(nowMs) {
-                free ?: com.nuvio.tv.core.player.BufferSizing.read(context.applicationContext)
-            },
+            roomBytes = roomBytes,
             swapLow = AutoSpeedup.swapLow(nowMs) { com.nuvio.tv.core.player.thumbnail.MemoryGovernor.readMeminfo() },
             fileBitrate = AutoSpeedup.fileBitrate(
                 PlaybackByteCounter.contentLengthFor(currentStreamUrl),
                 currentVideoSize,
                 player.duration
-            )
+            ),
+            idleBytes = control?.bufferAllocator?.availableBytes?.toLong() ?: 0L,
+            userBudget = userBudget,
+            maxBufferMs = control?.maxBufferMs?.toLong() ?: 0L
         )
     )
     if (!changed) return

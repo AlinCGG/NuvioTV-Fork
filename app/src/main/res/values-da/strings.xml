@@ -2960,7 +2960,10 @@
     <string name="playback_net_custom_desc">Forbindelserne vælges manuelt. Når det er slået fra, bruger appen én forbindelse, og på bokse med nok hukommelse tilføjer Automatisk acceleration flere, når en film har brug for det.</string>
     <string name="playback_net_auto_speedup">Automatisk acceleration</string>
     <string name="playback_net_auto_speedup_sub">Hjælper film, der ofte bufferer fra fjerne servere. Appen beder boksen om et større downloadvindue og tilføjer på bokse med nok hukommelse ekstra downloads, hvis en film stadig halter. Fra: én almindelig download.</string>
-    <string name="playback_net_auto_speedup_custom_note">Brugerdefineret netværk er slået til, så de manuelt valgte forbindelser bruges. Kun det større downloadvindue gælder stadig.</string>
+    <string name="playback_net_auto_speedup_custom_note">Når Forbindelser er sat til et tal, bruges dine egne forbindelsesindstillinger. Kun det større downloadvindue gælder stadig.</string>
+    <string name="playback_net_connections">Forbindelser</string>
+    <string name="playback_net_connections_sub">Hvor mange forbindelser der henter en stream på én gang. Automatisk bruger én, og på bokse med nok hukommelse tilføjer Automatisk acceleration flere, når en film har brug for dem.</string>
+    <string name="playback_net_connections_auto">Automatisk</string>
     <string name="playback_net_connection_count_small_box">Denne boks har %1$s hukommelse. Mere end 2 forbindelser kan få afspilningen til at hakke.</string>
     <string name="playback_net_chunk_size_small_note">Chunks under 8 MB er langsomme på Real-Debrid og kan blive afvist af TorBox.</string>
     <string name="diag_label_serving_host">Leverende vært</string>

@@ -2960,7 +2960,10 @@
     <string name="playback_net_custom_desc">接続を手動で設定します。オフのときアプリは接続を1本使い、メモリに余裕のあるデバイスでは、映画に必要なときに自動高速化が接続を追加します。</string>
     <string name="playback_net_auto_speedup">自動高速化</string>
     <string name="playback_net_auto_speedup_sub">遠くのサーバーから再生すると何度もバッファリングする映画を助けます。アプリはデバイスに大きなダウンロードウィンドウを求め、メモリに余裕のあるデバイスでは、それでも映画が追いつかないときに追加のダウンロードを使います。オフ: 通常のダウンロード1本。</string>
-    <string name="playback_net_auto_speedup_custom_note">カスタムネットワークがオンのため、手動で設定した接続が使われます。大きなダウンロードウィンドウだけは引き続き適用されます。</string>
+    <string name="playback_net_auto_speedup_custom_note">接続を数値に設定すると、ご自身の接続設定が使われます。大きなダウンロードウィンドウだけは引き続き適用されます。</string>
+    <string name="playback_net_connections">接続</string>
+    <string name="playback_net_connections_sub">ストリームを同時に取得する接続の数。自動では1本を使い、十分なメモリがある端末では、映画に必要なときに自動高速化が接続を追加します。</string>
+    <string name="playback_net_connections_auto">自動</string>
     <string name="playback_net_connection_count_small_box">このデバイスのメモリは%1$sです。接続数が2を超えると再生がカクつく場合があります。</string>
     <string name="playback_net_chunk_size_small_note">8 MB未満のチャンクはReal-Debridでは遅く、TorBoxに拒否されることがあります。</string>
     <string name="diag_label_serving_host">配信ホスト</string>

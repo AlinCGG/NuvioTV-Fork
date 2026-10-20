@@ -3523,7 +3523,10 @@
     <string name="playback_net_custom_desc">Οι συνδέσεις ορίζονται χειροκίνητα. Όταν είναι ανενεργό, η εφαρμογή χρησιμοποιεί μία σύνδεση και, σε συσκευές με αρκετή μνήμη, η Αυτόματη επιτάχυνση προσθέτει κι άλλες όταν τις χρειάζεται μια ταινία.</string>
     <string name="playback_net_auto_speedup">Αυτόματη επιτάχυνση</string>
     <string name="playback_net_auto_speedup_sub">Βοηθά ταινίες που κάνουν συχνά buffering από μακρινούς διακομιστές. Η εφαρμογή ζητά από τη συσκευή μεγαλύτερο παράθυρο λήψης και, σε συσκευές με αρκετή μνήμη, προσθέτει επιπλέον λήψεις αν η ταινία εξακολουθεί να μένει πίσω. Ανενεργό: μία κανονική λήψη.</string>
-    <string name="playback_net_auto_speedup_custom_note">Το Προσαρμοσμένο δίκτυο είναι ενεργό, οπότε χρησιμοποιούνται οι συνδέσεις που ορίστηκαν χειροκίνητα. Ισχύει μόνο το μεγαλύτερο παράθυρο λήψης.</string>
+    <string name="playback_net_auto_speedup_custom_note">Όταν οι Συνδέσεις έχουν οριστεί σε αριθμό, χρησιμοποιούνται οι δικές σας ρυθμίσεις σύνδεσης. Ισχύει μόνο το μεγαλύτερο παράθυρο λήψης.</string>
+    <string name="playback_net_connections">Συνδέσεις</string>
+    <string name="playback_net_connections_sub">Πόσες συνδέσεις φέρνουν μια ροή ταυτόχρονα. Το Αυτόματο χρησιμοποιεί μία και, σε συσκευές με αρκετή μνήμη, η Αυτόματη επιτάχυνση προσθέτει κι άλλες όταν τις χρειάζεται μια ταινία.</string>
+    <string name="playback_net_connections_auto">Αυτόματο</string>
     <string name="playback_net_connection_count_small_box">Αυτή η συσκευή έχει %1$s μνήμης. Πάνω από 2 συνδέσεις μπορεί να φέρουν μικροκολλήματα στην αναπαραγωγή.</string>
     <string name="playback_net_chunk_size_small_note">Chunks μικρότερα από 8 MB είναι αργά στο Real-Debrid και μπορεί να απορριφθούν από το TorBox.</string>
     <string name="diag_label_serving_host">Διακομιστής παροχής</string>

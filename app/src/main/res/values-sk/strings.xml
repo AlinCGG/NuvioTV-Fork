@@ -3634,7 +3634,10 @@
     <string name="playback_net_custom_desc">Pripojenia sa nastavujú ručne. Keď je vypnuté, aplikácia použije jedno pripojenie a na zariadeniach s dostatkom pamäte Automatické zrýchlenie pridá ďalšie, keď ich film potrebuje.</string>
     <string name="playback_net_auto_speedup">Automatické zrýchlenie</string>
     <string name="playback_net_auto_speedup_sub">Pomáha filmom, ktoré sa zo vzdialených serverov často zasekávajú pri načítavaní. Aplikácia požiada zariadenie o väčšie okno na sťahovanie a na zariadeniach s dostatkom pamäte pridá ďalšie sťahovania, ak film stále nestíha. Vypnuté: jedno bežné sťahovanie.</string>
-    <string name="playback_net_auto_speedup_custom_note">Vlastná sieť je zapnutá, preto sa použijú ručne nastavené pripojenia. Zostáva len väčšie okno na sťahovanie.</string>
+    <string name="playback_net_auto_speedup_custom_note">Keď sú Pripojenia nastavené na číslo, použijú sa vaše vlastné nastavenia pripojení. Zostáva len väčšie okno na sťahovanie.</string>
+    <string name="playback_net_connections">Pripojenia</string>
+    <string name="playback_net_connections_sub">Koľko pripojení sťahuje stream naraz. Automaticky používa jedno a na zariadeniach s dostatkom pamäte pridá Automatické zrýchlenie ďalšie, keď ich film potrebuje.</string>
+    <string name="playback_net_connections_auto">Automaticky</string>
     <string name="playback_net_connection_count_small_box">Toto zariadenie má %1$s pamäte. Viac ako 2 pripojenia môžu spôsobiť trhanie prehrávania.</string>
     <string name="playback_net_chunk_size_small_note">Bloky menšie ako 8 MB sú na Real-Debrid pomalé a TorBox ich môže odmietnuť.</string>
     <string name="diag_label_serving_host">Obsluhujúci hostiteľ</string>

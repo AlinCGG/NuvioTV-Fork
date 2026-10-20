@@ -3489,7 +3489,10 @@
     <string name="playback_net_custom_desc">手动设置连接。关闭时，应用使用一个连接；在内存充足的设备上，自动加速会在影片需要时增加连接。</string>
     <string name="playback_net_auto_speedup">自动加速</string>
     <string name="playback_net_auto_speedup_sub">帮助从远程服务器播放时经常缓冲的电影。应用会向设备申请更大的下载窗口；在内存充足的设备上，如果电影仍然跟不上，会增加额外下载。关闭：一个普通下载。</string>
-    <string name="playback_net_auto_speedup_custom_note">已开启自定义网络，因此使用手动设置的连接。仅保留更大的下载窗口。</string>
+    <string name="playback_net_auto_speedup_custom_note">当连接设为一个数字时，将使用你自己的连接设置。仅保留更大的下载窗口。</string>
+    <string name="playback_net_connections">连接</string>
+    <string name="playback_net_connections_sub">同时获取一个视频流的连接数量。自动只使用一个连接，在内存充足的设备上，自动加速会在影片需要时增加更多连接。</string>
+    <string name="playback_net_connections_auto">自动</string>
     <string name="playback_net_connection_count_small_box">此设备有 %1$s 内存。超过 2 个连接可能导致播放卡顿。</string>
     <string name="playback_net_chunk_size_small_note">小于 8 MB 的块在 Real-Debrid 上较慢，TorBox 可能会拒绝。</string>
     <string name="diag_label_serving_host">服务主机</string>

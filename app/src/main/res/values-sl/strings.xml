@@ -2435,7 +2435,10 @@
     <string name="playback_net_custom_desc">Povezave se nastavijo ročno. Ko je izklopljeno, aplikacija uporablja eno povezavo, na napravah z dovolj pomnilnika pa Samodejna pospešitev doda več, ko jih film potrebuje.</string>
     <string name="playback_net_auto_speedup">Samodejna pospešitev</string>
     <string name="playback_net_auto_speedup_sub">Pomaga filmom, ki se z oddaljenih strežnikov pogosto zatikajo pri nalaganju. Aplikacija od naprave zahteva večje okno za prenos in na napravah z dovolj pomnilnika doda dodatne prenose, če film še vedno zaostaja. Izklopljeno: en običajen prenos.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network je vklopljen, zato se uporabljajo ročno nastavljene povezave. Ostane le večje okno za prenos.</string>
+    <string name="playback_net_auto_speedup_custom_note">Ko je za Povezave nastavljeno število, se uporabljajo vaše lastne nastavitve povezav. Ostane le večje okno za prenos.</string>
+    <string name="playback_net_connections">Povezave</string>
+    <string name="playback_net_connections_sub">Koliko povezav hkrati prenaša vir. Samodejno uporablja eno, na napravah z dovolj pomnilnika pa Samodejna pospešitev doda več, ko jih film potrebuje.</string>
+    <string name="playback_net_connections_auto">Samodejno</string>
     <string name="playback_net_connection_count_small_box">Ta naprava ima %1$s pomnilnika. Pri več kot 2 povezavah se lahko predvajanje zatika.</string>
     <string name="playback_net_chunk_size_small_note">Kosi, manjši od 8 MB, so na Real-Debrid počasni, TorBox pa jih lahko zavrne.</string>
     <string name="diag_label_serving_host">Strežnik</string>

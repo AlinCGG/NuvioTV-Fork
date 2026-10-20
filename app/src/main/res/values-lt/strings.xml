@@ -1263,7 +1263,10 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="playback_net_custom_desc">Jungtys nustatomos rankiniu būdu. Išjungus programėlė naudoja vieną jungtį, o įrenginiuose, kuriuose pakanka atminties, Automatinis spartinimas prideda daugiau, kai filmui jų reikia.</string>
     <string name="playback_net_auto_speedup">Automatinis spartinimas</string>
     <string name="playback_net_auto_speedup_sub">Padeda filmams, kurie iš tolimų serverių dažnai buferizuojasi. Programėlė paprašo įrenginio didesnio atsisiuntimo lango ir įrenginiuose, kuriuose pakanka atminties, prideda papildomų atsisiuntimų, jei filmas vis tiek atsilieka. Išjungta: vienas įprastas atsisiuntimas.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network įjungtas, todėl naudojamos rankiniu būdu nustatytos jungtys. Lieka tik didesnis atsisiuntimo langas.</string>
+    <string name="playback_net_auto_speedup_custom_note">Kai Jungtys nustatytos skaičiumi, naudojami jūsų pačių jungčių nustatymai. Lieka tik didesnis atsisiuntimo langas.</string>
+    <string name="playback_net_connections">Jungtys</string>
+    <string name="playback_net_connections_sub">Kiek jungčių vienu metu siunčia srautą. Automatinis naudoja vieną, o įrenginiuose su pakankamai atminties Automatinis spartinimas prideda daugiau, kai filmui jų reikia.</string>
+    <string name="playback_net_connections_auto">Automatinis</string>
     <string name="playback_net_connection_count_small_box">Šis įrenginys turi %1$s atminties. Daugiau nei 2 jungtys gali sukelti atkūrimo trūkčiojimą.</string>
     <string name="playback_net_chunk_size_small_note">Mažesni nei 8 MB blokai lėti per Real-Debrid, o TorBox gali juos atmesti.</string>
     <string name="diag_label_serving_host">Teikiantis serveris</string>

@@ -104,15 +104,7 @@ internal fun PlaybackBufferNetworkSection(
     if (settings.autoSpeedupEnabled && settings.parallelNetworkEnabled) {
         SettingsNote(text = stringResource(R.string.playback_net_auto_speedup_custom_note))
     }
-    SettingsToggleRow(
-        title = stringResource(R.string.playback_net_custom),
-        subtitle = stringResource(R.string.playback_net_custom_desc),
-        checked = settings.parallelNetworkEnabled,
-        onToggle = { onUpdate { setParallelNetworkEnabled(!settings.parallelNetworkEnabled) } }
-    )
-    if (settings.parallelNetworkEnabled) {
-        ParallelNetworkControls(settings = settings, updateMemory = updateMemory)
-    }
+    ParallelNetworkControls(settings = settings, updateMemory = updateMemory)
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -238,14 +230,17 @@ private fun CustomBufferControls(
         onValueChange = { seconds -> onUpdate { setBufferBackBufferDurationMs(seconds * 1000) } }
     )
     if (buffer.backBufferDurationMs > 0) {
+        val playbackMb = BufferSettingsNumbers.playbackBufferMb(
+            bufferSizeMb, budgetManaged, isNativeMemory, com.nuvio.tv.core.player.BufferSizing.lastPlaybackBudget
+        )
         val kept = BufferSettingsNumbers.backBufferKept(
-            buffer.backBufferDurationMs, bufferSizeMb, isNativeMemory, buffer.minBufferMs
+            buffer.backBufferDurationMs, playbackMb, isNativeMemory, buffer.minBufferMs
         )
         SettingsNote(
             text = if (kept != null) {
-                stringResource(R.string.playback_buffer_back_fitted, bufferSizeMb, kept.seconds, kept.mb)
+                stringResource(R.string.playback_buffer_back_fitted, playbackMb, kept.seconds, kept.mb)
             } else {
-                stringResource(R.string.playback_buffer_back_fitted_none, bufferSizeMb)
+                stringResource(R.string.playback_buffer_back_fitted_none, playbackMb)
             }
         )
     }
@@ -378,24 +373,40 @@ private fun ParallelNetworkControls(
     settings: PlayerSettings,
     updateMemory: PlaybackSettingsUpdate
 ) {
-    SettingsToggleRow(
-        title = stringResource(R.string.playback_net_parallel),
-        subtitle = stringResource(R.string.playback_net_parallel_sub),
-        checked = settings.useParallelConnections,
-        onToggle = { updateMemory { setUseParallelConnections(!settings.useParallelConnections) } }
+    val connections = ConnectionsChoice.from(
+        settings.parallelNetworkEnabled,
+        settings.useParallelConnections,
+        settings.parallelConnectionCount
+    )
+    SliderSettingsItem(
+        title = stringResource(R.string.playback_net_connections),
+        subtitle = stringResource(R.string.playback_net_connections_sub),
+        values = ConnectionsChoice.values(MemoryBudget.maxConnections(settings.nuvioPerformanceModeEnabled)),
+        selected = connections,
+        valueText = if (connections == ConnectionsChoice.AUTOMATIC) {
+            stringResource(R.string.playback_net_connections_auto)
+        } else {
+            connections.toString()
+        },
+        onValueChange = { choice ->
+            updateMemory {
+                when (choice) {
+                    ConnectionsChoice.AUTOMATIC -> setParallelNetworkEnabled(false)
+                    1 -> {
+                        setUseParallelConnections(false)
+                        setParallelNetworkEnabled(true)
+                    }
+                    else -> {
+                        setParallelConnectionCount(choice)
+                        setUseParallelConnections(true)
+                        setParallelNetworkEnabled(true)
+                    }
+                }
+            }
+        }
     )
 
-    if (settings.useParallelConnections) {
-        SliderSettingsItem(
-            title = stringResource(R.string.playback_net_connection_count),
-            subtitle = stringResource(R.string.playback_net_connection_count_sub),
-            value = settings.parallelConnectionCount,
-            valueText = settings.parallelConnectionCount.toString(),
-            minValue = MemoryBudget.MIN_CONNECTIONS,
-            maxValue = MemoryBudget.maxConnections(settings.nuvioPerformanceModeEnabled),
-            step = 1,
-            onValueChange = { count -> updateMemory { setParallelConnectionCount(count) } }
-        )
+    if (connections >= 2) {
         val totalRamBytes = NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(LocalContext.current)
         if (BufferSettingsNumbers.connectionCountTooHigh(totalRamBytes, settings.parallelConnectionCount)) {
             SettingsNote(
@@ -433,10 +444,12 @@ private fun ParallelNetworkControls(
         SettingsNote(text = stringResource(R.string.playback_net_chunk_size_small_note))
     }
 
-    SettingsResetButton(
-        text = stringResource(R.string.playback_reset_to_default),
-        onClick = { updateMemory { resetNetworkSettingsToDefaults() } }
-    )
+    if (connections != ConnectionsChoice.AUTOMATIC) {
+        SettingsResetButton(
+            text = stringResource(R.string.playback_reset_to_default),
+            onClick = { updateMemory { resetNetworkSettingsToDefaults() } }
+        )
+    }
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)

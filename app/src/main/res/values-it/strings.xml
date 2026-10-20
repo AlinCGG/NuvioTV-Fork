@@ -3607,7 +3607,10 @@
     <string name="playback_net_custom_desc">Connessioni impostate a mano. Se disattivato, l\'app usa una connessione e, sui box con memoria sufficiente, Accelerazione automatica ne aggiunge altre quando un film ne ha bisogno.</string>
     <string name="playback_net_auto_speedup">Accelerazione automatica</string>
     <string name="playback_net_auto_speedup_sub">Aiuta i film che vanno spesso in buffering da server lontani. L\'app chiede al box una finestra di download più grande e, sui box con memoria sufficiente, aggiunge download extra se un film resta ancora indietro. Disattivato: un solo download standard.</string>
-    <string name="playback_net_auto_speedup_custom_note">Rete personalizzata è attiva, quindi si usano le connessioni impostate a mano. Resta solo la finestra di download più grande.</string>
+    <string name="playback_net_auto_speedup_custom_note">Quando Connessioni è impostato su un numero, si usano le tue impostazioni di connessione. Resta solo la finestra di download più grande.</string>
+    <string name="playback_net_connections">Connessioni</string>
+    <string name="playback_net_connections_sub">Quante connessioni scaricano uno stream contemporaneamente. Automatico ne usa una e, sui dispositivi con memoria sufficiente, Accelerazione automatica ne aggiunge altre quando un film ne ha bisogno.</string>
+    <string name="playback_net_connections_auto">Automatico</string>
     <string name="playback_net_connection_count_small_box">Questo box ha %1$s di memoria. Più di 2 connessioni possono far scattare la riproduzione.</string>
     <string name="playback_net_chunk_size_small_note">I chunk inferiori a 8 MB sono lenti su Real-Debrid e possono essere rifiutati da TorBox.</string>
     <string name="diag_label_serving_host">Host di origine</string>

@@ -2994,7 +2994,10 @@
     <string name="playback_net_custom_desc">З\'єднання задаються вручну. Коли вимкнено, застосунок використовує одне з\'єднання, а на приставках з достатнім обсягом пам\'яті Автоматичне прискорення додає ще, коли вони потрібні фільму.</string>
     <string name="playback_net_auto_speedup">Автоматичне прискорення</string>
     <string name="playback_net_auto_speedup_sub">Допомагає фільмам, які часто буферизуються з далеких серверів. Застосунок просить у приставки більше вікно завантаження і на приставках з достатнім обсягом пам\'яті додає додаткові завантаження, якщо фільм усе одно не встигає. Вимк.: одне звичайне завантаження.</string>
-    <string name="playback_net_auto_speedup_custom_note">Користувацька мережа увімкнена, тому використовуються задані вручну з\'єднання. Лишається тільки більше вікно завантаження.</string>
+    <string name="playback_net_auto_speedup_custom_note">Коли для З\'єднань вибрано число, використовуються ваші власні налаштування з\'єднань. Лишається тільки більше вікно завантаження.</string>
+    <string name="playback_net_connections">З\'єднання</string>
+    <string name="playback_net_connections_sub">Скільки з\'єднань одночасно завантажують потік. Автоматично використовується одне, а на пристроях із достатньою пам\'яттю Автоматичне прискорення додає ще, коли фільму це потрібно.</string>
+    <string name="playback_net_connections_auto">Автоматично</string>
     <string name="playback_net_connection_count_small_box">Ця приставка має %1$s пам\'яті. Понад 2 з\'єднання можуть спричинити підгальмовування.</string>
     <string name="playback_net_chunk_size_small_note">Чанки менші за 8 МБ повільні в Real-Debrid, а TorBox може їх відхилити.</string>
     <string name="diag_label_serving_host">Хост роздачі</string>

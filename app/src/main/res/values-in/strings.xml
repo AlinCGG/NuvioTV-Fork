@@ -2705,7 +2705,10 @@
     <string name="playback_net_custom_desc">Koneksi diatur manual. Saat mati, aplikasi memakai satu koneksi dan, pada perangkat dengan memori yang cukup, Percepatan otomatis menambah lagi saat film membutuhkannya.</string>
     <string name="playback_net_auto_speedup">Percepatan otomatis</string>
     <string name="playback_net_auto_speedup_sub">Membantu film yang sering buffering dari server yang jauh. Aplikasi meminta jendela unduhan yang lebih besar ke perangkat dan, pada perangkat dengan memori yang cukup, menambah unduhan ekstra jika film masih tertinggal. Mati: satu unduhan standar.</string>
-    <string name="playback_net_auto_speedup_custom_note">Custom network aktif, jadi koneksi yang diatur manual yang dipakai. Hanya jendela unduhan yang lebih besar yang tetap berlaku.</string>
+    <string name="playback_net_auto_speedup_custom_note">Saat Koneksi diatur ke angka, pengaturan koneksi Anda yang dipakai. Hanya jendela unduhan yang lebih besar yang tetap berlaku.</string>
+    <string name="playback_net_connections">Koneksi</string>
+    <string name="playback_net_connections_sub">Berapa banyak koneksi yang mengambil stream sekaligus. Otomatis memakai satu, dan pada perangkat dengan memori cukup, Percepatan otomatis menambah lebih banyak saat film membutuhkannya.</string>
+    <string name="playback_net_connections_auto">Otomatis</string>
     <string name="playback_net_connection_count_small_box">Perangkat ini memiliki memori %1$s. Lebih dari 2 koneksi bisa membuat pemutaran tersendat.</string>
     <string name="playback_net_chunk_size_small_note">Chunk di bawah 8 MB lambat di Real-Debrid dan bisa ditolak oleh TorBox.</string>
     <string name="diag_label_serving_host">Host penyaji</string>

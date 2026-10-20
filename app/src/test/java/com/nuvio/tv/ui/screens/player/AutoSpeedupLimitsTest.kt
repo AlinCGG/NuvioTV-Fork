@@ -10,7 +10,7 @@ class AutoSpeedupLimitsTest {
 
     @Test
     fun `two gigabyte boxes go up to four`() {
-        assertEquals(AutoSpeedup.Limits(4, 16L * mb), AutoSpeedup.limitsFor(1_900L * mb))
+        assertEquals(AutoSpeedup.Limits(4, 16L * mb, 8L * mb), AutoSpeedup.limitsFor(1_900L * mb))
         assertEquals(4, AutoSpeedup.limitsFor(2_559L * mb).maxDownloads)
     }
 
@@ -69,5 +69,66 @@ class AutoSpeedupLimitsTest {
         assertEquals(true, AutoSpeedup.swapLow(swapTotalMb = 512L, swapFreeMb = 49L))
         assertEquals(false, AutoSpeedup.swapLow(swapTotalMb = 512L, swapFreeMb = 50L))
         assertEquals(false, AutoSpeedup.swapLow(swapTotalMb = 0L, swapFreeMb = 0L))
+    }
+
+    @Test
+    fun `small boxes use 8 MB pieces only when the server answers quickly`() {
+        val small = AutoSpeedup.limitsFor(1_900L * mb)
+        assertEquals(8L * mb, AutoSpeedup.pieceFor(small, 260L))
+        assertEquals(8L * mb, AutoSpeedup.pieceFor(small, 399L))
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(small, 400L))
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(small, 750L))
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(small, -1L))
+    }
+
+    @Test
+    fun `bigger boxes keep 16 MB pieces however quick the server is`() {
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(2_900L * mb), 100L))
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(8_000L * mb), 100L))
+    }
+
+    @Test
+    fun `the quickest of the first requests sets the piece, then it stays`() {
+        try {
+            AutoSpeedup.begin("https://a/quick", 1_900L * mb)
+            assertEquals(16L * mb, AutoSpeedup.pieceBytes)
+            AutoSpeedup.onFirstByte(900L)
+            assertEquals(16L * mb, AutoSpeedup.pieceBytes)
+            AutoSpeedup.onFirstByte(260L)
+            assertEquals(8L * mb, AutoSpeedup.pieceBytes)
+            AutoSpeedup.onFirstByte(900L)
+            assertEquals(8L * mb, AutoSpeedup.fixPiece())
+            assertEquals(24L * mb, AutoSpeedupPolicy.lentBytes(2, AutoSpeedup.pieceBytes))
+        } finally {
+            AutoSpeedup.end()
+        }
+    }
+
+    @Test
+    fun `a slow server or an unmeasured one keeps 16 MB once the chunk session opens`() {
+        try {
+            AutoSpeedup.begin("https://a/slow", 1_900L * mb)
+            AutoSpeedup.onFirstByte(750L)
+            AutoSpeedup.onFirstByte(800L)
+            assertEquals(16L * mb, AutoSpeedup.fixPiece())
+            AutoSpeedup.end()
+            AutoSpeedup.begin("https://a/unmeasured", 1_900L * mb)
+            assertEquals(16L * mb, AutoSpeedup.fixPiece())
+            AutoSpeedup.onFirstByte(100L)
+            assertEquals(16L * mb, AutoSpeedup.pieceBytes)
+        } finally {
+            AutoSpeedup.end()
+        }
+    }
+
+    @Test
+    fun `bigger boxes never change the piece`() {
+        try {
+            AutoSpeedup.begin("https://a/big", 4_000L * mb)
+            AutoSpeedup.onFirstByte(100L)
+            assertEquals(16L * mb, AutoSpeedup.fixPiece())
+        } finally {
+            AutoSpeedup.end()
+        }
     }
 }
