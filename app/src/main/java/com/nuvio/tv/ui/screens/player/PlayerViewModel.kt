@@ -554,7 +554,10 @@ class PlayerViewModel @Inject constructor(
         // RPU. Gated on its own value rather than the DV-conversion line above,
         // so it also appears on strip/HDR10 paths where no source-profile line is
         // emitted. Informational only, no health dot.
-        (DolbyVisionConversionStats.getLastRpuMetadata()?.toDiagnosticLine() ?: dvDiag.dvHdrMastering)?.takeIf { it.isNotBlank() }?.let { mastering ->
+        // The RPU detail rows only for native DV7 FEL/MEL, so the panel fits smaller screens on every other film.
+        val dvDetail = dvDiag.dvSourceProfile?.trim() == "7" && dvDiag.dv7ModeEffective == "NATIVE_FEL"
+        (DolbyVisionConversionStats.getLastRpuMetadata()?.toDiagnosticLine() ?: dvDiag.dvHdrMastering)
+            ?.takeIf { dvDetail && it.isNotBlank() }?.let { mastering ->
             rows += StatsRow("DV HDR", mastering, StatsDot.NONE, marquee = mastering.length > 40)
         }
 
@@ -563,7 +566,7 @@ class PlayerViewModel @Inject constructor(
         // at the playback position; CM version and levels fall back to the first RPU.
         // Only for a DV stream: a late write from the previous title's loader (after the per-playback reset)
         // must not put DV rows on a non-DV title.
-        val dvStream = !dvDiag.dvSourceProfile.isNullOrBlank()
+        val dvStream = dvDetail
         val dmLive = if (dvStream) player?.let { DolbyVisionConversionStats.liveDmAt(it.currentPosition * 1000L) } else null
         val dmFirst = if (dvStream) DolbyVisionConversionStats.getFirstDm() else null
         (dmLive ?: dmFirst)?.let { dm ->
@@ -803,7 +806,7 @@ class PlayerViewModel @Inject constructor(
                 null -> StatsDot.NONE
             }
             listOfNotNull(codec, channels, rate, mode).joinToString(" · ")
-                .takeIf { it.isNotBlank() }?.let { rows += StatsRow("Audio", it, dot) }
+                .takeIf { it.isNotBlank() }?.let { rows += StatsRow("Audio", it, dot, marquee = true) }
             // Nothing declares a bitrate for a lossless track (MKV has no field for it and
             // TrueHD / DTS-HD MA are genuinely variable-rate), so under passthrough the sink
             // measures the encoded bitstream on its way out.
