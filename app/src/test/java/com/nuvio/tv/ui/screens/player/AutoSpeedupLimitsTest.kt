@@ -9,9 +9,11 @@ class AutoSpeedupLimitsTest {
     private val mb = 1024L * 1024L
 
     @Test
-    fun `two gigabyte boxes go up to four`() {
-        assertEquals(AutoSpeedup.Limits(4, 16L * mb, 8L * mb), AutoSpeedup.limitsFor(1_900L * mb))
-        assertEquals(4, AutoSpeedup.limitsFor(2_559L * mb).maxDownloads)
+    fun `two gigabyte boxes go up to six`() {
+        assertEquals(AutoSpeedup.Limits(6, 16L * mb, 8L * mb), AutoSpeedup.limitsFor(1_900L * mb))
+        assertEquals(6, AutoSpeedup.limitsFor(2_559L * mb).maxDownloads)
+        assertEquals(true, AutoSpeedup.limitsFor(1_900L * mb).smallBox)
+        assertEquals(false, AutoSpeedup.limitsFor(2_900L * mb).smallBox)
     }
 
     @Test
@@ -35,8 +37,8 @@ class AutoSpeedupLimitsTest {
     @Test
     fun `room is free memory above the low-memory line and the margin`() {
         val free = BufferSizing.FreeMemory(availBytes = 400L * mb, thresholdBytes = 144L * mb, lowMemory = false)
-        assertEquals((400L - 144L - BufferSizing.SYSTEM_MARGIN_MB) * mb, AutoSpeedup.roomAboveFloor(free))
-        val short = BufferSizing.FreeMemory(availBytes = 180L * mb, thresholdBytes = 144L * mb, lowMemory = false)
+        assertEquals(400L * mb - 144L * mb - AutoSpeedup.MARGIN_BYTES, AutoSpeedup.roomAboveFloor(free))
+        val short = BufferSizing.FreeMemory(availBytes = 160L * mb, thresholdBytes = 144L * mb, lowMemory = false)
         assertEquals(true, AutoSpeedup.roomAboveFloor(short) < 0L)
         assertEquals(Long.MAX_VALUE, AutoSpeedup.roomAboveFloor(null))
     }
@@ -75,8 +77,8 @@ class AutoSpeedupLimitsTest {
     fun `small boxes use 8 MB pieces only when the server answers quickly`() {
         val small = AutoSpeedup.limitsFor(1_900L * mb)
         assertEquals(8L * mb, AutoSpeedup.pieceFor(small, 260L))
-        assertEquals(8L * mb, AutoSpeedup.pieceFor(small, 399L))
-        assertEquals(16L * mb, AutoSpeedup.pieceFor(small, 400L))
+        assertEquals(8L * mb, AutoSpeedup.pieceFor(small, 599L))
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(small, 600L))
         assertEquals(16L * mb, AutoSpeedup.pieceFor(small, 750L))
         assertEquals(16L * mb, AutoSpeedup.pieceFor(small, -1L))
     }
@@ -130,5 +132,18 @@ class AutoSpeedupLimitsTest {
         } finally {
             AutoSpeedup.end()
         }
+    }
+
+    @Test
+    fun `the bitrate is guessed from size and runtime, else from a remux name`() {
+        val gb = 1_000_000_000L
+        assertEquals(true, AutoSpeedup.guessBitrate(60 * gb, 120) in 66_000_000L..67_000_000L)
+        assertEquals(true, AutoSpeedup.guessBitrate(26 * gb, 125) < 30_000_000L)
+        assertEquals(80_000_000L, AutoSpeedup.guessBitrate(null, null,
+            "No.Country.for.Old.Men.2007.UHD.BluRay.2160p.DTS-HD.MA.5.1.DV.HEVC.REMUX-FraMeSToR.mkv"))
+        assertEquals(80_000_000L, AutoSpeedup.guessBitrate(null, 120, "Film 2160p BluRay TrueHD Atmos 7.1"))
+        assertEquals(0L, AutoSpeedup.guessBitrate(null, null, "Tenzing.2160p.WEB-DL.DV.HDR10.DDP5.1"))
+        assertEquals(0L, AutoSpeedup.guessBitrate(null, null, "Film 2160p WEB-DL TrueHD 7.1"))
+        assertEquals(0L, AutoSpeedup.guessBitrate(null, null, "Film 1080p BluRay x264", null))
     }
 }

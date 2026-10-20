@@ -17,11 +17,20 @@ internal object AutoSpeedup {
     private const val SWAP_MIN_MB = 50L
     private const val MAX_FILE_BITRATE = 400_000_000L
 
-    private const val QUICK_FIRST_BYTE_MS = 400L
+    private const val QUICK_FIRST_BYTE_MS = 600L
+
+    /**
+     * What the extra downloads leave free above Android's low-memory line. Smaller than the buffer's margin: Android
+     * closes idle apps to keep that line.
+     */
+    const val MARGIN_BYTES = 25L * MB
     private const val FIRST_BYTE_SAMPLES = 2
 
     /** [quickHoldBytes] = the piece used instead of [holdBytes] when the server sends its first byte quickly. */
-    data class Limits(val maxDownloads: Int, val holdBytes: Long, val quickHoldBytes: Long = holdBytes)
+    data class Limits(val maxDownloads: Int, val holdBytes: Long, val quickHoldBytes: Long = holdBytes) {
+        /** A 2 GB box: smaller pieces and a start that holds no more than two 16 MB downloads. */
+        val smallBox: Boolean get() = quickHoldBytes < holdBytes
+    }
 
     /** Bytes received from the network for the stream that is playing, on either path. */
     val received = AtomicLong()
@@ -41,10 +50,75 @@ internal object AutoSpeedup {
 
     val downloads: Int get() = policy?.downloads ?: 1
 
+    /** Pieces fetched beyond one per download while memory allows, see [AutoSpeedupPolicy.readAheadPieces]. */
+    @Volatile
+    var readAhead: Int = 0
+        private set
+
+    private var readAheadRoomAtMs = Long.MIN_VALUE
+
+    /**
+     * Pieces the chunk session may have under way or waiting: one per download plus the read-ahead, never more than
+     * [MAX_IN_FLIGHT] requests at once, where debrid servers started answering "too many requests".
+     */
+    fun depth(): Int = minOf(downloads + if (downloads > 1) readAhead else 0, maxOf(downloads, MAX_IN_FLIGHT))
+
+    /** The most pieces the chunk session is ever asked to hold for this piece size. */
+    fun maxDepth(pieceBytes: Long): Int =
+        maxOf(limits.maxDownloads + 1, (AutoSpeedupPolicy.READ_AHEAD_MAX_BYTES / pieceBytes.coerceAtLeast(1L)).toInt())
+
+    @Volatile
+    private var hintUrl: String? = null
+
+    @Volatile
+    private var hintBps = 0L
+
+    /** The bitrate [guessBitrate] found for [streamUrl], used by [begin] before the first byte arrives. */
+    fun startHint(streamUrl: String, bitrateBps: Long) {
+        hintUrl = streamUrl
+        hintBps = bitrateBps
+    }
+
+    /**
+     * A film's bitrate in bits per second known before its first byte: the add-on's size over the title's runtime,
+     * else 80 Mbit/s for a name that says remux, or 4K with lossless audio outside a web release; 0 otherwise.
+     */
+    fun guessBitrate(sizeBytes: Long?, runtimeMinutes: Int?, vararg names: String?): Long {
+        if (sizeBytes != null && sizeBytes > 0L && runtimeMinutes != null && runtimeMinutes >= MIN_GUESS_RUNTIME_MIN) {
+            val bps = sizeBytes * 8L / (runtimeMinutes * 60L)
+            if (bps in 1..MAX_FILE_BITRATE) return bps
+        }
+        val text = names.filterNotNull().joinToString(" ")
+        if (REMUX.containsMatchIn(text)) return GUESSED_REMUX_BPS
+        if (UHD.containsMatchIn(text) && LOSSLESS_AUDIO.containsMatchIn(text) && !WEB.containsMatchIn(text)) {
+            return GUESSED_REMUX_BPS
+        }
+        return 0L
+    }
+
+    private const val MIN_GUESS_RUNTIME_MIN = 20
+    const val MAX_IN_FLIGHT = 8
+    private const val GUESSED_REMUX_BPS = 80_000_000L
+    private val REMUX = Regex("remux", RegexOption.IGNORE_CASE)
+    private val UHD = Regex("""2160p|\buhd\b|\b4k\b""", RegexOption.IGNORE_CASE)
+    private val LOSSLESS_AUDIO = Regex("""truehd|dts[-. ]?hd[-. ]?ma|dts[-. ]?x\b""", RegexOption.IGNORE_CASE)
+    private val WEB = Regex("web[-. ]?(dl|rip)", RegexOption.IGNORE_CASE)
+
+    /** Recomputed only on a fresh memory reading, so one reading never counts twice. */
+    fun updateReadAhead(roomBytes: Long) {
+        if (roomReadAtMs == readAheadRoomAtMs && downloads > 1) return
+        readAheadRoomAtMs = roomReadAtMs
+        val next = AutoSpeedupPolicy.readAheadPieces(readAhead, roomBytes, pieceBytes, downloads)
+        if (next != readAhead) {
+            Log.i(TAG, "AUTO_SPEEDUP: read-ahead $readAhead->$next downloads=$downloads roomMb=${roomBytes / MB}")
+            readAhead = next
+        }
+    }
+
     val active: Boolean get() = policy != null
 
     fun limitsFor(totalRamBytes: Long): Limits = when {
-        totalRamBytes in 1 until 2_560L * MB -> Limits(maxDownloads = 4, holdBytes = 16L * MB, quickHoldBytes = 8L * MB)
+        totalRamBytes in 1 until 2_560L * MB -> Limits(maxDownloads = 6, holdBytes = 16L * MB, quickHoldBytes = 8L * MB)
         totalRamBytes in 1 until 3_584L * MB -> Limits(maxDownloads = 5, holdBytes = 16L * MB)
         totalRamBytes > 0L -> Limits(maxDownloads = 6, holdBytes = 16L * MB)
         else -> Limits(maxDownloads = 1, holdBytes = 16L * MB)
@@ -97,7 +171,7 @@ internal object AutoSpeedup {
     @Volatile
     private var room = Long.MAX_VALUE
 
-    /** Free memory above Android's low-memory line and the system margin, read at most every [ROOM_READ_MS]. */
+    /** Free memory above Android's low-memory line and [MARGIN_BYTES], read at most every [ROOM_READ_MS]. */
     fun roomBytes(nowMs: Long, read: () -> BufferSizing.FreeMemory?): Long {
         if (roomReadAtMs == Long.MIN_VALUE || nowMs - roomReadAtMs >= ROOM_READ_MS) {
             room = roomAboveFloor(read())
@@ -127,7 +201,7 @@ internal object AutoSpeedup {
     /** Unknown free memory never blocks a download. */
     fun roomAboveFloor(free: BufferSizing.FreeMemory?): Long =
         if (free == null) Long.MAX_VALUE
-        else free.availBytes - free.thresholdBytes - BufferSizing.SYSTEM_MARGIN_MB * MB
+        else free.availBytes - free.thresholdBytes - MARGIN_BYTES
 
     /** A new stream starts on one download; the same stream again (a subtitle reload) keeps what it learnt. */
     fun begin(streamUrl: String, totalRamBytes: Long) {
@@ -137,14 +211,26 @@ internal object AutoSpeedup {
         url = streamUrl
         received.set(0L)
         roomReadAtMs = Long.MIN_VALUE
+        readAheadRoomAtMs = Long.MIN_VALUE
+        readAhead = 0
         swapReadAtMs = Long.MIN_VALUE
         swapLowNow = false
         synchronized(pieceLock) {
             pieceBytes = limits.holdBytes
             firstByteMs = -1L
             firstByteSamples = 0
-            policy = AutoSpeedupPolicy(limits.maxDownloads, pieceBytes)
+            policy = AutoSpeedupPolicy(limits.maxDownloads, pieceBytes, limits.smallBox)
             pieceFixed = limits.quickHoldBytes == limits.holdBytes
+            val guessed = if (hintUrl == streamUrl) hintBps else 0L
+            if (guessed >= AutoSpeedupPolicy.START_THREE_BPS && limits.maxDownloads > 1) {
+                // No first byte timed yet: the smaller piece, which the slow servers it suits less still carry.
+                pieceBytes = limits.quickHoldBytes
+                policy?.pieceBytes = pieceBytes
+                pieceFixed = true
+                val start = AutoSpeedupPolicy.startDownloads(guessed, limits.maxDownloads, pieceBytes, limits.smallBox)
+                policy?.preset(start)
+                Log.i(TAG, "AUTO_SPEEDUP: start guessed downloads=$start fileKbps=${guessed / 1000}")
+            }
             if (pieceFixed) logOn()
         }
     }

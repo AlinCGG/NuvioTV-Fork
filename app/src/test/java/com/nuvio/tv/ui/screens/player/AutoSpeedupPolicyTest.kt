@@ -236,12 +236,12 @@ class AutoSpeedupPolicyTest {
     }
 
     @Test
-    fun `after a low-memory hand-back no try for a minute even with room again`() {
+    fun `after a low-memory hand-back no try for 15 s even with room again`() {
         val policy = AutoSpeedupPolicy(4, pieceBytes = 16L * mb)
         policy.play(9, 80_000, roomMb = 500)
         assertEquals(1, policy.play(2, 80_000, roomMb = -1))
-        assertEquals(1, policy.play(55, 80_000, roomMb = 500))
-        assertEquals(2, policy.play(10, 80_000, roomMb = 500))
+        assertEquals(1, policy.play(12, 80_000, roomMb = 500))
+        assertEquals(2, policy.play(5, 80_000, roomMb = 500))
     }
 
     @Test
@@ -270,7 +270,7 @@ class AutoSpeedupPolicyTest {
     @Test
     fun `a 4K remux starts on three downloads on boxes with 3 GB or more`() {
         assertEquals(3, AutoSpeedupPolicy(6, 16L * mb).play(9, 30_000, fileMbps = 80))
-        assertEquals(listOf("downloads 1->3 start fileKbps=80000 singleKbps=30000"), log)
+        assertEquals(listOf("downloads 1->3 start heavy fileKbps=80000"), log)
         assertEquals(3, AutoSpeedupPolicy(5, 16L * mb).play(9, 30_000, fileMbps = 60))
     }
 
@@ -299,9 +299,10 @@ class AutoSpeedupPolicyTest {
     }
 
     @Test
-    fun `the start never goes above three, leaving TorBox one connection for thumbnails`() {
+    fun `the start never goes above three`() {
         for (max in 5..6) assertEquals(3, AutoSpeedupPolicy.startDownloads(200_000_000L, max))
         assertEquals(2, AutoSpeedupPolicy.startDownloads(200_000_000L, 4))
+        assertEquals(2, AutoSpeedupPolicy.startDownloads(200_000_000L, 4, 16L * mb))
         assertEquals(2, AutoSpeedupPolicy.startDownloads(200_000_000L, 2))
         assertEquals(1, AutoSpeedupPolicy.startDownloads(200_000_000L, 1))
     }
@@ -332,30 +333,29 @@ class AutoSpeedupPolicyTest {
     fun `start downloads that do not help are handed back and the start is not repeated`() {
         val policy = AutoSpeedupPolicy(6, 16L * mb)
         policy.play(8, 40_000, aheadPerSecondMs = 500)
-        assertEquals(3, policy.play(1, 40_000, fileMbps = 80))
-        assertEquals(1, policy.play(11, 42_000, fileMbps = 80))
-        assertEquals(true, log.last().startsWith("downloads 3->1 no gain"))
-        assertEquals(1, policy.play(60, 42_000, aheadPerSecondMs = 2_000, fileMbps = 80))
+        assertEquals(2, policy.play(1, 40_000, fileMbps = 50))
+        assertEquals(1, policy.play(11, 42_000, fileMbps = 50))
+        assertEquals(true, log.last().startsWith("downloads 2->1 no gain"))
+        assertEquals(1, policy.play(60, 42_000, aheadPerSecondMs = 2_000, fileMbps = 50))
     }
 
     @Test
     fun `after a start that did not help a film running short climbs the usual way`() {
         val policy = AutoSpeedupPolicy(6, 16L * mb)
         policy.play(8, 40_000, aheadPerSecondMs = 500)
-        policy.play(1, 40_000, fileMbps = 80)
-        assertEquals(1, policy.play(11, 42_000, fileMbps = 80))
-        assertEquals(2, policy.play(3, 42_000, fileMbps = 80))
+        policy.play(1, 40_000, fileMbps = 50)
+        assertEquals(1, policy.play(11, 42_000, fileMbps = 50))
+        assertEquals(2, policy.play(3, 42_000, fileMbps = 50))
         assertEquals(true, log.last().startsWith("downloads 1->2 trial"))
     }
 
     @Test
-    fun `with nothing delivered before the start it is judged against the film's bitrate`() {
-        val kept = AutoSpeedupPolicy(6, 16L * mb)
-        assertEquals(3, kept.play(9, 0, fileMbps = 80))
-        assertEquals(3, kept.play(11, 90_000, fileMbps = 80))
-        val dropped = AutoSpeedupPolicy(6, 16L * mb)
-        assertEquals(3, dropped.play(9, 0, fileMbps = 80))
-        assertEquals(1, dropped.play(11, 50_000, fileMbps = 80))
+    fun `a remux start stays even below the film's bitrate, one download being slower still`() {
+        val fast = AutoSpeedupPolicy(6, 16L * mb)
+        assertEquals(3, fast.play(14, 90_000, fileMbps = 80, aheadPerSecondMs = 1_000))
+        assertEquals(true, log.any { it.startsWith("kept downloads=3") })
+        val slow = AutoSpeedupPolicy(6, 16L * mb)
+        assertEquals(3, slow.play(14, 50_000, fileMbps = 80, aheadPerSecondMs = 1_000))
     }
 
     @Test
@@ -386,8 +386,8 @@ class AutoSpeedupPolicyTest {
 
     /** Starts a 70 Mbit/s film on two downloads, fills the buffer and hands one back as comfortable. */
     private fun AutoSpeedupPolicy.startFillAndDrop() {
-        assertEquals(2, play(9, 0, roomMb = 500, fileMbps = 70))
-        assertEquals(2, play(11, 90_000, roomMb = 500, fileMbps = 70, aheadPerSecondMs = 2_000))
+        assertEquals(2, play(9, 250_000, roomMb = 500, fileMbps = 70))
+        assertEquals(2, play(11, 250_000, roomMb = 500, fileMbps = 70, aheadPerSecondMs = 2_000))
         ahead = 40_000L
         assertEquals(1, play(65, 60_000, loading = false, roomMb = 500, fileMbps = 70))
         assertEquals(true, log.last().startsWith("downloads 2->1 comfortable"))
@@ -422,12 +422,12 @@ class AutoSpeedupPolicyTest {
         policy.play(9, 30_000)
         assertEquals(1, policy.play(11, 32_000))
         log.clear()
-        assertEquals(1, policy.play(30, 30_000))
+        assertEquals(1, policy.play(20, 30_000))
         assertEquals(1, log.size)
         assertEquals(true, log.single().startsWith("held downloads=1 roomMb="))
         assertEquals(true, log.single().contains("blockedS="))
         log.clear()
-        assertEquals(1, policy.play(30, 30_000))
+        assertEquals(1, policy.play(5, 30_000))
         assertEquals(emptyList<String>(), log)
     }
 
@@ -453,8 +453,17 @@ class AutoSpeedupPolicyTest {
     fun `with the user's own buffer target memory short still drops to one`() {
         val policy = AutoSpeedupPolicy(4, pieceBytes = 16L * mb)
         assertEquals(2, policy.play(9, 30_000, roomMb = -60, userBudget = true))
-        assertEquals(1, policy.play(1, 36_000, roomMb = -60, memoryShort = true, userBudget = true))
+        assertEquals(1, policy.play(3, 36_000, roomMb = -60, memoryShort = true, userBudget = true))
         assertEquals(1, policy.play(30, 30_000, roomMb = -60, userBudget = true))
+    }
+
+    @Test
+    fun `memory short hands downloads back one at a time`() {
+        val policy = AutoSpeedupPolicy(6, 8L * mb, smallBox = true)
+        policy.preset(4)
+        policy.play(12, 150_000, roomMb = 500, fileMbps = 96, aheadPerSecondMs = 1_000)
+        assertEquals(3, policy.play(1, 150_000, roomMb = 500, memoryShort = true, fileMbps = 96))
+        assertEquals(2, policy.play(2, 150_000, roomMb = 500, memoryShort = true, fileMbps = 96))
     }
 
     @Test
@@ -467,36 +476,46 @@ class AutoSpeedupPolicyTest {
     @Test
     fun `with the user's own buffer target the start does not check free memory`() {
         assertEquals(3, AutoSpeedupPolicy(6, 16L * mb).play(9, 30_000, roomMb = 40, fileMbps = 80, userBudget = true))
-        assertEquals(listOf("downloads 1->3 start fileKbps=80000 singleKbps=30000 userBudget=true"), log)
+        assertEquals(listOf("downloads 1->3 start heavy fileKbps=80000 userBudget=true"), log)
     }
 
     @Test
-    fun `a fast film starts on one download and goes to two only when one is slow`() {
-        // 90 Mbit/s on a 2 GB box: no blind start on two.
+    fun `a remux starts on several at once, a lighter film measures one download first`() {
+        assertEquals(2, AutoSpeedupPolicy(4, 16L * mb).play(1, 0, roomMb = 500, fileMbps = 90))
+        assertEquals(listOf("downloads 1->2 start heavy fileKbps=90000"), log)
+        // 50 Mbit/s: one download carrying 1.3 x the film's rate is enough.
+        log.clear()
         val fast = AutoSpeedupPolicy(4, 16L * mb)
-        assertEquals(1, fast.play(1, 0, roomMb = 500, fileMbps = 90))
-        assertEquals(1, fast.play(8, 150_000, roomMb = 500, fileMbps = 90, aheadPerSecondMs = 500))
-        assertEquals(listOf("start not needed fileKbps=90000 singleKbps=150000 loading=100%"), log)
-        assertEquals(1, fast.play(60, 150_000, roomMb = 500, fileMbps = 90, aheadPerSecondMs = 200))
-        // Under 1.3 x the film's rate: two.
+        assertEquals(1, fast.play(1, 0, roomMb = 500, fileMbps = 50))
+        assertEquals(1, fast.play(8, 150_000, roomMb = 500, fileMbps = 50, aheadPerSecondMs = 500))
+        assertEquals(listOf("start not needed fileKbps=50000 singleKbps=150000 loading=100%"), log)
         log.clear()
         val slow = AutoSpeedupPolicy(4, 16L * mb)
-        assertEquals(1, slow.play(1, 0, roomMb = 500, fileMbps = 90))
-        assertEquals(2, slow.play(8, 110_000, roomMb = 500, fileMbps = 90))
-        assertEquals(listOf("downloads 1->2 start fileKbps=90000 singleKbps=110000"), log)
-        // A loader that rests while one download fills the buffer needs no more.
+        assertEquals(1, slow.play(1, 0, roomMb = 500, fileMbps = 50))
+        assertEquals(2, slow.play(8, 55_000, roomMb = 500, fileMbps = 50))
+        assertEquals(listOf("downloads 1->2 start fileKbps=50000 singleKbps=55000"), log)
         log.clear()
         val resting = AutoSpeedupPolicy(4, 16L * mb)
-        assertEquals(1, resting.play(9, 40_000, loading = false, roomMb = 500, fileMbps = 90))
+        assertEquals(1, resting.play(9, 40_000, loading = false, roomMb = 500, fileMbps = 50))
         assertEquals(true, log.single().startsWith("start not needed"))
+    }
+
+    @Test
+    fun `a comfortable buffer never hands back to one download that is too slow for the film`() {
+        val policy = AutoSpeedupPolicy(4, 16L * mb)
+        assertEquals(2, policy.play(20, 150_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 1_000))
+        ahead = 11_500L
+        assertEquals(2, policy.play(120, 150_000, loading = false, bufferFull = true, roomMb = 500, fileMbps = 90,
+            maxBufferMs = 12_000))
+        assertEquals(emptyList<String>(), log.filter { "->1" in it })
     }
 
     @Test
     fun `a fast link hands the downloads back at a 12 s max buffer held short by memory`() {
         // 12 s Max buffer, but the pieces the downloads hold cap the buffer at about 9.5 s.
         val policy = AutoSpeedupPolicy(4, 16L * mb)
-        assertEquals(2, policy.play(9, 60_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000))
-        assertEquals(2, policy.play(11, 150_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000))
+        assertEquals(2, policy.play(9, 300_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 1_000))
+        assertEquals(2, policy.play(11, 300_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 1_000))
         ahead = 9_500L
         assertEquals(2, policy.play(50, 150_000, loading = false, bufferFull = true, roomMb = 500, fileMbps = 90,
             maxBufferMs = 12_000))
@@ -508,8 +527,8 @@ class AutoSpeedupPolicyTest {
     @Test
     fun `a buffer at the user's short Max buffer with a resting loader hands the downloads back`() {
         val policy = AutoSpeedupPolicy(4, 16L * mb)
-        policy.play(9, 60_000, roomMb = 500, fileMbps = 90, maxBufferMs = 8_000)
-        policy.play(11, 150_000, roomMb = 500, fileMbps = 90, maxBufferMs = 8_000)
+        policy.play(9, 300_000, roomMb = 500, fileMbps = 90, maxBufferMs = 8_000, aheadPerSecondMs = 1_000)
+        policy.play(11, 300_000, roomMb = 500, fileMbps = 90, maxBufferMs = 8_000, aheadPerSecondMs = 1_000)
         ahead = 7_500L
         assertEquals(1, policy.play(65, 150_000, loading = false, roomMb = 500, fileMbps = 90, maxBufferMs = 8_000))
     }
@@ -517,19 +536,19 @@ class AutoSpeedupPolicyTest {
     @Test
     fun `a slow link still adds a download and keeps it`() {
         val policy = AutoSpeedupPolicy(4, 16L * mb)
-        assertEquals(2, policy.play(9, 60_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000))
-        assertEquals(2, policy.play(11, 80_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000))
+        assertEquals(2, policy.play(9, 60_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 600))
+        assertEquals(2, policy.play(11, 80_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 600))
         // Short of buffer with the loader busy all the time: never handed back.
         ahead = 4_000L
-        assertEquals(2, policy.play(120, 80_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000))
+        assertEquals(true, policy.play(120, 80_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000) >= 2)
         assertEquals(emptyList<String>(), log.filter { "->1" in it })
     }
 
     @Test
     fun `running short after a hand-back at a full buffer adds a download back for the film`() {
         val policy = AutoSpeedupPolicy(4, 16L * mb)
-        policy.play(9, 60_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000)
-        policy.play(11, 150_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000)
+        policy.play(9, 300_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 1_000)
+        policy.play(11, 300_000, roomMb = 500, fileMbps = 90, maxBufferMs = 12_000, aheadPerSecondMs = 1_000)
         ahead = 9_500L
         assertEquals(1, policy.play(65, 150_000, loading = false, bufferFull = true, roomMb = 500, fileMbps = 90,
             maxBufferMs = 12_000))
@@ -540,5 +559,81 @@ class AutoSpeedupPolicyTest {
         ahead = 9_500L
         assertEquals(2, policy.play(120, 150_000, loading = false, bufferFull = true, roomMb = 500, fileMbps = 90,
             maxBufferMs = 12_000))
+    }
+
+    @Test
+    fun `a memory warning with room left does not stop the extra downloads`() {
+        val mb = 1024L * 1024L
+        assertEquals(false, AutoSpeedupPolicy.memoryShort(warned = true, warnedCritical = true, roomBytes = 150 * mb, lowMemory = false))
+        assertEquals(false, AutoSpeedupPolicy.memoryShort(warned = true, warnedCritical = false, roomBytes = -10 * mb, lowMemory = false))
+        assertEquals(false, AutoSpeedupPolicy.memoryShort(warned = false, warnedCritical = false, roomBytes = -10 * mb, lowMemory = false))
+    }
+
+    @Test
+    fun `memory is short past the box's own line, or close to it when Android says critical`() {
+        val mb = 1024L * 1024L
+        assertEquals(true, AutoSpeedupPolicy.memoryShort(warned = false, warnedCritical = false, roomBytes = -30 * mb, lowMemory = false))
+        assertEquals(true, AutoSpeedupPolicy.memoryShort(warned = true, warnedCritical = true, roomBytes = -10 * mb, lowMemory = false))
+        assertEquals(true, AutoSpeedupPolicy.memoryShort(warned = null, warnedCritical = false, roomBytes = 500 * mb, lowMemory = true))
+        assertEquals(false, AutoSpeedupPolicy.memoryShort(warned = null, warnedCritical = false, roomBytes = -120 * mb, lowMemory = false))
+    }
+
+    @Test
+    fun `read-ahead grows two pieces at a time with free memory and shrinks first when it runs low`() {
+        val mb = 1024L * 1024L
+        val piece = 8L * mb
+        assertEquals(0, AutoSpeedupPolicy.readAheadPieces(0, 500 * mb, piece, 1))
+        assertEquals(2, AutoSpeedupPolicy.readAheadPieces(0, 81 * mb, piece, 3))
+        assertEquals(1, AutoSpeedupPolicy.readAheadPieces(0, 34 * mb, piece, 3))
+        assertEquals(8, AutoSpeedupPolicy.readAheadPieces(7, 500 * mb, piece, 6))
+        assertEquals(9, AutoSpeedupPolicy.readAheadPieces(8, 500 * mb, piece, 3))
+        assertEquals(4, AutoSpeedupPolicy.readAheadPieces(6, 10 * mb, piece, 3))
+        assertEquals(0, AutoSpeedupPolicy.readAheadPieces(3, -40 * mb, piece, 3))
+        assertEquals(5, AutoSpeedupPolicy.readAheadPieces(4, 500 * mb, 16L * mb, 2))
+    }
+
+    @Test
+    fun `a 2 GB box allowed six still starts on three`() {
+        val mb = 1024L * 1024L
+        assertEquals(3, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 8L * mb, smallBox = true))
+        assertEquals(2, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 16L * mb, smallBox = true))
+        assertEquals(3, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 16L * mb, smallBox = false))
+    }
+
+    @Test
+    fun `a 2 GB box starts a remux on three 8 MB downloads, holding less than two 16 MB ones`() {
+        assertEquals(3, AutoSpeedupPolicy.startDownloads(90_000_000L, 4, 8L * mb))
+        assertEquals(2, AutoSpeedupPolicy.startDownloads(50_000_000L, 4, 8L * mb))
+        assertEquals(true, AutoSpeedupPolicy.lentBytes(3, 8L * mb) < AutoSpeedupPolicy.lentBytes(2, 16L * mb))
+    }
+
+    @Test
+    fun `a guessed remux runs its start downloads from the first sample and keeps them`() {
+        val policy = AutoSpeedupPolicy(6, 8L * mb, smallBox = true)
+        policy.preset(3)
+        assertEquals(3, policy.downloads)
+        assertEquals(3, policy.play(14, 100_000, roomMb = 500, fileMbps = 96, aheadPerSecondMs = 1_000))
+        assertEquals(true, log.any { it.startsWith("kept downloads=3") })
+    }
+
+    @Test
+    fun `free memory just under the margin keeps the downloads a remux needs`() {
+        val policy = AutoSpeedupPolicy(6, 8L * mb, smallBox = true)
+        policy.preset(3)
+        policy.play(12, 150_000, roomMb = 500, fileMbps = 96, aheadPerSecondMs = 1_000)
+        assertEquals(2, policy.play(10, 150_000, roomMb = -3, fileMbps = 96))
+        assertEquals(true, log.none { "->1" in it })
+    }
+
+    @Test
+    fun `an unmeasured remux keeps two downloads when the buffer is comfortable`() {
+        val policy = AutoSpeedupPolicy(6, 8L * mb, smallBox = true)
+        policy.preset(3)
+        // Memory short cancels the first measurement.
+        assertEquals(2, policy.play(1, 150_000, roomMb = 500, memoryShort = true, fileMbps = 96))
+        ahead = 11_500L
+        assertEquals(2, policy.play(120, 150_000, loading = false, bufferFull = true, roomMb = 500, fileMbps = 96,
+            maxBufferMs = 12_000))
+        assertEquals(true, log.none { "->1" in it })
     }
 }

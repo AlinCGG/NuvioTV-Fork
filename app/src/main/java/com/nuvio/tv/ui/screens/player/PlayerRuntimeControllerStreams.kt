@@ -1105,6 +1105,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
                     frameRateMatchingMode = playerSettings.frameRateMatchingMode,
                     resolutionMatchingEnabled = playerSettings.resolutionMatchingEnabled
                 )
+                noteSpeedupHint(playbackUrl)
                 player.setMediaSource(
                     mediaSourceFactory.createMediaSource(
                         context = context,

@@ -554,16 +554,17 @@ internal class PlayerMediaSourceFactory(
         }
         // The piece size is fixed when the chunk session first opens, after the first requests were timed.
         val multi by lazy {
+            val piece = AutoSpeedup.fixPiece()
             ParallelRangeDataSource.Factory(
                 okHttpFactory,
                 limits.maxDownloads,
-                AutoSpeedup.fixPiece(),
+                piece,
                 useNativeMemory = nuvioPerformanceModeEnabled,
-                prefetchDepthChunks = limits.maxDownloads,
+                prefetchDepthChunks = AutoSpeedup.maxDepth(piece),
                 allowContinuationReopen = true,
                 onResolvedUri = { resolved -> currentVodCacheResolvedUrl = resolved?.toString() },
                 defaultRequestHeaders = headers,
-                depthLimit = { AutoSpeedup.downloads },
+                depthLimit = { AutoSpeedup.depth() },
                 receivedBytes = AutoSpeedup.received
             )
         }

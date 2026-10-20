@@ -2418,6 +2418,14 @@ private fun PlayerRuntimeController.showPlaybackSpeedUnavailable() {
     }
 }
 
+/** Lets Automatic speed-up start a remux on several downloads before its first byte, see [AutoSpeedup.guessBitrate]. */
+internal fun PlayerRuntimeController.noteSpeedupHint(url: String) {
+    AutoSpeedup.startHint(
+        url,
+        AutoSpeedup.guessBitrate(currentVideoSize, expectedRuntimeMinutes, currentFilename, _uiState.value.currentStreamName)
+    )
+}
+
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs: Long) {
     val keeper = autoSpeedupKeeper()
@@ -2438,12 +2446,15 @@ private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs
     val roomBytes = AutoSpeedup.roomBytes(nowMs) {
         free ?: com.nuvio.tv.core.player.BufferSizing.read(context.applicationContext)
     }
-    val memoryShort = if (userBudget) {
-        bufferMemoryKeeper?.pressureLevel == com.nuvio.tv.core.player.BufferMemoryKeeper.LEVEL_CRITICAL ||
-            roomBytes < -com.nuvio.tv.core.player.BufferSizing.SYSTEM_MARGIN_MB * 1024L * 1024L
-    } else {
-        bufferMemoryKeeper?.let { it.pressureLevel > 0 } ?: (free?.lowMemory == true)
-    }
+    val memoryShort = AutoSpeedupPolicy.memoryShort(
+        warned = bufferMemoryKeeper?.let { it.pressureLevel > 0 },
+        warnedCritical = bufferMemoryKeeper?.pressureLevel == com.nuvio.tv.core.player.BufferMemoryKeeper.LEVEL_CRITICAL,
+        roomBytes = roomBytes,
+        lowMemory = free?.lowMemory == true
+    )
+    AutoSpeedup.updateReadAhead(roomBytes)
+    // A guessed start runs several downloads before the first sample; their memory comes off the buffer as usual.
+    if (keeper != null && keeper.lentBytes == 0L && AutoSpeedup.downloads > 1) keeper.setLentBytes(AutoSpeedup.lentBytes())
     val before = AutoSpeedup.downloads
     val changed = AutoSpeedup.onPlayerSample(
         AutoSpeedupPolicy.Sample(

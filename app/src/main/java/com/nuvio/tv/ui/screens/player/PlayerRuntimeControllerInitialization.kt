@@ -1693,6 +1693,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         "vodCache=${mediaSourceFactory.vodCacheEnabled} tunneling=${playerSettings.effectiveTunnelingEnabled}"
                 playbackAnalyticsDiagnostics.recordRawEventLine(playerInitLine)
                 TtffTrace.mirror(playerInitLine)
+                noteSpeedupHint(url)
                 val initialMediaSource = mediaSourceFactory.createMediaSource(
                     context = context,
                     url = url,
