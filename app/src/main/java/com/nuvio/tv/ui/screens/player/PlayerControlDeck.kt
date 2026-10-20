@@ -67,7 +67,7 @@ internal fun PlayerControlDeck(
     val deckAvailable = playerControlDeckAvailable(layout, available, false)
     val include = if (preview) PlayerControlAction.offered() else layout.focusOrder(deckAvailable).toSet()
     val actions = PlayerControlAction.entries.filter { it in include }
-    val ghostLabel = stringResource(R.string.player_layout_hidden_buttons)
+    val ghostLabel = stringResource(R.string.player_layout_hidden)
     val menuLabel = stringResource(R.string.player_layout_more_buttons)
     val gap = if (layout.style == PlayerControlButtonStyle.PREVIOUS && v2) 12.dp else 8.dp
     Layout(modifier = modifier, content = {

@@ -1,6 +1,9 @@
 package com.nuvio.tv.ui.screens.settings
 
 import com.nuvio.tv.data.local.*
+import com.nuvio.tv.ui.screens.player.PlayerControlDeckSize
+import com.nuvio.tv.ui.screens.player.playerControlPrimaryDeckPlan
+import com.nuvio.tv.ui.screens.player.playerControlPreviewFaded
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -71,6 +74,17 @@ class PlayerControlVisualEditorStateTest {
         repeat(12) { s = s.step(-1) }
         assertEquals(PlayerControlGroup.CENTRE, group(s, info)); assertFalse(s.draft.preview.entries.single { it.action == info }.visible)
         assertEquals(PlayerControlAction.entries.toSet(), s.draft.preview.entries.map { it.action }.toSet())
+    }
+    @Test fun `switching an unavailable action off and on moves it between the hidden row and its real place`() {
+        val offered = PlayerControlAction.offered(reportsAvailable = true)
+        val movie = offered - setOf(PlayerControlAction.EPISODES, next)
+        fun cell(s: PlayerControlVisualEditorState) = playerControlPrimaryDeckPlan(s.draft.preview, movie,
+            offered.associateWith { PlayerControlDeckSize(40, 20) }, 1280, 10, true, 15).cells.single { it.action == next }
+        val on = original().select(next)
+        assertTrue(playerControlPreviewFaded(on.draft.preview.entries.single { it.action == next }, movie))
+        assertFalse(cell(on).hidden)
+        val off = on.toggle(); assertTrue(cell(off).hidden)
+        assertEquals(cell(on), cell(off.toggle()))
     }
     @Test fun `moving locks selected action and visibility`() {
         val s = original().beginMove(); assertSame(s, s.select(info)); assertSame(s, s.toggle())

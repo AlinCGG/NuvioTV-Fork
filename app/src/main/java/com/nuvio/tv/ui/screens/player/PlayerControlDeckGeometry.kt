@@ -48,8 +48,10 @@ internal fun playerControlDeckPlan(layout: PlayerControlLayout, available: Set<P
     require(sizes.values.all { it.width >= 0 && it.height >= 0 })
     val gap = requestedGap.coerceAtMost(width / 2)
     val region = ((width - gap * 2).coerceAtLeast(0) / 3)
-    val collapsed = available - playerControlDeckAvailable(layout, available, moreExpanded)
-    val visible = layout.visibleGroups(available - collapsed)
+    // The preview keeps switched-on buttons in their real place even when the previewed title cannot offer them.
+    val placed = if (showHidden) available + layout.entries.filter { it.visible && it.action in sizes }.map { it.action } else available
+    val collapsed = placed - playerControlDeckAvailable(layout, placed, moreExpanded)
+    val visible = layout.visibleGroups(placed - collapsed)
     val more = PlayerControlAction.MORE
     val hasMore = visible.values.any { more in it } && sizes.containsKey(more)
     val actions = visible.mapValues { (_, entries) -> entries.filter { it != more } }
@@ -123,8 +125,8 @@ internal fun playerControlDeckPlan(layout: PlayerControlLayout, available: Set<P
         cells += PlayerControlDeckCell(more, width - moreWidth, 0, moreWidth, size.height, false)
     }
     // Preview-only sections retain one stable keyed widget per action. Explicit visibility
-    // and availability take precedence over menu membership; hiding More retains its members.
-    val hidden = if (showHidden) layout.entries.filter { !it.visible || it.action !in available }.map { it.action } else emptyList()
+    // takes precedence over menu membership; hiding More retains its members.
+    val hidden = if (showHidden) layout.entries.filter { !it.visible || it.action !in placed }.map { it.action } else emptyList()
     val menu = if (showHidden) layout.entries.filter { it.action in collapsed }.map { it.action } else emptyList()
     val sectionWidth = (width - gap).coerceAtLeast(0) / 2
     val menuX = sectionWidth + gap

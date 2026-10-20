@@ -48,11 +48,15 @@ class PlayerControlDeckGeometryTest {
         assertTrue(preview.cells.filter { it.hidden }.all { it.y > preview.mainHeight })
         assertEquals(all,preview.cells.map { it.action }.toSet())
     }
-    @Test fun `movie availability moves episode actions to editable ghosts without enabling runtime actions`() {
-        val l = PlayerControlLayout.original(true);val movie = all-setOf(PlayerControlAction.EPISODES,PlayerControlAction.NEXT_EPISODE)
+    @Test fun `movie preview keeps switched on episode actions in their real place without enabling runtime actions`() {
+        val episode = setOf(PlayerControlAction.EPISODES,PlayerControlAction.NEXT_EPISODE)
+        val l = PlayerControlLayout.original(true);val movie = all-episode
         val p = plan(l,ghost=true,available=movie);val live=plan(l,available=movie)
-        assertTrue(p.cell(PlayerControlAction.EPISODES).hidden);assertTrue(p.cell(PlayerControlAction.NEXT_EPISODE).hidden)
-        assertEquals(live.cells,p.cells.filterNot { it.hidden })
+        assertFalse(p.cell(PlayerControlAction.EPISODES).hidden);assertFalse(p.cell(PlayerControlAction.NEXT_EPISODE).hidden)
+        assertEquals(plan(l).cells,p.cells.filterNot { it.hidden })
+        assertFalse(live.cells.any { it.action in episode })
+        val off = plan(l.withVisibility(PlayerControlAction.NEXT_EPISODE,false),ghost=true,available=movie)
+        assertTrue(off.cell(PlayerControlAction.NEXT_EPISODE).hidden);assertTrue(off.cell(PlayerControlAction.NEXT_EPISODE).y > off.mainHeight)
     }
     @Test fun `all hidden runtime stays empty while every ghost remains reachable in the preview`() {
         val l = all.fold(PlayerControlLayout.default()) { value,a -> value.withVisibility(a,false) }

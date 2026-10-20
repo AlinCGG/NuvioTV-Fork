@@ -497,6 +497,7 @@ fun MetaDetailsScreen(
     if (selectedBackdrop != detailBackdrop) detailBackdrop = selectedBackdrop
     val onBackdropFailed: (String?) -> Unit = { url -> detailBackdrop = detailBackdrop.failed(url) }
     val heroSourceSignal = viewModel.heroSourceSignal.collectAsStateWithLifecycle()
+    val heroSourceLineEnabled by viewModel.heroSourceLineEnabled.collectAsStateWithLifecycle()
     val posterCardCornerRadiusDp by viewModel.posterCardCornerRadiusDp.collectAsStateWithLifecycle()
     val effectiveAutoplayEnabled by viewModel.effectiveAutoplayEnabled.collectAsStateWithLifecycle(
         initialValue = false
@@ -942,6 +943,7 @@ fun MetaDetailsScreen(
                     isEpisodeRatingsLoading = uiState.isEpisodeRatingsLoading,
                     episodeRatingsError = uiState.episodeRatingsError,
                     heroSourceSignal = heroSourceSignal,
+                    heroSourceLineEnabled = heroSourceLineEnabled,
                     mdbListRatingOrder = uiState.mdbListRatingOrder,
                     shouldShowCommentsSection = uiState.shouldShowCommentsSection,
                     commentsMode = uiState.commentsMode,
@@ -1285,6 +1287,7 @@ private fun MetaDetailsContent(
     isEpisodeRatingsLoading: Boolean,
     episodeRatingsError: String?,
     heroSourceSignal: State<com.nuvio.tv.core.stream.SourcePrefetchSignal?>,
+    heroSourceLineEnabled: Boolean = false,
     mdbListRatingOrder: List<String> = com.nuvio.tv.domain.model.MDBListSettings.DEFAULT_RATING_ORDER,
     shouldShowCommentsSection: Boolean,
     commentsMode: CommentsMode,
@@ -2611,6 +2614,7 @@ private fun MetaDetailsContent(
                         mdbListRatings = ratings.ratings.takeIf { ratings.active },
                         mdbListRatingOrder = mdbListRatingOrder,
                         sourceSignal = heroSourceSignal.value,
+                        sourceLineEnabled = heroSourceLineEnabled,
                         hideMetaInfoImdb = !showStandardOverallRatings,
                         tmdbRating = ratings.tmdb.takeIf { showStandardOverallRatings },
                         showFullReleaseDate = showFullReleaseDate,

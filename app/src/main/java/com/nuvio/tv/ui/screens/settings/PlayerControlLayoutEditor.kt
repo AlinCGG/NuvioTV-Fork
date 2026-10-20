@@ -58,7 +58,7 @@ internal fun PlayerControlLayoutEditor(
     val footerHeight = (canvasHeight * .3f).coerceIn(56.dp, 192.dp)
     var editor by remember { mutableStateOf(PlayerControlVisualEditorState(PlayerControlLayoutDraft(snapshot,
         previewDefault = PlayerControlLayout.original(v2)))) }
-    var previewEpisode by remember { mutableStateOf(false) }
+    var previewEpisode by remember { mutableStateOf(true) }
     var moreExpanded by remember { mutableStateOf(false) }
     LaunchedEffect(editor.canPreviewMore) { if (!editor.canPreviewMore) moreExpanded = false }
     var popupBounds by remember { mutableStateOf<IntRect?>(null) }

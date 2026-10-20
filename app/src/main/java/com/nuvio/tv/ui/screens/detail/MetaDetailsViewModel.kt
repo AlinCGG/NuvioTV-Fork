@@ -188,8 +188,7 @@ class MetaDetailsViewModel @Inject constructor(
             streamBadgeSettingsDataStore.settings
         ) { key, sig, settings, badgeSettings ->
             when {
-                key == null || !settings.speculativeStreamSearchEnabled -> null
-                settings.streamAutoPlayMode == com.nuvio.tv.data.local.StreamAutoPlayMode.MANUAL -> null
+                key == null || !heroSourceLineOn(settings.speculativeStreamSearchEnabled, settings.streamAutoPlayMode) -> null
                 sig?.uiKey != key -> com.nuvio.tv.core.stream.SourcePrefetchSignal(
                     key, com.nuvio.tv.core.stream.SourcePrefetchPhase.SEARCHING, null
                 )
@@ -201,6 +200,11 @@ class MetaDetailsViewModel @Inject constructor(
             kotlinx.coroutines.flow.SharingStarted.Eagerly,
             null
         )
+
+    val heroSourceLineEnabled: kotlinx.coroutines.flow.StateFlow<Boolean> = playerSettingsDataStore.playerSettings
+        .map { heroSourceLineOn(it.speculativeStreamSearchEnabled, it.streamAutoPlayMode) }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 
     /**
      * Kick the stream prefetch as early as the play target is knowable -
@@ -3664,3 +3668,6 @@ class MetaDetailsViewModel @Inject constructor(
         nextToWatchJob?.cancel()
     }
 }
+
+internal fun heroSourceLineOn(preSearch: Boolean, autoPlayMode: com.nuvio.tv.data.local.StreamAutoPlayMode): Boolean =
+    preSearch && autoPlayMode != com.nuvio.tv.data.local.StreamAutoPlayMode.MANUAL

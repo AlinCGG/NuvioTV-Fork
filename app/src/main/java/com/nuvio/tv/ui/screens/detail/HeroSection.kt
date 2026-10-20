@@ -138,6 +138,7 @@ fun HeroContentSection(
     onShowFullDescription: () -> Unit = {},
     onTruncationChanged: (Boolean) -> Unit = {},
     sourceSignal: com.nuvio.tv.core.stream.SourcePrefetchSignal? = null,
+    sourceLineEnabled: Boolean = false,
     heroLogoUrl: String? = null
 ) {
     val context = LocalContext.current
@@ -383,26 +384,19 @@ fun HeroContentSection(
 
                     Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
 
-                    // Director/Writer line above description. Reserve its height (and the
-                    // two rows below) so late-arriving content - creditLine on TMDB enrichment,
-                    // MDBList ratings async, and the auto-play source badge - fills in-place
-                    // instead of pushing the synopsis down (the 'bounce'). Heights are tuned to
-                    // the content; adjust the min values if a row still nudges or leaves a gap.
-                    Box(modifier = Modifier.heightIn(min = 20.dp)) {
-                        if (!creditLine.isNullOrBlank()) {
-                            Text(
-                                text = creditLine,
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    textDirection = creditLine.contentTextDirection()
-                                ),
-                                color = NuvioTheme.extendedColors.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth(0.6f)
-                            )
-                        }
+                    if (!creditLine.isNullOrBlank()) {
+                        Text(
+                            text = creditLine,
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                textDirection = creditLine.contentTextDirection()
+                            ),
+                            color = NuvioTheme.extendedColors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
                     }
-                    Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
 
                     // MDBList ratings: don't reserve space - a title with no ratings stays
                     // null (indistinguishable from 'still loading'), so a reserved box would sit
@@ -415,15 +409,20 @@ fun HeroContentSection(
                         }
                     }
 
-                    Box(modifier = Modifier.heightIn(min = 24.dp)) {
-                        if (sourceSignal != null) {
-                            SourceBadgeRow(
-                                signal = sourceSignal,
-                                modifier = Modifier.fillMaxWidth(0.75f)
-                            )
+                    val sourceLineShown = sourceLineEnabled && sourceSignal != null
+                    if (sourceLineEnabled) {
+                        Column(modifier = Modifier.animateContentSize()) {
+                            if (sourceSignal != null) {
+                                Box(modifier = Modifier.heightIn(min = 24.dp)) {
+                                    SourceBadgeRow(
+                                        signal = sourceSignal,
+                                        modifier = Modifier.fillMaxWidth(0.75f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(14.dp))
+                            }
                         }
                     }
-                    Spacer(modifier = Modifier.height(14.dp))
 
                     meta.description?.let { description ->
                         SynopsisDescription(
@@ -432,6 +431,7 @@ fun HeroContentSection(
                             upFocusRequester = playButtonFocusRequester,
                             onFocused = onHeroActionFocused,
                             onTruncationChanged = onTruncationChanged,
+                            maxLines = if (sourceLineShown) 6 else 8,
                             modifier = Modifier
                                 .fillMaxWidth(0.6f)
                                 .padding(bottom = NuvioTheme.spacing.md)

@@ -15,12 +15,12 @@ class PlayerControlPreviewSectionsTest {
     private fun PlayerControlDeckPlan.left()=cells.filter { it.hidden && it.x < moreLabelX }.map { it.action }.toSet()
     private fun PlayerControlDeckPlan.right()=cells.filter { it.hidden && it.x >= moreLabelX }.map { it.action }.toSet()
 
-    @Test fun `explicit hidden and unavailable actions are left while supported More members are right`() {
+    @Test fun `only switched off actions are left while switched on More members stay right even when unavailable`() {
         val l=PlayerControlLayout.original(true).withVisibility(speed,false)
         val available=all-PlayerControlAction.ASPECT
         val p=plan(l,available)
-        assertEquals(setOf(info,speed,PlayerControlAction.ASPECT),p.left())
-        assertEquals(extras-setOf(speed,PlayerControlAction.ASPECT),p.right())
+        assertEquals(setOf(info,speed),p.left())
+        assertEquals(extras-speed,p.right())
         assertEquals(p.hiddenLabelY,p.moreLabelY)
         assertEquals(all,p.cells.map { it.action }.toSet());assertEquals(all.size,p.cells.size)
         assertEquals(plan(l,available,preview=false).cells,p.cells.filterNot { it.hidden })
@@ -84,7 +84,7 @@ class PlayerControlPreviewSectionsTest {
             val layout=PlayerControlLayout.original(true).withVisibility(more,parentVisible)
             val available=all-PlayerControlAction.ASPECT
             val p=plan(layout,available)
-            layout.entries.filter { it.action in p.collapsedActions }.forEach { entry ->
+            layout.entries.filter { it.action in p.collapsedActions && it.action in available }.forEach { entry ->
                 assertFalse(playerControlPreviewFaded(entry,available))
             }
             val hidden=layout.withVisibility(speed,false)
