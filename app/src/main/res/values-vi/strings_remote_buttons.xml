@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Chuyển đến vị trí trong video</string>
     <string name="remote_buttons_job_skip_intro_or_next">Bỏ qua giới thiệu, hoặc tập tiếp theo</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Bỏ qua khi nút Bỏ qua hiện ra, nếu không thì phát tập tiếp theo</string>
+    <string name="remote_buttons_job_chapters_list">Danh sách chương</string>
+    <string name="remote_buttons_job_chapters_list_desc">Mở danh sách chương để chuyển đến một chương. Quay lại để đóng</string>
     <string name="remote_buttons_job_next_chapter">Chương tiếp theo</string>
     <string name="remote_buttons_job_previous_chapter">Chương trước</string>
     <string name="remote_buttons_job_previous_chapter_desc">Trước tiên quay về đầu chương nếu bạn đã xem chương đó hơn 3 giây</string>

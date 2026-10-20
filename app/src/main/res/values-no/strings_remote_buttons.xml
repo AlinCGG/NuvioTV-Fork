@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Hopp i videoen</string>
     <string name="remote_buttons_job_skip_intro_or_next">Hopp over intro eller neste episode</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Hopper over når Hopp over-knappen vises, ellers spilles neste episode</string>
+    <string name="remote_buttons_job_chapters_list">Kapittelliste</string>
+    <string name="remote_buttons_job_chapters_list_desc">Åpner listen over kapitler så du kan hoppe til ett. Tilbake lukker den</string>
     <string name="remote_buttons_job_next_chapter">Neste kapittel</string>
     <string name="remote_buttons_job_previous_chapter">Forrige kapittel</string>
     <string name="remote_buttons_job_previous_chapter_desc">Går først tilbake til starten av kapitlet hvis du er mer enn 3 sekunder inn i det</string>

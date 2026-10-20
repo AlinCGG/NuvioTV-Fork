@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Se déplacer dans la vidéo</string>
     <string name="remote_buttons_job_skip_intro_or_next">Passer l\'intro ou épisode suivant</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Passe l\'intro quand le bouton Passer s\'affiche, sinon lance l\'épisode suivant</string>
+    <string name="remote_buttons_job_chapters_list">Liste des chapitres</string>
+    <string name="remote_buttons_job_chapters_list_desc">Ouvre la liste des chapitres pour sauter à l\'un d\'eux. Retour la ferme</string>
     <string name="remote_buttons_job_next_chapter">Chapitre suivant</string>
     <string name="remote_buttons_job_previous_chapter">Chapitre précédent</string>
     <string name="remote_buttons_job_previous_chapter_desc">Revient d\'abord au début du chapitre si vous y êtes depuis plus de 3 secondes</string>

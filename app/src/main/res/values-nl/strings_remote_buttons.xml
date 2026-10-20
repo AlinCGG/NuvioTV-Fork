@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Door de video springen</string>
     <string name="remote_buttons_job_skip_intro_or_next">Intro overslaan of volgende aflevering</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Slaat over als de Overslaan-knop te zien is, anders speelt de volgende aflevering</string>
+    <string name="remote_buttons_job_chapters_list">Hoofdstukkenlijst</string>
+    <string name="remote_buttons_job_chapters_list_desc">Opent de lijst met hoofdstukken om naar een ervan te springen. Terug sluit hem</string>
     <string name="remote_buttons_job_next_chapter">Volgend hoofdstuk</string>
     <string name="remote_buttons_job_previous_chapter">Vorig hoofdstuk</string>
     <string name="remote_buttons_job_previous_chapter_desc">Gaat eerst terug naar het begin van het hoofdstuk als je er al meer dan 3 seconden in zit</string>

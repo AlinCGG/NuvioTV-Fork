@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Salta nel video</string>
     <string name="remote_buttons_job_skip_intro_or_next">Salta intro o prossimo episodio</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Salta quando appare il pulsante Salta, altrimenti avvia il prossimo episodio</string>
+    <string name="remote_buttons_job_chapters_list">Elenco capitoli</string>
+    <string name="remote_buttons_job_chapters_list_desc">Apre l\'elenco dei capitoli per saltare a uno. Indietro lo chiude</string>
     <string name="remote_buttons_job_next_chapter">Capitolo successivo</string>
     <string name="remote_buttons_job_previous_chapter">Capitolo precedente</string>
     <string name="remote_buttons_job_previous_chapter_desc">Torna prima all\'inizio del capitolo se sei oltre i primi 3 secondi</string>

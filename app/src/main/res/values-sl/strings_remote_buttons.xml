@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Skok na mesto v videu</string>
     <string name="remote_buttons_job_skip_intro_or_next">Preskoči uvod ali naslednja epizoda</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Preskoči, ko se prikaže gumb Preskoči, sicer predvaja naslednjo epizodo</string>
+    <string name="remote_buttons_job_chapters_list">Seznam poglavij</string>
+    <string name="remote_buttons_job_chapters_list_desc">Odpre seznam poglavij za skok na izbrano. Nazaj ga zapre</string>
     <string name="remote_buttons_job_next_chapter">Naslednje poglavje</string>
     <string name="remote_buttons_job_previous_chapter">Prejšnje poglavje</string>
     <string name="remote_buttons_job_previous_chapter_desc">Najprej se vrne na začetek poglavja, če je minilo več kot 3 sekunde</string>

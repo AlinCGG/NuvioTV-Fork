@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">קפיצה בתוך הסרטון</string>
     <string name="remote_buttons_job_skip_intro_or_next">דילוג על ההקדמה או הפרק הבא</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">מדלג כשכפתור הדילוג מוצג, אחרת מפעיל את הפרק הבא</string>
+    <string name="remote_buttons_job_chapters_list">רשימת סצנות</string>
+    <string name="remote_buttons_job_chapters_list_desc">פותח את רשימת הסצנות כדי לדלג לאחת מהן. חזרה סוגרת אותה</string>
     <string name="remote_buttons_job_next_chapter">הסצנה הבאה</string>
     <string name="remote_buttons_job_previous_chapter">הסצנה הקודמת</string>
     <string name="remote_buttons_job_previous_chapter_desc">חוזר קודם לתחילת הסצנה אם עברו בה יותר מ-3 שניות</string>

@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Skok na místo ve videu</string>
     <string name="remote_buttons_job_skip_intro_or_next">Přeskočit intro, nebo další epizoda</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Přeskočí, když se zobrazí tlačítko Přeskočit, jinak přehraje další epizodu</string>
+    <string name="remote_buttons_job_chapters_list">Seznam kapitol</string>
+    <string name="remote_buttons_job_chapters_list_desc">Otevře seznam kapitol pro skok na jednu z nich. Zpět jej zavře</string>
     <string name="remote_buttons_job_next_chapter">Další kapitola</string>
     <string name="remote_buttons_job_previous_chapter">Předchozí kapitola</string>
     <string name="remote_buttons_job_previous_chapter_desc">Pokud jste v kapitole déle než 3 sekundy, nejdřív se vrátí na její začátek</string>

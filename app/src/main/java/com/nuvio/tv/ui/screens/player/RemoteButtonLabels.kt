@@ -86,6 +86,7 @@ internal fun remoteJobLabel(context: Context, job: RemoteButtonJob): String = co
     RemoteButtonJob.ASPECT -> R.string.cd_aspect_ratio
     RemoteButtonJob.WATCH_PARTY -> R.string.party_title
     RemoteButtonJob.EXTERNAL -> R.string.cd_open_external_player
+    RemoteButtonJob.CHAPTERS_LIST -> R.string.remote_buttons_job_chapters_list
     RemoteButtonJob.NEXT_CHAPTER -> R.string.remote_buttons_job_next_chapter
     RemoteButtonJob.PREVIOUS_CHAPTER -> R.string.remote_buttons_job_previous_chapter
     RemoteButtonJob.LEAVE -> R.string.remote_buttons_job_leave
@@ -113,6 +114,7 @@ internal fun remoteJobDescription(
     RemoteButtonJob.SKIP_INTRO_OR_NEXT -> context.getString(R.string.remote_buttons_job_skip_intro_or_next_desc)
     RemoteButtonJob.JUMP_TO_PERCENT -> context.getString(R.string.remote_buttons_number_keys_desc)
     RemoteButtonJob.SHOW_DETAILS -> context.getString(R.string.remote_buttons_job_show_details_desc)
+    RemoteButtonJob.CHAPTERS_LIST -> context.getString(R.string.remote_buttons_job_chapters_list_desc)
     RemoteButtonJob.PREVIOUS_CHAPTER -> context.getString(R.string.remote_buttons_job_previous_chapter_desc)
     else -> null
 }

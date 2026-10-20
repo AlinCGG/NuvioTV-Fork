@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Salt într-un punct din video</string>
     <string name="remote_buttons_job_skip_intro_or_next">Omite intro sau episodul următor</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Omite când apare butonul Omite, altfel redă episodul următor</string>
+    <string name="remote_buttons_job_chapters_list">Lista capitolelor</string>
+    <string name="remote_buttons_job_chapters_list_desc">Deschide lista capitolelor ca să sari la unul. Înapoi o închide</string>
     <string name="remote_buttons_job_next_chapter">Capitolul următor</string>
     <string name="remote_buttons_job_previous_chapter">Capitolul anterior</string>
     <string name="remote_buttons_job_previous_chapter_desc">Revine mai întâi la începutul capitolului dacă au trecut peste 3 secunde din el</string>

@@ -19,6 +19,7 @@ enum class RemoteButtonJob(val id: String) {
     SKIP_FORWARD("skip_forward"),
     SKIP_BACK("skip_back"),
     JUMP_TO_PERCENT("jump_percent"),
+    CHAPTERS_LIST("chapters_list"),
     NEXT_CHAPTER("next_chapter"),
     PREVIOUS_CHAPTER("previous_chapter"),
     SKIP_INTRO_OR_NEXT("skip_intro_or_next"),

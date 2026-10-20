@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">依比例跳轉</string>
     <string name="remote_buttons_job_skip_intro_or_next">跳過片頭或下一集</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">顯示跳過按鈕時跳過，否則播放下一集</string>
+    <string name="remote_buttons_job_chapters_list">章節清單</string>
+    <string name="remote_buttons_job_chapters_list_desc">開啟章節清單以跳至所選章節。按返回鍵關閉</string>
     <string name="remote_buttons_job_next_chapter">下一章</string>
     <string name="remote_buttons_job_previous_chapter">上一章</string>
     <string name="remote_buttons_job_previous_chapter_desc">如果本章已播放超過 3 秒，會先回到本章開頭</string>

@@ -865,6 +865,7 @@ fun PlayerScreen(
                 true
             }
             RemoteButtonJob.EPISODES -> whenAvailable(PlayerControlAction.EPISODES, PlayerEvent.OnShowEpisodesPanel)
+            RemoteButtonJob.CHAPTERS_LIST -> whenAvailable(PlayerControlAction.CHAPTERS, PlayerEvent.OnShowChaptersPanel)
             RemoteButtonJob.NEXT_CHAPTER -> whenAvailable(PlayerControlAction.CHAPTERS, PlayerEvent.OnNextChapter)
             RemoteButtonJob.PREVIOUS_CHAPTER -> whenAvailable(PlayerControlAction.CHAPTERS, PlayerEvent.OnPreviousChapter)
             RemoteButtonJob.AUDIO -> whenAvailable(PlayerControlAction.AUDIO, PlayerEvent.OnShowAudioOverlay)

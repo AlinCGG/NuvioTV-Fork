@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Spring i videoen</string>
     <string name="remote_buttons_job_skip_intro_or_next">Spring intro over eller næste episode</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Springer over, når Spring over-knappen vises, ellers afspilles næste episode</string>
+    <string name="remote_buttons_job_chapters_list">Kapitelliste</string>
+    <string name="remote_buttons_job_chapters_list_desc">Åbner listen over kapitler, så du kan springe til et. Tilbage lukker den</string>
     <string name="remote_buttons_job_next_chapter">Næste kapitel</string>
     <string name="remote_buttons_job_previous_chapter">Forrige kapitel</string>
     <string name="remote_buttons_job_previous_chapter_desc">Går først tilbage til starten af kapitlet, hvis du er mere end 3 sekunder inde</string>

@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">動画内の位置へジャンプ</string>
     <string name="remote_buttons_job_skip_intro_or_next">イントロをスキップ、または次のエピソード</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">スキップボタンが表示されていればスキップし、それ以外は次のエピソードを再生します</string>
+    <string name="remote_buttons_job_chapters_list">チャプター一覧</string>
+    <string name="remote_buttons_job_chapters_list_desc">チャプター一覧を開き、選んだチャプターへジャンプ。戻るで閉じる</string>
     <string name="remote_buttons_job_next_chapter">次のチャプター</string>
     <string name="remote_buttons_job_previous_chapter">前のチャプター</string>
     <string name="remote_buttons_job_previous_chapter_desc">チャプターの開始から3秒以上経っている場合は、まずそのチャプターの先頭に戻ります</string>

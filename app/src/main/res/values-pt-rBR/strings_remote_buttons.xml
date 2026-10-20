@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Ir para um ponto do vídeo</string>
     <string name="remote_buttons_job_skip_intro_or_next">Pular abertura ou próximo episódio</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Pula quando o botão Pular aparece; senão, reproduz o próximo episódio</string>
+    <string name="remote_buttons_job_chapters_list">Lista de capítulos</string>
+    <string name="remote_buttons_job_chapters_list_desc">Abre a lista de capítulos para pular para um. Voltar fecha a lista</string>
     <string name="remote_buttons_job_next_chapter">Próximo capítulo</string>
     <string name="remote_buttons_job_previous_chapter">Capítulo anterior</string>
     <string name="remote_buttons_job_previous_chapter_desc">Primeiro volta ao início do capítulo se já passaram mais de 3 segundos</string>

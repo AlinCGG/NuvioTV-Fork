@@ -54,6 +54,8 @@
     <string name="remote_buttons_job_jump_percent">Jump through the video</string>
     <string name="remote_buttons_job_skip_intro_or_next">Skip intro, or next episode</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Skips when the Skip button shows, otherwise plays the next episode</string>
+    <string name="remote_buttons_job_chapters_list">Chapters list</string>
+    <string name="remote_buttons_job_chapters_list_desc">Opens the list of chapters to jump to one. Back closes it</string>
     <string name="remote_buttons_job_next_chapter">Next chapter</string>
     <string name="remote_buttons_job_previous_chapter">Previous chapter</string>
     <string name="remote_buttons_job_previous_chapter_desc">Goes back to the start of the chapter first when you are more than 3 seconds in</string>

@@ -309,4 +309,22 @@ class RemoteButtonMapTest {
         assertFalse(RemoteButtonJob.INFO.keepsPauseOverlay)
         assertFalse(RemoteButtonJob.SOURCES.keepsPauseOverlay)
     }
+
+    @Test
+    fun `chapters list is offered next to the chapter jobs and survives saving`() {
+        val jobs = RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_PROG_BLUE)
+        assertEquals(jobs.indexOf(RemoteButtonJob.NEXT_CHAPTER) - 1, jobs.indexOf(RemoteButtonJob.CHAPTERS_LIST))
+        assertTrue(RemoteButtonJob.CHAPTERS_LIST in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_MENU, RemotePressKind.HOLD))
+        assertTrue(RemoteButtonJob.CHAPTERS_LIST in RemoteButtonMap.jobsFor(KeyEvent.KEYCODE_DPAD_DOWN))
+        val map = RemoteButtonMap.DEFAULT
+            .with(KeyEvent.KEYCODE_PROG_BLUE, RemoteButtonBinding(RemoteButtonJob.CHAPTERS_LIST))
+            .withHold(KeyEvent.KEYCODE_MENU, RemoteButtonBinding(RemoteButtonJob.CHAPTERS_LIST))
+        val decoded = RemoteButtonMap.decode(map.encode())
+        assertEquals(map, decoded)
+        assertEquals(RemoteButtonJob.CHAPTERS_LIST, decoded.overrideFor(KeyEvent.KEYCODE_PROG_BLUE)?.job)
+        assertEquals(RemoteButtonJob.CHAPTERS_LIST, decoded.holdFor(KeyEvent.KEYCODE_MENU)?.job)
+        assertEquals(RemoteButtonJob.CHAPTERS_LIST, RemoteButtonJob.fromId("chapters_list"))
+        assertFalse(RemoteButtonJob.CHAPTERS_LIST.keepsPauseOverlay)
+        assertFalse(RemoteButtonJob.CHAPTERS_LIST.needsSkipSize)
+    }
 }

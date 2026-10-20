@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">Μετάβαση μέσα στο βίντεο</string>
     <string name="remote_buttons_job_skip_intro_or_next">Παράλειψη εισαγωγής ή επόμενο επεισόδιο</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">Παραλείπει όταν εμφανίζεται το κουμπί παράλειψης, αλλιώς παίζει το επόμενο επεισόδιο</string>
+    <string name="remote_buttons_job_chapters_list">Λίστα κεφαλαίων</string>
+    <string name="remote_buttons_job_chapters_list_desc">Ανοίγει τη λίστα κεφαλαίων για μετάβαση σε ένα από αυτά. Το Πίσω την κλείνει</string>
     <string name="remote_buttons_job_next_chapter">Επόμενο κεφάλαιο</string>
     <string name="remote_buttons_job_previous_chapter">Προηγούμενο κεφάλαιο</string>
     <string name="remote_buttons_job_previous_chapter_desc">Πρώτα επιστρέφει στην αρχή του κεφαλαίου, αν έχουν περάσει περισσότερα από 3 δευτερόλεπτα</string>

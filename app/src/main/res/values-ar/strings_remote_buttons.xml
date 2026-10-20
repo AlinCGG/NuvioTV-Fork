@@ -53,6 +53,8 @@
     <string name="remote_buttons_job_jump_percent">الانتقال داخل الفيديو</string>
     <string name="remote_buttons_job_skip_intro_or_next">تخطي المقدمة أو الحلقة التالية</string>
     <string name="remote_buttons_job_skip_intro_or_next_desc">يتخطى عند ظهور زر التخطي، وإلا يشغّل الحلقة التالية</string>
+    <string name="remote_buttons_job_chapters_list">قائمة الفصول</string>
+    <string name="remote_buttons_job_chapters_list_desc">يفتح قائمة الفصول للانتقال إلى أحدها. رجوع يغلقها</string>
     <string name="remote_buttons_job_next_chapter">الفصل التالي</string>
     <string name="remote_buttons_job_previous_chapter">الفصل السابق</string>
     <string name="remote_buttons_job_previous_chapter_desc">يعود أولًا إلى بداية الفصل إذا مرّ أكثر من 3 ثوانٍ منه</string>
