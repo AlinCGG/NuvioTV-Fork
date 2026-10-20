@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">انتهت صلاحية هذا الرمز.</string>
     <string name="servers_libraries">المكتبات</string>
     <string name="servers_libraries_description">المكتبات المحددة تظهر في صفوف الرئيسية والبحث ونتائج البث.</string>
+    <string name="servers_libraries_home_description">المكتبات المحددة تحصل على صف في الرئيسية. البحث ونتائج البث يستخدمان كل المكتبات دائمًا.</string>
     <string name="servers_no_libraries">لا توجد مكتبات أفلام أو مسلسلات متاحة لهذا المستخدم.</string>
     <string name="servers_refresh_libraries">تحديث المكتبات</string>
     <string name="servers_display_name">الاسم المعروض</string>

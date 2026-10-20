@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">פג תוקף הקוד.</string>
     <string name="servers_libraries">ספריות</string>
     <string name="servers_libraries_description">הספריות שנבחרו מופיעות בשורות מסך הבית, בחיפוש ובתוצאות הסטרימים.</string>
+    <string name="servers_libraries_home_description">ספריות שנבחרו מקבלות שורה במסך הבית. החיפוש ותוצאות הסטרימים תמיד משתמשים בכל הספריות.</string>
     <string name="servers_no_libraries">אין ספריות סרטים או סדרות זמינות למשתמש הזה.</string>
     <string name="servers_refresh_libraries">ריענון ספריות</string>
     <string name="servers_display_name">שם תצוגה</string>

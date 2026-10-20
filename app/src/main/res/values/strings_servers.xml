@@ -39,6 +39,7 @@
     <string name="servers_quick_connect_expired">This code has expired.</string>
     <string name="servers_libraries">Libraries</string>
     <string name="servers_libraries_description">Selected libraries appear in home rows, search, and stream results.</string>
+    <string name="servers_libraries_home_description">Ticked libraries get a row on Home. Search and stream results always use all libraries.</string>
     <string name="servers_no_libraries">No movie or series libraries are available to this user.</string>
     <string name="servers_refresh_libraries">Refresh libraries</string>
     <string name="servers_display_name">Display name</string>

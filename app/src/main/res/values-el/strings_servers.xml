@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Αυτός ο κωδικός έχει λήξει.</string>
     <string name="servers_libraries">Βιβλιοθήκες</string>
     <string name="servers_libraries_description">Οι επιλεγμένες βιβλιοθήκες εμφανίζονται στις σειρές της Αρχικής, στην αναζήτηση και στα αποτελέσματα ροών.</string>
+    <string name="servers_libraries_home_description">Οι επιλεγμένες βιβλιοθήκες παίρνουν σειρά στην Αρχική. Η αναζήτηση και τα αποτελέσματα ροών χρησιμοποιούν πάντα όλες τις βιβλιοθήκες.</string>
     <string name="servers_no_libraries">Δεν υπάρχουν διαθέσιμες βιβλιοθήκες ταινιών ή σειρών για αυτόν τον χρήστη.</string>
     <string name="servers_refresh_libraries">Ανανέωση βιβλιοθηκών</string>
     <string name="servers_display_name">Εμφανιζόμενο όνομα</string>

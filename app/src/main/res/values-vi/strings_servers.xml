@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Mã này đã hết hạn.</string>
     <string name="servers_libraries">Thư viện</string>
     <string name="servers_libraries_description">Các thư viện đã chọn xuất hiện trong các hàng ở Trang chủ, tìm kiếm và kết quả luồng.</string>
+    <string name="servers_libraries_home_description">Các thư viện đã chọn có một hàng ở Trang chủ. Tìm kiếm và kết quả luồng luôn dùng mọi thư viện.</string>
     <string name="servers_no_libraries">Người dùng này không có thư viện phim hoặc loạt phim nào.</string>
     <string name="servers_refresh_libraries">Làm mới thư viện</string>
     <string name="servers_display_name">Tên hiển thị</string>

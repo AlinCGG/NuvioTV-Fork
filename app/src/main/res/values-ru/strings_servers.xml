@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Срок действия кода истёк.</string>
     <string name="servers_libraries">Библиотеки</string>
     <string name="servers_libraries_description">Выбранные библиотеки появляются в рядах главного экрана, в поиске и среди потоков.</string>
+    <string name="servers_libraries_home_description">Выбранные библиотеки получают ряд на главном экране. Поиск и потоки всегда используют все библиотеки.</string>
     <string name="servers_no_libraries">Этому пользователю недоступны библиотеки фильмов или сериалов.</string>
     <string name="servers_refresh_libraries">Обновить библиотеки</string>
     <string name="servers_display_name">Отображаемое имя</string>

@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Ez a kód lejárt.</string>
     <string name="servers_libraries">Könyvtárak</string>
     <string name="servers_libraries_description">A kiválasztott könyvtárak megjelennek a Kezdőlap soraiban, a keresésben és a stream-találatokban.</string>
+    <string name="servers_libraries_home_description">A kiválasztott könyvtárak saját sort kapnak a Kezdőlapon. A keresés és a stream-találatok mindig az összes könyvtárat használják.</string>
     <string name="servers_no_libraries">Ennek a felhasználónak nincs elérhető film- vagy sorozatkönyvtára.</string>
     <string name="servers_refresh_libraries">Könyvtárak frissítése</string>
     <string name="servers_display_name">Megjelenített név</string>

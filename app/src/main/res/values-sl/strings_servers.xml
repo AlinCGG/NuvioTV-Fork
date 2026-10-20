@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Ta koda je potekla.</string>
     <string name="servers_libraries">Knjižnice</string>
     <string name="servers_libraries_description">Izbrane knjižnice se prikažejo v vrsticah na začetnem zaslonu, v iskanju in med viri.</string>
+    <string name="servers_libraries_home_description">Izbrane knjižnice dobijo vrstico na začetnem zaslonu. Iskanje in viri vedno uporabljajo vse knjižnice.</string>
     <string name="servers_no_libraries">Temu uporabniku ni na voljo nobena knjižnica filmov ali serij.</string>
     <string name="servers_refresh_libraries">Osveži knjižnice</string>
     <string name="servers_display_name">Prikazno ime</string>

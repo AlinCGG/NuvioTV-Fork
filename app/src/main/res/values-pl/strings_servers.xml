@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Ten kod wygasł.</string>
     <string name="servers_libraries">Biblioteki</string>
     <string name="servers_libraries_description">Wybrane biblioteki pojawiają się w wierszach strony głównej, wyszukiwaniu i wynikach strumieni.</string>
+    <string name="servers_libraries_home_description">Wybrane biblioteki dostają wiersz na stronie głównej. Wyszukiwanie i wyniki strumieni zawsze korzystają ze wszystkich bibliotek.</string>
     <string name="servers_no_libraries">Ten użytkownik nie ma dostępu do żadnej biblioteki filmów ani seriali.</string>
     <string name="servers_refresh_libraries">Odśwież biblioteki</string>
     <string name="servers_display_name">Wyświetlana nazwa</string>

@@ -84,9 +84,12 @@ data class ServerConnection(
     val selectedLibraries: List<ServerLibrary>
         get() = libraries.filter { it.selected }
 
-    /** Selected libraries that hold [kind]; a library of movies and shows comes back narrowed to [kind]. */
-    fun selectedLibraries(kind: ServerMediaKind): List<ServerLibrary> =
-        selectedLibraries.filter { it.holds(kind) }.map { if (it.kind == kind) it else it.copy(kind = kind) }
+    /**
+     * Every library that holds [kind], ticked or not, for search and stream matching; the ticks only
+     * choose Home rows. A library of movies and shows comes back narrowed to [kind].
+     */
+    fun librariesHolding(kind: ServerMediaKind): List<ServerLibrary> =
+        libraries.filter { it.holds(kind) }.map { if (it.kind == kind) it else it.copy(kind = kind) }
 }
 
 const val SERVER_DISPLAY_NAME_MAX_LENGTH = 30
@@ -259,6 +262,12 @@ data class ServerSegment(
     val kind: ServerSegmentKind,
     val startMs: Long,
     val endMs: Long
+)
+
+/** A named chapter the server knows for the file; [name] is null when it has none. */
+data class ServerChapter(
+    val startMs: Long,
+    val name: String?
 )
 
 data class ServerTrack(

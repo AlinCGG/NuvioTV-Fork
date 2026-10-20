@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Šio kodo galiojimas baigėsi.</string>
     <string name="servers_libraries">Bibliotekos</string>
     <string name="servers_libraries_description">Pasirinktos bibliotekos rodomos pradinio ekrano eilutėse, paieškoje ir srautų rezultatuose.</string>
+    <string name="servers_libraries_home_description">Pasirinktos bibliotekos gauna eilutę pradiniame ekrane. Paieška ir srautų rezultatai visada naudoja visas bibliotekas.</string>
     <string name="servers_no_libraries">Šiam naudotojui nepasiekiamos jokios filmų ar serialų bibliotekos.</string>
     <string name="servers_refresh_libraries">Atnaujinti bibliotekas</string>
     <string name="servers_display_name">Rodomas pavadinimas</string>

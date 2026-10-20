@@ -287,7 +287,10 @@ class ServerCatalog internal constructor(
         val provider = repository.provider(connection) ?: return null
         val libraries = connection.selectedLibraries
         val homeRows = connection.homeRows.takeIf { connection.showHomeRows }.orEmpty()
-        if (libraries.isEmpty() && homeRows.isEmpty()) return null
+        val searchKinds = SEARCH_KINDS.filter { kind ->
+            provider.supports(ServerCapability.SEARCH) && connection.librariesHolding(kind).isNotEmpty()
+        }
+        if (libraries.isEmpty() && homeRows.isEmpty() && searchKinds.isEmpty()) return null
         val rowLabel = rowLabels[connection.id] ?: connection.shownName
         val homeCatalogs = homeRows.map { row ->
             CatalogDescriptor(
@@ -311,17 +314,15 @@ class ServerCatalog internal constructor(
                 hasExplicitShowInHome = true
             )
         }
-        val searches = SEARCH_KINDS
-            .filter { kind -> provider.supports(ServerCapability.SEARCH) && libraries.any { it.holds(kind) } }
-            .map { kind ->
-                CatalogDescriptor(
-                    type = kind.domainType(),
-                    rawType = kind.contentType,
-                    id = SEARCH_PREFIX + kind.contentType,
-                    name = "$rowLabel · ${kindName(kind)}",
-                    extra = listOf(CatalogExtra(name = "search", isRequired = true))
-                )
-            }
+        val searches = searchKinds.map { kind ->
+            CatalogDescriptor(
+                type = kind.domainType(),
+                rawType = kind.contentType,
+                id = SEARCH_PREFIX + kind.contentType,
+                name = "$rowLabel · ${kindName(kind)}",
+                extra = listOf(CatalogExtra(name = "search", isRequired = true))
+            )
+        }
         val label = repository.sourceLabel(connection)
         return Addon(
             id = addonId(connection.id),
@@ -410,7 +411,7 @@ class ServerCatalog internal constructor(
         refreshScope.async {
             repository.call(connection.id) { provider, session ->
                 if (!provider.supports(ServerCapability.SEARCH)) throw ServerException(ServerFailure.UNSUPPORTED)
-                val libraries = session.connection.selectedLibraries(kind)
+                val libraries = session.connection.librariesHolding(kind)
                 if (libraries.isEmpty()) emptyList() else provider.search(session, kind, libraries, query, SEARCH_LIMIT)
             }
         }

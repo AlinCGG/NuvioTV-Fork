@@ -187,7 +187,7 @@ internal fun MediaServerSettingsContent(
                             ServerSectionLabel(stringResource(R.string.servers_libraries))
                             Text(
                                 text = stringResource(
-                                    if (connection.libraries.isEmpty()) R.string.servers_no_libraries else R.string.servers_libraries_description
+                                    if (connection.libraries.isEmpty()) R.string.servers_no_libraries else R.string.servers_libraries_home_description
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NuvioTheme.colors.TextSecondary,

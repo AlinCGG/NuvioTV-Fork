@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Este código expirou.</string>
     <string name="servers_libraries">Bibliotecas</string>
     <string name="servers_libraries_description">As bibliotecas selecionadas aparecem nas linhas da página inicial, na pesquisa e nos resultados de streams.</string>
+    <string name="servers_libraries_home_description">As bibliotecas selecionadas têm uma linha na página inicial. A pesquisa e os resultados de streams usam sempre todas as bibliotecas.</string>
     <string name="servers_no_libraries">Não há bibliotecas de filmes ou séries disponíveis para este utilizador.</string>
     <string name="servers_refresh_libraries">Atualizar bibliotecas</string>
     <string name="servers_display_name">Nome a mostrar</string>

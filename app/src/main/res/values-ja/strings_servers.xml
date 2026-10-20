@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">このコードは期限切れです。</string>
     <string name="servers_libraries">ライブラリ</string>
     <string name="servers_libraries_description">選択したライブラリは、ホームの行、検索、ストリーム結果に表示されます。</string>
+    <string name="servers_libraries_home_description">選択したライブラリはホームに行として表示されます。検索とストリーム結果では常にすべてのライブラリを使います。</string>
     <string name="servers_no_libraries">このユーザーが利用できる映画やシリーズのライブラリがありません。</string>
     <string name="servers_refresh_libraries">ライブラリを更新</string>
     <string name="servers_display_name">表示名</string>

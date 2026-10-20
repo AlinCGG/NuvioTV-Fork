@@ -135,7 +135,7 @@ class ServerStreams @Inject constructor(
 internal fun serverSourceSkipReason(connection: ServerConnection, kind: ServerMediaKind?, canLookUpIds: Boolean): String? = when {
     !connection.enabled -> "turned_off"
     kind == null -> "no_title_ids"
-    connection.selectedLibraries(kind).isEmpty() -> "library_not_ticked"
+    connection.librariesHolding(kind).isEmpty() -> "no_library"
     !canLookUpIds -> "no_id_lookup"
     else -> null
 }

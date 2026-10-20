@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Ovaj kod je istekao.</string>
     <string name="servers_libraries">Biblioteke</string>
     <string name="servers_libraries_description">Odabrane biblioteke se prikazuju u redovima na početnoj, u pretrazi i među streamovima.</string>
+    <string name="servers_libraries_home_description">Odabrane biblioteke dobijaju red na početnoj. Pretraga i streamovi uvijek koriste sve biblioteke.</string>
     <string name="servers_no_libraries">Ovom korisniku nije dostupna nijedna biblioteka filmova ili serija.</string>
     <string name="servers_refresh_libraries">Osvježi biblioteke</string>
     <string name="servers_display_name">Prikazano ime</string>

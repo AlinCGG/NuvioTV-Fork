@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Този код е изтекъл.</string>
     <string name="servers_libraries">Библиотеки</string>
     <string name="servers_libraries_description">Избраните библиотеки се показват в редовете на началния екран, в търсенето и в резултатите с потоци.</string>
+    <string name="servers_libraries_home_description">Избраните библиотеки получават ред на началния екран. Търсенето и резултатите с потоци винаги използват всички библиотеки.</string>
     <string name="servers_no_libraries">За този потребител няма достъпни библиотеки с филми или сериали.</string>
     <string name="servers_refresh_libraries">Обнови библиотеките</string>
     <string name="servers_display_name">Показвано име</string>

@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Kode ini sudah kedaluwarsa.</string>
     <string name="servers_libraries">Pustaka</string>
     <string name="servers_libraries_description">Pustaka yang dipilih muncul di baris beranda, pencarian, dan hasil stream.</string>
+    <string name="servers_libraries_home_description">Pustaka yang dipilih mendapat baris di Beranda. Pencarian dan hasil stream selalu memakai semua pustaka.</string>
     <string name="servers_no_libraries">Tidak ada pustaka film atau serial yang tersedia untuk pengguna ini.</string>
     <string name="servers_refresh_libraries">Perbarui pustaka</string>
     <string name="servers_display_name">Nama tampilan</string>

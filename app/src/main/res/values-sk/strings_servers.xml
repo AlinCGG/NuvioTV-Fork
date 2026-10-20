@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Platnosť tohto kódu vypršala.</string>
     <string name="servers_libraries">Knižnice</string>
     <string name="servers_libraries_description">Vybrané knižnice sa zobrazia v riadkoch na domovskej obrazovke, vo vyhľadávaní a vo výsledkoch streamov.</string>
+    <string name="servers_libraries_home_description">Vybrané knižnice dostanú riadok na domovskej obrazovke. Vyhľadávanie a výsledky streamov vždy používajú všetky knižnice.</string>
     <string name="servers_no_libraries">Tento používateľ nemá k dispozícii žiadne knižnice filmov ani seriálov.</string>
     <string name="servers_refresh_libraries">Obnoviť knižnice</string>
     <string name="servers_display_name">Zobrazovaný názov</string>

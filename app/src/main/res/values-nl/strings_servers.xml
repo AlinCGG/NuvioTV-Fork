@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Deze code is verlopen.</string>
     <string name="servers_libraries">Bibliotheken</string>
     <string name="servers_libraries_description">Geselecteerde bibliotheken verschijnen in rijen op Home, bij zoeken en in streamresultaten.</string>
+    <string name="servers_libraries_home_description">Geselecteerde bibliotheken krijgen een rij op Home. Zoeken en streamresultaten gebruiken altijd alle bibliotheken.</string>
     <string name="servers_no_libraries">Er zijn geen film- of seriebibliotheken beschikbaar voor deze gebruiker.</string>
     <string name="servers_refresh_libraries">Bibliotheken vernieuwen</string>
     <string name="servers_display_name">Weergavenaam</string>

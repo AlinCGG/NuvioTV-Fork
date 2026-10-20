@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Denne koden er utløpt.</string>
     <string name="servers_libraries">Biblioteker</string>
     <string name="servers_libraries_description">Valgte biblioteker vises i hjemrader, søk og strømresultater.</string>
+    <string name="servers_libraries_home_description">Valgte biblioteker får en rad på Hjem. Søk og strømresultater bruker alltid alle biblioteker.</string>
     <string name="servers_no_libraries">Ingen film- eller seriebiblioteker er tilgjengelige for denne brukeren.</string>
     <string name="servers_refresh_libraries">Oppdater biblioteker</string>
     <string name="servers_display_name">Visningsnavn</string>

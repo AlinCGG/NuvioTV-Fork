@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">此代码已过期。</string>
     <string name="servers_libraries">媒体库</string>
     <string name="servers_libraries_description">所选媒体库会显示在首页行、搜索和流结果中。</string>
+    <string name="servers_libraries_home_description">所选媒体库会在首页显示为一行。搜索和流结果始终使用所有媒体库。</string>
     <string name="servers_no_libraries">此用户没有可用的电影或剧集媒体库。</string>
     <string name="servers_refresh_libraries">刷新媒体库</string>
     <string name="servers_display_name">显示名称</string>

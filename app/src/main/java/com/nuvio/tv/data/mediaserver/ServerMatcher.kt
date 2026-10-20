@@ -113,7 +113,7 @@ class ServerMatcher internal constructor(
         titleItemIds(connection, request, forceRefresh = false).map { ServerItemRef(connection.id, it) }
 
     fun supports(connection: ServerConnection, kind: ServerMediaKind): Boolean =
-        connection.selectedLibraries(kind).isNotEmpty() &&
+        connection.librariesHolding(kind).isNotEmpty() &&
             repository.provider(connection)?.supports(ServerCapability.EXTERNAL_ID_LOOKUP) == true
 
     suspend fun match(connection: ServerConnection, request: MatchRequest, forceRefresh: Boolean): List<ServerItemRef> {
@@ -135,7 +135,7 @@ class ServerMatcher internal constructor(
 
     private suspend fun titleItemIds(connection: ServerConnection, request: MatchRequest, forceRefresh: Boolean): List<String> {
         val ids = withConvertedIds(request)
-        val libraries = connection.selectedLibraries(request.kind)
+        val libraries = connection.librariesHolding(request.kind)
         val original = ids.tmdb?.let { originalTitle(it, request.kind) }?.takeIf { it.isNotBlank() }
         val query = ServerTitleQuery(ids, request.name, request.year, original)
         lookupItemIds(connection, request.kind, query, libraries, forceRefresh)?.let { return it }

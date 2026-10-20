@@ -132,12 +132,45 @@ class ServerCatalogTest {
         assertEquals(ServerCatalog.addonId(connection.id), addon.id)
         assertEquals("Fake · Box", addon.displayName)
         assertTrue(ServerCatalog.isServerAddon(addon.baseUrl))
-        assertEquals(listOf("10", "search.movie"), addon.catalogs.map { it.id })
+        assertEquals(listOf("10", "search.movie", "search.series"), addon.catalogs.map { it.id })
         assertEquals("Box · Movies", addon.catalogs.single { it.id == "10" }.name)
-        assertEquals("Box · Movies", addon.catalogs.last().name)
-        assertEquals(listOf("10", "search.movie"), catalog.searchAddons.first().single().catalogs.map { it.id })
-        assertEquals(listOf("search.movie"), addon.catalogs.filter { it.supportsExtra("search") }.map { it.id })
+        assertEquals("Box · Movies", addon.catalogs.single { it.id == "search.movie" }.name)
+        assertEquals(
+            listOf("10", "search.movie", "search.series"),
+            catalog.searchAddons.first().single().catalogs.map { it.id }
+        )
+        assertEquals(listOf("search.movie", "search.series"), addon.catalogs.filter { it.supportsExtra("search") }.map { it.id })
         assertTrue(addon.catalogs.last().extra.single().isRequired)
+    }
+
+    @Test
+    fun untickedLibrariesGetNoRowButAreStillSearched() = runTest {
+        val provider = FakeServerProvider()
+        val (catalog, repository, connection) = catalog(provider)
+        repository.setLibrarySelected(connection.id, FakeServerProvider.MOVIE_LIBRARY.id, false)
+        repository.setLibrarySelected(connection.id, FakeServerProvider.SERIES_LIBRARY.id, false)
+
+        val addon = catalog.addons.first().single()
+        assertEquals(listOf("search.movie", "search.series"), addon.catalogs.map { it.id })
+        assertTrue(addon.catalogs.none { it.showInHome })
+        assertTrue(catalog.libraries().isEmpty())
+
+        catalog.page(connection, "search.movie", skip = 0, extra = mapOf("search" to "item"))
+        catalog.page(connection, "search.series", skip = 0, extra = mapOf("search" to "item"))
+        assertEquals(
+            listOf(
+                ServerMediaKind.MOVIE to listOf("10" to ServerMediaKind.MOVIE),
+                ServerMediaKind.SERIES to listOf("20" to ServerMediaKind.SERIES)
+            ),
+            provider.searches.toList()
+        )
+    }
+
+    @Test
+    fun aServerWithoutLibrariesOffersNoSearch() = runTest {
+        val (catalog, _, _) = catalog(libraries = emptyList())
+
+        assertTrue(catalog.addons.first().isEmpty())
     }
 
     @Test

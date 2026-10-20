@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Questo codice è scaduto.</string>
     <string name="servers_libraries">Librerie</string>
     <string name="servers_libraries_description">Le librerie selezionate compaiono nelle righe della Home, nella ricerca e nei risultati degli stream.</string>
+    <string name="servers_libraries_home_description">Le librerie selezionate hanno una riga nella Home. La ricerca e i risultati degli stream usano sempre tutte le librerie.</string>
     <string name="servers_no_libraries">Nessuna libreria di film o serie è disponibile per questo utente.</string>
     <string name="servers_refresh_libraries">Aggiorna librerie</string>
     <string name="servers_display_name">Nome visualizzato</string>

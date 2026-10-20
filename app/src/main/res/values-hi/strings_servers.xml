@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">यह कोड समाप्त हो गया है।</string>
     <string name="servers_libraries">लाइब्रेरी</string>
     <string name="servers_libraries_description">चुनी गई लाइब्रेरी होम रो, खोज और स्ट्रीम नतीजों में दिखती हैं।</string>
+    <string name="servers_libraries_home_description">चुनी गई लाइब्रेरी को होम पर एक रो मिलती है। खोज और स्ट्रीम नतीजे हमेशा सभी लाइब्रेरी इस्तेमाल करते हैं।</string>
     <string name="servers_no_libraries">इस यूज़र के लिए कोई मूवी या सीरीज़ लाइब्रेरी उपलब्ध नहीं है।</string>
     <string name="servers_refresh_libraries">लाइब्रेरी रिफ्रेश करें</string>
     <string name="servers_display_name">डिस्प्ले नाम</string>

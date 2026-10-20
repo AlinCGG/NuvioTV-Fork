@@ -36,10 +36,34 @@ class ServerSourceLogTest {
     fun skipReasons() {
         assertEquals("turned_off", serverSourceSkipReason(connection(enabled = false), ServerMediaKind.MOVIE, true))
         assertEquals("no_title_ids", serverSourceSkipReason(connection(), null, true))
-        assertEquals("library_not_ticked", serverSourceSkipReason(connection(), ServerMediaKind.SERIES, true))
-        val unticked = connection(libraries = listOf(ServerLibrary("m", "Movies", ServerMediaKind.MOVIE, selected = false)))
-        assertEquals("library_not_ticked", serverSourceSkipReason(unticked, ServerMediaKind.MOVIE, true))
+        assertEquals("no_library", serverSourceSkipReason(connection(), ServerMediaKind.SERIES, true))
         assertEquals("no_id_lookup", serverSourceSkipReason(connection(), ServerMediaKind.MOVIE, false))
+    }
+
+    @Test
+    fun untickedLibrariesAreStillAsked() {
+        val unticked = connection(libraries = listOf(ServerLibrary("m", "Movies", ServerMediaKind.MOVIE, selected = false)))
+        assertNull(serverSourceSkipReason(unticked, ServerMediaKind.MOVIE, canLookUpIds = true))
+        val mixed = connection(libraries = listOf(ServerLibrary("x", "All", ServerMediaKind.MIXED, selected = false)))
+        assertNull(serverSourceSkipReason(mixed, ServerMediaKind.SERIES, canLookUpIds = true))
+        assertEquals("turned_off", serverSourceSkipReason(unticked.copy(enabled = false), ServerMediaKind.MOVIE, true))
+    }
+
+    @Test
+    fun librariesHoldingIgnoresTheTicks() {
+        val unticked = connection(
+            libraries = listOf(
+                ServerLibrary("m", "Movies", ServerMediaKind.MOVIE, selected = false),
+                ServerLibrary("x", "All", ServerMediaKind.MIXED, selected = false),
+                ServerLibrary("s", "Shows", ServerMediaKind.SERIES)
+            )
+        )
+        assertEquals(
+            listOf("m" to ServerMediaKind.MOVIE, "x" to ServerMediaKind.MOVIE),
+            unticked.librariesHolding(ServerMediaKind.MOVIE).map { it.id to it.kind }
+        )
+        assertEquals(listOf("x", "s"), unticked.librariesHolding(ServerMediaKind.SERIES).map { it.id })
+        assertEquals(listOf("s"), unticked.selectedLibraries.map { it.id })
     }
 
     @Test

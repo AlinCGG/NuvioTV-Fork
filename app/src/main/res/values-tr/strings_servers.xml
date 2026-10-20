@@ -42,6 +42,7 @@
     <string name="servers_quick_connect_expired">Bu kodun süresi doldu.</string>
     <string name="servers_libraries">Kütüphaneler</string>
     <string name="servers_libraries_description">Seçilen kütüphaneler ana sayfa satırlarında, aramada ve yayın sonuçlarında görünür.</string>
+    <string name="servers_libraries_home_description">Seçilen kütüphaneler Ana Sayfa\'da bir satır alır. Arama ve yayın sonuçları her zaman tüm kütüphaneleri kullanır.</string>
     <string name="servers_no_libraries">Bu kullanıcının erişebildiği film veya dizi kütüphanesi yok.</string>
     <string name="servers_refresh_libraries">Kütüphaneleri yenile</string>
     <string name="servers_display_name">Görünen ad</string>
