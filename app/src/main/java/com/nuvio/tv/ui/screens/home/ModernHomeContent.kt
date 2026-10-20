@@ -87,6 +87,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.nuvio.tv.domain.model.ContinueWatchingCardStyle
 import com.nuvio.tv.domain.model.FocusedPosterTrailerPlaybackTarget
 import com.nuvio.tv.domain.model.MetaPreview
+import com.nuvio.tv.domain.model.PosterShape
 import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.components.ContinueWatchingOptionsDialog
 import com.nuvio.tv.LocalSidebarExpanded
@@ -807,7 +808,9 @@ fun ModernHomeContent(
                         background = artSource?.background ?: resolvedHero?.backdrop,
                         landscape = artSource?.landscapePoster,
                         fallbackBackground = heroCarouselItem?.heroPreview?.backdrop,
-                        fallbackPoster = heroCarouselItem?.heroPreview?.poster
+                        fallbackPoster = heroCarouselItem?.heroPreview?.poster,
+                        widePoster = heroCarouselItem?.metaPreview
+                            ?.takeIf { it.posterShape == PosterShape.LANDSCAPE }?.poster
                     )
                     ResolvedModernHeroState(artwork, resolvedHero, effectiveEnrichmentActive)
                 }

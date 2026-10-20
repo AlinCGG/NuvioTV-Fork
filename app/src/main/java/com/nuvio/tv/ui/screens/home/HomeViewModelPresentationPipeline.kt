@@ -948,7 +948,8 @@ private suspend fun HomeViewModel.fetchFocusedHeroMetadata(
 } else tmdbMetadataService.fetchEnrichment(tmdbId, contentType, language)
 
 private suspend fun HomeViewModel.prefetchHeroArtwork(preview: MetaPreview) {
-    val candidates = landscapeHeroArtwork(preview.id, preview.poster, preview.background, preview.landscapePoster)
+    val candidates = landscapeHeroArtwork(preview.id, preview.poster, preview.background, preview.landscapePoster,
+        widePoster = preview.poster.takeIf { preview.posterShape == com.nuvio.tv.domain.model.PosterShape.LANDSCAPE })
     val url = candidates.urls.firstOrNull() ?: return
     val width = HeroImageRequests.width
     val height = HeroImageRequests.height

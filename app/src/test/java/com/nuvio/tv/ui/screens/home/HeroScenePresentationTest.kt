@@ -46,6 +46,29 @@ class HeroScenePresentationTest {
         assertTrue(landscapeHeroArtwork(null, "p", "b", "l").urls.isEmpty())
     }
 
+    @Test fun `addon landscape poster is the last hero choice`() {
+        assertEquals(listOf("poster"), landscapeHeroArtwork("a", "poster", "poster", null, widePoster = "poster").urls)
+        assertEquals(listOf("background", "poster"),
+            landscapeHeroArtwork("a", "poster", "background", null, widePoster = "poster").urls)
+        assertTrue(landscapeHeroArtwork(null, "poster", null, null, widePoster = "poster").urls.isEmpty())
+    }
+
+    @Test fun `own stand-in keeps its logo after the timeout`() {
+        val a = HeroScenePresentation<String>().select("a")
+        val standIn = a.fallback(a.ticket, "a text + logo")
+        assertSame(standIn, standIn.timeout(a.ticket, "a text"))
+        assertEquals("a pixels + logo", standIn.ready(a.ticket, "a pixels + logo").displayed)
+    }
+
+    @Test fun `timeout still clears a scene left from another title`() {
+        val a = HeroScenePresentation<String>().select("a")
+        val b = a.ready(a.ticket, "a pixels + a logo").select("b")
+        val timedOut = b.timeout(b.ticket, "b text")
+        assertEquals("b text", timedOut.displayed)
+        assertSame(timedOut, timedOut.timeout(b.ticket, "b text again"))
+        assertSame(b, b.timeout(a.ticket, "stale"))
+    }
+
     @Test fun `surface sizing normalizes TMDB variants without rewriting addon URLs`() {
         val root = "https://image.tmdb.org/t/p/"
         assertEquals(root+"w780/a.jpg", heroTransferUrl(root+"original/a.jpg", 720))

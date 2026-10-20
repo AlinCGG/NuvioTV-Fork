@@ -36,7 +36,7 @@ internal fun rememberPreparedHeroScene(
         launch {
             delay(900)
             if (!presentation.committed) HeroSceneTrace.event("neutral-timeout", owner)
-            presentation = presentation.fallback(ticket, latest.neutralHero())
+            presentation = presentation.timeout(ticket, latest.neutralHero())
         }
         snapshotFlow { latest }
             .distinctUntilChangedBy { Triple(it.artwork, it.preview?.logo, it.enrichmentActive) }
@@ -87,7 +87,7 @@ internal fun rememberPreparedHeroScene(
     }
     val logoUrl = latest.preview?.logo
     val displayed = presentation.displayed
-    LaunchedEffect(identity, logoUrl, displayed?.preparedImage) {
+    LaunchedEffect(identity, logoUrl, displayed?.preparedImage, displayed?.artwork?.ownerKey, displayed?.preparedLogo == null) {
         val ticket = presentation.ticket
         if (displayed == null || ticket.identity != identity || displayed.artwork.ownerKey != owner ||
             displayed.preparedLogo != null || logoUrl.isNullOrBlank()) return@LaunchedEffect

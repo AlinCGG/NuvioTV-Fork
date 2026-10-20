@@ -744,6 +744,13 @@ internal fun ContinueWatchingItem.episode(): Int? {
     }
 }
 
+/** Global landscape posters, or the backdrop with logo switch on a card the add-on marks landscape. */
+internal fun ModernCarouselItem.usesLandscapeCardTreatment(
+    useLandscapePosters: Boolean,
+    alwaysShowLandscapeClearlogo: Boolean
+): Boolean = useLandscapePosters || (alwaysShowLandscapeClearlogo &&
+    payload is ModernPayload.Catalog && metaPreview?.posterShape == PosterShape.LANDSCAPE)
+
 /** Collapsed-card artwork shared by rendering and all poster warmers. */
 internal fun ModernCarouselItem.collapsedArtworkUrl(
     landscape: Boolean,

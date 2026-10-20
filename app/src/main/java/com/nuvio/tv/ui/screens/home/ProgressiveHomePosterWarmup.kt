@@ -122,8 +122,9 @@ internal fun ProgressiveHomePosterWarmup(
                         val index = scan.iterator.next()
                         val row = catalogue[scan.row]
                         val item = row.items[index]
+                        val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
                         val url = item.collapsedArtworkUrl(
-                            useLandscapePosters,
+                            landscape,
                             alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
                         )?.takeUnless { it.isPlaceholder() }
                         if (url != null && item.payload !is ModernPayload.ContinueWatching) {
@@ -133,7 +134,7 @@ internal fun ProgressiveHomePosterWarmup(
                             val height = with(density) { metrics.height.roundToPx() }.coerceAtLeast(1)
                             val diskKey = sizedHomeArtworkUrl(url, width)
                             val memoryKey = homePosterCacheKey(url, width, height)
-                            val memoryExtras = item.customPosterCacheExtras(url, useLandscapePosters)
+                            val memoryExtras = item.customPosterCacheExtras(url, landscape)
                             val toMemory = scan.row in memoryRows && index in scan.memoryColumns &&
                                 memoryBudget >= width.toLong() * height * 4
                             viewport.warmWhenIdle(::unchanged) {

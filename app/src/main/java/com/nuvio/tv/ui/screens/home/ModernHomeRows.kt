@@ -661,7 +661,7 @@ private fun ModernCatalogRowItem(
 
     ModernCarouselCard(
         item = item,
-        useLandscapeOverlayTreatment = useLandscapePosters,
+        useLandscapeOverlayTreatment = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo),
         alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
         showLabels = showLabels,
         placeholderShimmerOffsetState = placeholderShimmerOffsetState,
@@ -1017,8 +1017,9 @@ internal fun ModernRowSection(
                             if (widthPx <= 0 || heightPx <= 0) return
                             cacheKey = continueWatchingImageCacheKey(model, widthPx, heightPx, blur)
                         } else {
+                            val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
                             val url = item.collapsedArtworkUrl(
-                                useLandscapePosters,
+                                landscape,
                                 alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
                             ) ?: return
                             val (w, h) = requestSizePx(item)
@@ -1029,7 +1030,7 @@ internal fun ModernRowSection(
                             // URL and target when focus settles; they must not size every poster.
                             model = url
                             cacheKey = homePosterCacheKey(url, widthPx, heightPx)
-                            extras = item.customPosterCacheExtras(url, useLandscapePosters)
+                            extras = item.customPosterCacheExtras(url, landscape)
                         }
                         if (imageLoader.memoryCache?.get(MemoryCache.Key(cacheKey, extras)) != null) return
                         // The loader runs its request steps on the caller's thread: keep them off the main thread.
@@ -1142,13 +1143,8 @@ internal fun ModernRowSection(
 
         // When a poster in this row expands, ensure it scrolls fully into view.
         var isExpansionScrollActive by remember { mutableStateOf(false) }
-        val expandedCardWidthPx = with(density) {
-            if (useLandscapePosters) {
-                landscapeCatalogCardWidth.roundToPx()
-            } else {
-                (portraitCatalogCardHeight * (16f / 9f)).roundToPx()
-            }
-        }
+        val landscapeExpandedWidthPx = with(density) { landscapeCatalogCardWidth.roundToPx() }
+        val portraitExpandedWidthPx = with(density) { (portraitCatalogCardHeight * (16f / 9f)).roundToPx() }
         // A poster held small for a trailer in the hero must not push the row along either.
         val posterGrows = focusedPosterGrows(effectiveExpandEnabled, effectiveAutoplayEnabled, trailerPlaybackTarget)
         LaunchedEffect(row.key, posterGrows, rowItemCount) {
@@ -1173,6 +1169,9 @@ internal fun ModernRowSection(
                     val itemInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.index == expandedIndex }
                         ?: return@collect
                     val viewportEnd = layoutInfo.viewportEndOffset
+                    val expandedCardWidthPx = if (row.items.list[expandedIndex]
+                            .usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
+                    ) landscapeExpandedWidthPx else portraitExpandedWidthPx
                     val itemEndExpanded = itemInfo.offset + expandedCardWidthPx
                     if (itemEndExpanded > viewportEnd) {
                         // Scroll just enough to reveal the trailing edge plus a small margin.

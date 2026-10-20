@@ -8,7 +8,9 @@ import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.PosterShape
 import com.nuvio.tv.ui.util.StableList
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HomePosterArtworkTest {
@@ -25,6 +27,29 @@ class HomePosterArtworkTest {
         assertEquals("displayed-backdrop", item.collapsedArtworkUrl(true, "displayed-backdrop"))
         assertEquals("fallback-poster", item.copy(imageUrl = null).collapsedArtworkUrl(false))
         assertEquals("fallback-poster", item.collapsedArtworkUrl(true, null))
+    }
+
+    @Test fun backdropWithLogoSwitchCoversCardsTheAddonMarksLandscape() {
+        val meta = MetaPreview(id = "id", type = ContentType.MOVIE, name = "Title", poster = "poster",
+            posterShape = PosterShape.LANDSCAPE, background = "background", logo = null, description = null,
+            releaseInfo = null, imdbRating = null, genres = emptyList())
+        val addonLandscape = item.copy(metaPreview = meta)
+        assertTrue(addonLandscape.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = true))
+        assertFalse(addonLandscape.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = false))
+        assertEquals("frozen-backdrop", addonLandscape.collapsedArtworkUrl(
+            addonLandscape.usesLandscapeCardTreatment(false, true), alwaysShowLandscapeClearlogo = true))
+        assertEquals("poster", addonLandscape.collapsedArtworkUrl(
+            addonLandscape.usesLandscapeCardTreatment(false, false)))
+
+        val portrait = item.copy(metaPreview = meta.copy(posterShape = PosterShape.POSTER))
+        assertFalse(portrait.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = true))
+        assertTrue(portrait.usesLandscapeCardTreatment(useLandscapePosters = true, alwaysShowLandscapeClearlogo = false))
+
+        val folder = addonLandscape.copy(payload = ModernPayload.CollectionFolder(
+            focusKey = "folder", collectionId = "c", collectionTitle = "C", folderId = "f",
+            posterShape = PosterShape.LANDSCAPE, focusGlowEnabled = false, focusGifEnabled = false,
+            focusGifUrl = null, heroBackdropUrl = null, heroVideoUrl = null, titleLogoUrl = null))
+        assertFalse(folder.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = true))
     }
 
     @Test fun landscapePosterFromTheAddonWinsUnlessTheClearlogoOptionIsOn() {

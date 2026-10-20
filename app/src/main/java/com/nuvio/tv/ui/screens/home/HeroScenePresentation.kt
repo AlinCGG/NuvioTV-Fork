@@ -6,7 +6,8 @@ internal data class HeroSceneTicket(val identity: String?, val generation: Long)
 internal data class HeroScenePresentation<T>(
     val ticket: HeroSceneTicket = HeroSceneTicket(null, 0),
     val displayed: T? = null,
-    val committed: Boolean = false
+    val committed: Boolean = false,
+    val displayedTicket: HeroSceneTicket? = null
 ) {
     fun select(identity: String?): HeroScenePresentation<T> =
         if (identity == ticket.identity) this else copy(
@@ -14,24 +15,29 @@ internal data class HeroScenePresentation<T>(
         )
 
     fun ready(request: HeroSceneTicket, scene: T): HeroScenePresentation<T> =
-        if (request != ticket || committed) this else copy(displayed = scene, committed = true)
+        if (request != ticket || committed) this else copy(displayed = scene, committed = true, displayedTicket = request)
 
     /** A bounded neutral fallback may later upgrade to the first successfully decoded backdrop. */
     fun fallback(request: HeroSceneTicket, scene: T): HeroScenePresentation<T> =
-        if (request != ticket || committed) this else copy(displayed = scene)
+        if (request != ticket || committed) this else copy(displayed = scene, displayedTicket = request)
+
+    /** The safety timer only clears a scene left over from another title. */
+    fun timeout(request: HeroSceneTicket, scene: T): HeroScenePresentation<T> =
+        if (displayedTicket == request) this else fallback(request, scene)
 
     fun revise(request: HeroSceneTicket, transform: (T) -> T): HeroScenePresentation<T> =
         if (request != ticket || displayed == null) this else copy(displayed = transform(displayed))
 }
 
-/** URL roles are resolved before image loading; a portrait poster is never a hero candidate. */
+/** URL roles are resolved before image loading; only a poster the add-on marks landscape is a last candidate. */
 internal fun landscapeHeroArtwork(
     owner: String?, poster: String?, background: String?, landscape: String?,
-    fallbackBackground: String? = null, fallbackPoster: String? = null
+    fallbackBackground: String? = null, fallbackPoster: String? = null, widePoster: String? = null
 ): HeroArtworkSelection = heroArtworkSelection(owner,
     background?.takeUnless { it == poster || it == fallbackPoster },
     landscape?.takeUnless { it == poster || it == fallbackPoster },
-    fallbackBackground?.takeUnless { it == poster || it == fallbackPoster }
+    fallbackBackground?.takeUnless { it == poster || it == fallbackPoster },
+    widePoster
 )
 
 internal fun heroTransferUrl(url: String, width: Int): String {

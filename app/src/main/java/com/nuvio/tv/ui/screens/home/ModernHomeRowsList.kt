@@ -334,11 +334,12 @@ internal fun ModernHomeRowsList(
                         val item = row.items.list[i]
                         // CW request parity is not reproducible here (see ModernHomeRows): skip.
                         if (item.payload is ModernPayload.ContinueWatching) continue
+                        val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
                         val url = item.collapsedArtworkUrl(
-                            useLandscapePosters,
+                            landscape,
                             alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
                         )?.takeUnless { it.isPlaceholder() } ?: continue
-                        val extras = item.customPosterCacheExtras(url, useLandscapePosters)
+                        val extras = item.customPosterCacheExtras(url, landscape)
                         val metrics = item.catalogCardRequestMetrics(
                             useLandscapePosters = useLandscapePosters,
                             portraitCardWidth = portraitCatalogCardWidth,
