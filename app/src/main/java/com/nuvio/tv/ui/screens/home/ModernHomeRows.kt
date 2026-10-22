@@ -521,6 +521,7 @@ private fun ModernCatalogRowItem(
     mayClaimFocus: () -> Boolean = { true },
     useLandscapePosters: Boolean,
     alwaysShowLandscapeClearlogo: Boolean = false,
+    addonLandscapeBackdropLogo: Boolean = false,
     showLabels: Boolean,
     placeholderShimmerOffsetState: State<Float>?,
     posterCardCornerRadius: Dp,
@@ -661,7 +662,7 @@ private fun ModernCatalogRowItem(
 
     ModernCarouselCard(
         item = item,
-        useLandscapeOverlayTreatment = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo),
+        useLandscapeOverlayTreatment = item.usesLandscapeCardTreatment(useLandscapePosters, addonLandscapeBackdropLogo),
         alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
         showLabels = showLabels,
         placeholderShimmerOffsetState = placeholderShimmerOffsetState,
@@ -742,6 +743,7 @@ internal fun ModernRowSection(
     onRowItemFocused: (String, Int, Boolean) -> Unit,
     useLandscapePosters: Boolean,
     alwaysShowLandscapeClearlogo: Boolean = false,
+    addonLandscapeBackdropLogo: Boolean = false,
     showLabels: Boolean,
     posterCardCornerRadius: Dp,
     focusedPosterBackdropTrailerMuted: Boolean,
@@ -962,6 +964,8 @@ internal fun ModernRowSection(
             rowListState,
             homeImagePriority,
             useLandscapePosters,
+            alwaysShowLandscapeClearlogo,
+            addonLandscapeBackdropLogo,
             rowItemCount,
             effectiveExpandEnabled,
             portraitCatalogCardWidth,
@@ -1017,7 +1021,7 @@ internal fun ModernRowSection(
                             if (widthPx <= 0 || heightPx <= 0) return
                             cacheKey = continueWatchingImageCacheKey(model, widthPx, heightPx, blur)
                         } else {
-                            val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
+                            val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, addonLandscapeBackdropLogo)
                             val url = item.collapsedArtworkUrl(
                                 landscape,
                                 alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
@@ -1169,8 +1173,9 @@ internal fun ModernRowSection(
                     val itemInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.index == expandedIndex }
                         ?: return@collect
                     val viewportEnd = layoutInfo.viewportEndOffset
-                    val expandedCardWidthPx = if (row.items.list[expandedIndex]
-                            .usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
+                    val expandedItem = row.items.list[expandedIndex]
+                    val expandedCardWidthPx = if (expandedItem.isAddonLandscapeCard() ||
+                        expandedItem.usesLandscapeCardTreatment(useLandscapePosters, addonLandscapeBackdropLogo)
                     ) landscapeExpandedWidthPx else portraitExpandedWidthPx
                     val itemEndExpanded = itemInfo.offset + expandedCardWidthPx
                     if (itemEndExpanded > viewportEnd) {
@@ -1374,6 +1379,7 @@ internal fun ModernRowSection(
                                 mayClaimFocus = mayClaimFocus,
                                 useLandscapePosters = useLandscapePosters,
                                 alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
+                                addonLandscapeBackdropLogo = addonLandscapeBackdropLogo,
                                 showLabels = showLabels,
                                 placeholderShimmerOffsetState = placeholderShimmerOffsetState,
                                 posterCardCornerRadius = posterCardCornerRadius,
@@ -1483,6 +1489,8 @@ private fun ModernCarouselCard(
         !item.heroPreview.logo.isNullOrBlank() && !item.heroPreview.logo.isPlaceholder()) {
         frozenLogoUrl.value = item.heroPreview.logo
     }
+    // A frozen logo that failed to load gives way to the enriched one, so the card shows the logo the hero shows.
+    var landscapeLogoLoadFailed by remember(frozenLogoUrl.value) { mutableStateOf(false) }
     if (!enrichedLogoUrl.isNullOrBlank() && frozenLogoUrl.value != enrichedLogoUrl) {
         // Outside landscape we always pick up the enriched URL so manual artwork
         // updates land instantly. Inside landscape we still adopt the enriched
@@ -1491,7 +1499,7 @@ private fun ModernCarouselCard(
         // ships items without a logo even
         // though TMDB has one. Once we have any non-blank value we keep it
         // frozen to avoid mid-scroll flicker on enrichment refresh.
-        if (!useLandscapeOverlayTreatment || frozenLogoUrl.value.isNullOrBlank()) {
+        if (!useLandscapeOverlayTreatment || frozenLogoUrl.value.isNullOrBlank() || landscapeLogoLoadFailed) {
             frozenLogoUrl.value = enrichedLogoUrl
         }
     }
@@ -1629,7 +1637,6 @@ private fun ModernCarouselCard(
                 .build()
         }
     }
-    var landscapeLogoLoadFailed by remember(effectiveLogoUrl) { mutableStateOf(false) }
     val shouldPlayTrailerInCard = playTrailerInExpandedCard && !trailerPreviewUrl.isNullOrBlank()
     var trailerFirstFrameRendered by remember(trailerPreviewUrl) { mutableStateOf(false) }
 

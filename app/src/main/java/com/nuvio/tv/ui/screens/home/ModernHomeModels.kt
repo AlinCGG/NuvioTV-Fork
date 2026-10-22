@@ -744,12 +744,14 @@ internal fun ContinueWatchingItem.episode(): Int? {
     }
 }
 
-/** Global landscape posters, or the backdrop with logo switch on a card the add-on marks landscape. */
+internal fun ModernCarouselItem.isAddonLandscapeCard(): Boolean =
+    payload is ModernPayload.Catalog && metaPreview?.posterShape == PosterShape.LANDSCAPE
+
+/** Global landscape posters; a card the add-on marks landscape keeps its own picture unless its switch is on. */
 internal fun ModernCarouselItem.usesLandscapeCardTreatment(
     useLandscapePosters: Boolean,
-    alwaysShowLandscapeClearlogo: Boolean
-): Boolean = useLandscapePosters || (alwaysShowLandscapeClearlogo &&
-    payload is ModernPayload.Catalog && metaPreview?.posterShape == PosterShape.LANDSCAPE)
+    addonLandscapeBackdropLogo: Boolean
+): Boolean = if (isAddonLandscapeCard()) addonLandscapeBackdropLogo else useLandscapePosters
 
 /** Collapsed-card artwork shared by rendering and all poster warmers. */
 internal fun ModernCarouselItem.collapsedArtworkUrl(
@@ -761,8 +763,11 @@ internal fun ModernCarouselItem.collapsedArtworkUrl(
     landscape && payload !is ModernPayload.CollectionFolder ->
         landscapePosterUrl(alwaysShowLandscapeClearlogo) ?: backdrop ?: heroPreview.poster
     payload is ModernPayload.CollectionFolder && !payload.coverEmoji.isNullOrBlank() -> imageUrl
-    else -> imageUrl ?: heroPreview.poster ?: heroPreview.backdrop
+    else -> addonWidePosterUrl() ?: imageUrl ?: heroPreview.poster ?: heroPreview.backdrop
 }
+
+private fun ModernCarouselItem.addonWidePosterUrl(): String? =
+    metaPreview?.poster?.takeIf { isAddonLandscapeCard() && it.isNotBlank() }
 
 internal fun ModernCarouselItem.landscapePosterUrl(alwaysShowLandscapeClearlogo: Boolean): String? {
     val preview = metaPreview ?: return null

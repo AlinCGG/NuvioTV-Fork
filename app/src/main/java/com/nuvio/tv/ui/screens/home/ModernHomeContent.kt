@@ -184,6 +184,7 @@ fun ModernHomeContent(
     val v2Appearance = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current
     val isV2 = v2Appearance != null
     val alwaysShowLandscapeClearlogo = uiState.alwaysShowLandscapeClearlogo
+    val addonLandscapeBackdropLogo = uiState.addonLandscapeBackdropLogo
     val fullScreenBackdrop = uiState.modernHeroFullScreenBackdropEnabled
     val artworkAccent = com.nuvio.tv.ui.v2.appearance.LocalArtworkAccent.current
     val trailerPlaybackTarget = uiState.focusedPosterBackdropTrailerPlaybackTarget
@@ -1196,6 +1197,7 @@ fun ModernHomeContent(
                 trailerPreviewAudioUrls = stableTrailerPreviewAudioUrls,
                 useLandscapePosters = useLandscapePosters,
                 alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
+                addonLandscapeBackdropLogo = addonLandscapeBackdropLogo,
                 showLabels = uiState.posterLabelsEnabled,
                 posterCardCornerRadius = posterCardCornerRadius,
                 focusedPosterBackdropTrailerMuted = uiState.focusedPosterBackdropTrailerMuted,

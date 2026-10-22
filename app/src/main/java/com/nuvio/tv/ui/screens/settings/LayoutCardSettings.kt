@@ -333,6 +333,12 @@ internal fun LayoutPosterCardSection(
         checked = uiState.alwaysShowLandscapeClearlogo,
         onToggle = { onEvent(LayoutSettingsEvent.SetAlwaysShowLandscapeClearlogo(!uiState.alwaysShowLandscapeClearlogo)) }
     )
+    SettingsToggleRow(
+        title = stringResource(R.string.layout_addon_landscape_backdrop_logo),
+        subtitle = stringResource(R.string.layout_addon_landscape_backdrop_logo_sub),
+        checked = uiState.addonLandscapeBackdropLogo,
+        onToggle = { onEvent(LayoutSettingsEvent.SetAddonLandscapeBackdropLogo(!uiState.addonLandscapeBackdropLogo)) }
+    )
     SettingsResetButton(
         text = stringResource(R.string.layout_reset_default),
         onClick = { onEvent(LayoutSettingsEvent.ResetPosterCardStyle) }

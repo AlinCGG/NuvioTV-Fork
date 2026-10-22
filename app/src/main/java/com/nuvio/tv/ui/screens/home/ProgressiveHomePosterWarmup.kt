@@ -43,6 +43,7 @@ internal fun ProgressiveHomePosterWarmup(
     verticalScrolling: State<Boolean>,
     useLandscapePosters: Boolean,
     alwaysShowLandscapeClearlogo: Boolean,
+    addonLandscapeBackdropLogo: Boolean,
     portraitWidth: Dp,
     portraitHeight: Dp,
     landscapeWidth: Dp,
@@ -52,7 +53,7 @@ internal fun ProgressiveHomePosterWarmup(
     val density = LocalDensity.current
     val loader = context.imageLoader
     val latestRowStates = rememberUpdatedState(rowStates)
-    LaunchedEffect(viewport, density, useLandscapePosters, alwaysShowLandscapeClearlogo, portraitWidth, portraitHeight, landscapeWidth, landscapeHeight) {
+    LaunchedEffect(viewport, density, useLandscapePosters, alwaysShowLandscapeClearlogo, addonLandscapeBackdropLogo, portraitWidth, portraitHeight, landscapeWidth, landscapeHeight) {
         fun idle() = !viewport.scrolling && !verticalScrolling.value &&
             latestRowStates.value.values.none { it.isScrollInProgress }
         fun log(message: String) {
@@ -122,7 +123,7 @@ internal fun ProgressiveHomePosterWarmup(
                         val index = scan.iterator.next()
                         val row = catalogue[scan.row]
                         val item = row.items[index]
-                        val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
+                        val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, addonLandscapeBackdropLogo)
                         val url = item.collapsedArtworkUrl(
                             landscape,
                             alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo

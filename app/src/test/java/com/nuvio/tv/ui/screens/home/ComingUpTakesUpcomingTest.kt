@@ -8,6 +8,8 @@ import com.nuvio.tv.core.calendar.CalendarTitleRecord
 import com.nuvio.tv.core.calendar.CalendarTitleType
 import com.nuvio.tv.core.calendar.CalendarWatchedIndex
 import com.nuvio.tv.core.calendar.buildCalendarComingUp
+import com.nuvio.tv.core.calendar.calendarContinueWatchingTitles
+import com.nuvio.tv.core.calendar.calendarTitleInContinueWatching
 import com.nuvio.tv.ui.screens.calendar.CalendarFormats
 import java.time.Instant
 import java.time.LocalDate
@@ -148,6 +150,23 @@ class ComingUpTakesUpcomingTest {
             null, now, sydney
         )
         assertEquals(1, items.size)
+    }
+
+    @Test fun theCalendarsOwnDatesWinOverTheUpcomingRowsGuess() {
+        val titles = listOf(show("tt1", on("2026-10-17", 7, season = 2), on("2026-10-17", 8, season = 2)))
+        val merged = calendarTitlesWithUpcoming(titles, listOf(upcoming("tt1", 2, 2, "2026-10-19")), sydney)
+        assertEquals(listOf(7, 8), merged.single().entries.map { it.episode })
+        val earlier = calendarTitlesWithUpcoming(titles, listOf(upcoming("tt1", 2, 9, "2026-10-19")), sydney)
+        assertEquals(listOf(7, 8, 9), earlier.single().entries.map { it.episode })
+    }
+
+    @Test fun aShowWithSomethingToWatchInContinueWatchingIsLeftOut() {
+        val watchable = calendarContinueWatchingTitles(listOf("tt1", "tmdb:42"))
+        assertTrue(calendarTitleInContinueWatching(watchable, show("tt1", on("2026-10-19", 2))))
+        val byTmdb = show("tt9", on("2026-10-19", 2)).copy(contentId = null, ids = CalendarIds(imdb = "tt9", tmdb = 42))
+        assertTrue(calendarTitleInContinueWatching(watchable, byTmdb))
+        assertTrue(!calendarTitleInContinueWatching(watchable, show("tt2", on("2026-10-19", 2))))
+        assertTrue(!calendarTitleInContinueWatching(emptySet(), show("tt1", on("2026-10-19", 2))))
     }
 
     @Test fun filmsUndatedAndUnnumberedItemsAreLeftOut() {

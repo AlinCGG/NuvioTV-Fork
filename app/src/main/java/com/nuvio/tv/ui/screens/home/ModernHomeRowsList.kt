@@ -125,6 +125,7 @@ internal fun ModernHomeRowsList(
     trailerPreviewAudioUrls: StableMap<String, String>,
     useLandscapePosters: Boolean,
     alwaysShowLandscapeClearlogo: Boolean = false,
+    addonLandscapeBackdropLogo: Boolean = false,
     showLabels: Boolean,
     posterCardCornerRadius: Dp,
     focusedPosterBackdropTrailerMuted: Boolean,
@@ -264,6 +265,7 @@ internal fun ModernHomeRowsList(
         verticalScrolling = isVerticalRowsScrollingState,
         useLandscapePosters = useLandscapePosters,
         alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
+        addonLandscapeBackdropLogo = addonLandscapeBackdropLogo,
         portraitWidth = portraitCatalogCardWidth,
         portraitHeight = portraitCatalogCardHeight,
         landscapeWidth = landscapeCatalogCardWidth,
@@ -275,6 +277,8 @@ internal fun ModernHomeRowsList(
         verticalRowListState,
         density,
         useLandscapePosters,
+        alwaysShowLandscapeClearlogo,
+        addonLandscapeBackdropLogo,
         effectiveExpandEnabled,
         portraitCatalogCardWidth,
         portraitCatalogCardHeight,
@@ -334,7 +338,7 @@ internal fun ModernHomeRowsList(
                         val item = row.items.list[i]
                         // CW request parity is not reproducible here (see ModernHomeRows): skip.
                         if (item.payload is ModernPayload.ContinueWatching) continue
-                        val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, alwaysShowLandscapeClearlogo)
+                        val landscape = item.usesLandscapeCardTreatment(useLandscapePosters, addonLandscapeBackdropLogo)
                         val url = item.collapsedArtworkUrl(
                             landscape,
                             alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo
@@ -657,6 +661,7 @@ internal fun ModernHomeRowsList(
                     onRowItemFocused = stableOnRowItemFocused,
                     useLandscapePosters = useLandscapePosters,
                     alwaysShowLandscapeClearlogo = alwaysShowLandscapeClearlogo,
+                    addonLandscapeBackdropLogo = addonLandscapeBackdropLogo,
                     showLabels = showLabels,
                     posterCardCornerRadius = posterCardCornerRadius,
                     focusedPosterBackdropTrailerMuted = focusedPosterBackdropTrailerMuted,

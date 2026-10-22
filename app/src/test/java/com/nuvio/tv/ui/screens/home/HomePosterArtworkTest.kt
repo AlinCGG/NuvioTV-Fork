@@ -29,27 +29,43 @@ class HomePosterArtworkTest {
         assertEquals("fallback-poster", item.collapsedArtworkUrl(true, null))
     }
 
-    @Test fun backdropWithLogoSwitchCoversCardsTheAddonMarksLandscape() {
-        val meta = MetaPreview(id = "id", type = ContentType.MOVIE, name = "Title", poster = "poster",
+    @Test fun addonLandscapeCardsKeepTheirOwnPictureUnlessTheirSwitchIsOn() {
+        val meta = MetaPreview(id = "id", type = ContentType.MOVIE, name = "Title", poster = "addon-wide",
             posterShape = PosterShape.LANDSCAPE, background = "background", logo = null, description = null,
             releaseInfo = null, imdbRating = null, genres = emptyList())
         val addonLandscape = item.copy(metaPreview = meta)
-        assertTrue(addonLandscape.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = true))
-        assertFalse(addonLandscape.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = false))
-        assertEquals("frozen-backdrop", addonLandscape.collapsedArtworkUrl(
-            addonLandscape.usesLandscapeCardTreatment(false, true), alwaysShowLandscapeClearlogo = true))
-        assertEquals("poster", addonLandscape.collapsedArtworkUrl(
-            addonLandscape.usesLandscapeCardTreatment(false, false)))
+        assertTrue(addonLandscape.isAddonLandscapeCard())
+        for (global in listOf(false, true)) {
+            assertFalse(addonLandscape.usesLandscapeCardTreatment(useLandscapePosters = global, addonLandscapeBackdropLogo = false))
+            assertTrue(addonLandscape.usesLandscapeCardTreatment(useLandscapePosters = global, addonLandscapeBackdropLogo = true))
+            for (clearlogo in listOf(false, true)) {
+                assertEquals("addon-wide", addonLandscape.collapsedArtworkUrl(
+                    addonLandscape.usesLandscapeCardTreatment(global, addonLandscapeBackdropLogo = false),
+                    alwaysShowLandscapeClearlogo = clearlogo))
+            }
+            assertEquals("frozen-backdrop", addonLandscape.collapsedArtworkUrl(
+                addonLandscape.usesLandscapeCardTreatment(global, addonLandscapeBackdropLogo = true),
+                alwaysShowLandscapeClearlogo = true))
+        }
+        val globalLandscapeImage = addonLandscape.copy(imageUrl = "background")
+        assertEquals("addon-wide", globalLandscapeImage.collapsedArtworkUrl(
+            globalLandscapeImage.usesLandscapeCardTreatment(true, addonLandscapeBackdropLogo = false)))
 
         val portrait = item.copy(metaPreview = meta.copy(posterShape = PosterShape.POSTER))
-        assertFalse(portrait.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = true))
-        assertTrue(portrait.usesLandscapeCardTreatment(useLandscapePosters = true, alwaysShowLandscapeClearlogo = false))
+        assertFalse(portrait.isAddonLandscapeCard())
+        assertFalse(portrait.usesLandscapeCardTreatment(useLandscapePosters = false, addonLandscapeBackdropLogo = true))
+        assertTrue(portrait.usesLandscapeCardTreatment(useLandscapePosters = true, addonLandscapeBackdropLogo = false))
+        assertTrue(portrait.usesLandscapeCardTreatment(useLandscapePosters = true, addonLandscapeBackdropLogo = true))
+        assertEquals("frozen-backdrop", portrait.collapsedArtworkUrl(
+            portrait.usesLandscapeCardTreatment(true, false), alwaysShowLandscapeClearlogo = true))
+        assertEquals("poster", portrait.collapsedArtworkUrl(portrait.usesLandscapeCardTreatment(false, true)))
 
         val folder = addonLandscape.copy(payload = ModernPayload.CollectionFolder(
             focusKey = "folder", collectionId = "c", collectionTitle = "C", folderId = "f",
             posterShape = PosterShape.LANDSCAPE, focusGlowEnabled = false, focusGifEnabled = false,
             focusGifUrl = null, heroBackdropUrl = null, heroVideoUrl = null, titleLogoUrl = null))
-        assertFalse(folder.usesLandscapeCardTreatment(useLandscapePosters = false, alwaysShowLandscapeClearlogo = true))
+        assertFalse(folder.isAddonLandscapeCard())
+        assertFalse(folder.usesLandscapeCardTreatment(useLandscapePosters = false, addonLandscapeBackdropLogo = true))
     }
 
     @Test fun landscapePosterFromTheAddonWinsUnlessTheClearlogoOptionIsOn() {

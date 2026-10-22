@@ -111,6 +111,7 @@ class LayoutPreferenceDataStore @Inject constructor(
     private val randomEpisodeEnabledKey = booleanPreferencesKey("random_episode_enabled")
     private val startupSplashEnabledKey = booleanPreferencesKey("startup_splash_enabled")
     private val alwaysShowLandscapeClearlogoKey = booleanPreferencesKey("always_show_landscape_clearlogo")
+    private val addonLandscapeBackdropLogoKey = booleanPreferencesKey("addon_landscape_backdrop_logo")
     private val episodeOptionsOverlayStyleKey = stringPreferencesKey("episode_options_overlay_style")
     private val episodeSynopsisUnderRowKey = booleanPreferencesKey("episode_synopsis_under_row")
     private val homeImdbRatingsVisibilityKey = stringPreferencesKey("home_imdb_ratings_visibility")
@@ -365,6 +366,10 @@ class LayoutPreferenceDataStore @Inject constructor(
 
     val alwaysShowLandscapeClearlogo: Flow<Boolean> = profileFlow { prefs ->
         prefs[alwaysShowLandscapeClearlogoKey] ?: false
+    }
+
+    val addonLandscapeBackdropLogo: Flow<Boolean> = profileFlow { prefs ->
+        prefs[addonLandscapeBackdropLogoKey] ?: false
     }
 
     val episodeOptionsOverlayStyle: Flow<EpisodeOptionsOverlayStyle> = profileFlow { prefs ->
@@ -792,6 +797,12 @@ class LayoutPreferenceDataStore @Inject constructor(
     suspend fun setAlwaysShowLandscapeClearlogo(enabled: Boolean) {
         store().edit { prefs ->
             prefs[alwaysShowLandscapeClearlogoKey] = enabled
+        }
+    }
+
+    suspend fun setAddonLandscapeBackdropLogo(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[addonLandscapeBackdropLogoKey] = enabled
         }
     }
 
