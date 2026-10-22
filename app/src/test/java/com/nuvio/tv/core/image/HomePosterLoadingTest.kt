@@ -172,10 +172,10 @@ class HomePosterLoadingTest {
 
     @Test fun onlyBoxesAboveThreeGigabytesGetTheLargerArtworkCache() {
         val mib = 1024L * 1024
-        assertEquals(176L * mib, homeArtworkMemoryCacheBytes(96L * mib, 3_800L * mib))
+        assertEquals(900L * mib, homeArtworkMemoryCacheBytes(96L * mib, 3_800L * mib))
         assertEquals(96L * mib, homeArtworkMemoryCacheBytes(96L * mib, 3_072L * mib))
         assertEquals(57L * mib, homeArtworkMemoryCacheBytes(57L * mib, 1_950L * mib))
-        assertEquals(256L * mib, homeArtworkMemoryCacheBytes(256L * mib, 8_192L * mib))
+        assertEquals(900L * mib, homeArtworkMemoryCacheBytes(256L * mib, 8_192L * mib))
         assertEquals(132L * mib, ArtworkMemoryCache(176L * mib).posterMaxSize)
     }
 

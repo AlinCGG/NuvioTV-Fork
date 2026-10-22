@@ -92,7 +92,7 @@ private const val MIB = 1024L * 1024
 private const val STRONG_BOX_TOTAL_BYTES = 2_560L * MIB
 private const val SMALL_BOX_TOTAL_BYTES = 1_536L * MIB
 private const val LARGE_MEMORY_BOX_TOTAL_BYTES = 3_072L * MIB
-private const val LARGE_BOX_ARTWORK_CACHE_BYTES = 176L * MIB
+private const val LARGE_BOX_ARTWORK_CACHE_BYTES = 900L * MIB
 
 /** Disk-hit decode lanes by device class, never more than BitmapFactory's own parallelism. */
 fun homePosterDiskDecodeSlots(totalRamBytes: Long, lowRamDevice: Boolean, cores: Int): Int = when {
@@ -266,3 +266,4 @@ internal fun progressivePosterRows(count: Int, first: Int, last: Int): Sequence<
         distance++
     }
 }
+
