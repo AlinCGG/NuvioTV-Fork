@@ -16,7 +16,21 @@ internal fun captureMissingPresentationChoices(
             "focused_poster_backdrop_trailer_playback_target",
             "modern_hero_full_screen_backdrop",
             "landscape_poster_scope",
-            "watched_titles_mode"
+            "watched_titles_mode",
+            "addon_landscape_backdrop_logo",
+            "continue_watching_card_style",
+            "poster_card_width_dp",
+            "poster_card_height_dp",
+            "poster_card_corner_radius_dp",
+            "card_depth_enabled",
+            "card_depth_edge_strength",
+            "card_depth_sheen_strength",
+            "card_depth_edge_coverage",
+            "card_depth_posters_enabled",
+            "card_depth_continue_watching_enabled",
+            "card_depth_episode_cards_enabled",
+            "card_depth_cast_enabled",
+            "card_depth_trailers_enabled"
         )
         "player_settings" -> setOf(
             "speculative_stream_search_enabled",

@@ -51,11 +51,55 @@ class PresentationPreferencePreservationTest {
         assertTrue(captureMissingPresentationChoices("layout_settings", local, setOf(legacy.name, scope.name)).isEmpty())
     }
 
+    @Test fun `add-on landscape switch survives a snapshot from an install without it`() {
+        val addonLandscape = booleanPreferencesKey("addon_landscape_backdrop_logo")
+        val local = preferencesOf(addonLandscape to true)
+        assertEquals(mapOf<Preferences.Key<*>, Any>(Pair(addonLandscape, true)),
+            captureMissingPresentationChoices("layout_settings", local, setOf("always_show_landscape_clearlogo")))
+        assertTrue(captureMissingPresentationChoices("layout_settings", local, setOf(addonLandscape.name)).isEmpty())
+    }
+
     @Test fun `watched titles choice survives a snapshot from an install without it`() {
         val mode = stringPreferencesKey("watched_titles_mode")
         val local = preferencesOf(mode to "HIDE")
         assertEquals(mapOf<Preferences.Key<*>, Any>(Pair(mode, "HIDE")),
             captureMissingPresentationChoices("layout_settings", local, setOf("hide_unreleased_content")))
         assertTrue(captureMissingPresentationChoices("layout_settings", local, setOf(mode.name)).isEmpty())
+    }
+
+    @Test fun `card style, size and depth survive a snapshot from an install without them`() {
+        val style = stringPreferencesKey("continue_watching_card_style")
+        val width = intPreferencesKey("poster_card_width_dp")
+        val height = intPreferencesKey("poster_card_height_dp")
+        val corner = intPreferencesKey("poster_card_corner_radius_dp")
+        val depthBooleans = listOf(
+            "card_depth_enabled",
+            "card_depth_posters_enabled",
+            "card_depth_continue_watching_enabled",
+            "card_depth_episode_cards_enabled",
+            "card_depth_cast_enabled",
+            "card_depth_trailers_enabled"
+        ).map { booleanPreferencesKey(it) }
+        val depthInts = listOf(
+            "card_depth_edge_strength",
+            "card_depth_sheen_strength",
+            "card_depth_edge_coverage"
+        ).map { intPreferencesKey(it) }
+        val local = mutablePreferencesOf(style to "POSTER", width to 140, height to 210, corner to 6)
+        depthBooleans.forEach { local[it] = true }
+        depthInts.forEach { local[it] = 40 }
+        local[booleanPreferencesKey("unrelated")] = true
+
+        val preserved = captureMissingPresentationChoices("layout_settings", local, setOf("hero_section_enabled"))
+        val expected = mutableMapOf<Preferences.Key<*>, Any>(
+            Pair(style, "POSTER"), Pair(width, 140), Pair(height, 210), Pair(corner, 6)
+        )
+        depthBooleans.forEach { expected[it] = true }
+        depthInts.forEach { expected[it] = 40 }
+        assertEquals(expected, preserved)
+
+        val incoming = expected.keys.map { it.name }.toSet()
+        assertTrue(captureMissingPresentationChoices("layout_settings", local, incoming).isEmpty())
+        assertTrue(captureMissingPresentationChoices("theme_settings", local, emptySet()).isEmpty())
     }
 }

@@ -141,7 +141,7 @@ class ProfileSettingsSubtitleLanguageSyncTest {
         val service = ProfileSettingsSyncService(
             authManager, postgrest, profileManager, factory, identity,
             mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
-            mockk(relaxed = true)
+            mockk(relaxed = true), ProfileSettingsSyncStateStore(mockk(relaxed = true))
         )
         val player = PlayerSettingsDataStore(factory, profileManager, mockk(relaxed = true))
         scopes += privateScope(service, ProfileSettingsSyncService::class.java, "scope")
