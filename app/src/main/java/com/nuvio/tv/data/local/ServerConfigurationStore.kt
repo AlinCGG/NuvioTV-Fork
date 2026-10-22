@@ -7,6 +7,7 @@ import com.nuvio.tv.domain.model.ServerConfiguration
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 @Singleton
 class ServerConfigurationStore @Inject constructor(
@@ -16,7 +17,7 @@ class ServerConfigurationStore @Inject constructor(
         if (!BuildConfig.FEATURE_CUSTOM_SERVER_CONNECTIONS_ENABLED) return officialConfiguration()
         val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
         if (!preferences.getBoolean(KEY_CUSTOM_ENABLED, false)) return officialConfiguration()
-        val backendUrl = preferences.getString(KEY_BACKEND_URL, null)?.trim().orEmpty()
+        val backendUrl = normalizeBackendUrl(preferences.getString(KEY_BACKEND_URL, null)?.trim().orEmpty())
         val publishableKey = preferences.getString(KEY_PUBLISHABLE_KEY, null)?.trim().orEmpty()
         val emailPasswordAuth = preferences.getBoolean(KEY_EMAIL_PASSWORD_AUTH, false)
         val tvLogin = preferences.getBoolean(KEY_TV_LOGIN, false)
@@ -41,15 +42,16 @@ class ServerConfigurationStore @Inject constructor(
 
     fun saveCustom(configuration: ServerConfiguration): Boolean {
         if (!BuildConfig.FEATURE_CUSTOM_SERVER_CONNECTIONS_ENABLED) return false
+        val normalized = configuration.copy(backendUrl = normalizeBackendUrl(configuration.backendUrl))
         return context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_CUSTOM_ENABLED, true)
-            .putString(KEY_BACKEND_URL, configuration.backendUrl)
-            .putString(KEY_PUBLISHABLE_KEY, configuration.publishableKey)
-            .putBoolean(KEY_EMAIL_PASSWORD_AUTH, configuration.capabilities.emailPasswordAuth)
-            .putBoolean(KEY_TV_LOGIN, configuration.capabilities.tvLogin)
-            .putBoolean(KEY_WATCH_PARTY, configuration.capabilities.watchParty)
-            .putString(KEY_DISCOVERY_URL, configuration.discoveryUrl)
+            .putString(KEY_BACKEND_URL, normalized.backendUrl)
+            .putString(KEY_PUBLISHABLE_KEY, normalized.publishableKey)
+            .putBoolean(KEY_EMAIL_PASSWORD_AUTH, normalized.capabilities.emailPasswordAuth)
+            .putBoolean(KEY_TV_LOGIN, normalized.capabilities.tvLogin)
+            .putBoolean(KEY_WATCH_PARTY, normalized.capabilities.watchParty)
+            .putString(KEY_DISCOVERY_URL, normalized.discoveryUrl)
             .commit()
     }
 
@@ -60,7 +62,7 @@ class ServerConfigurationStore @Inject constructor(
             .commit()
 
     private fun officialConfiguration() = ServerConfiguration(
-        backendUrl = BuildConfig.SUPABASE_URL.trimEnd('/'),
+        backendUrl = normalizeBackendUrl(BuildConfig.SUPABASE_URL),
         publishableKey = BuildConfig.SUPABASE_ANON_KEY,
         capabilities = ServerCapabilities(
             emailPasswordAuth = false,
@@ -68,11 +70,18 @@ class ServerConfigurationStore @Inject constructor(
             watchParty = true
         ),
         isCustom = false,
-        fallbackBackendUrl = BuildConfig.SUPABASE_FALLBACK_URL.trim().trimEnd('/').takeIf { it.isNotBlank() },
+        fallbackBackendUrl = normalizeBackendUrl(BuildConfig.SUPABASE_FALLBACK_URL).takeIf { it.isNotBlank() },
         tvLoginWebBaseUrl = BuildConfig.TV_LOGIN_WEB_BASE_URL,
         deviceLoginWebBaseUrl = BuildConfig.DEVICE_LOGIN_WEB_BASE_URL,
         avatarPublicBaseUrl = BuildConfig.AVATAR_PUBLIC_BASE_URL.trimEnd('/').takeIf { it.isNotBlank() }
     )
+
+    private fun normalizeBackendUrl(value: String): String {
+        val raw = value.trim()
+        if (raw.isBlank()) return raw
+        val candidate = if (raw.contains("://")) raw else "https://$raw"
+        return candidate.toHttpUrlOrNull()?.toString()?.trimEnd('/') ?: raw.trimEnd('/')
+    }
 
     private companion object {
         const val PREFERENCES_NAME = "server_configuration"
