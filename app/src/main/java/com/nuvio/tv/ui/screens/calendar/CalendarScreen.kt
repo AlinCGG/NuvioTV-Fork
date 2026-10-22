@@ -2,7 +2,9 @@ package com.nuvio.tv.ui.screens.calendar
 
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -922,8 +924,9 @@ private fun CalendarSidePanel(
     }
     val row = focus?.row ?: return
     val details = focus.details
+    val scroll = remember(row.key) { ScrollState(0) }
     container {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
             Box(Modifier.fillMaxWidth().height(calendarMetrics().panelArtHeight)) {
                 CalendarArtImage(
                     url = details?.still(row.season, row.episode),
@@ -998,7 +1001,7 @@ private fun CalendarSidePanel(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    next.forEach { upcoming -> CalendarNextRow(upcoming, details, formats, today) }
+                    next.forEach { upcoming -> CalendarNextRow(upcoming, details, formats, today, performance, onOpen) }
                 }
             }
         }
@@ -1066,9 +1069,33 @@ private fun CalendarPanelActions(
     }
 }
 
+/** Down from the panel's buttons moves through these; the panel scrolls them into view. OK opens the show. */
 @Composable
-private fun CalendarNextRow(row: CalendarRow, details: CalendarRowDetails?, formats: CalendarFormats, today: LocalDate?) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = NuvioTheme.spacing.xs)) {
+private fun CalendarNextRow(
+    row: CalendarRow,
+    details: CalendarRowDetails?,
+    formats: CalendarFormats,
+    today: LocalDate?,
+    performance: Boolean,
+    onOpen: (CalendarRow) -> Unit
+) {
+    val v2 = LocalV2Appearance.current != null
+    val shape = RoundedCornerShape(NuvioTheme.radii.sm)
+    CalendarFocusCard(
+        onClick = { onOpen(row) },
+        shape = shape,
+        performance = performance,
+        focusedScale = 1.02f,
+        modifier = Modifier.fillMaxWidth().padding(top = NuvioTheme.spacing.xs)
+    ) { focused ->
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (v2 && focused) Modifier.nuvioGlass(GlassRole.CONTROL, focused = true, shape = shape) else Modifier)
+            .background(if (!v2 && focused) NuvioTheme.colors.FocusBackground else Color.Transparent)
+            .padding(NuvioTheme.spacing.xxs)
+    ) {
         CalendarArtImage(
             url = details?.still(row.season, row.episode),
             alternate = row.backdrop ?: details?.backdrop,
@@ -1095,6 +1122,7 @@ private fun CalendarNextRow(row: CalendarRow, details: CalendarRowDetails?, form
                 )
             }
         }
+    }
     }
 }
 

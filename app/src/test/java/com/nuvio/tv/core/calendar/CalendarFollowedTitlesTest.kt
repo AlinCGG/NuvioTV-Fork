@@ -272,4 +272,12 @@ class CalendarFollowedTitlesTest {
         assertEquals(setOf("series:imdb:tt2", "series:imdb:tt3", "series:imdb:tt4"), result.titles.map { it.key }.toSet())
         assertEquals(CalendarLeftOut("series:imdb:tt1", "Imported", CalendarLeftOutReason.IDLE, null), result.leftOut.single())
     }
+
+    @Test fun aStartedShowWithAnUpcomingEpisodeIsNeverIdle() {
+        val candidates = listOf(show(CalendarOrigin.TRAKT_WATCHED, CalendarIds(imdb = "tt9", tmdb = 90), daysAgo(800), "Old Show"))
+        val left = followCalendarTitles(candidates, CalendarFollowRules(), now)
+        assertEquals(CalendarLeftOutReason.IDLE, left.leftOut.single().reason)
+        val kept = followCalendarTitles(candidates, CalendarFollowRules(upcomingAliases = setOf("tmdb:90")), now)
+        assertEquals(listOf("Old Show"), kept.titles.map { it.name })
+    }
 }

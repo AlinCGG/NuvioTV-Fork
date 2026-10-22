@@ -65,6 +65,7 @@ interface CalendarScreenData {
     suspend fun setComingUpRow(enabled: Boolean)
     suspend fun setHiddenFromComingUp(titleKey: String, hidden: Boolean)
     suspend fun unhideAllFromComingUp()
+    suspend fun setViewMode(mode: CalendarViewMode) {}
     /** From what the app already holds; with [fetch] the title's details are asked for once when they are missing. */
     suspend fun details(row: CalendarRow, fetch: Boolean = false): CalendarRowDetails?
 
@@ -95,6 +96,10 @@ class DefaultCalendarScreenData @Inject constructor(
 
     override fun now(): Instant = clock.instant()
     override fun requestRefresh(reason: CalendarRefreshReason) = refresher.requestRefresh(reason)
+    override suspend fun setViewMode(mode: CalendarViewMode) {
+        settingsStore.setViewMode(mode.name)
+    }
+
     override suspend fun setBell(titleKey: String, on: Boolean) {
         settingsStore.setBell(titleKey, on)
     }

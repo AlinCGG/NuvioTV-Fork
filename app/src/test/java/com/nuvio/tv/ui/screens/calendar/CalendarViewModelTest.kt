@@ -305,4 +305,12 @@ class CalendarViewModelTest {
         delay(600)
         assertEquals(listOf("details:tt2:true"), data.calls.filter { it.endsWith(":true") })
     }
+
+    @org.junit.Test
+    fun `the remembered view name opens the calendar there`() {
+        org.junit.Assert.assertEquals(CalendarViewMode.LIST, "LIST".toCalendarViewMode())
+        org.junit.Assert.assertEquals(CalendarViewMode.MONTH, "MONTH".toCalendarViewMode())
+        org.junit.Assert.assertEquals(CalendarViewMode.WEEK, null.toCalendarViewMode())
+        org.junit.Assert.assertEquals(CalendarViewMode.WEEK, "SOMETHING".toCalendarViewMode())
+    }
 }

@@ -322,7 +322,8 @@ class CalendarRefresher internal constructor(
                 includePersonalLists = settings.includePersonalLists,
                 hiddenTitleKeys = settings.hiddenTitleKeys,
                 bellOn = settings.bellOn,
-                removedFromContinueWatching = sources.removedFromContinueWatching
+                removedFromContinueWatching = sources.removedFromContinueWatching,
+                upcomingAliases = sources.addonEntries.flatMapTo(mutableSetOf()) { it.first.aliases() }
             )
             val unread = if (traktItems != null) sources.unreadOrigins - CalendarOrigin.TRAKT_CALENDAR else sources.unreadOrigins
             val carried = carriedCalendarCandidates(snapshot.titles, unread)

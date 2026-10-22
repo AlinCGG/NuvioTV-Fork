@@ -147,6 +147,14 @@ fun calendarContinueWatchingKeys(episodes: List<Triple<String, Int, Int>>): Set<
         CalendarIds.fromContentId(contentId).aliases().map { "$it|$season|$episode" }
     }
 
+/** Every id of the titles Continue Watching has something to watch from. */
+fun calendarContinueWatchingTitles(contentIds: List<String>): Set<String> =
+    contentIds.flatMapTo(hashSetOf()) { CalendarIds.fromContentId(it).aliases() + it }
+
+/** Coming up leaves out a title Continue Watching already has something to watch from. */
+fun calendarTitleInContinueWatching(titles: Set<String>, title: CalendarTitleRecord): Boolean =
+    titles.isNotEmpty() && (title.contentId in titles || title.ids.aliases().any { it in titles })
+
 fun calendarEntryInKeys(keys: Set<String>, title: CalendarTitleRecord, entry: CalendarEntry): Boolean {
     if (keys.isEmpty() || entry.kind != CalendarEntryKind.EPISODE) return false
     val season = entry.season ?: return false

@@ -30,6 +30,8 @@ data class CalendarFollowRules(
     val hiddenTitleKeys: Set<String> = emptySet(),
     val bellOn: Set<String> = emptySet(),
     val removedFromContinueWatching: Set<String> = emptySet(),
+    /** Ids of shows with an upcoming episode in Continue Watching; never idle, as Coming up shows them too. */
+    val upcomingAliases: Set<String> = emptySet(),
     val staleAfter: Duration = Duration.ofDays(365),
     val cap: Int = CALENDAR_MAX_TITLES
 )
@@ -92,8 +94,8 @@ fun followCalendarTitles(
             CalendarOrigin.DROPPED in origins -> CalendarLeftOutReason.DROPPED
             type == CalendarTitleType.SERIES && ids.aliases().any { it in removedAliases } ->
                 CalendarLeftOutReason.REMOVED_FROM_CONTINUE_WATCHING
-            origins.any { it.started } && (lastActivity?.isBefore(staleBefore) ?: origins.none { it.savesFilms }) ->
-                CalendarLeftOutReason.IDLE
+            origins.any { it.started } && (lastActivity?.isBefore(staleBefore) ?: origins.none { it.savesFilms }) &&
+                ids.aliases().none { it in rules.upcomingAliases } -> CalendarLeftOutReason.IDLE
             type == CalendarTitleType.MOVIE && origins.none { it.savesFilms } -> CalendarLeftOutReason.FILM_NOT_SAVED
             else -> null
         }

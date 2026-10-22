@@ -38,7 +38,9 @@ data class CalendarSettings(
     val hiddenTitleNames: Map<String, String> = emptyMap(),
     /** Shows left out of the Home Coming up row only; the Calendar still follows them. */
     val comingUpHiddenKeys: Set<String> = emptySet(),
-    val comingUpHiddenNames: Map<String, String> = emptyMap()
+    val comingUpHiddenNames: Map<String, String> = emptyMap(),
+    /** The view last picked in the Calendar header (Week, List or Month), by name; null until one was picked. */
+    val viewMode: String? = null
 )
 
 internal object CalendarSettingsKeys {
@@ -54,6 +56,7 @@ internal object CalendarSettingsKeys {
     val hiddenTitleNames = stringSetPreferencesKey("calendar_hidden_names")
     val comingUpHiddenKeys = stringSetPreferencesKey("calendar_coming_up_hidden")
     val comingUpHiddenNames = stringSetPreferencesKey("calendar_coming_up_hidden_names")
+    val viewMode = stringPreferencesKey("calendar_view_mode")
 }
 
 private const val NAME_SEPARATOR = '\u001F'
@@ -88,7 +91,8 @@ internal fun Preferences.toCalendarSettings() = CalendarSettings(
         .filterKeys { it in this[CalendarSettingsKeys.hiddenTitleKeys].orEmpty() },
     comingUpHiddenKeys = this[CalendarSettingsKeys.comingUpHiddenKeys].orEmpty(),
     comingUpHiddenNames = decodeCalendarHiddenNames(this[CalendarSettingsKeys.comingUpHiddenNames])
-        .filterKeys { it in this[CalendarSettingsKeys.comingUpHiddenKeys].orEmpty() }
+        .filterKeys { it in this[CalendarSettingsKeys.comingUpHiddenKeys].orEmpty() },
+    viewMode = this[CalendarSettingsKeys.viewMode]
 )
 
 /** Turning a title off also removes keys that name the same title by another of its ids. */
@@ -154,6 +158,8 @@ class CalendarSettingsDataStore @Inject constructor(
     suspend fun setCornerMessage(enabled: Boolean) = store().edit { it[CalendarSettingsKeys.cornerMessage] = enabled }
 
     suspend fun setComingUpRow(enabled: Boolean) = store().edit { it[CalendarSettingsKeys.comingUpRow] = enabled }
+
+    suspend fun setViewMode(mode: String) = store().edit { it[CalendarSettingsKeys.viewMode] = mode }
 
     suspend fun setTitleHidden(titleKey: String, hidden: Boolean, name: String? = null) = store().edit {
         it.toggleNamed(CalendarSettingsKeys.hiddenTitleKeys, CalendarSettingsKeys.hiddenTitleNames, titleKey, hidden, name)

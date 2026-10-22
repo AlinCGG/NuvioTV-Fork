@@ -19,6 +19,8 @@ import com.nuvio.tv.core.calendar.CalendarZoneProvider
 import com.nuvio.tv.core.calendar.buildCalendarComingUp
 import com.nuvio.tv.core.calendar.calendarContentIds
 import com.nuvio.tv.core.calendar.calendarContinueWatchingKeys
+import com.nuvio.tv.core.calendar.calendarContinueWatchingTitles
+import com.nuvio.tv.core.calendar.calendarTitleInContinueWatching
 import com.nuvio.tv.core.calendar.calendarEntryInKeys
 import com.nuvio.tv.core.calendar.calendarKeyMatches
 import com.nuvio.tv.core.calendar.calendarTitleKey
@@ -195,7 +197,15 @@ fun calendarTitlesWithUpcoming(
         }
         if (index >= 0) {
             val title = result[index]
-            val listed = title.entries.any { it.slot == entry.slot }
+            // A guess the Calendar has already passed (a later episode out on or before that date) is stale.
+            val passed = title.sources.any { (source, entries) ->
+                source != CalendarSource.ADDON && entries.any { listed ->
+                    listed.kind == CalendarEntryKind.EPISODE &&
+                        ((listed.season ?: 0) > info.season || (listed.season == info.season && (listed.episode ?: 0) > info.episode)) &&
+                        listed.localDate(zone)?.let { it <= date } == true
+                }
+            }
+            val listed = passed || title.entries.any { it.slot == entry.slot }
             result[index] = title.copy(
                 poster = title.poster?.takeIf(String::isNotBlank) ?: info.poster,
                 backdrop = title.backdrop?.takeIf(String::isNotBlank) ?: info.backdrop,
@@ -278,19 +288,28 @@ class CalendarComingUpSource @Inject constructor(
                 val shownKeys = continueWatching.map { items ->
                     calendarContinueWatchingKeys(
                         items.mapNotNull { (it as? ContinueWatchingItem.NextUp)?.info?.let { info -> Triple(info.contentId, info.season, info.episode) } }
+                    ) to calendarContinueWatchingTitles(
+                        items.mapNotNull { item ->
+                            when (item) {
+                                is ContinueWatchingItem.InProgress -> item.progress.contentId
+                                is ContinueWatchingItem.NextUp -> item.info.contentId.takeIf { item.info.hasAired }
+                            }
+                        }
                     )
                 }.distinctUntilChanged()
                 val minutes = active.distinctUntilChanged().flatMapLatest { if (it) minutes() else emptyFlow() }
                 val upcomingCards = upcoming.distinctUntilChanged { old, new -> upcomingCardSources(old) == upcomingCardSources(new) }
                 val withUpcoming = combine(shownKeys, upcomingCards) { shown, items -> shown to items }
                 val hiddenHere = settingsStore.settings.map { it?.comingUpHiddenKeys.orEmpty() }.distinctUntilChanged()
-                combine(calendar.state, zoneProvider.zones, withUpcoming, minutes, hiddenHere) { state, zone, (shown, upcomingItems), now, comingUpHidden ->
+                combine(calendar.state, zoneProvider.zones, withUpcoming, minutes, hiddenHere) { state, zone, (cw, upcomingItems), now, comingUpHidden ->
+                    val (shown, watchable) = cw
                     val ready = state.loaded && state.watched != null
                     if (!ready && upcomingItems.isEmpty()) return@combine emptyList()
                     val hidden = settingsStore.settings.value?.hiddenTitleKeys.orEmpty()
                     val calendarTitles = if (ready) state.titles else emptyList()
                     val calendarKeys = calendarTitles.mapTo(HashSet()) { it.key }
                     val titles = calendarTitlesShownInComingUp(calendarTitlesWithUpcoming(calendarTitles, upcomingItems, zone, hidden), comingUpHidden)
+                        .filterNot { calendarTitleInContinueWatching(watchable, it) }
                     val localContext = localizedContext()
                     val locale = localContext.resources.configuration.locales[0] ?: java.util.Locale.getDefault()
                     val formats = CalendarFormats.forDevice(localContext, locale)
