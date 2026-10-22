@@ -10,23 +10,25 @@ class AutoSpeedupLimitsTest {
 
     @Test
     fun `two gigabyte boxes go up to six`() {
-        assertEquals(AutoSpeedup.Limits(6, 16L * mb, 8L * mb), AutoSpeedup.limitsFor(1_900L * mb))
+        assertEquals(AutoSpeedup.Limits(6, 16L * mb, 8L * mb, smallBox = true), AutoSpeedup.limitsFor(1_900L * mb))
         assertEquals(6, AutoSpeedup.limitsFor(2_559L * mb).maxDownloads)
         assertEquals(true, AutoSpeedup.limitsFor(1_900L * mb).smallBox)
         assertEquals(false, AutoSpeedup.limitsFor(2_900L * mb).smallBox)
     }
 
     @Test
-    fun `three gigabyte boxes go up to five`() {
-        assertEquals(AutoSpeedup.Limits(5, 16L * mb), AutoSpeedup.limitsFor(2_560L * mb))
-        assertEquals(AutoSpeedup.Limits(5, 16L * mb), AutoSpeedup.limitsFor(2_900L * mb))
+    fun `three gigabyte boxes go up to eight`() {
+        val three = AutoSpeedup.Limits(8, 16L * mb, 8L * mb, readAheadMaxBytes = 192L * mb)
+        assertEquals(three, AutoSpeedup.limitsFor(2_560L * mb))
+        assertEquals(three, AutoSpeedup.limitsFor(2_900L * mb))
     }
 
     @Test
-    fun `four gigabyte boxes and up go up to six`() {
-        assertEquals(AutoSpeedup.Limits(6, 16L * mb), AutoSpeedup.limitsFor(3_584L * mb))
-        assertEquals(AutoSpeedup.Limits(6, 16L * mb), AutoSpeedup.limitsFor(3_800L * mb))
-        assertEquals(AutoSpeedup.Limits(6, 16L * mb), AutoSpeedup.limitsFor(8_000L * mb))
+    fun `four gigabyte boxes and up go up to ten`() {
+        val four = AutoSpeedup.Limits(10, 24L * mb, 8L * mb, readAheadMaxBytes = 256L * mb)
+        assertEquals(four, AutoSpeedup.limitsFor(3_584L * mb))
+        assertEquals(four, AutoSpeedup.limitsFor(3_800L * mb))
+        assertEquals(four, AutoSpeedup.limitsFor(8_000L * mb))
     }
 
     @Test
@@ -84,9 +86,18 @@ class AutoSpeedupLimitsTest {
     }
 
     @Test
-    fun `bigger boxes keep 16 MB pieces however quick the server is`() {
-        assertEquals(16L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(2_900L * mb), 100L))
-        assertEquals(16L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(8_000L * mb), 100L))
+    fun `every box uses small pieces on a quick server and bigger ones on a slow one`() {
+        assertEquals(8L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(2_900L * mb), 100L))
+        assertEquals(16L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(2_900L * mb), 730L))
+        assertEquals(8L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(8_000L * mb), 100L))
+        assertEquals(24L * mb, AutoSpeedup.pieceFor(AutoSpeedup.limitsFor(8_000L * mb), 730L))
+    }
+
+    @Test
+    fun `the read-ahead may hold more on bigger boxes`() {
+        assertEquals(AutoSpeedupPolicy.READ_AHEAD_MAX_BYTES, AutoSpeedup.limitsFor(1_900L * mb).readAheadMaxBytes)
+        assertEquals(192L * mb, AutoSpeedup.limitsFor(2_900L * mb).readAheadMaxBytes)
+        assertEquals(256L * mb, AutoSpeedup.limitsFor(8_000L * mb).readAheadMaxBytes)
     }
 
     @Test
@@ -124,11 +135,12 @@ class AutoSpeedupLimitsTest {
     }
 
     @Test
-    fun `bigger boxes never change the piece`() {
+    fun `bigger boxes take the small piece from a quick server`() {
         try {
             AutoSpeedup.begin("https://a/big", 4_000L * mb)
             AutoSpeedup.onFirstByte(100L)
-            assertEquals(16L * mb, AutoSpeedup.fixPiece())
+            AutoSpeedup.onFirstByte(120L)
+            assertEquals(8L * mb, AutoSpeedup.fixPiece())
         } finally {
             AutoSpeedup.end()
         }

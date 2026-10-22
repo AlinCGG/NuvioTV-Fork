@@ -636,4 +636,45 @@ class AutoSpeedupPolicyTest {
             maxBufferMs = 12_000))
         assertEquals(true, log.none { "->1" in it })
     }
+
+    @Test
+    fun `read-ahead leaves generating thumbnails their memory floor and returns to the normal rule after`() {
+        val piece = 8L * mb
+        val floor = 235L * mb
+        // Fire Stick: 200 MB available, 115 MB above Android's line and the margin.
+        val room = AutoSpeedupPolicy.readAheadRoom(115L * mb, 200L * mb, floor)
+        assertEquals(-35L * mb, room)
+        assertEquals(0, AutoSpeedupPolicy.readAheadPieces(6, room, piece, 3))
+        assertEquals(8, AutoSpeedupPolicy.readAheadPieces(6, 115L * mb, piece, 3))
+        // Well above the floor the normal rule is the tighter one.
+        assertEquals(115L * mb, AutoSpeedupPolicy.readAheadRoom(115L * mb, 500L * mb, floor))
+        // No session generating, or MemAvailable unknown.
+        assertEquals(115L * mb, AutoSpeedupPolicy.readAheadRoom(115L * mb, 200L * mb, 0L))
+        assertEquals(115L * mb, AutoSpeedupPolicy.readAheadRoom(115L * mb, -1L, floor))
+        // Read-ahead stops 25 MB above the floor: 268 MB available leaves room for one more piece.
+        val near = AutoSpeedupPolicy.readAheadRoom(Long.MAX_VALUE, 268L * mb, floor)
+        assertEquals(1, AutoSpeedupPolicy.readAheadPieces(0, near, piece, 3))
+    }
+    @Test
+    fun `a known rate per download starts the film on what carries it with a margin`() {
+        val mb = 1024L * 1024L
+        assertEquals(4, AutoSpeedupPolicy.startDownloads(90_000_000L, 10, 16L * mb, false, 30_000_000L / 8))
+        assertEquals(6, AutoSpeedupPolicy.startDownloads(90_000_000L, 10, 16L * mb, false, 20_000_000L / 8))
+        assertEquals(10, AutoSpeedupPolicy.startDownloads(90_000_000L, 10, 16L * mb, false, 5_000_000L / 8))
+        assertEquals(1, AutoSpeedupPolicy.startDownloads(15_000_000L, 10, 8L * mb, false, 100_000_000L / 8))
+    }
+
+    @Test
+    fun `a 2 GB box with a known rate still keeps the start within its memory`() {
+        val mb = 1024L * 1024L
+        assertEquals(5, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 8L * mb, true, 15_000_000L / 8))
+        assertEquals(2, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 16L * mb, true, 15_000_000L / 8))
+    }
+
+    @Test
+    fun `the read-ahead follows the box's own cap`() {
+        val mb = 1024L * 1024L
+        assertEquals(12, AutoSpeedupPolicy.readAheadPieces(10, 500 * mb, 8L * mb, 6, 256L * mb))
+        assertEquals(8, AutoSpeedupPolicy.readAheadPieces(8, 500 * mb, 8L * mb, 6))
+    }
 }

@@ -2,7 +2,9 @@ package com.nuvio.tv.ui.screens.player
 
 import android.util.Log
 import com.nuvio.tv.core.player.BufferSizing
+import com.nuvio.tv.core.player.thumbnail.ConnectionLedger
 import com.nuvio.tv.core.player.thumbnail.MemoryGovernor
+import com.nuvio.tv.core.player.thumbnail.SeekThumbnails
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -26,11 +28,19 @@ internal object AutoSpeedup {
     const val MARGIN_BYTES = 25L * MB
     private const val FIRST_BYTE_SAMPLES = 2
 
-    /** [quickHoldBytes] = the piece used instead of [holdBytes] when the server sends its first byte quickly. */
-    data class Limits(val maxDownloads: Int, val holdBytes: Long, val quickHoldBytes: Long = holdBytes) {
-        /** A 2 GB box: smaller pieces and a start that holds no more than two 16 MB downloads. */
-        val smallBox: Boolean get() = quickHoldBytes < holdBytes
-    }
+    /**
+     * [quickHoldBytes] = the piece used instead of [holdBytes] when the server sends its first byte quickly: pieces
+     * in flight are taken off the buffer, so the smallest piece that still keeps the downloads busy leaves the most
+     * film in memory. [smallBox] = a 2 GB box: a start that holds no more than two 16 MB downloads.
+     * [readAheadMaxBytes] = the most the read-ahead may hold on this box.
+     */
+    data class Limits(
+        val maxDownloads: Int,
+        val holdBytes: Long,
+        val quickHoldBytes: Long = holdBytes,
+        val smallBox: Boolean = false,
+        val readAheadMaxBytes: Long = AutoSpeedupPolicy.READ_AHEAD_MAX_BYTES
+    )
 
     /** Bytes received from the network for the stream that is playing, on either path. */
     val received = AtomicLong()
@@ -61,11 +71,16 @@ internal object AutoSpeedup {
      * Pieces the chunk session may have under way or waiting: one per download plus the read-ahead, never more than
      * [MAX_IN_FLIGHT] requests at once, where debrid servers started answering "too many requests".
      */
-    fun depth(): Int = minOf(downloads + if (downloads > 1) readAhead else 0, maxOf(downloads, MAX_IN_FLIGHT))
+    fun depth(): Int = ConnectionLedger.app.playbackRoom(url, wantedDepth())
+
+    /** Requests playback would like at once, before the server's shared budget ([ConnectionLedger.playbackRoom]). */
+    private fun wantedDepth(): Int = minOf(downloads + if (downloads > 1) readAhead else 0, maxOf(downloads, MAX_IN_FLIGHT))
+
+    private fun noteRequests() = ConnectionLedger.app.notePlaybackDownloads(url, wantedDepth())
 
     /** The most pieces the chunk session is ever asked to hold for this piece size. */
     fun maxDepth(pieceBytes: Long): Int =
-        maxOf(limits.maxDownloads + 1, (AutoSpeedupPolicy.READ_AHEAD_MAX_BYTES / pieceBytes.coerceAtLeast(1L)).toInt())
+        maxOf(limits.maxDownloads + 1, (limits.readAheadMaxBytes / pieceBytes.coerceAtLeast(1L)).toInt())
 
     @Volatile
     private var hintUrl: String? = null
@@ -104,23 +119,38 @@ internal object AutoSpeedup {
     private val LOSSLESS_AUDIO = Regex("""truehd|dts[-. ]?hd[-. ]?ma|dts[-. ]?x\b""", RegexOption.IGNORE_CASE)
     private val WEB = Regex("web[-. ]?(dl|rip)", RegexOption.IGNORE_CASE)
 
-    /** Recomputed only on a fresh memory reading, so one reading never counts twice. */
-    fun updateReadAhead(roomBytes: Long) {
+    /**
+     * Recomputed only on a fresh memory reading, so one reading never counts twice. While seek thumbnails are
+     * generating it also leaves them the MemAvailable they need ([thumbFloorBytes]).
+     */
+    fun updateReadAhead(roomBytes: Long, thumbFloorBytes: () -> Long = { SeekThumbnails.memoryFloorBytes() }) {
         if (roomReadAtMs == readAheadRoomAtMs && downloads > 1) return
         readAheadRoomAtMs = roomReadAtMs
-        val next = AutoSpeedupPolicy.readAheadPieces(readAhead, roomBytes, pieceBytes, downloads)
+        val floor = if (downloads > 1) thumbFloorBytes() else 0L
+        val room = if (floor > 0L) {
+            val avail = MemoryGovernor.readMeminfo()?.availableMb?.let { it * MB } ?: -1L
+            AutoSpeedupPolicy.readAheadRoom(roomBytes, avail, floor)
+        } else {
+            roomBytes
+        }
+        val next = AutoSpeedupPolicy.readAheadPieces(readAhead, room, pieceBytes, downloads, limits.readAheadMaxBytes)
         if (next != readAhead) {
-            Log.i(TAG, "AUTO_SPEEDUP: read-ahead $readAhead->$next downloads=$downloads roomMb=${roomBytes / MB}")
+            val thumbs = if (floor > 0L) " thumbFloorMb=${floor / MB}" else ""
+            Log.i(TAG, "AUTO_SPEEDUP: read-ahead $readAhead->$next downloads=$downloads roomMb=${room / MB}$thumbs")
             readAhead = next
+            noteRequests()
         }
     }
 
     val active: Boolean get() = policy != null
 
     fun limitsFor(totalRamBytes: Long): Limits = when {
-        totalRamBytes in 1 until 2_560L * MB -> Limits(maxDownloads = 6, holdBytes = 16L * MB, quickHoldBytes = 8L * MB)
-        totalRamBytes in 1 until 3_584L * MB -> Limits(maxDownloads = 5, holdBytes = 16L * MB)
-        totalRamBytes > 0L -> Limits(maxDownloads = 6, holdBytes = 16L * MB)
+        totalRamBytes in 1 until 2_560L * MB ->
+            Limits(maxDownloads = 6, holdBytes = 16L * MB, quickHoldBytes = 8L * MB, smallBox = true)
+        totalRamBytes in 1 until 3_584L * MB ->
+            Limits(maxDownloads = 8, holdBytes = 16L * MB, quickHoldBytes = 8L * MB, readAheadMaxBytes = 192L * MB)
+        totalRamBytes > 0L ->
+            Limits(maxDownloads = 10, holdBytes = 24L * MB, quickHoldBytes = 8L * MB, readAheadMaxBytes = 256L * MB)
         else -> Limits(maxDownloads = 1, holdBytes = 16L * MB)
     }
 
@@ -203,12 +233,23 @@ internal object AutoSpeedup {
         if (free == null) Long.MAX_VALUE
         else free.availBytes - free.thresholdBytes - MARGIN_BYTES
 
-    /** A new stream starts on one download; the same stream again (a subtitle reload) keeps what it learnt. */
+    @Volatile
+    private var hostKey: String? = null
+
+    @Volatile
+    private var remembered: HostSpeeds.Entry? = null
+
+    /**
+     * A new stream starts on one download; the same stream again (a subtitle reload) keeps what it learnt. What the
+     * same server delivered before ([HostSpeeds]) picks the piece size at once and the downloads a heavy film starts on.
+     */
     fun begin(streamUrl: String, totalRamBytes: Long) {
         if (policy != null && streamUrl == url) return
         end()
         limits = limitsFor(totalRamBytes)
         url = streamUrl
+        hostKey = HostSpeeds.keyOf(streamUrl)
+        remembered = hostKey?.let { HostSpeeds.get(it) }
         received.set(0L)
         roomReadAtMs = Long.MIN_VALUE
         readAheadRoomAtMs = Long.MIN_VALUE
@@ -221,13 +262,28 @@ internal object AutoSpeedup {
             firstByteSamples = 0
             policy = AutoSpeedupPolicy(limits.maxDownloads, pieceBytes, limits.smallBox)
             pieceFixed = limits.quickHoldBytes == limits.holdBytes
+            val known = remembered
+            if (known != null) {
+                policy?.knownPerDownloadBps = known.perDownloadBps
+                if (known.firstByteMs >= 0L) {
+                    firstByteMs = known.firstByteMs
+                    pieceBytes = pieceFor(limits, known.firstByteMs)
+                    policy?.pieceBytes = pieceBytes
+                    pieceFixed = true
+                }
+                Log.i(TAG, "AUTO_SPEEDUP: remembered host=$hostKey perDownloadKbps=${known.perDownloadBps * 8 / 1000} " +
+                    "downloads=${known.downloads} firstByteMs=${known.firstByteMs}")
+            }
             val guessed = if (hintUrl == streamUrl) hintBps else 0L
             if (guessed >= AutoSpeedupPolicy.START_THREE_BPS && limits.maxDownloads > 1) {
-                // No first byte timed yet: the smaller piece, which the slow servers it suits less still carry.
-                pieceBytes = limits.quickHoldBytes
-                policy?.pieceBytes = pieceBytes
+                if (known == null || known.firstByteMs < 0L) {
+                    // No first byte timed yet: the smaller piece, which the slow servers it suits less still carry.
+                    pieceBytes = limits.quickHoldBytes
+                    policy?.pieceBytes = pieceBytes
+                }
                 pieceFixed = true
-                val start = AutoSpeedupPolicy.startDownloads(guessed, limits.maxDownloads, pieceBytes, limits.smallBox)
+                val start = AutoSpeedupPolicy.startDownloads(guessed, limits.maxDownloads, pieceBytes, limits.smallBox,
+                    known?.perDownloadBps ?: 0L)
                 policy?.preset(start)
                 Log.i(TAG, "AUTO_SPEEDUP: start guessed downloads=$start fileKbps=${guessed / 1000}")
             }
@@ -236,9 +292,20 @@ internal object AutoSpeedup {
     }
 
     fun end() {
-        val wasOn = policy != null
+        val p = policy
+        val wasOn = p != null
+        val key = hostKey
+        if (p != null && key != null && p.measuredPerDownloadBps > 0L) {
+            val entry = HostSpeeds.Entry(p.measuredPerDownloadBps, p.peakKept.coerceAtLeast(1),
+                if (firstByteMs >= 0L) firstByteMs else remembered?.firstByteMs ?: -1L, System.currentTimeMillis())
+            HostSpeeds.put(key, entry)
+            Log.i(TAG, "AUTO_SPEEDUP: saved host=$key perDownloadKbps=${entry.perDownloadBps * 8 / 1000} " +
+                "downloads=${entry.downloads}")
+        }
         policy = null
         url = null
+        hostKey = null
+        remembered = null
         if (wasOn) ParallelRangeDataSource.releaseRetainedSessionIfIdle()
     }
 
@@ -259,8 +326,10 @@ internal object AutoSpeedup {
     fun onPlayerSample(sample: AutoSpeedupPolicy.Sample): Boolean {
         val p = policy ?: return false
         val before = p.downloads
+        p.roomCap = ConnectionLedger.app.playbackRoom(url, limits.maxDownloads)
         p.onSample(sample.copy(bytes = received.get(), multiActive = multiOpen.get() > 0))
-        p.lastChange?.let { Log.i(TAG, "AUTO_SPEEDUP: $it aheadMs=${sample.aheadMs}") }
+        p.lastChange?.let { Log.i(TAG, "AUTO_SPEEDUP: $it aheadMs=${sample.aheadMs} roomCap=${p.roomCap}") }
+        if (p.downloads != before) noteRequests()
         return p.downloads != before
     }
 }

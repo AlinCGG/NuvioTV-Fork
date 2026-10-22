@@ -541,6 +541,7 @@ internal class PlayerMediaSourceFactory(
         single: DataSource.Factory,
         headers: Map<String, String>
     ): DataSource.Factory {
+        HostSpeeds.attach(context.applicationContext.getSharedPreferences("auto_speedup_hosts", Context.MODE_PRIVATE))
         AutoSpeedup.begin(url, NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context))
         val limits = AutoSpeedup.limits
         // The few long downloads keep the playback receive window, unlike the many piece sockets of Custom network.
