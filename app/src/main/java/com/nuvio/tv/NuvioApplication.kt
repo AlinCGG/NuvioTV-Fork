@@ -266,27 +266,14 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                 )
             }
             .memoryCache {
-                val totalRamMb = memoryInfo.totalMem / (1024 * 1024)
-                // Keep RAM usage low so posters/backdrops are served mainly from the
-                // internal storage cache on TVs with abundant free space.
-                val cachePercent = when {
-                    totalRamMb <= 2048 -> 0.10
-                    totalRamMb <= 3072 -> 0.12
-                    else -> 0.15
-                }
-                val heapBudget = MemoryCache.Builder()
-                    .maxSizePercent(context, cachePercent)
-                    .build().maxSize
-                com.nuvio.tv.core.image.ArtworkMemoryCache(
-                    com.nuvio.tv.core.image.homeArtworkMemoryCacheBytes(heapBudget, memoryInfo.totalMem)
-                )
+                com.nuvio.tv.core.image.ArtworkMemoryCache(750L * 1024L * 1024L)
             }
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache").toOkioPath())
-                    // Internal storage is plentiful on this TV; keep a large disk cache so artwork
-                    // is retained there instead of consuming RAM.
-                    .maxSizeBytes(10L * 1024L * 1024L * 1024L)
+                    // Dev branch: RAM-first test. Keep the original disk budget to compare
+                    // against the storage-first branch without forcing a fully disabled cache.
+                    .maxSizeBytes(if (memoryInfo.totalMem >= 3_300L * 1024 * 1024) 300L * 1024 * 1024 else 200L * 1024 * 1024)
                     .build()
             }
             .crossfade(false)
