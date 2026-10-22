@@ -10,24 +10,37 @@ class BufferSettingsNumbersTest {
     private val gb = 1024L * 1024L * 1024L
 
     @Test
-    fun `the seconds line shows what the size holds of an 80 Mbit s remux`() {
-        assertEquals(15, BufferSettingsNumbers.secondsHint(150, 280))
-        assertEquals(8, BufferSettingsNumbers.secondsHint(86, 45))
-        assertEquals(100, BufferSettingsNumbers.secondsHint(1000, 280))
-        assertEquals(12, BufferSettingsNumbers.secondsHint(125, 45))
+    fun `the reach line shows what the last playback's buffer holds of a remux and a web file`() {
+        assertEquals(BufferSettingsNumbers.Reach(245, 21, 130), BufferSettingsNumbers.reach(245))
+        assertEquals(BufferSettingsNumbers.Reach(110, 9, 58), BufferSettingsNumbers.reach(110))
+        assertEquals(BufferSettingsNumbers.Reach(840, 74, 448), BufferSettingsNumbers.reach(840))
+        assertEquals(BufferSettingsNumbers.Reach(0, 0, 0), BufferSettingsNumbers.reach(-5))
     }
 
     @Test
-    fun `the seconds line stays away when the setting is not longer than the size holds`() {
-        assertNull(BufferSettingsNumbers.secondsHint(1000, 45))
-        assertNull(BufferSettingsNumbers.secondsHint(150, 15))
-        assertNull(BufferSettingsNumbers.secondsHint(2000, 120))
+    fun `the reach line uses the size the last playback got, or the automatic size before the first`() {
+        val auto = 200
+        assertEquals(auto, BufferSettingsNumbers.playbackBufferMb(auto, automaticSize = true, nativeMemory = false, lastPlayback = null))
+        val last = com.nuvio.tv.core.player.BufferSizing.PlaybackBudget(nativeMemory = false, automatic = true, budgetMb = 110)
+        assertEquals(110, BufferSettingsNumbers.playbackBufferMb(auto, automaticSize = true, nativeMemory = false, lastPlayback = last))
+        assertEquals(17, BufferSettingsNumbers.reach(BufferSettingsNumbers.playbackBufferMb(auto, true, false, null)).remuxSeconds)
+    }
+
+    @Test
+    fun `amber only when a remux cannot fill the seconds`() {
+        val reach = BufferSettingsNumbers.reach(245)
+        assertFalse(BufferSettingsNumbers.remuxCannotFill(20, reach))
+        assertFalse(BufferSettingsNumbers.remuxCannotFill(21, reach))
+        assertTrue(BufferSettingsNumbers.remuxCannotFill(22, reach))
+        assertTrue(BufferSettingsNumbers.remuxCannotFill(60, reach))
+        assertTrue(BufferSettingsNumbers.remuxCannotFill(30, BufferSettingsNumbers.reach(245)))
+        assertFalse(BufferSettingsNumbers.remuxCannotFill(5, BufferSettingsNumbers.reach(110)))
     }
 
     @Test
     fun `the back buffer note shows what the player keeps inside the size`() {
-        // Native memory preset: 12 s back buffer, 200 s minimum.
-        assertEquals(BufferSettingsNumbers.BackBufferKept(5, 50), BufferSettingsNumbers.backBufferKept(12_000, 150, true, 200_000))
+        // Native memory preset: 12 s back buffer, 280 s ahead.
+        assertEquals(BufferSettingsNumbers.BackBufferKept(5, 50), BufferSettingsNumbers.backBufferKept(12_000, 150, true, 280_000))
         assertEquals(BufferSettingsNumbers.BackBufferKept(12, 120), BufferSettingsNumbers.backBufferKept(12_000, 1000, true, 200_000))
         assertEquals(BufferSettingsNumbers.BackBufferKept(1, 12), BufferSettingsNumbers.backBufferKept(12_000, 62, true, 200_000))
         assertEquals(BufferSettingsNumbers.BackBufferKept(3, 33), BufferSettingsNumbers.backBufferKept(12_000, 100, true, 200_000))

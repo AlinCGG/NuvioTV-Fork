@@ -24,6 +24,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
+import com.nuvio.tv.core.player.BufferAhead
 import com.nuvio.tv.core.player.thumbnail.SeekThumbMode
 import com.nuvio.tv.core.player.thumbnail.SeekThumbnailPreferences
 import com.nuvio.tv.core.player.thumbnail.SeekThumbnails
@@ -117,7 +118,6 @@ private fun CustomBufferControls(
     val context = LocalContext.current
     val buffer = settings.bufferSettings
     val isNativeMemory = settings.nuvioPerformanceModeEnabled
-    val maxDuration = if (isNativeMemory) 1200 else 120
     val durationStep = if (isNativeMemory) 10 else 5
 
     val budgetManaged = settings.bufferBudgetManaged
@@ -166,58 +166,66 @@ private fun CustomBufferControls(
     SettingsSectionLabel(text = stringResource(R.string.playback_buffer_header))
     SettingsNote(text = stringResource(R.string.playback_buffer_warning), tone = SettingsNoteTone.Warning)
 
-    SliderSettingsItem(
-        title = stringResource(R.string.playback_buffer_min),
-        subtitle = stringResource(R.string.playback_buffer_min_sub),
-        value = buffer.minBufferMs / 1000,
-        valueText = "${buffer.minBufferMs / 1000}s",
-        minValue = 5,
-        maxValue = maxDuration,
-        step = durationStep,
-        onValueChange = { seconds -> onUpdate { setBufferMinBufferMs(seconds * 1000) } }
+    val playbackMb = BufferSettingsNumbers.playbackBufferMb(
+        bufferSizeMb, budgetManaged, isNativeMemory, com.nuvio.tv.core.player.BufferSizing.lastPlaybackBudget
     )
-
-    val minBufferSeconds = buffer.minBufferMs / 1000
-    val maxBufferSeconds = buffer.maxBufferMs / 1000
+    val reach = BufferSettingsNumbers.reach(playbackMb)
+    val aheadSeconds = buffer.bufferAheadMs / 1000
     SliderSettingsItem(
-        title = stringResource(R.string.playback_buffer_max),
-        subtitle = stringResource(R.string.playback_buffer_max_sub),
-        value = maxBufferSeconds,
-        valueText = if (maxBufferSeconds == minBufferSeconds) {
-            stringResource(R.string.playback_buffer_value_same_as_min, maxBufferSeconds)
-        } else {
-            "${maxBufferSeconds}s"
-        },
-        minValue = 5,
-        maxValue = maxDuration,
+        title = stringResource(R.string.playback_buffer_ahead),
+        subtitle = stringResource(R.string.playback_buffer_ahead_sub),
+        value = aheadSeconds,
+        valueText = "${aheadSeconds}s",
+        minValue = BufferAhead.MIN_MS / 1000,
+        maxValue = BufferAhead.limitMs(isNativeMemory) / 1000,
         step = durationStep,
-        onValueChange = { seconds -> onUpdate { setBufferMaxBufferMs(maxOf(seconds, minBufferSeconds) * 1000) } }
+        onValueChange = { seconds -> onUpdate { setBufferAheadMs(seconds * 1000) } }
     )
-    BufferSettingsNumbers.secondsHint(bufferSizeMb, maxBufferSeconds)?.let { seconds ->
-        SettingsNote(text = stringResource(R.string.playback_buffer_seconds_hint, bufferSizeMb, seconds))
+    SettingsNote(
+        text = stringResource(R.string.playback_buffer_ahead_reach, reach.mb, reach.remuxSeconds, reach.webFileSeconds)
+    )
+    if (BufferSettingsNumbers.remuxCannotFill(aheadSeconds, reach)) {
+        SettingsNote(
+            text = stringResource(R.string.playback_buffer_ahead_over_remux, reach.remuxSeconds),
+            tone = SettingsNoteTone.Warning
+        )
     }
 
+    val initialSeconds = buffer.bufferForPlaybackMs / 1000
     SliderSettingsItem(
         title = stringResource(R.string.playback_buffer_initial),
         subtitle = stringResource(R.string.playback_buffer_initial_sub),
-        value = buffer.bufferForPlaybackMs / 1000,
-        valueText = "${buffer.bufferForPlaybackMs / 1000}s",
+        value = initialSeconds,
+        valueText = "${initialSeconds}s",
         minValue = 1,
         maxValue = 60,
         step = 1,
         onValueChange = { seconds -> onUpdate { setBufferForPlaybackMs(seconds * 1000) } }
     )
+    if (BufferSettingsNumbers.remuxCannotFill(initialSeconds, reach)) {
+        SettingsNote(
+            text = stringResource(R.string.playback_buffer_remux_cannot_fill, reach.remuxSeconds),
+            tone = SettingsNoteTone.Warning
+        )
+    }
 
+    val afterRebufferSeconds = buffer.bufferForPlaybackAfterRebufferMs / 1000
     SliderSettingsItem(
         title = stringResource(R.string.playback_buffer_after_rebuffer),
         subtitle = stringResource(R.string.playback_buffer_after_rebuffer_sub),
-        value = buffer.bufferForPlaybackAfterRebufferMs / 1000,
-        valueText = "${buffer.bufferForPlaybackAfterRebufferMs / 1000}s",
+        value = afterRebufferSeconds,
+        valueText = "${afterRebufferSeconds}s",
         minValue = 1,
         maxValue = 120,
         step = 1,
         onValueChange = { seconds -> onUpdate { setBufferForPlaybackAfterRebufferMs(seconds * 1000) } }
     )
+    if (BufferSettingsNumbers.remuxCannotFill(afterRebufferSeconds, reach)) {
+        SettingsNote(
+            text = stringResource(R.string.playback_buffer_remux_cannot_fill, reach.remuxSeconds),
+            tone = SettingsNoteTone.Warning
+        )
+    }
 
     SliderSettingsItem(
         title = stringResource(R.string.playback_buffer_back),
@@ -230,11 +238,8 @@ private fun CustomBufferControls(
         onValueChange = { seconds -> onUpdate { setBufferBackBufferDurationMs(seconds * 1000) } }
     )
     if (buffer.backBufferDurationMs > 0) {
-        val playbackMb = BufferSettingsNumbers.playbackBufferMb(
-            bufferSizeMb, budgetManaged, isNativeMemory, com.nuvio.tv.core.player.BufferSizing.lastPlaybackBudget
-        )
         val kept = BufferSettingsNumbers.backBufferKept(
-            buffer.backBufferDurationMs, playbackMb, isNativeMemory, buffer.minBufferMs
+            buffer.backBufferDurationMs, playbackMb, isNativeMemory, buffer.bufferAheadMs
         )
         SettingsNote(
             text = if (kept != null) {

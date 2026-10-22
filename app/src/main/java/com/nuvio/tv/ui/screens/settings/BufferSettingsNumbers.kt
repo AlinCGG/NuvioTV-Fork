@@ -18,11 +18,20 @@ internal object BufferSettingsNumbers {
     const val SYSTEM_SHARE_MB = 800
     private const val UNKNOWN_RAM_MB = 2048
 
-    fun secondsHeld(bufferMb: Int): Int = (bufferMb / REMUX_MB_PER_SECOND).coerceAtLeast(0)
+    /** The line under Buffer ahead: a 4K remux at 90 Mbit/s and a web file at 15 Mbit/s. */
+    const val REMUX_MBIT_PER_SECOND = 90
+    const val WEB_FILE_MBIT_PER_SECOND = 15
 
-    /** Seconds for the line under Max buffer duration, or null when the setting is not longer than the size holds. */
-    fun secondsHint(bufferMb: Int, maxBufferSeconds: Int): Int? =
-        secondsHeld(bufferMb).takeIf { maxBufferSeconds > it }
+    data class Reach(val mb: Int, val remuxSeconds: Int, val webFileSeconds: Int)
+
+    /** Seconds [playbackMb] holds, rounded down. */
+    fun reach(playbackMb: Int): Reach {
+        val mb = playbackMb.coerceAtLeast(0)
+        return Reach(mb, mb * 8 / REMUX_MBIT_PER_SECOND, mb * 8 / WEB_FILE_MBIT_PER_SECOND)
+    }
+
+    /** True when a 4K remux cannot fill [seconds] on this box: amber under Buffer ahead and the two start buffers. */
+    fun remuxCannotFill(seconds: Int, reach: Reach): Boolean = seconds > reach.remuxSeconds
 
     data class BackBufferKept(val seconds: Int, val mb: Int)
 
@@ -43,10 +52,10 @@ internal object BufferSettingsNumbers {
 
     /**
      * The back buffer the player keeps inside [bufferMb]. With native memory the player also holds it to half of
-     * [minBufferMs]. Null when nothing is kept.
+     * [bufferAheadMs]. Null when nothing is kept.
      */
-    fun backBufferKept(backBufferMs: Int, bufferMb: Int, nativeMemory: Boolean, minBufferMs: Int): BackBufferKept? {
-        val setMs = if (nativeMemory) backBufferMs.coerceAtMost(minBufferMs / 2) else backBufferMs
+    fun backBufferKept(backBufferMs: Int, bufferMb: Int, nativeMemory: Boolean, bufferAheadMs: Int): BackBufferKept? {
+        val setMs = if (nativeMemory) backBufferMs.coerceAtMost(bufferAheadMs / 2) else backBufferMs
         val keptMs = BufferSizing.backBufferMsForTarget(setMs, bufferMb.toLong() * MB)
         if (keptMs <= 0) return null
         return BackBufferKept(

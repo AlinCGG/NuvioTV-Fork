@@ -84,4 +84,47 @@ class BitrateAwareLoadControlTest {
         lc.setBudgetBytesOverride(1000 * mb)
         assertEquals(1250 * mb, lc.ceilingBytes())
     }
+
+    @Test
+    fun `loading starts again a little below the maximum instead of at the minimum`() {
+        val lc = loadControl()
+        fillMb(5)
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 46_000)))
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 43_000)))
+        assertTrue(lc.shouldContinueLoading(params(bufferedMs = 41_000)))
+    }
+
+    @Test
+    fun `topping up waits for a piece of room below the budget`() {
+        val lc = loadControl()
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 46_000)))
+        fillMb(19)
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 30_000)))
+    }
+
+    private fun reservable(targetMb: Long = 20) = ReservableLoadControl(
+        allocator = allocator,
+        minBufferMs = 15_000,
+        maxBufferMs = 45_000,
+        bufferForPlaybackMs = 5_000,
+        bufferForPlaybackAfterRebufferMs = 3_000,
+        targetBufferBytes = (targetMb * mb).toInt(),
+        prioritizeTimeOverSizeThresholds = false,
+        backBufferDurationMs = 0,
+        retainBackBufferFromKeyframe = true,
+    ).also {
+        it.onPrepared(playerId)
+        it.onTracksSelected(params(0), TrackGroupArray.EMPTY, arrayOf<ExoTrackSelection?>())
+    }
+
+    @Test
+    fun `native memory tops up too and a pressure cap still holds it back`() {
+        val lc = reservable()
+        fillMb(5)
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 46_000)))
+        assertTrue(lc.shouldContinueLoading(params(bufferedMs = 41_000)))
+        lc.setPressureCapBytes(6 * mb)
+        assertFalse(lc.shouldContinueLoading(params(bufferedMs = 41_000)))
+        assertEquals(42_000, lc.topUp.resumeBelowMs)
+    }
 }

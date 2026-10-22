@@ -14,6 +14,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.nuvio.tv.core.profile.ProfileManager
+import com.nuvio.tv.core.player.BufferAhead
 import com.nuvio.tv.core.player.BufferSizing
 import com.nuvio.tv.core.player.LastPlaybackDiagnostics
 import kotlinx.coroutines.CoroutineScope
@@ -181,6 +182,9 @@ data class BufferSettings(
     val backBufferDurationMs: Int = DEFAULT_BACK_BUFFER_DURATION_MS,
     val retainBackBufferFromKeyframe: Boolean = false
 ) {
+    /** The Buffer ahead setting. Min and Max are both still stored, for sync and older builds. */
+    val bufferAheadMs: Int get() = BufferAhead.fromStored(minBufferMs, maxBufferMs)
+
     companion object {
         const val DEFAULT_MIN_BUFFER_MS = 15_000
         const val DEFAULT_MAX_BUFFER_MS = 45_000
@@ -2276,6 +2280,18 @@ class PlayerSettingsDataStore @Inject constructor(
     }
 
     // Buffer settings functions
+
+    suspend fun setBufferAheadMs(ms: Int) = setBufferAheadMs(ms, profileManager.activeProfileId.value)
+
+    /** Min and Max both take the value, so synced profiles and older builds see the same buffer. */
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    internal suspend fun setBufferAheadMs(ms: Int, profileId: Int) {
+        store(profileId).edit { prefs ->
+            val value = ms.coerceIn(BufferAhead.MIN_MS, BufferAhead.limitMs(isNativeMemoryActive(prefs)))
+            prefs[minBufferMsKey] = value
+            prefs[maxBufferMsKey] = value
+        }
+    }
 
     suspend fun setBufferMinBufferMs(ms: Int) = setBufferMinBufferMs(ms, profileManager.activeProfileId.value)
 

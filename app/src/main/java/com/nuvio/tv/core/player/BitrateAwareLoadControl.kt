@@ -32,7 +32,8 @@ class BitrateAwareLoadControl(
     retainBackBufferFromKeyframe: Boolean,
     /** Memory ceiling in bytes. */
     budgetBytes: Long,
-    allocator: DefaultAllocator = DefaultAllocator(/* trimOnReset= */ true, C.DEFAULT_BUFFER_SEGMENT_SIZE, 64)
+    allocator: DefaultAllocator = DefaultAllocator(/* trimOnReset= */ true, C.DEFAULT_BUFFER_SEGMENT_SIZE, 64),
+    topUpPieceBytes: Long = BufferTopUp.DEFAULT_PIECE_BYTES
 ) : DefaultLoadControl(
     allocator,
     minBufferMs,
@@ -48,6 +49,10 @@ class BitrateAwareLoadControl(
     override val bufferAllocator: DefaultAllocator = allocator
 
     override val maxBufferMs: Int = maxBufferMs
+
+    override val topUp: BufferTopUp = BufferTopUp(maxBufferMs, minBufferMs, topUpPieceBytes)
+
+    @Volatile override var backBufferBytes: Long = 0L
 
     // Effective byte budget when >= 0, else the constructed budget. Re-read on track
     // (re)selection, so this can change mid-playback.
@@ -119,7 +124,9 @@ class BitrateAwareLoadControl(
 
     override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean =
         if (reserveCore.holdsLoading(parameters) || overCeiling(parameters)) false
-        else super.shouldContinueLoading(parameters)
+        else super.shouldContinueLoading(parameters) || topUp.wantsLoading(
+            parameters.bufferedDurationUs, bufferAllocator.totalBytesAllocated.toLong(), allocatorTargetBytes().toLong()
+        )
 
     override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean =
         super.shouldStartPlayback(parameters) || overCeiling(parameters)

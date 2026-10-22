@@ -416,6 +416,10 @@ class PlaybackSettingsViewModel @Inject constructor(
 
     // Buffer settings functions
 
+    suspend fun setBufferAheadMs(ms: Int) {
+        playerSettingsDataStore.setBufferAheadMs(ms)
+    }
+
     suspend fun setBufferMinBufferMs(ms: Int) {
         playerSettingsDataStore.setBufferMinBufferMs(ms)
     }

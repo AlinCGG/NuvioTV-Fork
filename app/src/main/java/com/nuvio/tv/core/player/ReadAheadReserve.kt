@@ -148,6 +148,7 @@ class ReservableLoadControl(
     prioritizeTimeOverSizeThresholds: Boolean,
     backBufferDurationMs: Int,
     retainBackBufferFromKeyframe: Boolean,
+    topUpPieceBytes: Long = BufferTopUp.DEFAULT_PIECE_BYTES,
 ) : DefaultLoadControl(
     allocator,
     minBufferMs,
@@ -166,6 +167,10 @@ class ReservableLoadControl(
     override val bufferAllocator: DefaultAllocator = allocator
 
     override val maxBufferMs: Int = maxBufferMs
+
+    override val topUp: BufferTopUp = BufferTopUp(maxBufferMs, minBufferMs, topUpPieceBytes)
+
+    @Volatile override var backBufferBytes: Long = 0L
 
     override fun calculateTargetBufferBytes(trackSelectionArray: Array<out ExoTrackSelection?>): Int =
         super.calculateTargetBufferBytes(trackSelectionArray).also { computedTargetBytes = it }
@@ -213,7 +218,9 @@ class ReservableLoadControl(
 
     override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean =
         if (reserveCore.holdsLoading(parameters) || overPressureCap(parameters)) false
-        else super.shouldContinueLoading(parameters) || parameters.bufferedDurationUs < minAheadUs
+        else super.shouldContinueLoading(parameters) || parameters.bufferedDurationUs < minAheadUs ||
+            topUp.wantsLoading(parameters.bufferedDurationUs, bufferAllocator.totalBytesAllocated.toLong(),
+                allocatorTargetBytes().toLong())
 
     override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean =
         super.shouldStartPlayback(parameters) || overPressureCap(parameters)
