@@ -267,14 +267,12 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             }
             .memoryCache {
                 val totalRamMb = memoryInfo.totalMem / (1024 * 1024)
-                // Low-RAM devices (≤2GB): use 0.15 — larger cache reduces GC pressure
-                // from rapid bitmap eviction during scrolling.
-                // Mid-range devices (≤3GB): use 0.20 for decent image caching.
-                // Normal devices (>3GB): use 0.25 for snappy image loading.
+                // Keep RAM usage low so posters/backdrops are served mainly from the
+                // internal storage cache on TVs with abundant free space.
                 val cachePercent = when {
-                    totalRamMb <= 2048 -> 0.15
-                    totalRamMb <= 3072 -> 0.20
-                    else -> 0.25
+                    totalRamMb <= 2048 -> 0.10
+                    totalRamMb <= 3072 -> 0.12
+                    else -> 0.15
                 }
                 val heapBudget = MemoryCache.Builder()
                     .maxSizePercent(context, cachePercent)
@@ -286,8 +284,9 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache").toOkioPath())
-                    // Fixed size like the official app; boxes under ~3.3 GB of RAM get 200 MB.
-                    .maxSizeBytes(if (memoryInfo.totalMem >= 3_300L * 1024 * 1024) 300L * 1024 * 1024 else 200L * 1024 * 1024)
+                    // Internal storage is plentiful on this TV; keep a large disk cache so artwork
+                    // is retained there instead of consuming RAM.
+                    .maxSizeBytes(10L * 1024L * 1024L * 1024L)
                     .build()
             }
             .crossfade(false)
