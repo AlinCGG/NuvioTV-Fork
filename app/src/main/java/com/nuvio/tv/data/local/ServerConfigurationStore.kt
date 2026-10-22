@@ -17,13 +17,16 @@ class ServerConfigurationStore @Inject constructor(
         if (!BuildConfig.FEATURE_CUSTOM_SERVER_CONNECTIONS_ENABLED) return officialConfiguration()
         val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
         if (!preferences.getBoolean(KEY_CUSTOM_ENABLED, false)) return officialConfiguration()
+
         val backendUrl = normalizeBackendUrl(preferences.getString(KEY_BACKEND_URL, null)?.trim().orEmpty())
         val publishableKey = preferences.getString(KEY_PUBLISHABLE_KEY, null)?.trim().orEmpty()
         val emailPasswordAuth = preferences.getBoolean(KEY_EMAIL_PASSWORD_AUTH, false)
         val tvLogin = preferences.getBoolean(KEY_TV_LOGIN, false)
-        if (backendUrl.isBlank() || publishableKey.isBlank() || (!emailPasswordAuth && !tvLogin)) {
+
+        if (backendUrl.isBlank() || backendUrl.toHttpUrlOrNull() == null || publishableKey.isBlank() || (!emailPasswordAuth && !tvLogin)) {
             return officialConfiguration()
         }
+
         return ServerConfiguration(
             backendUrl = backendUrl,
             publishableKey = publishableKey,
@@ -42,7 +45,13 @@ class ServerConfigurationStore @Inject constructor(
 
     fun saveCustom(configuration: ServerConfiguration): Boolean {
         if (!BuildConfig.FEATURE_CUSTOM_SERVER_CONNECTIONS_ENABLED) return false
-        val normalized = configuration.copy(backendUrl = normalizeBackendUrl(configuration.backendUrl))
+
+        val normalizedBackendUrl = normalizeBackendUrl(configuration.backendUrl)
+        if (normalizedBackendUrl.isBlank() || normalizedBackendUrl.toHttpUrlOrNull() == null) {
+            return false
+        }
+
+        val normalized = configuration.copy(backendUrl = normalizedBackendUrl)
         return context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_CUSTOM_ENABLED, true)
@@ -78,9 +87,10 @@ class ServerConfigurationStore @Inject constructor(
 
     private fun normalizeBackendUrl(value: String): String {
         val raw = value.trim()
-        if (raw.isBlank()) return raw
+        if (raw.isBlank()) return ""
+
         val candidate = if (raw.contains("://")) raw else "https://$raw"
-        return candidate.toHttpUrlOrNull()?.toString()?.trimEnd('/') ?: raw.trimEnd('/')
+        return candidate.toHttpUrlOrNull()?.toString()?.trimEnd('/') ?: ""
     }
 
     private companion object {
