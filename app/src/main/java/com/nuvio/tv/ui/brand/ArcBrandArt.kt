@@ -39,6 +39,8 @@ object ArcBrandArt {
         override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
     }
 
+    fun release() = cache.evictAll()
+
     /** Art is prepared at the slot's own height, so it is drawn 1:1 instead of being resampled a second time. */
     fun bucketFor(heightPx: Int): Int = if (heightPx <= 0) 0 else min(heightPx, LockupHeight)
 

@@ -138,6 +138,45 @@ class BufferMemoryKeeperTest {
     }
 
     @Test
+    fun `memory pressure cuts the buffer ahead, not the back buffer`() {
+        // 2 GB box, 200 MiB, 60 Mbit/s film with a 7.5 s back buffer (56.25 MB).
+        val rate = BufferSizing.backBufferBytesPerSecond(60_000_000L)
+        val lc = performanceControl(budgetMb = 200, backBufferMs = 7_500)
+        lc.backBufferBytes = BufferSizing.backBufferBytes(7_500, rate)
+        assertEquals(56_250_000L, lc.backBufferBytes)
+        val k = keeper(lc)
+        val budget = 200 * mb
+        val forward = budget - lc.backBufferBytes
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        val low = k.capBytes(BufferMemoryKeeper.LEVEL_LOW)
+        assertEquals(lc.backBufferBytes + forward * 60 / 100, low)
+        assertEquals(low, k.effectiveCapBytes())
+        assertEquals(low.toInt(), lc.allocatorTargetBytes())
+        // 12.3 s ahead under the cut, against 9.3 s when the whole budget was cut to 60 %.
+        assertEquals(12_277L, (low - lc.backBufferBytes) * 1000L / rate)
+        assertEquals(9_277L, (budget * 60 / 100 - lc.backBufferBytes) * 1000L / rate)
+        val critical = k.capBytes(BufferMemoryKeeper.LEVEL_CRITICAL)
+        assertEquals(lc.backBufferBytes + forward * 35 / 100, critical)
+        assertEquals(7_161L, (critical - lc.backBufferBytes) * 1000L / rate)
+    }
+
+    @Test
+    fun `the back buffer share keeps the floor and never counts past the budget`() {
+        val lc = customControl(budgetMb = 100)
+        lc.backBufferBytes = 40 * mb
+        val k = keeper(lc)
+        assertEquals(40 * mb + 60 * mb * 35 / 100, k.capBytes(BufferMemoryKeeper.LEVEL_CRITICAL))
+        lc.backBufferBytes = 0L
+        assertEquals(50 * mb, k.capBytes(BufferMemoryKeeper.LEVEL_CRITICAL))
+        lc.backBufferBytes = 300 * mb
+        assertEquals(100 * mb, k.capBytes(BufferMemoryKeeper.LEVEL_CRITICAL))
+        lc.backBufferBytes = 40 * mb
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        k.setLentBytes(48 * mb)
+        assertEquals(52 * mb, k.effectiveCapBytes())
+    }
+
+    @Test
     fun `hiding the ui only gives idle memory back`() {
         val k = keeper(customControl())
         giveBack(take(30))

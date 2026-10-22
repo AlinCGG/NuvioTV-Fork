@@ -11,6 +11,9 @@ interface BufferBudgetControl {
     /** Budget without the memory-pressure cap. */
     val uncappedBudgetBytes: Long
 
+    /** What the back buffer was fitted to hold at build; a memory-pressure cut leaves it alone. */
+    var backBufferBytes: Long
+
     /** Negative removes the cap. */
     fun setPressureCapBytes(bytes: Long)
 
@@ -19,4 +22,7 @@ interface BufferBudgetControl {
 
     /** The most buffer ahead the player loads. */
     val maxBufferMs: Int
+
+    /** When loading starts again below [maxBufferMs]. */
+    val topUp: BufferTopUp
 }

@@ -171,7 +171,8 @@ class BufferMemoryKeeper(
             else -> return budget
         }
         val floor = minOf(budget, BufferSizing.MIN_SIZED_BUFFER_MB * MB)
-        return (budget * share / 100).coerceAtLeast(floor)
+        val back = control.backBufferBytes.coerceIn(0L, budget.coerceAtLeast(0L))
+        return (back + (budget - back) * share / 100).coerceAtLeast(floor)
     }
 
     private fun capOrBudgetMb(): Long =

@@ -13,7 +13,7 @@ object BufferSizing {
     // Automatic buffer per box, by the total memory Android reports. The 1 GB and 1.5 GB sizes are scaled from 2 GB.
     const val BUFFER_1GB_BOX_MB = 100
     const val BUFFER_1_5GB_BOX_MB = 125
-    const val BUFFER_2GB_BOX_MB = 150
+    const val BUFFER_2GB_BOX_MB = 200
     const val BUFFER_3GB_BOX_MB = 500
     const val BUFFER_4GB_BOX_MB = 1000
     const val BUFFER_6GB_BOX_MB = 1600
@@ -27,11 +27,13 @@ object BufferSizing {
 
     // Kept free above Android's low-memory line, so the box does not start killing apps and swapping.
     const val SYSTEM_MARGIN_MB = 100
+    // Kept free when the buffer is sized at the start: Android closes idle apps to hold its own line, and the
+    // memory keeper trims the buffer if the box really runs short later.
+    const val SIZING_MARGIN_MB = 28
     // Still to come once the player is built: video surface and decoder (about 140 MB of graphics for 4K video
-    // output on 2 GB boxes), the native allocator's 32 MB arena, and the image cache filling up again.
+    // output on 2 GB boxes) and the native allocator's 32 MB arena. Pictures are already in memory by then.
     const val VIDEO_OUTPUT_RESERVE_MB = 140
     const val NATIVE_ARENA_RESERVE_MB = 32
-    const val IMAGE_CACHE_RESERVE_MB = 40
     /** About 5 s of a 4K remux at 80 Mbit/s. */
     const val MIN_SIZED_BUFFER_MB = 50
 
@@ -75,13 +77,13 @@ object BufferSizing {
     }.getOrNull()
 
     /**
-     * MB the buffer can take before the box drops below its low-memory line plus [SYSTEM_MARGIN_MB].
+     * MB the buffer can take before the box drops below its low-memory line plus [SIZING_MARGIN_MB].
      * [outsideBudgetMb] is memory the player holds outside this budget (the parallel chunk window);
      * [heldByPlayerMb] is buffer memory already held that the new player takes over or frees.
      */
     fun spareMb(free: FreeMemory, outsideBudgetMb: Int, heldByPlayerMb: Int): Long =
-        free.availMb - free.thresholdMb - SYSTEM_MARGIN_MB - VIDEO_OUTPUT_RESERVE_MB -
-            NATIVE_ARENA_RESERVE_MB - IMAGE_CACHE_RESERVE_MB - outsideBudgetMb + heldByPlayerMb
+        free.availMb - free.thresholdMb - SIZING_MARGIN_MB - VIDEO_OUTPUT_RESERVE_MB -
+            NATIVE_ARENA_RESERVE_MB - outsideBudgetMb + heldByPlayerMb
 
     /** The box's size, lowered to what is free now, never below [MIN_SIZED_BUFFER_MB] (or the box's size if smaller). */
     fun sizedBudgetMb(boxMb: Int, free: FreeMemory?, outsideBudgetMb: Int, heldByPlayerMb: Int): Int {
@@ -99,17 +101,35 @@ object BufferSizing {
     /**
      * Every byte of the back buffer counts against the target, and it moves with playback instead of shrinking.
      * At [bytesPerSecond] it takes at most a third of [targetBytes] and leaves [MIN_AHEAD_MS] ahead.
+     * A positive [minBufferMs] holds it to half of that, as the official app does with native memory. With
+     * [maxBufferMs] it only gets what is left once the buffer ahead holds what the official app would keep in
+     * [referenceBytes] (up to [maxBufferMs]), so a target lowered to the free memory comes out of the back buffer first.
      */
     fun backBufferMsForTarget(
         backBufferMs: Int,
         targetBytes: Long,
-        bytesPerSecond: Long = DEFAULT_BACK_BUFFER_BYTES_PER_SECOND
+        bytesPerSecond: Long = DEFAULT_BACK_BUFFER_BYTES_PER_SECOND,
+        minBufferMs: Int = 0,
+        maxBufferMs: Int = 0,
+        referenceBytes: Long = targetBytes
     ): Int {
         if (backBufferMs <= 0) return 0
         val rate = bytesPerSecond.takeIf { it > 0L } ?: DEFAULT_BACK_BUFFER_BYTES_PER_SECOND
-        val aheadBytes = MIN_AHEAD_MS * rate / 1000L
+        // Official keeps at most Min/2 behind; that only decides what stays ahead, the setting itself is kept when it fits.
+        val officialBackMs = if (minBufferMs > 0) backBufferMs.coerceAtMost(minBufferMs / 2) else backBufferMs
+        var aheadBytes = MIN_AHEAD_MS * rate / 1000L
+        if (maxBufferMs > 0) {
+            val officialAheadBytes = (referenceBytes - officialBackMs.toLong() * rate / 1000L).coerceAtLeast(0L)
+            aheadBytes = maxOf(aheadBytes, minOf(officialAheadBytes, maxBufferMs.toLong() * rate / 1000L))
+        }
         val backBytes = minOf(targetBytes / 3, targetBytes - aheadBytes).coerceAtLeast(0L)
         return backBufferMs.toLong().coerceAtMost(backBytes * 1000L / rate).toInt()
+    }
+
+    /** Bytes [backBufferMs] holds at [bytesPerSecond]. */
+    fun backBufferBytes(backBufferMs: Int, bytesPerSecond: Long): Long {
+        val rate = bytesPerSecond.takeIf { it > 0L } ?: DEFAULT_BACK_BUFFER_BYTES_PER_SECOND
+        return backBufferMs.coerceAtLeast(0).toLong() * rate / 1000L
     }
 
     /** The budget the back buffer was fitted to at the last player build, for the settings note. */

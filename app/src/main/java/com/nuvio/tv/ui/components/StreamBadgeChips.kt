@@ -62,6 +62,10 @@ private val badgeImageRequestCache = HashMap<String, ImageRequest>(32)
 
 private var badgeImageLoader: ImageLoader? = null
 
+internal fun releaseBadgeImageMemory() {
+    badgeImageLoader?.memoryCache?.clear()
+}
+
 private fun getBadgeImageLoader(context: android.content.Context): ImageLoader {
     badgeImageLoader?.let { return it }
     val loader = ImageLoader.Builder(context.applicationContext)

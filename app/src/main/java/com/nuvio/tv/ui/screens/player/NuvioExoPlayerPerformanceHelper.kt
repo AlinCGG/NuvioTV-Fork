@@ -70,6 +70,10 @@ object NuvioExoPlayerPerformanceHelper {
     @Volatile
     var maxBufferMs: Int = DEFAULT_NUVIO_MAX_BUFFER_MS
 
+    /** Half of this caps the back buffer, as the official app does with native memory (its Min buffer duration). */
+    @Volatile
+    var backBufferReferenceMs: Int = DEFAULT_NUVIO_MIN_BUFFER_MS
+
     @Volatile
     var bufferForPlaybackMs: Int = 3_000
 
@@ -81,6 +85,10 @@ object NuvioExoPlayerPerformanceHelper {
 
     @Volatile
     var targetBufferSizeMb: Int = 250
+
+    /** The target before it was lowered to the free memory: what the buffer ahead is measured against. */
+    @Volatile
+    var unsizedTargetBufferSizeMb: Int = 250
 
     /** Back buffer of the last load control built, the one the player runs with; -1 before the first build. */
     @Volatile
@@ -108,10 +116,20 @@ object NuvioExoPlayerPerformanceHelper {
         val customBuffers = settings.bufferEngineEnabled
         val bufferSettings = settings.bufferSettings
         
-        minBufferMs = if (customBuffers) bufferSettings.minBufferMs else DEFAULT_NUVIO_MIN_BUFFER_MS
-        maxBufferMs = if (customBuffers) bufferSettings.maxBufferMs else DEFAULT_NUVIO_MAX_BUFFER_MS
         bufferForPlaybackMs = if (customBuffers) bufferSettings.bufferForPlaybackMs else 3_000
         bufferForPlaybackAfterRebufferMs = if (customBuffers) bufferSettings.bufferForPlaybackAfterRebufferMs else 3_000
+        if (customBuffers) {
+            val durations = com.nuvio.tv.core.player.BufferAhead.durations(
+                bufferSettings.bufferAheadMs, bufferForPlaybackMs, bufferForPlaybackAfterRebufferMs
+            )
+            minBufferMs = durations.minBufferMs
+            maxBufferMs = durations.maxBufferMs
+            backBufferReferenceMs = durations.maxBufferMs
+        } else {
+            minBufferMs = DEFAULT_NUVIO_MIN_BUFFER_MS
+            maxBufferMs = DEFAULT_NUVIO_MAX_BUFFER_MS
+            backBufferReferenceMs = DEFAULT_NUVIO_MIN_BUFFER_MS
+        }
         backBufferMs = if (customBuffers) bufferSettings.backBufferDurationMs else DEFAULT_NUVIO_BACK_BUFFER_MS
 
         val safeLimitMb = getSafeNativeMemoryLimitMb(context)
@@ -119,6 +137,7 @@ object NuvioExoPlayerPerformanceHelper {
         val (automatic, targetMb) = targetBufferFor(settings, safeLimitMb, autoMb)
         targetIsAutomatic = automatic
         targetBufferSizeMb = targetMb
+        unsizedTargetBufferSizeMb = targetMb
 
         val effectiveBufferMb = when {
             settings.nuvioPerformanceModeEnabled -> {
@@ -303,6 +322,7 @@ object NuvioExoPlayerPerformanceHelper {
         heldMb: Int
     ): String {
         val boxMb = targetBufferSizeMb
+        unsizedTargetBufferSizeMb = boxMb
         if (!targetIsAutomatic) return "boxMb=$boxMb sizedMb=$boxMb user=true"
         val sized = com.nuvio.tv.core.player.BufferSizing.sizedBudgetMb(boxMb, free, chunkWindowMb, heldMb)
         targetBufferSizeMb = sized
@@ -327,14 +347,18 @@ object NuvioExoPlayerPerformanceHelper {
         }
     }
 
-    // Both buffers hold bitrate times duration, so half of minBufferMs gives the back buffer a third of the target whatever the stream.
-    private fun effectiveBackBufferMs(): Int = backBufferMs.coerceAtLeast(0)
+    private fun effectiveBackBufferMs(): Int = backBufferMs.coerceAtLeast(0).coerceAtMost(backBufferReferenceMs / 2)
 
     /**
      * Builds a [DefaultLoadControl] tuned for Nuvio performance when enabled,
      * or a standard ExoPlayer [DefaultLoadControl] when disabled.
      */
-    fun buildLoadControl(context: Context? = null, chunkOverheadMb: Int = 0, fileBitrateBps: Long = 0L): DefaultLoadControl {
+    fun buildLoadControl(
+        context: Context? = null,
+        chunkOverheadMb: Int = 0,
+        fileBitrateBps: Long = 0L,
+        topUpPieceBytes: Long = com.nuvio.tv.core.player.BufferTopUp.DEFAULT_PIECE_BYTES
+    ): DefaultLoadControl {
         return if (enabled) {
             val effectiveTargetBufferMb = (targetBufferSizeMb - chunkOverheadMb)
                 .coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
@@ -353,8 +377,11 @@ object NuvioExoPlayerPerformanceHelper {
             val allocator = DefaultAllocator(true, DEFAULT_NUVIO_ALLOCATOR_SEGMENT_SIZE, 0, enabled)
             liveAllocator = allocator
             val sizing = com.nuvio.tv.core.player.BufferSizing
+            val bytesPerSecond = sizing.backBufferBytesPerSecond(fileBitrateBps)
+            val referenceBytes = (unsizedTargetBufferSizeMb - chunkOverheadMb)
+                .coerceAtLeast(effectiveTargetBufferMb).toLong() * 1024L * 1024L
             val fittedBackBufferMs = sizing.backBufferMsForTarget(
-                effectiveBackBufferMs(), targetBufferBytes.toLong(), sizing.backBufferBytesPerSecond(fileBitrateBps)
+                backBufferMs, targetBufferBytes.toLong(), bytesPerSecond, backBufferReferenceMs, maxBufferMs, referenceBytes
             )
             builtBackBufferMs = fittedBackBufferMs
             sizing.lastPlaybackBudget = com.nuvio.tv.core.player.BufferSizing.PlaybackBudget(
@@ -362,7 +389,7 @@ object NuvioExoPlayerPerformanceHelper {
             )
             android.util.Log.i(
                 "ExoPerformance",
-                "buildLoadControl: targetBufferSizeMb=$targetBufferSizeMb, chunkOverheadMb=$chunkOverheadMb, effectiveTargetBufferMb=$effectiveTargetBufferMb, targetBytes=$targetBufferBytes, backBufferMs=$fittedBackBufferMs (set=$backBufferMs) fileKbps=${fileBitrateBps / 1000}"
+                "buildLoadControl: targetBufferSizeMb=$targetBufferSizeMb, chunkOverheadMb=$chunkOverheadMb, effectiveTargetBufferMb=$effectiveTargetBufferMb, targetBytes=$targetBufferBytes, backBufferMs=$fittedBackBufferMs (set=$backBufferMs) referenceMb=${referenceBytes / (1024L * 1024L)} fileKbps=${fileBitrateBps / 1000}"
             )
             // Same parameters the Builder took; the subclass adds the seek-thumbnail read-ahead reserve (4K-E).
             com.nuvio.tv.core.player.ReservableLoadControl(
@@ -379,7 +406,8 @@ object NuvioExoPlayerPerformanceHelper {
                 // so the back buffer is the side that gives way when both cannot fit the target.
                 backBufferDurationMs = fittedBackBufferMs,
                 retainBackBufferFromKeyframe = true,
-            )
+                topUpPieceBytes = topUpPieceBytes,
+            ).also { it.backBufferBytes = sizing.backBufferBytes(fittedBackBufferMs, bytesPerSecond) }
         } else {
             DefaultLoadControl.Builder()
                 .setTargetBufferBytes(100 * 1024 * 1024)

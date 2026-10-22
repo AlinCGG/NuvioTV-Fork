@@ -15,10 +15,10 @@ class BufferSizingTest {
 
     @Test
     fun `one size per box`() {
-        assertEquals(150, BufferSizing.autoBufferMbForRam(0L))
+        assertEquals(200, BufferSizing.autoBufferMbForRam(0L))
         assertEquals(100, BufferSizing.autoBufferMbForRam((0.9 * gb).toLong()))
         assertEquals(125, BufferSizing.autoBufferMbForRam((1.3 * gb).toLong()))
-        assertEquals(150, BufferSizing.autoBufferMbForRam((1.9 * gb).toLong()))
+        assertEquals(200, BufferSizing.autoBufferMbForRam((1.9 * gb).toLong()))
         assertEquals(500, BufferSizing.autoBufferMbForRam((2.8 * gb).toLong()))
         assertEquals(1000, BufferSizing.autoBufferMbForRam((3.8 * gb).toLong()))
         assertEquals(1600, BufferSizing.autoBufferMbForRam((5.6 * gb).toLong()))
@@ -42,19 +42,23 @@ class BufferSizingTest {
     fun `size follows the memory that is free`() {
         val rows = listOf(
             // Fire TV Stick 4K Max, other apps stopped: room for the whole 2 GB size.
-            Row(150, 700, 130, 96, 0, 150),
+            Row(200, 740, 130, 96, 0, 200),
+            // A little less free: what is spare.
+            Row(200, 588, 130, 96, 0, 162),
             // Same box with apps in the background (MemAvailable 425 MB measured idle): the floor.
-            Row(150, 425, 130, 96, 0, 50),
+            Row(200, 425, 130, 96, 0, 50),
             // Somewhere between: what is spare.
-            Row(150, 600, 130, 96, 0, 62),
+            Row(200, 488, 130, 96, 0, 62),
             // Previous player still holds 80 MB that comes back.
-            Row(150, 600, 130, 96, 80, 142),
+            Row(200, 488, 130, 96, 80, 142),
+            // A Fire Stick with 500 MB free and no chunk window: 156 MB with the 200 MB start-up reserve.
+            Row(200, 500, 144, 0, 0, 156),
             // AM9 Pro with plenty free: the 4 GB size.
             Row(1000, 2400, 220, 192, 0, 1000),
-            // AM9 Pro with 1.4 GB free.
-            Row(1000, 1400, 220, 192, 0, 676),
+            // AM9 Pro with 1.3 GB free.
+            Row(1000, 1288, 220, 192, 0, 676),
             // Custom buffers keep the chunks inside the budget, so no window outside it.
-            Row(150, 520, 130, 0, 0, 78),
+            Row(200, 408, 130, 0, 0, 78),
         )
         for (r in rows) {
             val sized = BufferSizing.sizedBudgetMb(r.boxMb, free(r.availMb, r.thresholdMb), r.windowMb, r.heldMb)
@@ -114,6 +118,78 @@ class BufferSizingTest {
                 if (backMs > 0) assertTrue("$bps at $targetMb MB", backBytes + BufferSizing.MIN_AHEAD_MS * rate / 1000 <= targetMb * mb)
                 assertTrue("$bps at $targetMb MB", backBytes <= targetMb * mb / 3)
             }
+        }
+    }
+
+    @Test
+    fun `with room the back buffer keeps its setting, half the minimum only decides what stays ahead`() {
+        val rate20 = BufferSizing.backBufferBytesPerSecond(20_000_000L)
+        assertEquals(30_000, BufferSizing.backBufferMsForTarget(30_000, 1000 * mb, rate20, 15_000, 45_000))
+        assertEquals(5_000, BufferSizing.backBufferMsForTarget(5_000, 1000 * mb, rate20, 15_000, 45_000))
+        assertEquals(30_000, BufferSizing.backBufferMsForTarget(30_000, 1000 * mb, rate20, 0, 45_000))
+    }
+
+    @Test
+    fun `2 GB box, 60 Mbit s film, back buffer 30 s, Min 15 s, Max 45 s keeps the official seconds ahead`() {
+        val rate = BufferSizing.backBufferBytesPerSecond(60_000_000L)
+        assertEquals(7_500_000L, rate)
+        fun aheadMs(targetBytes: Long, backMs: Int) = (targetBytes - backMs.toLong() * rate / 1000L) * 1000L / rate
+        // The official app: 200 MiB, back buffer min(30 s, 15 s / 2) = 7.5 s, 20.46 s ahead.
+        val official = aheadMs(200 * mb, 7_500)
+        assertEquals(20_462L, official)
+
+        // Before: 150 MiB and the back buffer fitted to a third of it, 6.99 s back and 13.98 s ahead.
+        val before = BufferSizing.backBufferMsForTarget(30_000, 150 * mb, rate)
+        assertEquals(6_990, before)
+        assertEquals(13_981L, aheadMs(150 * mb, before))
+
+        // Now: 200 MiB, 7.5 s back, the official 20.46 s ahead.
+        val now = BufferSizing.backBufferMsForTarget(30_000, 200 * mb, rate, 15_000, 45_000, 200 * mb)
+        assertEquals(7_500, now)
+        assertTrue(aheadMs(200 * mb, now) >= official)
+
+        // Lowered by the free memory: the back buffer only gets what is left over the official amount ahead.
+        val slightly = BufferSizing.backBufferMsForTarget(30_000, 190 * mb, rate, 15_000, 45_000, 200 * mb)
+        assertEquals(6_101, slightly)
+        assertTrue(aheadMs(190 * mb, slightly) >= official)
+        val lowered = BufferSizing.backBufferMsForTarget(30_000, 150 * mb, rate, 15_000, 45_000, 200 * mb)
+        assertEquals(509, lowered)
+        assertTrue(aheadMs(150 * mb, lowered) >= official)
+        // Below the official amount the buffer ahead takes all of it.
+        val tight = BufferSizing.backBufferMsForTarget(30_000, 140 * mb, rate, 15_000, 45_000, 200 * mb)
+        assertEquals(0, tight)
+        assertEquals(19_573L, aheadMs(140 * mb, tight))
+    }
+
+    @Test
+    fun `the buffer ahead never gets less than the official amount, Max or the target allow`() {
+        for (bps in listOf(5_000_000L, 25_000_000L, 60_000_000L, 120_000_000L)) {
+            val rate = BufferSizing.backBufferBytesPerSecond(bps)
+            for (setMs in listOf(1_500, 12_000, 30_000, 120_000)) {
+                for (targetMb in 50L..400L step 10L) {
+                    val target = targetMb * mb
+                    val reference = 200 * mb
+                    val backMs = BufferSizing.backBufferMsForTarget(setMs, target, rate, 15_000, 45_000, reference)
+                    val label = "$bps bps, set $setMs, $targetMb MB"
+                    assertTrue(label, backMs <= setMs)
+                    val ahead = target - backMs.toLong() * rate / 1000L
+                    val officialAhead = reference - minOf(setMs, 7_500).toLong() * rate / 1000L
+                    val wanted = minOf(officialAhead, 45_000L * rate / 1000L, target)
+                    assertTrue(label, ahead >= wanted)
+                    if (backMs > 0) assertTrue(label, ahead >= BufferSizing.MIN_AHEAD_MS * rate / 1000L)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `without Min and Max the fit is unchanged`() {
+        val rate20 = BufferSizing.backBufferBytesPerSecond(20_000_000L)
+        for (targetMb in listOf(50L, 62L, 100L, 150L, 1000L)) {
+            assertEquals(
+                BufferSizing.backBufferMsForTarget(30_000, targetMb * mb, rate20),
+                BufferSizing.backBufferMsForTarget(30_000, targetMb * mb, rate20, 0, 0, 2000 * mb)
+            )
         }
     }
 
