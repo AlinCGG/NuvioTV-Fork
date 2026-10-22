@@ -223,8 +223,8 @@ class BufferMemoryKeeperTest {
         val calm = performanceControl(budgetMb = 62, minBufferMs = 200_000, maxBufferMs = 280_000, backBufferMs = 12_000)
         assertTrue(calm.shouldContinueLoading(params(bufferedMs = 2_000)))
         assertFalse(calm.shouldContinueLoading(params(bufferedMs = 5_000)))
-        // The back buffer the app builds for this target is cut to leave 5 s ahead.
-        assertEquals(1_200, BufferSizing.backBufferMsForTarget(12_000, 62 * mb))
+        // The back buffer the app builds for this target would be under 10 s, so it goes to the buffer ahead.
+        assertEquals(0, BufferSizing.backBufferMsForTarget(12_000, 62 * mb))
     }
 
     @Test

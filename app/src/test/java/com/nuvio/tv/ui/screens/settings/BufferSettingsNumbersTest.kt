@@ -40,12 +40,12 @@ class BufferSettingsNumbersTest {
     @Test
     fun `the back buffer note shows what the player keeps inside the size`() {
         // Native memory preset: 12 s back buffer, 280 s ahead.
-        assertEquals(BufferSettingsNumbers.BackBufferKept(5, 50), BufferSettingsNumbers.backBufferKept(12_000, 150, true, 280_000))
+        assertNull(BufferSettingsNumbers.backBufferKept(12_000, 150, true, 280_000))
         assertEquals(BufferSettingsNumbers.BackBufferKept(12, 120), BufferSettingsNumbers.backBufferKept(12_000, 1000, true, 200_000))
-        assertEquals(BufferSettingsNumbers.BackBufferKept(1, 12), BufferSettingsNumbers.backBufferKept(12_000, 62, true, 200_000))
-        assertEquals(BufferSettingsNumbers.BackBufferKept(3, 33), BufferSettingsNumbers.backBufferKept(12_000, 100, true, 200_000))
+        assertNull(BufferSettingsNumbers.backBufferKept(12_000, 62, true, 200_000))
+        assertNull(BufferSettingsNumbers.backBufferKept(12_000, 100, true, 200_000))
         // Custom buffers without native memory on a 2 GB box with 2 x 16 MB chunks: 150 - 64 = 86 MB.
-        assertEquals(BufferSettingsNumbers.BackBufferKept(3, 29), BufferSettingsNumbers.backBufferKept(5_000, 86, false, 15_000))
+        assertNull(BufferSettingsNumbers.backBufferKept(5_000, 86, false, 15_000))
         // A short back buffer that fits stays as set.
         assertEquals(BufferSettingsNumbers.BackBufferKept(5, 50), BufferSettingsNumbers.backBufferKept(5_000, 1000, false, 15_000))
     }

@@ -593,16 +593,17 @@ class AutoSpeedupPolicyTest {
     }
 
     @Test
-    fun `a 2 GB box allowed six still starts on three`() {
+    fun `a 2 GB box starts a remux on five small downloads`() {
         val mb = 1024L * 1024L
-        assertEquals(3, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 8L * mb, smallBox = true))
+        assertEquals(5, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 8L * mb, smallBox = true))
+        assertEquals(2, AutoSpeedupPolicy.startDownloads(50_000_000L, 6, 8L * mb, smallBox = true))
         assertEquals(2, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 16L * mb, smallBox = true))
         assertEquals(3, AutoSpeedupPolicy.startDownloads(90_000_000L, 6, 16L * mb, smallBox = false))
     }
 
     @Test
-    fun `a 2 GB box starts a remux on three 8 MB downloads, holding less than two 16 MB ones`() {
-        assertEquals(3, AutoSpeedupPolicy.startDownloads(90_000_000L, 4, 8L * mb))
+    fun `a 2 GB box starts a remux on as many 8 MB downloads as it may, holding less than two 16 MB ones`() {
+        assertEquals(4, AutoSpeedupPolicy.startDownloads(90_000_000L, 4, 8L * mb))
         assertEquals(2, AutoSpeedupPolicy.startDownloads(50_000_000L, 4, 8L * mb))
         assertEquals(true, AutoSpeedupPolicy.lentBytes(3, 8L * mb) < AutoSpeedupPolicy.lentBytes(2, 16L * mb))
     }

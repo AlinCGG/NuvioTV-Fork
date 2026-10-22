@@ -82,12 +82,13 @@ class BufferSizingTest {
     }
 
     @Test
-    fun `the back buffer always leaves 5 s ahead at 80 Mbit s`() {
+    fun `the back buffer always leaves 5 s ahead at 80 Mbit s and is dropped below 10 s`() {
         assertEquals(0, BufferSizing.backBufferMsForTarget(12_000, 50 * mb))
-        assertEquals(1_200, BufferSizing.backBufferMsForTarget(12_000, 62 * mb))
-        assertEquals(5_000, BufferSizing.backBufferMsForTarget(12_000, 150 * mb))
+        assertEquals(0, BufferSizing.backBufferMsForTarget(12_000, 62 * mb))
+        assertEquals(0, BufferSizing.backBufferMsForTarget(12_000, 150 * mb))
         assertEquals(12_000, BufferSizing.backBufferMsForTarget(12_000, 1000 * mb))
         assertEquals(1_500, BufferSizing.backBufferMsForTarget(1_500, 150 * mb))
+        assertEquals(10_000, BufferSizing.backBufferMsForTarget(12_000, 300 * mb))
         assertEquals(0, BufferSizing.backBufferMsForTarget(0, 1000 * mb))
         val bytesPerSecond = 10 * mb
         for (targetMb in 50L..2000L) {
@@ -103,13 +104,13 @@ class BufferSizingTest {
     fun `the back buffer follows the film's real bitrate`() {
         val rate20 = BufferSizing.backBufferBytesPerSecond(20_000_000L)
         assertEquals(2_500_000L, rate20)
-        // 2 GB box at 100 MB: about 3.5 s of an 80 Mbit/s remux, the 12 s set kept whole for a 20 Mbit/s film.
-        assertEquals(3_495, BufferSizing.backBufferMsForTarget(12_000, 100 * mb, BufferSizing.backBufferBytesPerSecond(80_000_000L)))
+        // 2 GB box at 100 MB: under 10 s of an 80 Mbit/s remux fits, so none is kept; the 12 s set fits a 20 Mbit/s film.
+        assertEquals(0, BufferSizing.backBufferMsForTarget(12_000, 100 * mb, BufferSizing.backBufferBytesPerSecond(80_000_000L)))
         assertEquals(12_000, BufferSizing.backBufferMsForTarget(12_000, 100 * mb, rate20))
         assertEquals(20_971, BufferSizing.backBufferMsForTarget(30_000, 150 * mb, rate20))
-        // 50 MB, the smallest size: a quarter of a second at 80 Mbit/s, about 7 s at 20 Mbit/s.
-        assertEquals(242, BufferSizing.backBufferMsForTarget(30_000, 50 * mb, BufferSizing.backBufferBytesPerSecond(80_000_000L)))
-        assertEquals(6_990, BufferSizing.backBufferMsForTarget(30_000, 50 * mb, rate20))
+        // 50 MB, the smallest size: under 10 s at either rate, so the buffer ahead gets it all.
+        assertEquals(0, BufferSizing.backBufferMsForTarget(30_000, 50 * mb, BufferSizing.backBufferBytesPerSecond(80_000_000L)))
+        assertEquals(0, BufferSizing.backBufferMsForTarget(30_000, 50 * mb, rate20))
         for (bps in listOf(5_000_000L, 20_000_000L, 60_000_000L, 90_000_000L, 120_000_000L)) {
             val rate = BufferSizing.backBufferBytesPerSecond(bps)
             for (targetMb in 50L..1000L step 10L) {
@@ -140,20 +141,20 @@ class BufferSizingTest {
 
         // Before: 150 MiB and the back buffer fitted to a third of it, 6.99 s back and 13.98 s ahead.
         val before = BufferSizing.backBufferMsForTarget(30_000, 150 * mb, rate)
-        assertEquals(6_990, before)
-        assertEquals(13_981L, aheadMs(150 * mb, before))
+        assertEquals(0, before)
+        assertEquals(20_971L, aheadMs(150 * mb, before))
 
-        // Now: 200 MiB, 7.5 s back, the official 20.46 s ahead.
+        // Now: 200 MiB; the 7.5 s that would fit behind is under one 10 s skip, so all of it stays ahead.
         val now = BufferSizing.backBufferMsForTarget(30_000, 200 * mb, rate, 15_000, 45_000, 200 * mb)
-        assertEquals(7_500, now)
+        assertEquals(0, now)
         assertTrue(aheadMs(200 * mb, now) >= official)
 
         // Lowered by the free memory: the back buffer only gets what is left over the official amount ahead.
         val slightly = BufferSizing.backBufferMsForTarget(30_000, 190 * mb, rate, 15_000, 45_000, 200 * mb)
-        assertEquals(6_101, slightly)
+        assertEquals(0, slightly)
         assertTrue(aheadMs(190 * mb, slightly) >= official)
         val lowered = BufferSizing.backBufferMsForTarget(30_000, 150 * mb, rate, 15_000, 45_000, 200 * mb)
-        assertEquals(509, lowered)
+        assertEquals(0, lowered)
         assertTrue(aheadMs(150 * mb, lowered) >= official)
         // Below the official amount the buffer ahead takes all of it.
         val tight = BufferSizing.backBufferMsForTarget(30_000, 140 * mb, rate, 15_000, 45_000, 200 * mb)
@@ -198,7 +199,7 @@ class BufferSizingTest {
         assertEquals(10 * mb, BufferSizing.backBufferBytesPerSecond(0L))
         assertEquals(10 * mb, BufferSizing.backBufferBytesPerSecond(-1L))
         assertEquals(1 * mb, BufferSizing.backBufferBytesPerSecond(1_000_000L))
-        assertEquals(5_000, BufferSizing.backBufferMsForTarget(12_000, 150 * mb, 0L))
+        assertEquals(0, BufferSizing.backBufferMsForTarget(12_000, 150 * mb, 0L))
         assertEquals(
             BufferSizing.backBufferMsForTarget(12_000, 150 * mb),
             BufferSizing.backBufferMsForTarget(12_000, 150 * mb, BufferSizing.backBufferBytesPerSecond(0L))

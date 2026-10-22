@@ -259,8 +259,8 @@ class NuvioExoPlayerPerformanceHelperTest {
             helper.targetBufferSizeMb = 150
             helper.sizeTargetFromFreeMemory(com.nuvio.tv.core.player.BufferSizing.FreeMemory(488 * mb, 130 * mb, false), 96, 0)
             assertEquals(62, helper.targetBufferSizeMb)
-            assertEquals(1_200_000L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
-            assertEquals(1_200, helper.builtBackBufferMs)
+            assertEquals(0L, helper.buildLoadControl().getBackBufferDurationUs(playerId))
+            assertEquals(0, helper.builtBackBufferMs)
 
             helper.targetBufferSizeMb = 150
             helper.sizeTargetFromFreeMemory(com.nuvio.tv.core.player.BufferSizing.FreeMemory(425 * mb, 130 * mb, false), 96, 0)
@@ -307,15 +307,16 @@ class NuvioExoPlayerPerformanceHelperTest {
             helper.sizeTargetFromFreeMemory(com.nuvio.tv.core.player.BufferSizing.FreeMemory(800 * mb, 130 * mb, false), 96, 0)
             assertEquals(200, helper.targetBufferSizeMb)
             val full = helper.buildLoadControl(fileBitrateBps = 60_000_000L)
-            assertEquals(7_500_000L, full.getBackBufferDurationUs(playerId))
-            assertEquals(56_250_000L, (full as com.nuvio.tv.core.player.BufferBudgetControl).backBufferBytes)
+            // The 7.5 s that would fit behind is under one 10 s skip back, so all of it stays ahead.
+            assertEquals(0L, full.getBackBufferDurationUs(playerId))
+            assertEquals(0L, (full as com.nuvio.tv.core.player.BufferBudgetControl).backBufferBytes)
 
             // Lowered to 150 MB by the free memory: the official 20.5 s stay ahead, the back buffer gets the rest.
             helper.targetBufferSizeMb = 200
             helper.sizeTargetFromFreeMemory(com.nuvio.tv.core.player.BufferSizing.FreeMemory(576 * mb, 130 * mb, false), 96, 0)
             assertEquals(150, helper.targetBufferSizeMb)
             assertEquals(200, helper.unsizedTargetBufferSizeMb)
-            assertEquals(509_000L, helper.buildLoadControl(fileBitrateBps = 60_000_000L).getBackBufferDurationUs(playerId))
+            assertEquals(0L, helper.buildLoadControl(fileBitrateBps = 60_000_000L).getBackBufferDurationUs(playerId))
         } finally {
             helper.targetBufferSizeMb = old[0]
             helper.minBufferMs = old[1]
