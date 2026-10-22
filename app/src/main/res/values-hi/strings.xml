@@ -1185,6 +1185,8 @@
     <string name="layout_trailer_logo_sub">कार्ड में चल रहे ट्रेलर के ऊपर टाइटल लोगो दिखाएँ।</string>
     <string name="layout_preset_extra_large">एक्स्ट्रा लार्ज</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV सुझाव</string>
+    <string name="layout_addon_landscape_backdrop_logo">ऐडऑन की लैंडस्केप रो पर लोगो के साथ बैकड्रॉप</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">जिन रो को ऐडऑन पहले से लैंडस्केप में दिखाता है, वे उसकी अपनी तस्वीरें इस्तेमाल करती हैं। चालू करने पर वहाँ भी टाइटल लोगो के साथ बैकड्रॉप इस्तेमाल होता है।</string>
     <string name="mdblist_account_title">अकाउंट</string>
     <string name="mdblist_account_subtitle">आपका MDBList यूज़रनेम। रीफ्रेश करने के लिए चुनें।</string>
     <string name="mdblist_plan_title">प्लान</string>
@@ -1247,7 +1249,11 @@
     <string name="playback_net_device_memory_auto">इस डिवाइस में %1$s मेमोरी है। ऐप %2$d MB तक आगे बफर करता है, मेमोरी कम होने पर कम।</string>
     <string name="playback_net_native_memory_sub">ऐप को इस डिवाइस के लिए बफर का साइज़ तय करने और उसे नेटिव मेमोरी में रखने देता है, जिससे सीक तेज़ होता है। इसे चालू करने पर नीचे की बफर और नेटवर्क वैल्यू भी इस डिवाइस के हिसाब से सेट हो जाती हैं।</string>
     <string name="playback_buffer_custom_desc">ऐप की अपनी वैल्यू की जगह नीचे की वैल्यू इस्तेमाल करें। बंद होने पर: ExoPlayer नेटिव मेमोरी चालू हो तो ऐप इस डिवाइस के लिए चुने साइज़ में 15 से 45 सेकंड बफर करता है; बंद हो तो Media3 का स्टैंडर्ड बफर।</string>
-    <string name="playback_buffer_seconds_hint">%1$d MB में 4K remux (80 Mbit/s) के करीब %2$d सेकंड आते हैं। इससे लंबी सेटिंग से कोई फ़र्क नहीं पड़ता।</string>
+    <string name="playback_buffer_ahead">आगे का बफर</string>
+    <string name="playback_buffer_ahead_sub">आप जहाँ हैं उससे आगे फ़िल्म का कितना हिस्सा तैयार रखा जाए। ऐप इसे हर समय भरा रखता है। अस्थिर सर्वर पर ज़्यादा मदद करता है; सीमा इस डिवाइस की मेमोरी है।</string>
+    <string name="playback_buffer_ahead_reach">यह डिवाइस 4K remux के करीब %2$d सेकंड और वेब फ़ाइल के %3$d सेकंड रख सकता है (पिछले प्लेबैक में %1$d MB खाली)।</string>
+    <string name="playback_buffer_ahead_over_remux">यह डिवाइस 4K remux का जितना रख सकता है उससे ज़्यादा (करीब %1$d सेकंड)। हल्की फ़िल्में फिर भी इसका उपयोग करती हैं।</string>
+    <string name="playback_buffer_remux_cannot_fill">इस डिवाइस पर 4K remux इसे नहीं भर सकता (करीब %1$d सेकंड आते हैं): मेमोरी भरने पर प्लेबैक शुरू होता है।</string>
     <string name="playback_buffer_back_fitted">टारगेट बफर साइज़ के अंदर रखा जाता है। %1$d MB पर ऐप इसमें से करीब %2$d सेकंड तक रखता है (80 Mbit/s पर %3$d MB), ताकि कम से कम 5 सेकंड आगे बफर रहें।</string>
     <string name="playback_buffer_back_fitted_none">टारगेट बफर साइज़ के अंदर रखा जाता है। %1$d MB पर इसके लिए जगह नहीं है, इसलिए ऐप इसकी जगह 5 सेकंड आगे बफर रखता है।</string>
     <string name="playback_buffer_managed_desc">प्लेबैक शुरू होते समय इस डिवाइस की खाली मेमोरी से बफर तय करता है, और मेमोरी कम होने पर उसे छोटा करता है। टारगेट बफर साइज़ खुद चुनने के लिए बंद करें: तब ऐप मेमोरी कम होने पर भी आपका चुना साइज़ रखता है, और डिवाइस की मेमोरी सच में खत्म हो जाए तो Android प्लेयर को बंद कर सकता है। छोटे डिवाइस पर बड़ा साइज़ प्लेबैक को रुक-रुक कर चला सकता है।</string>

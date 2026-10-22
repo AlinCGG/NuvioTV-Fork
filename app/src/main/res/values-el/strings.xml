@@ -3453,6 +3453,8 @@
     <string name="layout_trailer_logo">Λογότυπο πάνω στο τρέιλερ της κάρτας</string>
     <string name="layout_trailer_logo_sub">Εμφάνιση του λογότυπου του τίτλου πάνω στο τρέιλερ που παίζει σε κάρτα.</string>
     <string name="layout_preset_extra_large">Πολύ μεγάλο</string>
+    <string name="layout_addon_landscape_backdrop_logo">Φόντο με λογότυπο σε οριζόντιες σειρές πρόσθετων</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Οι σειρές που ένα πρόσθετο ήδη δείχνει οριζόντια χρησιμοποιούν τις δικές του εικόνες. Όταν είναι ενεργό, χρησιμοποιείται και εκεί το φόντο με το λογότυπο του τίτλου.</string>
     <string name="mdblist_account_title">Λογαριασμός</string>
     <string name="mdblist_account_subtitle">Το όνομα χρήστη σας στο MDBList. Επιλέξτε για ανανέωση.</string>
     <string name="mdblist_plan_title">Πλάνο</string>
@@ -3513,7 +3515,11 @@
     <string name="playback_net_device_memory_auto">Αυτή η συσκευή έχει %1$s μνήμης. Η εφαρμογή κάνει buffer έως %2$d MB μπροστά, λιγότερο όταν λείπει μνήμη.</string>
     <string name="playback_net_native_memory_sub">Αφήνει την εφαρμογή να ορίζει το buffer για αυτή τη συσκευή και να το κρατά στην εγγενή μνήμη, με ταχύτερη μετακίνηση. Η ενεργοποίηση ορίζει επίσης τις παρακάτω τιμές buffer και δικτύου για αυτή τη συσκευή.</string>
     <string name="playback_buffer_custom_desc">Χρήση των παρακάτω τιμών αντί για αυτές της εφαρμογής. Όταν είναι ανενεργό: με ενεργή την «Εγγενής μνήμη ExoPlayer», η εφαρμογή κάνει buffer 15 έως 45 s μέσα στο μέγεθος που επιλέγει για τη συσκευή· χωρίς αυτή, το τυπικό buffer του Media3.</string>
-    <string name="playback_buffer_seconds_hint">Στα %1$d MB χωρούν περίπου %2$d s ενός remux 4K (80 Mbit/s). Μεγαλύτερες τιμές δεν κάνουν διαφορά.</string>
+    <string name="playback_buffer_ahead">Buffer μπροστά</string>
+    <string name="playback_buffer_ahead_sub">Πόσο από την ταινία μένει έτοιμο μπροστά από το σημείο σας. Η εφαρμογή το συμπληρώνει συνεχώς. Περισσότερο βοηθά σε ασταθείς διακομιστές· το όριο είναι η μνήμη αυτής της συσκευής.</string>
+    <string name="playback_buffer_ahead_reach">Αυτή η συσκευή χωρά περίπου %2$d s ενός remux 4K και %3$d s ενός αρχείου web (%1$d MB ελεύθερα στην τελευταία αναπαραγωγή).</string>
+    <string name="playback_buffer_ahead_over_remux">Περισσότερο από όσο χωρά αυτή η συσκευή για ένα remux 4K (περίπου %1$d s). Οι ελαφρύτερες ταινίες το χρησιμοποιούν κανονικά.</string>
+    <string name="playback_buffer_remux_cannot_fill">Ένα remux 4K δεν μπορεί να το γεμίσει σε αυτή τη συσκευή (χωρούν περίπου %1$d s): η αναπαραγωγή ξεκινά όταν γεμίσει η μνήμη.</string>
     <string name="playback_buffer_back_fitted">Κρατιέται μέσα στο «Μέγεθος Target Buffer». Στα %1$d MB η εφαρμογή κρατά έως περίπου %2$d s (%3$d MB στα 80 Mbit/s), ώστε να μένουν τουλάχιστον 5 s μπροστά.</string>
     <string name="playback_buffer_back_fitted_none">Κρατιέται μέσα στο «Μέγεθος Target Buffer». Στα %1$d MB δεν υπάρχει χώρος, οπότε η εφαρμογή κρατά 5 s μπροστά.</string>
     <string name="playback_buffer_managed_desc">Ορίζει το buffer από την ελεύθερη μνήμη της συσκευής στην έναρξη της αναπαραγωγής και το μικραίνει όταν λείπει μνήμη. Απενεργοποιήστε το για να ορίσετε μόνοι σας το «Μέγεθος Target Buffer»: η εφαρμογή τότε κρατά το μέγεθός σας όταν η μνήμη λιγοστεύει και, αν η συσκευή μείνει πραγματικά από μνήμη, το Android μπορεί να κλείσει το πρόγραμμα αναπαραγωγής. Σε μικρές συσκευές ένα μεγαλύτερο μέγεθος μπορεί να φέρει μικροκολλήματα.</string>

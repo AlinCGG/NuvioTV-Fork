@@ -167,6 +167,8 @@
     <string name="layout_trailer_logo">Logó a kártya előzetese felett</string>
     <string name="layout_trailer_logo_sub">A cím logójának megjelenítése a kártyán lejátszott előzetes felett.</string>
     <string name="layout_preset_extra_large">Extra nagy</string>
+    <string name="layout_addon_landscape_backdrop_logo">Háttérkép logóval a bővítmények fekvő soraiban</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Azok a sorok, amelyeket egy bővítmény már fekvő formában mutat, a saját képeiket használják. Bekapcsolva ott is a háttérkép jelenik meg a cím logójával.</string>
     <string name="mdblist_account_title">Fiók</string>
     <string name="mdblist_account_subtitle">Az MDBList-felhasználóneved. Frissítéshez válaszd ki.</string>
     <string name="mdblist_plan_title">Csomag</string>
@@ -227,7 +229,11 @@
     <string name="playback_net_device_memory_auto">Ennek az eszköznek %1$s memóriája van. Az alkalmazás legfeljebb %2$d MB-ot pufferel előre, memóriahiánykor kevesebbet.</string>
     <string name="playback_net_native_memory_sub">Az alkalmazás az eszközhöz méretezi a puffert, és natív memóriában tartja, gyorsabb tekeréssel. Bekapcsolva az alábbi puffer- és hálózati értékeket is beállítja ehhez az eszközhöz.</string>
     <string name="playback_buffer_custom_desc">Az alkalmazás saját értékei helyett az alábbiakat használja. Kikapcsolva: bekapcsolt ExoPlayer natív memória mellett az alkalmazás 15 és 45 s között pufferel az eszközhöz választott méreten belül; anélkül a Media3 alap pufferét használja.</string>
-    <string name="playback_buffer_seconds_hint">%1$d MB-nál ez kb. %2$d s-nyi 4K remuxot tart (80 Mbit/s). Hosszabb beállítás nem változtat semmin.</string>
+    <string name="playback_buffer_ahead">Előre pufferelés</string>
+    <string name="playback_buffer_ahead_sub">A filmből mennyi álljon készen az aktuális hely előtt. Az alkalmazás folyamatosan feltölti. Több segít az ingadozó szervereken; a határ az eszköz memóriája.</string>
+    <string name="playback_buffer_ahead_reach">Ez az eszköz kb. %2$d s-nyi 4K remuxot és %3$d s-nyi webes fájlt tart (%1$d MB szabad a legutóbbi lejátszáskor).</string>
+    <string name="playback_buffer_ahead_over_remux">Több, mint amennyit ez az eszköz egy 4K remuxból tartani tud (kb. %1$d s). A könnyebb filmek így is kihasználják.</string>
+    <string name="playback_buffer_remux_cannot_fill">Egy 4K remux ezt nem tudja kitölteni ezen az eszközön (kb. %1$d s fér el): a lejátszás akkor indul, amikor megtelik a memória.</string>
     <string name="playback_buffer_back_fitted">A Cél puffer mérete értékén belül marad. %1$d MB-nál az alkalmazás legfeljebb kb. %2$d s-ot tart meg belőle (%3$d MB 80 Mbit/s-nál), így legalább 5 s marad előre.</string>
     <string name="playback_buffer_back_fitted_none">A Cél puffer mérete értékén belül marad. %1$d MB-nál nincs hely rá, ezért az alkalmazás helyette 5 s-ot tart előre.</string>
     <string name="playback_buffer_managed_desc">A lejátszás indításakor szabad memória alapján állítja be a puffert, és csökkenti, ha az eszköznek kevés a memóriája. Kapcsold ki, ha a Cél puffer mérete értékét magad választanád: ilyenkor az alkalmazás megtartja a választott méretet, ha fogy a memória, és ha az eszköznek tényleg elfogy, az Android bezárhatja a lejátszót. Kis eszközökön a nagyobb méret akadozást okozhat.</string>

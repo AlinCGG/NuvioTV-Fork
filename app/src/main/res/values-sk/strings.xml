@@ -3564,6 +3564,8 @@
     <string name="layout_trailer_logo_sub">Zobraziť logo titulu cez trailer prehrávaný v karte.</string>
     <string name="layout_preset_extra_large">Veľmi veľké</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Odporúčania TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Pozadie s logom v riadkoch doplnkov na šírku</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Riadky, ktoré doplnok už zobrazuje na šírku, používajú jeho vlastné obrázky. Po zapnutí sa aj tam použije pozadie s logom titulu.</string>
     <string name="mdblist_account_title">Účet</string>
     <string name="mdblist_account_subtitle">Vaše používateľské meno MDBList. Výberom obnovíte.</string>
     <string name="mdblist_plan_title">Plán</string>
@@ -3624,7 +3626,11 @@
     <string name="playback_net_device_memory_auto">Toto zariadenie má %1$s pamäte. Aplikácia načítava dopredu až %2$d MB, pri nedostatku pamäte menej.</string>
     <string name="playback_net_native_memory_sub">Nechá aplikáciu určiť veľkosť vyrovnávacej pamäte pre toto zariadenie a držať ju v natívnej pamäti, s rýchlejším pretáčaním. Zapnutím sa pre toto zariadenie nastavia aj hodnoty vyrovnávacej pamäte a siete nižšie.</string>
     <string name="playback_buffer_custom_desc">Použiť hodnoty nižšie namiesto vlastných hodnôt aplikácie. Vypnuté: so zapnutou Natívnou pamäťou ExoPlayer aplikácia načítava 15 až 45 s v rámci veľkosti zvolenej pre toto zariadenie; bez nej štandardná vyrovnávacia pamäť Media3.</string>
-    <string name="playback_buffer_seconds_hint">Pri %1$d MB to pojme asi %2$d s 4K remuxu (80 Mbit/s). Dlhšie nastavenie nič nezmení.</string>
+    <string name="playback_buffer_ahead">Vyrovnávacia pamäť dopredu</string>
+    <string name="playback_buffer_ahead_sub">Koľko filmu držať pripravené pred miestom, kde ste. Aplikácia ju stále dopĺňa. Viac pomôže pri nestabilných serveroch; limitom je pamäť tohto zariadenia.</string>
+    <string name="playback_buffer_ahead_reach">Toto zariadenie pojme asi %2$d s 4K remuxu a %3$d s webového súboru (%1$d MB voľných pri poslednom prehrávaní).</string>
+    <string name="playback_buffer_ahead_over_remux">Viac, než toto zariadenie pojme pri 4K remuxe (asi %1$d s). Ľahšie filmy to stále využijú.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K remux to na tomto zariadení nenaplní (zmestí sa asi %1$d s): prehrávanie začne, keď bude pamäť plná.</string>
     <string name="playback_buffer_back_fitted">Drží sa v rámci Cieľovej veľkosti vyrovnávacej pamäte. Pri %1$d MB aplikácia ponechá až asi %2$d s (%3$d MB pri 80 Mbit/s), takže aspoň 5 s zostane dopredu.</string>
     <string name="playback_buffer_back_fitted_none">Drží sa v rámci Cieľovej veľkosti vyrovnávacej pamäte. Pri %1$d MB preň nie je miesto, takže aplikácia namiesto toho drží 5 s dopredu.</string>
     <string name="playback_buffer_managed_desc">Nastaví vyrovnávaciu pamäť podľa voľnej pamäte pri spustení prehrávania a zmenší ju, keď zariadeniu dochádza pamäť. Vypnite pre ručnú voľbu Cieľovej veľkosti vyrovnávacej pamäte: aplikácia potom vašu veľkosť zachová, aj keď pamäte ubúda, a ak zariadeniu pamäť naozaj dôjde, Android môže prehrávač zavrieť. Na malých zariadeniach môže väčšia hodnota spôsobiť trhanie prehrávania.</string>

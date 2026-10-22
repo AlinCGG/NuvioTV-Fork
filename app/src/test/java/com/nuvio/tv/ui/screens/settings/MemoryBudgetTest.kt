@@ -90,7 +90,7 @@ class MemoryBudgetTest {
     @Test
     fun testManagedBudgetUsesTheBoxSize() {
         val gb = 1024L * 1024L * 1024L
-        assertEquals(150, MemoryBudget.autoBudgetMbFor(true, (1.9 * gb).toLong(), 250))
+        assertEquals(200, MemoryBudget.autoBudgetMbFor(true, (1.9 * gb).toLong(), 250))
         assertEquals(1000, MemoryBudget.autoBudgetMbFor(true, (3.8 * gb).toLong(), 1000))
         // Without native memory the heap budget stays.
         assertEquals(174, MemoryBudget.autoBudgetMbFor(false, (1.9 * gb).toLong(), 174))

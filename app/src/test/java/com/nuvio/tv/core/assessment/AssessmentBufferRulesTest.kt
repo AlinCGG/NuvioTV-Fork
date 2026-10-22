@@ -17,17 +17,17 @@ class AssessmentBufferRulesTest {
     @Test
     fun `2 GB box gets custom buffers and managed budget on, no fixed size and at most 2 connections`() {
         val autoMb = BufferSizing.autoBufferMbForRam(twoGbBox)
-        assertEquals(150, autoMb)
+        assertEquals(200, autoMb)
         assertEquals(true, AssessmentBufferRules.bufferEngineChange(false))
         assertEquals(true, AssessmentBufferRules.managedBudgetChange(false))
         assertNull(AssessmentBufferRules.managedBudgetChange(true))
         assertTrue(AssessmentBufferRules.allowLargeRecommendedOff(twoGbBox))
         assertEquals(false, AssessmentBufferRules.allowLargeChange(twoGbBox, true))
         assertNull(AssessmentBufferRules.allowLargeChange(twoGbBox, false))
-        // 150 MB of an 80 Mbit/s remux.
+        // 200 MB of an 80 Mbit/s remux.
         val capacity = AssessmentBufferRules.capacitySeconds(autoMb, 80.0)
-        assertEquals(15, capacity)
-        assertEquals(15, AssessmentBufferRules.recommendedMaxBufferSeconds(capacity))
+        assertEquals(20, capacity)
+        assertEquals(20, AssessmentBufferRules.recommendedMaxBufferSeconds(capacity))
 
         val measured = listOf(
             MeasuredPass(2, 8, 120.0), MeasuredPass(2, 16, 141.0),

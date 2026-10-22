@@ -3562,6 +3562,8 @@
     <string name="layout_trailer_logo_sub">Kartta oynatılan fragmanın üzerinde başlık logosunu göster.</string>
     <string name="layout_preset_extra_large">Çok büyük</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV Önerileri</string>
+    <string name="layout_addon_landscape_backdrop_logo">Eklenti Yatay Satırlarında Logolu Arka Plan</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Bir eklentinin zaten yatay gösterdiği satırlar kendi görsellerini kullanır. Açıkken orada da başlık logolu arka plan kullanılır.</string>
     <string name="mdblist_account_title">Hesap</string>
     <string name="mdblist_account_subtitle">MDBList kullanıcı adınız. Yenilemek için seçin.</string>
     <string name="mdblist_plan_title">Plan</string>
@@ -3622,7 +3624,11 @@
     <string name="playback_net_device_memory_auto">Bu cihazda %1$s bellek var. Uygulama en fazla %2$d MB ileriyi arabelleğe alır, bellek azaldığında daha az.</string>
     <string name="playback_net_native_memory_sub">Uygulamanın arabellek boyutunu bu cihaza göre belirlemesini ve yerel bellekte tutmasını sağlar, sarma daha hızlı olur. Açmak, aşağıdaki arabellek ve ağ değerlerini de bu cihaza göre ayarlar.</string>
     <string name="playback_buffer_custom_desc">Uygulamanın kendi değerleri yerine aşağıdaki değerleri kullanın. Kapalıyken: ExoPlayer Native Memory açıksa uygulama bu cihaz için seçtiği boyut içinde 15 ile 45 sn arabelleğe alır; kapalıysa Media3\'ün standart arabelleği.</string>
-    <string name="playback_buffer_seconds_hint">%1$d MB, 4K bir remux (80 Mbit/s) için yaklaşık %2$d sn tutar. Daha uzun ayarlar fark yaratmaz.</string>
+    <string name="playback_buffer_ahead">İleri Arabellek</string>
+    <string name="playback_buffer_ahead_sub">Filmin bulunduğunuz yerin ötesinde ne kadarının hazır tutulacağı. Uygulama onu sürekli dolu tutar. Kararsız sunucularda fazlası yardımcı olur; sınır bu cihazın belleğidir.</string>
+    <string name="playback_buffer_ahead_reach">Bu cihaz 4K bir remux için yaklaşık %2$d sn, bir web dosyası için %3$d sn tutar (son oynatmada %1$d MB boştu).</string>
+    <string name="playback_buffer_ahead_over_remux">Bu cihazın 4K bir remux için tutabileceğinden fazla (yaklaşık %1$d sn). Daha hafif filmler yine de kullanır.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K bir remux bunu bu cihazda dolduramaz (yaklaşık %1$d sn sığar): oynatma, bellek dolunca başlar.</string>
     <string name="playback_buffer_back_fitted">Hedef Arabellek Boyutunun içinde tutulur. %1$d MB ile uygulama en fazla yaklaşık %2$d sn tutar (80 Mbit/s ile %3$d MB), böylece en az 5 sn ilerisi hazır kalır.</string>
     <string name="playback_buffer_back_fitted_none">Hedef Arabellek Boyutunun içinde tutulur. %1$d MB ile buna yer kalmaz, bu yüzden uygulama bunun yerine 5 sn ileriyi tutar.</string>
     <string name="playback_buffer_managed_desc">Arabelleği oynatma başlarken bu cihazda boş olan belleğe göre ayarlar ve bellek azaldığında küçültür. Hedef Arabellek Boyutunu kendiniz seçmek için kapatın: uygulama bellek azaldığında seçtiğiniz boyutu korur, cihazın belleği gerçekten biterse Android oynatıcıyı kapatabilir. Küçük cihazlarda daha büyük bir boyut oynatmanın takılmasına yol açabilir.</string>

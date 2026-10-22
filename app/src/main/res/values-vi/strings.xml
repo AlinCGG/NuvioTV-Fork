@@ -3546,6 +3546,8 @@
     <string name="layout_trailer_logo">Logo trên trailer của thẻ</string>
     <string name="layout_trailer_logo_sub">Hiện logo tựa phim trên trailer đang phát trong thẻ.</string>
     <string name="layout_preset_extra_large">Rất lớn</string>
+    <string name="layout_addon_landscape_backdrop_logo">Phông nền kèm logo cho hàng ngang của tiện ích</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Các hàng mà tiện ích đã hiển thị dạng ngang sẽ dùng hình ảnh riêng của tiện ích. Khi bật, phông nền kèm logo tựa phim cũng được dùng ở đó.</string>
     <string name="mdblist_account_title">Tài khoản</string>
     <string name="mdblist_account_subtitle">Tên người dùng MDBList của bạn. Chọn để làm mới.</string>
     <string name="mdblist_plan_title">Gói</string>
@@ -3606,7 +3608,11 @@
     <string name="playback_net_device_memory_auto">Thiết bị này có %1$s bộ nhớ. Ứng dụng đệm trước tối đa %2$d MB, ít hơn khi thiếu bộ nhớ.</string>
     <string name="playback_net_native_memory_sub">Cho phép ứng dụng tự chọn kích thước bộ đệm cho thiết bị này và giữ nó trong bộ nhớ gốc, giúp tua nhanh hơn. Khi bật, các giá trị bộ đệm và mạng bên dưới cũng được đặt theo thiết bị này.</string>
     <string name="playback_buffer_custom_desc">Dùng các giá trị bên dưới thay cho giá trị của ứng dụng. Khi tắt: nếu bật Bộ nhớ gốc ExoPlayer, ứng dụng đệm 15 đến 45 giây trong dung lượng nó chọn cho thiết bị này; nếu không, dùng bộ đệm chuẩn của Media3.</string>
-    <string name="playback_buffer_seconds_hint">Với %1$d MB, bộ đệm chứa khoảng %2$d giây của một bản remux 4K (80 Mbit/s). Đặt dài hơn cũng không khác gì.</string>
+    <string name="playback_buffer_ahead">Bộ đệm phía trước</string>
+    <string name="playback_buffer_ahead_sub">Lượng phim được giữ sẵn phía trước vị trí bạn đang xem. Ứng dụng luôn nạp đầy bộ đệm này. Nhiều hơn sẽ giúp với máy chủ không ổn định; giới hạn là bộ nhớ của thiết bị này.</string>
+    <string name="playback_buffer_ahead_reach">Thiết bị này chứa khoảng %2$d giây của một bản remux 4K và %3$d giây của một tệp web (%1$d MB trống ở lần phát gần nhất).</string>
+    <string name="playback_buffer_ahead_over_remux">Nhiều hơn mức thiết bị này chứa được cho một bản remux 4K (khoảng %1$d giây). Phim nhẹ hơn vẫn dùng được.</string>
+    <string name="playback_buffer_remux_cannot_fill">Một bản remux 4K không thể lấp đầy mức này trên thiết bị này (chứa được khoảng %1$d giây): phát sẽ bắt đầu khi bộ nhớ đầy.</string>
     <string name="playback_buffer_back_fitted">Nằm trong Dung lượng bộ đệm mục tiêu. Với %1$d MB, ứng dụng giữ tối đa khoảng %2$d giây (%3$d MB ở 80 Mbit/s), để luôn còn ít nhất 5 giây đệm phía trước.</string>
     <string name="playback_buffer_back_fitted_none">Nằm trong Dung lượng bộ đệm mục tiêu. Với %1$d MB không còn chỗ cho nó, nên ứng dụng giữ 5 giây đệm phía trước thay thế.</string>
     <string name="playback_buffer_managed_desc">Đặt bộ đệm theo bộ nhớ trống của thiết bị lúc bắt đầu phát, và thu nhỏ khi thiết bị thiếu bộ nhớ. Tắt để tự chọn Dung lượng bộ đệm mục tiêu: khi đó ứng dụng giữ nguyên dung lượng bạn chọn lúc bộ nhớ xuống thấp, và nếu thiết bị thật sự hết bộ nhớ, Android có thể đóng trình phát. Trên thiết bị nhỏ, dung lượng lớn hơn có thể làm video bị giật.</string>

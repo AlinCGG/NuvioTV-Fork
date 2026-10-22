@@ -1191,6 +1191,8 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="layout_trailer_logo_sub">Rodyti pavadinimo logotipą ant kortelėje leidžiamo anonso.</string>
     <string name="layout_preset_extra_large">Labai didelis</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV rekomendacijos</string>
+    <string name="layout_addon_landscape_backdrop_logo">Fonas su logotipu gulsčiose priedų eilutėse</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Eilutės, kurias priedas jau rodo gulsčias, naudoja jo paties paveikslėlius. Įjungus ir ten naudojamas fonas su pavadinimo logotipu.</string>
     <string name="mdblist_account_title">Paskyra</string>
     <string name="mdblist_account_subtitle">Jūsų MDBList naudotojo vardas. Pasirinkite, kad atnaujintumėte.</string>
     <string name="mdblist_plan_title">Planas</string>
@@ -1253,7 +1255,11 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="playback_net_device_memory_auto">Šis įrenginys turi %1$s atminties. Programa iš anksto buferizuoja iki %2$d MB, mažiau, kai trūksta atminties.</string>
     <string name="playback_net_native_memory_sub">Leidžia programai parinkti buferį šiam įrenginiui ir laikyti jį savojoje atmintyje, su greitesniu persukimu. Įjungus taip pat nustatomos žemiau esančios buferio ir tinklo reikšmės šiam įrenginiui.</string>
     <string name="playback_buffer_custom_desc">Naudoja žemiau esančias reikšmes vietoj programos savųjų. Išjungus: kai įjungta „ExoPlayer savoji atmintis“, programa buferizuoja nuo 15 iki 45 s pagal šiam įrenginiui parinktą dydį; kai išjungta, naudojamas standartinis Media3 buferis.</string>
-    <string name="playback_buffer_seconds_hint">Esant %1$d MB, tai talpina apie %2$d s 4K remux įrašo (80 Mbit/s). Ilgesni nustatymai nieko nekeičia.</string>
+    <string name="playback_buffer_ahead">Buferis į priekį</string>
+    <string name="playback_buffer_ahead_sub">Kiek filmo laikyti paruošta į priekį nuo vietos, kurioje esate. Programa jį nuolat papildo. Daugiau padeda su nestabiliais serveriais; riba yra šio įrenginio atmintis.</string>
+    <string name="playback_buffer_ahead_reach">Šis įrenginys talpina apie %2$d s 4K remux įrašo ir %3$d s žiniatinklio failo (%1$d MB laisva per paskutinį atkūrimą).</string>
+    <string name="playback_buffer_ahead_over_remux">Daugiau, nei šis įrenginys gali talpinti 4K remux įrašui (apie %1$d s). Lengvesni filmai vis tiek tai naudoja.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K remux įrašas šiame įrenginyje to neužpildys (telpa apie %1$d s): atkūrimas prasideda, kai atmintis prisipildo.</string>
     <string name="playback_buffer_back_fitted">Laikoma nustatymo „Tikslinis buferio dydis“ ribose. Esant %1$d MB, programa laiko iki maždaug %2$d s (%3$d MB esant 80 Mbit/s), kad į priekį liktų bent 5 s.</string>
     <string name="playback_buffer_back_fitted_none">Laikoma nustatymo „Tikslinis buferio dydis“ ribose. Esant %1$d MB, jam vietos nėra, todėl programa vietoj to laiko 5 s į priekį.</string>
     <string name="playback_buffer_managed_desc">Nustato buferį pagal laisvą atmintį atkūrimo pradžioje ir jį sumažina, kai įrenginiui trūksta atminties. Išjunkite, jei norite patys nustatyti „Tikslinis buferio dydis“: programa tada išlaiko jūsų dydį, kai trūksta atminties, o jei įrenginiui atminties tikrai pritrūksta, Android gali uždaryti grotuvą. Mažuose įrenginiuose didesnis dydis gali sukelti atkūrimo trūkčiojimą.</string>

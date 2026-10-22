@@ -3417,6 +3417,8 @@
     <string name="layout_trailer_logo_sub">在卡片中播放的預告片上顯示標題標誌。</string>
     <string name="layout_preset_extra_large">特大</string>
     <string name="layout_custom_poster_screen_tv_recommendations">電視推薦</string>
+    <string name="layout_addon_landscape_backdrop_logo">擴充套件橫向列使用背景圖加標誌</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">擴充套件已以橫向顯示的列會使用其自帶圖片。開啟後，這些列也會使用帶標題標誌的背景圖。</string>
     <string name="mdblist_account_title">帳戶</string>
     <string name="mdblist_account_subtitle">您的 MDBList 使用者名稱。選擇以重新整理。</string>
     <string name="mdblist_plan_title">方案</string>
@@ -3479,7 +3481,11 @@
     <string name="playback_net_device_memory_auto">此裝置有 %1$s 記憶體。應用程式最多預先緩衝 %2$d MB，記憶體不足時會減少。</string>
     <string name="playback_net_native_memory_sub">讓應用程式為此裝置設定緩衝大小並保存在原生記憶體中，跳轉更快。開啟後也會為此裝置設定下方的緩衝和網路值。</string>
     <string name="playback_buffer_custom_desc">使用下方的值，而非應用程式自己的值。關閉時：若開啟「ExoPlayer 原生記憶體」，應用程式會在為此裝置選定的大小內緩衝 15 至 45 秒；若未開啟，則使用 Media3 的標準緩衝。</string>
-    <string name="playback_buffer_seconds_hint">%1$d MB 可容納約 %2$d 秒的 4K 原盤 (80 Mbit/s)。設定更長也沒有差別。</string>
+    <string name="playback_buffer_ahead">預先緩衝</string>
+    <string name="playback_buffer_ahead_sub">在目前位置之前準備好多少影片內容。應用程式會一直保持補滿。伺服器不穩定時多一些更有幫助；上限是此裝置的記憶體。</string>
+    <string name="playback_buffer_ahead_reach">此裝置可容納約 %2$d 秒的 4K 原盤和 %3$d 秒的網路檔案（上次播放時有 %1$d MB 可用）。</string>
+    <string name="playback_buffer_ahead_over_remux">超過此裝置能容納的 4K 原盤時長（約 %1$d 秒）。較輕的影片仍會用到。</string>
+    <string name="playback_buffer_remux_cannot_fill">在此裝置上 4K 原盤無法填滿此值（約可容納 %1$d 秒）：記憶體滿時開始播放。</string>
     <string name="playback_buffer_back_fitted">保留在「目標緩衝大小」之內。在 %1$d MB 下，應用程式最多保留約 %2$d 秒 (80 Mbit/s 時為 %3$d MB)，確保至少還有 5 秒預先緩衝。</string>
     <string name="playback_buffer_back_fitted_none">保留在「目標緩衝大小」之內。在 %1$d MB 下沒有空間，因此應用程式改為保留 5 秒預先緩衝。</string>
     <string name="playback_buffer_managed_desc">依播放開始時此裝置的可用記憶體設定緩衝，並在記憶體不足時縮小。關閉後可自行選擇「目標緩衝大小」：記憶體不足時應用程式會保留你選的大小，若裝置記憶體真的耗盡，Android 可能會關閉播放器。在小記憶體裝置上，較大的值可能導致播放卡頓。</string>

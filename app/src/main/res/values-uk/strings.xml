@@ -2922,6 +2922,8 @@
     <string name="layout_trailer_logo_sub">Показувати логотип тайтлу поверх трейлера в картці.</string>
     <string name="layout_preset_extra_large">Дуже великий</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Рекомендації ТБ</string>
+    <string name="layout_addon_landscape_backdrop_logo">Фон із логотипом в альбомних рядках адонів</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Рядки, які адон уже показує в альбомному вигляді, використовують його власні зображення. Якщо увімкнено, там теж використовується фон із логотипом тайтлу.</string>
     <string name="mdblist_account_title">Акаунт</string>
     <string name="mdblist_account_subtitle">Ваше ім\'я користувача MDBList. Виберіть, щоб оновити.</string>
     <string name="mdblist_plan_title">Тариф</string>
@@ -2984,7 +2986,11 @@
     <string name="playback_net_device_memory_auto">Ця приставка має %1$s пам\'яті. Застосунок буферизує до %2$d МБ наперед, менше при нестачі пам\'яті.</string>
     <string name="playback_net_native_memory_sub">Застосунок підбирає буфер для цієї приставки й тримає його в нативній пам\'яті, перемотування швидше. Увімкнення також задає значення буфера й мережі нижче для цієї приставки.</string>
     <string name="playback_buffer_custom_desc">Використовувати значення нижче замість власних. Коли вимк.: з увімкненою нативною пам\'яттю ExoPlayer застосунок буферизує від 15 до 45 с у межах розміру, вибраного для приставки; без неї стандартний буфер Media3.</string>
-    <string name="playback_buffer_seconds_hint">При %1$d МБ це близько %2$d с ремукса 4K (80 Mbit/s). Довші значення нічого не змінюють.</string>
+    <string name="playback_buffer_ahead">Буфер наперед</string>
+    <string name="playback_buffer_ahead_sub">Скільки фільму тримати готовим попереду поточного місця. Застосунок постійно його поповнює. Більше допомагає на нестабільних серверах; межу задає пам\'ять цієї приставки.</string>
+    <string name="playback_buffer_ahead_reach">Ця приставка вміщує близько %2$d с ремукса 4K і %3$d с веб-файлу (%1$d МБ вільно під час останнього відтворення).</string>
+    <string name="playback_buffer_ahead_over_remux">Більше, ніж ця приставка вміщує для ремукса 4K (близько %1$d с). Легші фільми все одно це використовують.</string>
+    <string name="playback_buffer_remux_cannot_fill">Ремукс 4K не заповнить це на цій приставці (вміщується близько %1$d с): відтворення почнеться, коли пам\'ять заповниться.</string>
     <string name="playback_buffer_back_fitted">Зберігається в межах цільового розміру буфера. При %1$d МБ застосунок зберігає до %2$d с (%3$d МБ при 80 Mbit/s), щоб попереду лишалося щонайменше 5 с.</string>
     <string name="playback_buffer_back_fitted_none">Зберігається в межах цільового розміру буфера. При %1$d МБ місця для нього немає, тож застосунок тримає 5 с попереду.</string>
     <string name="playback_buffer_managed_desc">Задає буфер за вільною пам\'яттю приставки на старті відтворення і зменшує його при нестачі пам\'яті. Вимкніть, щоб задати цільовий розмір буфера самостійно: тоді застосунок збереже ваш розмір при нестачі пам\'яті, а якщо приставці зовсім не вистачить пам\'яті, Android може закрити програвач. На слабких приставках більший розмір може спричинити підгальмовування.</string>

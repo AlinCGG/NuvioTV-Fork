@@ -3086,6 +3086,8 @@
     <string name="layout_trailer_logo_sub">Afficher le logo du titre sur la bande-annonce lue dans une carte.</string>
     <string name="layout_preset_extra_large">Très grand</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recommandations TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Arrière-plan avec logo sur les rangées paysage des addons</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Les rangées qu\'un addon affiche déjà en paysage utilisent ses propres images. Une fois activé, l\'arrière-plan avec le logo du titre y est aussi utilisé.</string>
     <string name="mdblist_account_title">Compte</string>
     <string name="mdblist_account_subtitle">Votre nom d\'utilisateur MDBList. Sélectionnez pour actualiser.</string>
     <string name="mdblist_plan_title">Abonnement</string>
@@ -3148,7 +3150,11 @@
     <string name="playback_net_device_memory_auto">Ce boîtier a %1$s de mémoire. L\'application met en tampon jusqu\'à %2$d Mo d\'avance, moins quand la mémoire manque.</string>
     <string name="playback_net_native_memory_sub">Laisse l\'application dimensionner le tampon pour ce boîtier et le garder en mémoire native, pour avancer et reculer plus vite. L\'activer règle aussi pour ce boîtier les valeurs de tampon et de réseau ci-dessous.</string>
     <string name="playback_buffer_custom_desc">Utilise les valeurs ci-dessous au lieu de celles de l\'application. Désactivé : avec «&#160;Mémoire native ExoPlayer&#160;» activée, l\'application met en tampon 15 à 45 s dans la taille choisie pour ce boîtier ; sinon, le tampon standard de Media3.</string>
-    <string name="playback_buffer_seconds_hint">À %1$d Mo, cela contient environ %2$d s d\'un remux 4K (80 Mbit/s). Des durées plus longues ne changent rien.</string>
+    <string name="playback_buffer_ahead">Tampon d\'avance</string>
+    <string name="playback_buffer_ahead_sub">La part du film gardée prête devant l\'endroit où vous êtes. L\'application la maintient remplie en permanence. Plus aide avec les serveurs instables ; la limite est la mémoire de ce boîtier.</string>
+    <string name="playback_buffer_ahead_reach">Ce boîtier contient environ %2$d s d\'un remux 4K et %3$d s d\'un fichier web (%1$d Mo libres à la dernière lecture).</string>
+    <string name="playback_buffer_ahead_over_remux">Plus que ce que ce boîtier peut contenir pour un remux 4K (environ %1$d s). Les films plus légers en profitent quand même.</string>
+    <string name="playback_buffer_remux_cannot_fill">Un remux 4K ne peut pas remplir cela sur ce boîtier (environ %1$d s tiennent) : la lecture démarre quand la mémoire est pleine.</string>
     <string name="playback_buffer_back_fitted">Compris dans la «&#160;Taille de tampon cible&#160;». À %1$d Mo, l\'application en garde jusqu\'à environ %2$d s (%3$d Mo à 80 Mbit/s), pour qu\'au moins 5 s restent d\'avance.</string>
     <string name="playback_buffer_back_fitted_none">Compris dans la «&#160;Taille de tampon cible&#160;». À %1$d Mo, il n\'y a pas de place, donc l\'application garde plutôt 5 s d\'avance.</string>
     <string name="playback_buffer_managed_desc">Règle le tampon selon la mémoire libre du boîtier au début de la lecture et le réduit quand la mémoire manque. Désactivez pour choisir vous-même la «&#160;Taille de tampon cible&#160;» : l\'application garde alors votre taille quand la mémoire diminue, et si le boîtier manque vraiment de mémoire, Android peut fermer le lecteur. Sur les petits boîtiers, une taille plus grande peut faire saccader la lecture.</string>

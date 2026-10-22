@@ -3551,6 +3551,8 @@
     <string name="layout_trailer_logo">לוגו מעל טריילר בכרטיס</string>
     <string name="layout_trailer_logo_sub">הצגת לוגו הכותרת מעל טריילר שמתנגן בכרטיס.</string>
     <string name="layout_preset_extra_large">גדול מאוד</string>
+    <string name="layout_addon_landscape_backdrop_logo">רקע עם לוגו בשורות לרוחב של תוספים</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">שורות שתוסף כבר מציג לרוחב משתמשות בתמונות שלו. כשהאפשרות פעילה, גם שם יוצג הרקע עם לוגו הכותרת.</string>
     <string name="mdblist_account_title">חשבון</string>
     <string name="mdblist_account_subtitle">שם המשתמש שלך ב-MDBList. בחירה מרעננת.</string>
     <string name="mdblist_plan_title">תוכנית</string>
@@ -3611,7 +3613,11 @@
     <string name="playback_net_device_memory_auto">במכשיר הזה יש %1$s זיכרון. האפליקציה טוענת מראש עד %2$d MB, ופחות כשחסר זיכרון.</string>
     <string name="playback_net_native_memory_sub">מאפשר לאפליקציה לקבוע את גודל המאגר למכשיר הזה ולשמור אותו בזיכרון מקורי, עם דילוג מהיר יותר. ההפעלה קובעת גם את ערכי המאגר והרשת שלמטה למכשיר הזה.</string>
     <string name="playback_buffer_custom_desc">שימוש בערכים שלמטה במקום בערכים של האפליקציה. כשכבוי: עם זיכרון מקורי של ExoPlayer מופעל, האפליקציה טוענת מראש 15 עד 45 שניות בתוך הגודל שהיא בוחרת למכשיר; כשהוא כבוי, המאגר הרגיל של Media3.</string>
-    <string name="playback_buffer_seconds_hint">ב-%1$d MB זה מחזיק כ-%2$d שניות של remux ב-4K (80 Mbit/s). ערכים ארוכים יותר לא משנים דבר.</string>
+    <string name="playback_buffer_ahead">טעינה מראש קדימה</string>
+    <string name="playback_buffer_ahead_sub">כמה מהסרט נשמר מוכן לפני המקום שבו אתם נמצאים. האפליקציה ממלאת אותו כל הזמן. יותר עוזר בשרתים לא יציבים; הגבול הוא הזיכרון של המכשיר הזה.</string>
+    <string name="playback_buffer_ahead_reach">המכשיר הזה מחזיק כ-%2$d שניות של remux ב-4K ו-%3$d שניות של קובץ רשת (%1$d MB פנויים בהפעלה האחרונה).</string>
+    <string name="playback_buffer_ahead_over_remux">יותר ממה שהמכשיר הזה יכול להחזיק ב-remux של 4K (כ-%1$d שניות). סרטים קלים יותר עדיין משתמשים בזה.</string>
+    <string name="playback_buffer_remux_cannot_fill">remux ב-4K לא יכול למלא את זה במכשיר הזה (נכנסות כ-%1$d שניות): ההפעלה מתחילה כשהזיכרון מתמלא.</string>
     <string name="playback_buffer_back_fitted">נשמר בתוך כמות הזיכרון לטעינה מראש. ב-%1$d MB האפליקציה שומרת עד כ-%2$d שניות ממנה (%3$d MB ב-80 Mbit/s), כך שלפחות 5 שניות נשארות טעונות מראש.</string>
     <string name="playback_buffer_back_fitted_none">נשמר בתוך כמות הזיכרון לטעינה מראש. ב-%1$d MB אין לזה מקום, ולכן האפליקציה שומרת במקום זאת 5 שניות טעונות מראש.</string>
     <string name="playback_buffer_managed_desc">קובע את המאגר לפי הזיכרון הפנוי במכשיר בתחילת ההפעלה, ומקטין אותו כשחסר זיכרון. יש לכבות כדי לבחור ידנית את כמות הזיכרון לטעינה מראש: האפליקציה תשמור אז על הכמות שבחרת כשהזיכרון נמוך, ואם הזיכרון במכשיר באמת נגמר, Android עלול לסגור את הנגן. במכשירים קטנים כמות גדולה יותר עלולה לגרום להפעלה לגמגם.</string>

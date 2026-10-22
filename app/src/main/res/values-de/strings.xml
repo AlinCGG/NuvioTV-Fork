@@ -2459,6 +2459,8 @@
     <string name="layout_trailer_logo_sub">Titellogo über einem Trailer anzeigen, der in einer Karte läuft.</string>
     <string name="layout_preset_extra_large">Extra groß</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-Empfehlungen</string>
+    <string name="layout_addon_landscape_backdrop_logo">Hintergrund mit Logo in Add-on-Zeilen im Querformat</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Zeilen, die ein Add-on bereits im Querformat zeigt, nutzen dessen eigene Bilder. Eingeschaltet wird dort ebenfalls der Hintergrund mit dem Titellogo verwendet.</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Ihr MDBList-Benutzername. Zum Aktualisieren auswählen.</string>
     <string name="mdblist_plan_title">Tarif</string>
@@ -2521,7 +2523,11 @@
     <string name="playback_net_device_memory_auto">Dieses Gerät hat %1$s Speicher. Die App puffert bis zu %2$d MB im Voraus, weniger bei Speichermangel.</string>
     <string name="playback_net_native_memory_sub">Lässt die App den Puffer für dieses Gerät bemessen und im nativen Speicher halten, mit schnellerem Spulen. Beim Einschalten werden auch die Puffer- und Netzwerkwerte unten für dieses Gerät gesetzt.</string>
     <string name="playback_buffer_custom_desc">Nutzt die Werte unten statt der Werte der App. Aus: Mit „Nativer ExoPlayer-Speicher“ an puffert die App 15 bis 45 s innerhalb der Größe, die sie für dieses Gerät wählt; sonst den Standardpuffer von Media3.</string>
-    <string name="playback_buffer_seconds_hint">Bei %1$d MB fasst das etwa %2$d s eines 4K-Remux (80 Mbit/s). Längere Werte bringen nichts.</string>
+    <string name="playback_buffer_ahead">Puffer voraus</string>
+    <string name="playback_buffer_ahead_sub">Wie viel vom Film vor der aktuellen Stelle bereitliegt. Die App hält ihn ständig aufgefüllt. Mehr hilft bei unsteten Servern; die Grenze ist der Speicher dieses Geräts.</string>
+    <string name="playback_buffer_ahead_reach">Dieses Gerät fasst etwa %2$d s eines 4K-Remux und %3$d s einer Web-Datei (%1$d MB frei bei der letzten Wiedergabe).</string>
+    <string name="playback_buffer_ahead_over_remux">Mehr, als dieses Gerät von einem 4K-Remux fasst (etwa %1$d s). Leichtere Filme nutzen es trotzdem.</string>
+    <string name="playback_buffer_remux_cannot_fill">Ein 4K-Remux kann das auf diesem Gerät nicht füllen (etwa %1$d s passen): Die Wiedergabe startet, wenn der Speicher voll ist.</string>
     <string name="playback_buffer_back_fitted">Liegt innerhalb der „Zielpuffergröße“. Bei %1$d MB behält die App bis zu etwa %2$d s davon (%3$d MB bei 80 Mbit/s), damit mindestens 5 s voraus bleiben.</string>
     <string name="playback_buffer_back_fitted_none">Liegt innerhalb der „Zielpuffergröße“. Bei %1$d MB ist dafür kein Platz, daher hält die App stattdessen 5 s voraus.</string>
     <string name="playback_buffer_managed_desc">Legt den Puffer anhand des freien Speichers beim Wiedergabestart fest und verkleinert ihn bei Speichermangel. Ausschalten, um die „Zielpuffergröße“ selbst zu wählen: Die App behält dann die gewählte Größe bei Speichermangel, und wenn dem Gerät der Speicher wirklich ausgeht, kann Android den Player schließen. Auf kleinen Geräten kann ein größerer Wert die Wiedergabe ruckeln lassen.</string>

@@ -3535,6 +3535,8 @@
     <string name="layout_trailer_logo">Logo sul trailer della scheda</string>
     <string name="layout_trailer_logo_sub">Mostra il logo del titolo sul trailer riprodotto in una scheda.</string>
     <string name="layout_preset_extra_large">Molto grande</string>
+    <string name="layout_addon_landscape_backdrop_logo">Sfondo con logo nelle righe orizzontali degli addon</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Le righe che un addon mostra già in orizzontale usano le sue immagini. Se attivo, anche lì viene usato lo sfondo con il logo del titolo.</string>
     <string name="mdblist_account_title">Account</string>
     <string name="mdblist_account_subtitle">Il tuo nome utente MDBList. Seleziona per aggiornare.</string>
     <string name="mdblist_plan_title">Piano</string>
@@ -3597,7 +3599,11 @@
     <string name="playback_net_device_memory_auto">Questo box ha %1$s di memoria. L\'app mette in buffer fino a %2$d MB in anticipo, meno quando la memoria scarseggia.</string>
     <string name="playback_net_native_memory_sub">Lascia che l\'app dimensioni il buffer per questo box e lo tenga in memoria nativa, per scorrere il video più velocemente. Se attivata, imposta anche i valori di buffer e rete qui sotto per questo box.</string>
     <string name="playback_buffer_custom_desc">Usa i valori qui sotto invece di quelli dell\'app. Se disattivato: con Memoria nativa ExoPlayer attiva, l\'app mette in buffer da 15 a 45 s entro la dimensione scelta per questo box; senza, il buffer standard di Media3.</string>
-    <string name="playback_buffer_seconds_hint">Con %1$d MB contiene circa %2$d s di un remux 4K (80 Mbit/s). Durate più lunghe non cambiano nulla.</string>
+    <string name="playback_buffer_ahead">Buffer in anticipo</string>
+    <string name="playback_buffer_ahead_sub">Quanta parte del film tenere pronta oltre il punto in cui sei. L\'app lo tiene sempre pieno. Di più aiuta con server instabili; il limite è la memoria di questo box.</string>
+    <string name="playback_buffer_ahead_reach">Questo box contiene circa %2$d s di un remux 4K e %3$d s di un file web (%1$d MB liberi all\'ultima riproduzione).</string>
+    <string name="playback_buffer_ahead_over_remux">Più di quanto questo box possa contenere per un remux 4K (circa %1$d s). I film più leggeri lo usano comunque.</string>
+    <string name="playback_buffer_remux_cannot_fill">Un remux 4K non può riempire questo valore su questo box (ci stanno circa %1$d s): la riproduzione parte quando la memoria è piena.</string>
     <string name="playback_buffer_back_fitted">Tenuto dentro la Dimensione buffer target. Con %1$d MB l\'app ne tiene fino a circa %2$d s (%3$d MB a 80 Mbit/s), così restano almeno 5 s in anticipo.</string>
     <string name="playback_buffer_back_fitted_none">Tenuto dentro la Dimensione buffer target. Con %1$d MB non c\'è spazio, quindi l\'app tiene invece 5 s in anticipo.</string>
     <string name="playback_buffer_managed_desc">Imposta il buffer in base alla memoria libera del box all\'avvio della riproduzione e lo riduce quando il box è a corto di memoria. Disattivalo per scegliere tu la Dimensione buffer target: l\'app mantiene allora la tua dimensione quando la memoria scarseggia e, se il box finisce davvero la memoria, Android può chiudere il player. Sui box piccoli una dimensione maggiore può far scattare la riproduzione.</string>

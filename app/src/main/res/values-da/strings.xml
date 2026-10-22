@@ -2888,6 +2888,8 @@
     <string name="layout_trailer_logo_sub">Vis titellogoet over en trailer, der afspilles i et kort.</string>
     <string name="layout_preset_extra_large">Ekstra stor</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-anbefalinger</string>
+    <string name="layout_addon_landscape_backdrop_logo">Baggrundsbillede med logo i addon-rækker i landskab</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Rækker, som en addon allerede viser i landskab, bruger dens egne billeder. Når det er slået til, bruges baggrundsbilledet med titellogoet også der.</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Dit MDBList-brugernavn. Vælg for at opdatere.</string>
     <string name="mdblist_plan_title">Abonnement</string>
@@ -2950,7 +2952,11 @@
     <string name="playback_net_device_memory_auto">Denne boks har %1$s hukommelse. Appen buffer op til %2$d MB forud, mindre når hukommelsen er knap.</string>
     <string name="playback_net_native_memory_sub">Lader appen tilpasse bufferen til denne boks og holde den i native hukommelse, med hurtigere spoling. Når den slås til, indstilles buffer- og netværksværdierne nedenfor også til denne boks.</string>
     <string name="playback_buffer_custom_desc">Brug værdierne nedenfor i stedet for appens egne. Slået fra: med ExoPlayer native memory slået til buffer appen 15 til 45 s inden for den størrelse, den vælger til denne boks; ellers Media3\'s standardbuffer.</string>
-    <string name="playback_buffer_seconds_hint">Ved %1$d MB rummer det ca. %2$d s af en 4K-remux (80 Mbit/s). Længere indstillinger gør ingen forskel.</string>
+    <string name="playback_buffer_ahead">Buffer forud</string>
+    <string name="playback_buffer_ahead_sub">Hvor meget af filmen der holdes klar foran, hvor du er. Appen holder den fyldt op hele tiden. Mere hjælper på ustabile servere; grænsen er hukommelsen i denne boks.</string>
+    <string name="playback_buffer_ahead_reach">Denne boks rummer ca. %2$d s af en 4K-remux og %3$d s af en webfil (%1$d MB ledig ved sidste afspilning).</string>
+    <string name="playback_buffer_ahead_over_remux">Mere end denne boks kan rumme af en 4K-remux (ca. %1$d s). Lettere film bruger det stadig.</string>
+    <string name="playback_buffer_remux_cannot_fill">En 4K-remux kan ikke fylde dette på denne boks (der er plads til ca. %1$d s): afspilningen starter, når hukommelsen er fuld.</string>
     <string name="playback_buffer_back_fitted">Holdes inden for Målbufferstørrelse. Ved %1$d MB beholder appen op til ca. %2$d s af den (%3$d MB ved 80 Mbit/s), så mindst 5 s forbliver forud.</string>
     <string name="playback_buffer_back_fitted_none">Holdes inden for Målbufferstørrelse. Ved %1$d MB er der ikke plads til den, så appen holder i stedet 5 s forud.</string>
     <string name="playback_buffer_managed_desc">Indstiller bufferen ud fra den ledige hukommelse ved afspilningsstart og skrumper den, når boksen mangler hukommelse. Slå fra for selv at vælge Målbufferstørrelse: appen beholder så din størrelse, når hukommelsen bliver knap, og hvis boksen for alvor løber tør, kan Android lukke afspilleren. På små bokse kan en større værdi få afspilningen til at hakke.</string>

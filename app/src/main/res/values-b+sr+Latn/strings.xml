@@ -3359,6 +3359,8 @@
     <string name="layout_trailer_logo_sub">Prikaži logo naslova preko trejlera koji se pušta na kartici.</string>
     <string name="layout_preset_extra_large">Veoma veliko</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV preporuke</string>
+    <string name="layout_addon_landscape_backdrop_logo">Pozadina sa logom u horizontalnim redovima dodataka</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Redovi koje dodatak već prikazuje horizontalno koriste njegove slike. Kada je uključeno, i tamo se koristi pozadina sa logom naslova.</string>
     <string name="mdblist_account_title">Nalog</string>
     <string name="mdblist_account_subtitle">Vaše MDBList korisničko ime. Izaberite za osvežavanje.</string>
     <string name="mdblist_plan_title">Plan</string>
@@ -3421,7 +3423,11 @@
     <string name="playback_net_device_memory_auto">Ovaj uređaj ima %1$s memorije. Aplikacija baferuje do %2$d MB unapred, manje kada nedostaje memorije.</string>
     <string name="playback_net_native_memory_sub">Aplikacija određuje bafer za ovaj uređaj i drži ga u nativnoj memoriji, uz brže premotavanje. Uključivanje podešava i vrednosti bafera i mreže ispod za ovaj uređaj.</string>
     <string name="playback_buffer_custom_desc">Koristi vrednosti ispod umesto vrednosti aplikacije. Isključeno: sa uključenom nativnom memorijom ExoPlayer-a aplikacija baferuje od 15 do 45 s u veličini izabranoj za uređaj; bez nje standardni bafer Media3.</string>
-    <string name="playback_buffer_seconds_hint">Pri %1$d MB ovo drži oko %2$d s 4K remuksa (80 Mbit/s). Duža podešavanja ništa ne menjaju.</string>
+    <string name="playback_buffer_ahead">Bafer unapred</string>
+    <string name="playback_buffer_ahead_sub">Koliko filma se drži spremno ispred mesta gde ste. Aplikacija ga stalno dopunjava. Više pomaže na nestabilnim serverima; granica je memorija ovog uređaja.</string>
+    <string name="playback_buffer_ahead_reach">Ovaj uređaj drži oko %2$d s 4K remuksa i %3$d s web fajla (%1$d MB slobodno pri poslednjoj reprodukciji).</string>
+    <string name="playback_buffer_ahead_over_remux">Više nego što ovaj uređaj može da drži za 4K remuks (oko %1$d s). Lakši filmovi ga i dalje koriste.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K remuks ovo ne može da popuni na ovom uređaju (stane oko %1$d s): reprodukcija počinje kad se memorija napuni.</string>
     <string name="playback_buffer_back_fitted">Čuva se unutar ciljne veličine bafera. Pri %1$d MB aplikacija čuva do oko %2$d s (%3$d MB pri 80 Mbit/s), pa najmanje 5 s ostaje unapred.</string>
     <string name="playback_buffer_back_fitted_none">Čuva se unutar ciljne veličine bafera. Pri %1$d MB za njega nema mesta, pa aplikacija umesto toga drži 5 s unapred.</string>
     <string name="playback_buffer_managed_desc">Određuje bafer prema slobodnoj memoriji uređaja na početku reprodukcije i smanjuje ga kad memorije ponestane. Isključite da biste sami izabrali ciljnu veličinu bafera: aplikacija tada zadržava vašu veličinu kad memorije ponestaje, a ako uređaju stvarno ponestane memorije, Android može da zatvori plejer. Na slabijim uređajima veća veličina može da izazove seckanje.</string>

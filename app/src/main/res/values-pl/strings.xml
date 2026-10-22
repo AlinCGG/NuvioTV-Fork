@@ -3623,6 +3623,8 @@
     <string name="layout_trailer_logo_sub">Pokazuj logo tytułu na zwiastunie odtwarzanym w karcie.</string>
     <string name="layout_preset_extra_large">Bardzo duży</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Rekomendacje TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Tło z logo w poziomych rzędach dodatków</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Rzędy, które dodatek już pokazuje poziomo, używają jego własnych obrazów. Po włączeniu również tam używane jest tło z logo tytułu.</string>
     <string name="mdblist_account_title">Konto</string>
     <string name="mdblist_account_subtitle">Twoja nazwa użytkownika MDBList. Wybierz, aby odświeżyć.</string>
     <string name="mdblist_plan_title">Plan</string>
@@ -3683,7 +3685,11 @@
     <string name="playback_net_device_memory_auto">To urządzenie ma %1$s pamięci. Aplikacja buforuje do %2$d MB naprzód, mniej przy braku pamięci.</string>
     <string name="playback_net_native_memory_sub">Pozwala aplikacji dobrać bufor do tego urządzenia i trzymać go w pamięci natywnej, z szybszym przewijaniem. Włączenie ustawia też poniższe wartości bufora i sieci dla tego urządzenia.</string>
     <string name="playback_buffer_custom_desc">Używa poniższych wartości zamiast wartości aplikacji. Gdy wyłączone: z włączoną pamięcią natywną ExoPlayer aplikacja buforuje od 15 do 45 s w rozmiarze dobranym dla urządzenia; bez niej standardowy bufor Media3.</string>
-    <string name="playback_buffer_seconds_hint">Przy %1$d MB to około %2$d s remuxu 4K (80 Mbit/s). Dłuższe ustawienia nic nie zmieniają.</string>
+    <string name="playback_buffer_ahead">Bufor do przodu</string>
+    <string name="playback_buffer_ahead_sub">Ile filmu trzymać w gotowości przed miejscem, w którym jesteś. Aplikacja stale go uzupełnia. Więcej pomaga przy niestabilnych serwerach; limitem jest pamięć tego urządzenia.</string>
+    <string name="playback_buffer_ahead_reach">To urządzenie mieści około %2$d s remuxu 4K i %3$d s pliku web (%1$d MB wolnych przy ostatnim odtwarzaniu).</string>
+    <string name="playback_buffer_ahead_over_remux">Więcej, niż to urządzenie zmieści dla remuxu 4K (około %1$d s). Lżejsze filmy nadal z tego korzystają.</string>
+    <string name="playback_buffer_remux_cannot_fill">Remux 4K nie wypełni tego na tym urządzeniu (mieści się około %1$d s): odtwarzanie rusza, gdy pamięć się zapełni.</string>
     <string name="playback_buffer_back_fitted">Mieści się w docelowym rozmiarze bufora. Przy %1$d MB aplikacja trzyma do około %2$d s (%3$d MB przy 80 Mbit/s), więc co najmniej 5 s zostaje do przodu.</string>
     <string name="playback_buffer_back_fitted_none">Mieści się w docelowym rozmiarze bufora. Przy %1$d MB brak na niego miejsca, więc aplikacja trzyma zamiast tego 5 s do przodu.</string>
     <string name="playback_buffer_managed_desc">Ustala bufor według pamięci wolnej na starcie odtwarzania i zmniejsza go, gdy pamięci brakuje. Wyłącz, aby samemu wybrać docelowy rozmiar bufora: aplikacja zachowa wtedy twój rozmiar, gdy pamięci zacznie brakować, a jeśli urządzeniu naprawdę zabraknie pamięci, Android może zamknąć odtwarzacz. Na słabszych urządzeniach większy rozmiar może powodować zacinanie.</string>

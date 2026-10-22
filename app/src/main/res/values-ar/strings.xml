@@ -3224,6 +3224,8 @@
     <string name="layout_trailer_logo_sub">إظهار شعار العنوان فوق الإعلان المعروض داخل البطاقة.</string>
     <string name="layout_preset_extra_large">كبير جدًا</string>
     <string name="layout_custom_poster_screen_tv_recommendations">توصيات التلفزيون</string>
+    <string name="layout_addon_landscape_backdrop_logo">خلفية مع شعار في صفوف الإضافات الأفقية</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">الصفوف التي تعرضها الإضافة أفقيًا تستخدم صورها الخاصة. عند التفعيل تُستخدم الخلفية مع شعار العنوان فيها أيضًا.</string>
     <string name="mdblist_account_title">الحساب</string>
     <string name="mdblist_account_subtitle">اسم مستخدمك في MDBList. اختر للتحديث.</string>
     <string name="mdblist_plan_title">الخطة</string>
@@ -3286,7 +3288,11 @@
     <string name="playback_net_device_memory_auto">في هذا الجهاز %1$s من الذاكرة. يخزّن التطبيق مسبقاً حتى %2$d م.ب، وأقل عند نقص الذاكرة.</string>
     <string name="playback_net_native_memory_sub">يتيح للتطبيق تحديد حجم المخزون لهذا الجهاز وإبقاءه في الذاكرة الأصلية، مع تنقل أسرع. تفعيله يضبط أيضاً قيم المخزون والشبكة أدناه لهذا الجهاز.</string>
     <string name="playback_buffer_custom_desc">استخدام القيم أدناه بدل قيم التطبيق. عند الإيقاف: مع تفعيل «ذاكرة ExoPlayer الأصلية» يخزّن التطبيق 15 إلى 45 ث ضمن الحجم الذي يختاره لهذا الجهاز؛ ومع إيقافها، المخزون القياسي لـ Media3.</string>
-    <string name="playback_buffer_seconds_hint">عند %1$d م.ب يتسع هذا لنحو %2$d ث من remux بدقة 4K (80 Mbit/s). القيم الأطول لا تُحدث فرقاً.</string>
+    <string name="playback_buffer_ahead">المخزون المسبق</string>
+    <string name="playback_buffer_ahead_sub">كم من الفيلم يبقى جاهزاً قبل موضعك الحالي. يحافظ التطبيق على امتلائه طوال الوقت. الزيادة تساعد مع الخوادم غير المستقرة، والحد هو ذاكرة هذا الجهاز.</string>
+    <string name="playback_buffer_ahead_reach">يتسع هذا الجهاز لنحو %2$d ث من remux بدقة 4K ولنحو %3$d ث من ملف ويب (%1$d م.ب متاحة في آخر تشغيل).</string>
+    <string name="playback_buffer_ahead_over_remux">أكثر مما يتسع له هذا الجهاز من remux بدقة 4K (نحو %1$d ث). الأفلام الأخف ما زالت تستفيد منه.</string>
+    <string name="playback_buffer_remux_cannot_fill">لا يستطيع remux بدقة 4K ملء هذا على هذا الجهاز (يتسع لنحو %1$d ث): يبدأ التشغيل عندما تمتلئ الذاكرة.</string>
     <string name="playback_buffer_back_fitted">يُحفظ داخل «حجم المخزون الهدف». عند %1$d م.ب يحتفظ التطبيق بنحو %2$d ث منه كحد أقصى (%3$d م.ب عند 80 Mbit/s)، لتبقى 5 ث على الأقل مخزّنة مسبقاً.</string>
     <string name="playback_buffer_back_fitted_none">يُحفظ داخل «حجم المخزون الهدف». عند %1$d م.ب لا توجد مساحة له، لذا يحتفظ التطبيق بدلاً منه بـ 5 ث مخزّنة مسبقاً.</string>
     <string name="playback_buffer_managed_desc">يحدد المخزون من الذاكرة الحرة في هذا الجهاز عند بدء التشغيل، ويصغّره عند نقص الذاكرة. أوقفه لتختار «حجم المخزون الهدف» بنفسك: يحتفظ التطبيق حينها بحجمك عند انخفاض الذاكرة، وإذا نفدت ذاكرة الجهاز فعلًا قد يغلق Android المشغّل. على الأجهزة الصغيرة قد يجعل الحجم الأكبر التشغيل يتقطع.</string>

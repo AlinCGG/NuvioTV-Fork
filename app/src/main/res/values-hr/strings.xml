@@ -3491,6 +3491,8 @@
     <string name="layout_trailer_logo_sub">Prikaži logo naslova preko trailera koji se reproducira na kartici.</string>
     <string name="layout_preset_extra_large">Vrlo veliko</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV preporuke</string>
+    <string name="layout_addon_landscape_backdrop_logo">Pozadina s logotipom u vodoravnim redovima dodataka</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Redovi koje dodatak već prikazuje vodoravno koriste njegove slike. Kada je uključeno, i tamo se koristi pozadina s logotipom naslova.</string>
     <string name="mdblist_account_title">Račun</string>
     <string name="mdblist_account_subtitle">Tvoje MDBList korisničko ime. Odaberi za osvježavanje.</string>
     <string name="mdblist_plan_title">Plan</string>
@@ -3553,7 +3555,11 @@
     <string name="playback_net_device_memory_auto">Ovaj uređaj ima %1$s memorije. Aplikacija sprema u međuspremnik do %2$d MB unaprijed, manje kad nedostaje memorije.</string>
     <string name="playback_net_native_memory_sub">Aplikacija prilagođava međuspremnik ovom uređaju i drži ga u nativnoj memoriji, uz brže premotavanje. Uključivanje postavlja i vrijednosti međuspremnika i mreže ispod za ovaj uređaj.</string>
     <string name="playback_buffer_custom_desc">Koristi vrijednosti ispod umjesto vrijednosti aplikacije. Kad je isključeno: s uključenom ExoPlayer nativnom memorijom aplikacija sprema 15 do 45 s unutar veličine odabrane za uređaj; bez nje standardni međuspremnik Media3.</string>
-    <string name="playback_buffer_seconds_hint">Pri %1$d MB to drži oko %2$d s 4K remuxa (80 Mbit/s). Dulje postavke ništa ne mijenjaju.</string>
+    <string name="playback_buffer_ahead">Međuspremnik unaprijed</string>
+    <string name="playback_buffer_ahead_sub">Koliko filma se drži spremno ispred mjesta gdje ste. Aplikacija ga stalno nadopunjuje. Više pomaže na nestabilnim poslužiteljima; granica je memorija ovog uređaja.</string>
+    <string name="playback_buffer_ahead_reach">Ovaj uređaj drži oko %2$d s 4K remuxa i %3$d s web datoteke (%1$d MB slobodno pri zadnjoj reprodukciji).</string>
+    <string name="playback_buffer_ahead_over_remux">Više nego što ovaj uređaj može držati za 4K remux (oko %1$d s). Lakši filmovi ga i dalje koriste.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K remux ovo ne može popuniti na ovom uređaju (stane oko %1$d s): reprodukcija počinje kad se memorija napuni.</string>
     <string name="playback_buffer_back_fitted">Drži se unutar ciljne veličine međuspremnika. Pri %1$d MB aplikacija čuva do oko %2$d s (%3$d MB pri 80 Mbit/s), pa najmanje 5 s ostaje unaprijed.</string>
     <string name="playback_buffer_back_fitted_none">Drži se unutar ciljne veličine međuspremnika. Pri %1$d MB za njega nema mjesta, pa aplikacija umjesto toga drži 5 s unaprijed.</string>
     <string name="playback_buffer_managed_desc">Postavlja međuspremnik prema slobodnoj memoriji uređaja na početku reprodukcije i smanjuje ga kad memorije ponestane. Isključi da sam odabereš ciljnu veličinu međuspremnika: aplikacija tada zadržava tvoju veličinu kad memorije ponestaje, a ako uređaju stvarno ponestane memorije, Android može zatvoriti player. Na slabijim uređajima veća veličina može uzrokovati zastajkivanje.</string>

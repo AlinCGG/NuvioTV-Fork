@@ -3024,6 +3024,8 @@
     <string name="layout_trailer_logo_sub">Zobrazit logo titulu přes trailer přehrávaný v kartě.</string>
     <string name="layout_preset_extra_large">Velmi velké</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Doporučení TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Pozadí s logem v řádcích doplňků na šířku</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Řádky, které doplněk už zobrazuje na šířku, používají jeho vlastní obrázky. Po zapnutí se i tam použije pozadí s logem titulu.</string>
     <string name="mdblist_account_title">Účet</string>
     <string name="mdblist_account_subtitle">Vaše uživatelské jméno MDBList. Výběrem obnovíte.</string>
     <string name="mdblist_plan_title">Tarif</string>
@@ -3086,7 +3088,11 @@
     <string name="playback_net_device_memory_auto">Toto zařízení má %1$s paměti. Aplikace bufferuje dopředu až %2$d MB, při nedostatku paměti méně.</string>
     <string name="playback_net_native_memory_sub">Nechá aplikaci určit velikost bufferu pro toto zařízení a držet ho v nativní paměti, s rychlejším přetáčením. Zapnutím se také nastaví hodnoty bufferu a sítě níže pro toto zařízení.</string>
     <string name="playback_buffer_custom_desc">Použít hodnoty níže místo vlastních hodnot aplikace. Vypnuto: se zapnutou Nativní pamětí ExoPlayer aplikace bufferuje 15 až 45 s v rámci velikosti zvolené pro toto zařízení; bez ní standardní buffer Media3.</string>
-    <string name="playback_buffer_seconds_hint">Při %1$d MB to pojme asi %2$d s 4K remuxu (80 Mbit/s). Delší nastavení nic nezmění.</string>
+    <string name="playback_buffer_ahead">Buffer dopředu</string>
+    <string name="playback_buffer_ahead_sub">Kolik filmu držet připraveno před místem, kde jste. Aplikace ho stále doplňuje. Více pomůže u nestabilních serverů; limitem je paměť tohoto zařízení.</string>
+    <string name="playback_buffer_ahead_reach">Toto zařízení pojme asi %2$d s 4K remuxu a %3$d s webového souboru (%1$d MB volných při posledním přehrávání).</string>
+    <string name="playback_buffer_ahead_over_remux">Víc, než toto zařízení pojme u 4K remuxu (asi %1$d s). Lehčí filmy to stále využijí.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K remux to na tomto zařízení nenaplní (vejde se asi %1$d s): přehrávání začne, až bude paměť plná.</string>
     <string name="playback_buffer_back_fitted">Drží se v rámci Cílové velikosti bufferu. Při %1$d MB aplikace ponechá až asi %2$d s (%3$d MB při 80 Mbit/s), takže alespoň 5 s zůstane dopředu.</string>
     <string name="playback_buffer_back_fitted_none">Drží se v rámci Cílové velikosti bufferu. Při %1$d MB pro něj není místo, takže aplikace místo toho drží 5 s dopředu.</string>
     <string name="playback_buffer_managed_desc">Nastaví buffer podle volné paměti při spuštění přehrávání a zmenší ho, když zařízení dochází paměť. Vypněte pro ruční volbu Cílové velikosti bufferu: aplikace pak vaši velikost zachová, i když paměti ubývá, a pokud zařízení paměť opravdu dojde, Android může přehrávač zavřít. Na malých zařízeních může větší hodnota způsobit trhání přehrávání.</string>

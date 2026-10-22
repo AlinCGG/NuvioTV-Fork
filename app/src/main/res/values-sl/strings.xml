@@ -2363,6 +2363,8 @@
     <string name="layout_trailer_logo_sub">Prikaži logotip naslova čez napovednik, ki se predvaja v kartici.</string>
     <string name="layout_preset_extra_large">Zelo veliko</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Priporočila TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Ozadje z logotipom v vodoravnih vrsticah dodatkov</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Vrstice, ki jih dodatek že prikazuje vodoravno, uporabljajo njegove slike. Ko je vklopljeno, se tudi tam uporabi ozadje z logotipom naslova.</string>
     <string name="mdblist_account_title">Račun</string>
     <string name="mdblist_account_subtitle">Vaše uporabniško ime MDBList. Izberite za osvežitev.</string>
     <string name="mdblist_plan_title">Paket</string>
@@ -2425,7 +2427,11 @@
     <string name="playback_net_device_memory_auto">Ta naprava ima %1$s pomnilnika. Aplikacija vnaprej medpomni do %2$d MB, manj, ko pomnilnika primanjkuje.</string>
     <string name="playback_net_native_memory_sub">Aplikacija prilagodi medpomnilnik tej napravi in ga hrani v izvornem pomnilniku, s hitrejšim previjanjem. Vklop za to napravo nastavi tudi spodnje vrednosti medpomnilnika in omrežja.</string>
     <string name="playback_buffer_custom_desc">Uporabi spodnje vrednosti namesto vrednosti aplikacije. Ko je izklopljeno: z vklopljenim izvornim pomnilnikom ExoPlayer aplikacija medpomni od 15 do 45 s znotraj velikosti, izbrane za napravo; brez njega standardni medpomnilnik Media3.</string>
-    <string name="playback_buffer_seconds_hint">Pri %1$d MB to drži približno %2$d s 4K remuxa (80 Mbit/s). Daljše nastavitve ne spremenijo ničesar.</string>
+    <string name="playback_buffer_ahead">Medpomnilnik vnaprej</string>
+    <string name="playback_buffer_ahead_sub">Koliko filma je pripravljenega pred mestom, kjer ste. Aplikacija ga ves čas dopolnjuje. Več pomaga pri nestabilnih strežnikih; meja je pomnilnik te naprave.</string>
+    <string name="playback_buffer_ahead_reach">Ta naprava drži približno %2$d s 4K remuxa in %3$d s spletne datoteke (%1$d MB prostega pri zadnjem predvajanju).</string>
+    <string name="playback_buffer_ahead_over_remux">Več, kot lahko ta naprava drži za 4K remux (približno %1$d s). Lažji filmi ga še vedno uporabljajo.</string>
+    <string name="playback_buffer_remux_cannot_fill">4K remux tega na tej napravi ne more napolniti (prostora je za približno %1$d s): predvajanje se začne, ko je pomnilnik poln.</string>
     <string name="playback_buffer_back_fitted">Hrani se znotraj ciljne velikosti medpomnilnika. Pri %1$d MB aplikacija hrani do približno %2$d s (%3$d MB pri 80 Mbit/s), tako da vsaj 5 s ostane vnaprej.</string>
     <string name="playback_buffer_back_fitted_none">Hrani se znotraj ciljne velikosti medpomnilnika. Pri %1$d MB zanj ni prostora, zato aplikacija namesto tega hrani 5 s vnaprej.</string>
     <string name="playback_buffer_managed_desc">Nastavi medpomnilnik glede na prosti pomnilnik naprave ob začetku predvajanja in ga zmanjša, ko pomnilnika zmanjka. Izklopite, da ciljno velikost medpomnilnika izberete sami: aplikacija potem obdrži vašo velikost, ko pomnilnika primanjkuje, če pa napravi pomnilnika res zmanjka, lahko Android zapre predvajalnik. Na šibkejših napravah se lahko predvajanje pri večji velikosti zatika.</string>

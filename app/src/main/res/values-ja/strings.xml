@@ -2888,6 +2888,8 @@
     <string name="layout_trailer_logo_sub">カードで再生中の予告編にタイトルロゴを重ねて表示</string>
     <string name="layout_preset_extra_large">特大</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TVのおすすめ</string>
+    <string name="layout_addon_landscape_backdrop_logo">アドオンの横向き行に背景とロゴを使用</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">アドオンが横向きで表示する行は、アドオン独自の画像を使います。オンにすると、そこでも背景とタイトルロゴを使います。</string>
     <string name="mdblist_account_title">アカウント</string>
     <string name="mdblist_account_subtitle">MDBListのユーザー名。選択すると更新します。</string>
     <string name="mdblist_plan_title">プラン</string>
@@ -2950,7 +2952,11 @@
     <string name="playback_net_device_memory_auto">このデバイスのメモリは%1$sです。アプリは最大%2$d MBを先読みし、メモリ不足時は減らします。</string>
     <string name="playback_net_native_memory_sub">このデバイスに合わせてアプリがバッファサイズを決め、ネイティブメモリに保持します。シークも速くなります。オンにすると、下のバッファとネットワークの値もこのデバイス向けに設定されます。</string>
     <string name="playback_buffer_custom_desc">アプリ独自の値の代わりに下の値を使います。オフの場合: ExoPlayerネイティブメモリがオンなら、このデバイス向けに選んだサイズ内で15〜45秒をバッファします。オフならMedia3の標準バッファです。</string>
-    <string name="playback_buffer_seconds_hint">%1$d MBでは4Kリマックス（80 Mbit/s）の約%2$d秒分を保持します。これより長くしても変わりません。</string>
+    <string name="playback_buffer_ahead">先読みバッファ</string>
+    <string name="playback_buffer_ahead_sub">再生位置より先にどれだけ用意しておくかです。アプリは常に満たした状態を保ちます。不安定なサーバーでは多いほど有効です。上限はこのデバイスのメモリです。</string>
+    <string name="playback_buffer_ahead_reach">このデバイスは4Kリマックスで約%2$d秒、Webファイルで約%3$d秒を保持できます（前回の再生時の空きは%1$d MB）。</string>
+    <string name="playback_buffer_ahead_over_remux">このデバイスが4Kリマックスで保持できる量（約%1$d秒）を超えています。軽い作品では引き続き使われます。</string>
+    <string name="playback_buffer_remux_cannot_fill">このデバイスでは4Kリマックスでこれを満たせません（約%1$d秒分）：メモリがいっぱいになると再生が始まります。</string>
     <string name="playback_buffer_back_fitted">目標バッファサイズの中に保持されます。%1$d MBではアプリは最大約%2$d秒分を保持し（80 Mbit/sで%3$d MB）、少なくとも5秒分の先読みを残します。</string>
     <string name="playback_buffer_back_fitted_none">目標バッファサイズの中に保持されます。%1$d MBでは余裕がないため、代わりに5秒分の先読みを保持します。</string>
     <string name="playback_buffer_managed_desc">再生開始時にこのデバイスの空きメモリからバッファを決め、メモリ不足時は縮小します。目標バッファサイズを自分で選ぶにはオフにします。その場合、メモリが少なくなってもアプリは選んだサイズを保ちますが、デバイスのメモリが本当に尽きるとAndroidがプレーヤーを閉じることがあります。小さなデバイスでは大きなサイズで再生がカクつく場合があります。</string>

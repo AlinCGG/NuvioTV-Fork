@@ -177,4 +177,38 @@ class BufferPresetDefaultsTest {
         store.setParallelChunkSizeKb(256 * 1024)
         assertEquals(128 * 1024, store.playerSettings.first().parallelChunkSizeKb)
     }
+
+    @Test
+    fun `buffer ahead takes the stored max of a hand-set min and max`() = withStore((1.9 * gb).toLong()) { store ->
+        store.setBufferMinBufferMs(20_000)
+        store.setBufferMaxBufferMs(60_000)
+        assertEquals(60_000, store.playerSettings.first().bufferSettings.bufferAheadMs)
+        assertEquals(45_000, BufferSettings().bufferAheadMs)
+        assertEquals(30_000, BufferSettings(minBufferMs = 30_000, maxBufferMs = 20_000).bufferAheadMs)
+    }
+
+    @Test
+    fun `buffer ahead writes min and max and keeps to its range`() = withStore((1.9 * gb).toLong()) { store ->
+        store.setBufferAheadMs(90_000)
+        store.playerSettings.first().bufferSettings.let {
+            assertEquals(90_000, it.minBufferMs)
+            assertEquals(90_000, it.maxBufferMs)
+            assertEquals(90_000, it.bufferAheadMs)
+        }
+        store.setBufferAheadMs(300_000)
+        assertEquals(120_000, store.playerSettings.first().bufferSettings.bufferAheadMs)
+        store.setBufferAheadMs(5_000)
+        assertEquals(10_000, store.playerSettings.first().bufferSettings.bufferAheadMs)
+    }
+
+    @Test
+    fun `with native memory buffer ahead goes up to 600 s and the preset keeps its 280 s`() =
+        withStore((3.8 * gb).toLong()) { store ->
+            store.setNuvioPerformanceModeEnabled(true)
+            assertEquals(280_000, store.playerSettings.first().bufferSettings.bufferAheadMs)
+            store.setBufferAheadMs(300_000)
+            assertEquals(300_000, store.playerSettings.first().bufferSettings.bufferAheadMs)
+            store.setBufferAheadMs(1_200_000)
+            assertEquals(600_000, store.playerSettings.first().bufferSettings.bufferAheadMs)
+        }
 }

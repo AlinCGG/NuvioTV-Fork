@@ -2633,6 +2633,8 @@
     <string name="layout_trailer_logo_sub">Tampilkan logo judul di atas trailer yang diputar di kartu.</string>
     <string name="layout_preset_extra_large">Sangat besar</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Rekomendasi TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Backdrop dengan Logo di baris lanskap addon</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Baris yang sudah ditampilkan addon dalam format lanskap memakai gambarnya sendiri. Jika diaktifkan, backdrop dengan logo judul juga dipakai di sana.</string>
     <string name="mdblist_account_title">Akun</string>
     <string name="mdblist_account_subtitle">Nama pengguna MDBList Anda. Pilih untuk menyegarkan.</string>
     <string name="mdblist_plan_title">Paket</string>
@@ -2695,7 +2697,11 @@
     <string name="playback_net_device_memory_auto">Perangkat ini memiliki memori %1$s. Aplikasi mem-buffer hingga %2$d MB ke depan, lebih sedikit saat memori menipis.</string>
     <string name="playback_net_native_memory_sub">Membiarkan aplikasi menentukan ukuran buffer untuk perangkat ini dan menyimpannya di memori native, dengan seek lebih cepat. Mengaktifkannya juga mengatur nilai buffer dan jaringan di bawah untuk perangkat ini.</string>
     <string name="playback_buffer_custom_desc">Gunakan nilai di bawah, bukan nilai bawaan aplikasi. Saat nonaktif: dengan ExoPlayer native memory aktif, aplikasi mem-buffer 15 hingga 45 detik dalam ukuran yang dipilihnya untuk perangkat ini; tanpa itu, buffer standar Media3.</string>
-    <string name="playback_buffer_seconds_hint">Pada %1$d MB ini menampung sekitar %2$d detik remux 4K (80 Mbit/s). Pengaturan yang lebih lama tidak berpengaruh.</string>
+    <string name="playback_buffer_ahead">Buffer ke depan</string>
+    <string name="playback_buffer_ahead_sub">Seberapa banyak film yang disiapkan di depan posisi Anda. Aplikasi terus mengisinya sepanjang waktu. Lebih banyak membantu pada server yang tidak stabil; batasnya adalah memori perangkat ini.</string>
+    <string name="playback_buffer_ahead_reach">Perangkat ini menampung sekitar %2$d detik remux 4K dan %3$d detik file web (%1$d MB kosong pada pemutaran terakhir).</string>
+    <string name="playback_buffer_ahead_over_remux">Lebih dari yang bisa ditampung perangkat ini untuk remux 4K (sekitar %1$d detik). Film yang lebih ringan tetap memakainya.</string>
+    <string name="playback_buffer_remux_cannot_fill">Remux 4K tidak bisa mengisi ini di perangkat ini (muat sekitar %1$d detik): pemutaran dimulai saat memori penuh.</string>
     <string name="playback_buffer_back_fitted">Disimpan di dalam Ukuran Buffer Target. Pada %1$d MB aplikasi menyimpan hingga sekitar %2$d detik (%3$d MB pada 80 Mbit/s), agar minimal 5 detik tetap tersedia ke depan.</string>
     <string name="playback_buffer_back_fitted_none">Disimpan di dalam Ukuran Buffer Target. Pada %1$d MB tidak ada ruang untuknya, jadi aplikasi menyimpan 5 detik ke depan sebagai gantinya.</string>
     <string name="playback_buffer_managed_desc">Menentukan buffer dari memori kosong perangkat ini saat pemutaran dimulai, dan mengecilkannya saat memori menipis. Nonaktifkan untuk memilih Ukuran Buffer Target sendiri: aplikasi lalu mempertahankan ukuran pilihan Anda saat memori menipis, dan jika memori perangkat benar-benar habis, Android bisa menutup pemutar. Pada perangkat kecil ukuran lebih besar bisa membuat pemutaran tersendat.</string>

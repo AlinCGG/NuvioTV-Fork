@@ -3329,6 +3329,8 @@
     <string name="layout_trailer_logo_sub">Toon het titellogo over een trailer die in een kaart speelt.</string>
     <string name="layout_preset_extra_large">Extra groot</string>
     <string name="layout_custom_poster_screen_tv_recommendations">TV-aanbevelingen</string>
+    <string name="layout_addon_landscape_backdrop_logo">Achtergrond met logo in liggende add-on-rijen</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Rijen die een add-on al liggend toont, gebruiken de eigen afbeeldingen van de add-on. Indien aan, wordt daar ook de achtergrond met het titellogo gebruikt.</string>
     <string name="mdblist_account_title">Account</string>
     <string name="mdblist_account_subtitle">Je MDBList-gebruikersnaam. Selecteer om te vernieuwen.</string>
     <string name="mdblist_plan_title">Abonnement</string>
@@ -3391,7 +3393,11 @@
     <string name="playback_net_device_memory_auto">Dit apparaat heeft %1$s geheugen. De app buffert tot %2$d MB vooruit, minder als het geheugen krap is.</string>
     <string name="playback_net_native_memory_sub">Laat de app de buffer voor dit apparaat bepalen en in native geheugen houden, met sneller spoelen. Aanzetten stelt ook de buffer- en netwerkwaarden hieronder in voor dit apparaat.</string>
     <string name="playback_buffer_custom_desc">Gebruik de waarden hieronder in plaats van die van de app. Uit: met Native geheugen van ExoPlayer aan buffert de app 15 tot 45 s binnen de grootte die hij voor dit apparaat kiest; anders de standaardbuffer van Media3.</string>
-    <string name="playback_buffer_seconds_hint">Bij %1$d MB past hierin ongeveer %2$d s van een 4K-remux (80 Mbit/s). Langere instellingen maken geen verschil.</string>
+    <string name="playback_buffer_ahead">Buffer vooruit</string>
+    <string name="playback_buffer_ahead_sub">Hoeveel van de film klaarstaat voor de plek waar je bent. De app houdt hem steeds aangevuld. Meer helpt bij onstabiele servers; de grens is het geheugen van dit apparaat.</string>
+    <string name="playback_buffer_ahead_reach">Dit apparaat houdt ongeveer %2$d s van een 4K-remux en %3$d s van een webbestand vast (%1$d MB vrij bij de laatste weergave).</string>
+    <string name="playback_buffer_ahead_over_remux">Meer dan dit apparaat kan vasthouden voor een 4K-remux (ongeveer %1$d s). Lichtere films gebruiken het nog wel.</string>
+    <string name="playback_buffer_remux_cannot_fill">Een 4K-remux kan dit op dit apparaat niet vullen (er past ongeveer %1$d s in): het afspelen begint als het geheugen vol is.</string>
     <string name="playback_buffer_back_fitted">Valt binnen de Doelbuffergrootte. Bij %1$d MB houdt de app er tot ongeveer %2$d s van (%3$d MB bij 80 Mbit/s), zodat er minstens 5 s vooruit blijft.</string>
     <string name="playback_buffer_back_fitted_none">Valt binnen de Doelbuffergrootte. Bij %1$d MB is daar geen ruimte voor, dus houdt de app in plaats daarvan 5 s vooruit.</string>
     <string name="playback_buffer_managed_desc">Stelt de buffer in op basis van het vrije geheugen bij de start van het afspelen en verkleint hem als het geheugen krap wordt. Zet uit om de Doelbuffergrootte zelf te kiezen: de app houdt dan jouw grootte aan als het geheugen krap wordt, en als het apparaat echt zonder geheugen komt, kan Android de speler sluiten. Op kleine apparaten kan een grotere waarde het afspelen laten haperen.</string>

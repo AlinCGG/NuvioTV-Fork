@@ -3359,6 +3359,8 @@
     <string name="layout_trailer_logo_sub">Exibe o logo do título sobre o trailer reproduzido em um cartão.</string>
     <string name="layout_preset_extra_large">Muito grande</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recomendações da TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Fundo com logo nas linhas horizontais de addons</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">As linhas que um addon já mostra na horizontal usam as próprias imagens. Quando ativado, o fundo com o logo do título também é usado ali.</string>
     <string name="mdblist_account_title">Conta</string>
     <string name="mdblist_account_subtitle">Seu nome de usuário do MDBList. Selecione para atualizar.</string>
     <string name="mdblist_plan_title">Plano</string>
@@ -3419,7 +3421,11 @@
     <string name="playback_net_device_memory_auto">Este dispositivo tem %1$s de memória. O app carrega até %2$d MB à frente, menos quando falta memória.</string>
     <string name="playback_net_native_memory_sub">Deixa o app ajustar o buffer para este dispositivo e mantê-lo na memória nativa, para avançar e voltar mais rápido. Ao ativar, também ajusta os valores de buffer e rede abaixo para este dispositivo.</string>
     <string name="playback_buffer_custom_desc">Usa os valores abaixo em vez dos do app. Desativado: com Memória nativa do ExoPlayer ativada, o app carrega de 15 a 45 s dentro do tamanho que escolhe para este dispositivo; sem ela, o buffer padrão do Media3.</string>
-    <string name="playback_buffer_seconds_hint">Com %1$d MB cabem cerca de %2$d s de um remux 4K (80 Mbit/s). Valores maiores não fazem diferença.</string>
+    <string name="playback_buffer_ahead">Buffer à frente</string>
+    <string name="playback_buffer_ahead_sub">Quanto do filme fica pronto à frente de onde você está. O app o mantém sempre cheio. Mais ajuda com servidores instáveis; o limite é a memória deste dispositivo.</string>
+    <string name="playback_buffer_ahead_reach">Este dispositivo guarda cerca de %2$d s de um remux 4K e %3$d s de um arquivo web (%1$d MB livres na última reprodução).</string>
+    <string name="playback_buffer_ahead_over_remux">Mais do que este dispositivo consegue guardar de um remux 4K (cerca de %1$d s). Filmes mais leves continuam usando.</string>
+    <string name="playback_buffer_remux_cannot_fill">Um remux 4K não consegue encher isto neste dispositivo (cabem cerca de %1$d s): a reprodução começa quando a memória fica cheia.</string>
     <string name="playback_buffer_back_fitted">Mantido dentro do Tamanho do Buffer Alvo. Com %1$d MB o app mantém até cerca de %2$d s (%3$d MB a 80 Mbit/s), para que pelo menos 5 s fiquem à frente.</string>
     <string name="playback_buffer_back_fitted_none">Mantido dentro do Tamanho do Buffer Alvo. Com %1$d MB não há espaço para ele, então o app mantém 5 s à frente.</string>
     <string name="playback_buffer_managed_desc">Define o buffer pela memória livre do dispositivo ao iniciar a reprodução e o reduz quando falta memória. Desative para escolher você mesmo o Tamanho do Buffer Alvo: o app mantém então o seu tamanho quando a memória fica baixa e, se o dispositivo ficar sem memória de verdade, o Android pode fechar o player. Em dispositivos pequenos, um tamanho maior pode fazer a reprodução engasgar.</string>

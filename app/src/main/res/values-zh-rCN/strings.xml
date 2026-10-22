@@ -3417,6 +3417,8 @@
     <string name="layout_trailer_logo_sub">在卡片中播放的预告片上显示标题标志。</string>
     <string name="layout_preset_extra_large">特大</string>
     <string name="layout_custom_poster_screen_tv_recommendations">电视推荐</string>
+    <string name="layout_addon_landscape_backdrop_logo">扩展横向行使用背景图加标志</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">扩展已以横向显示的行会使用其自带图片。开启后，这些行也使用带标题标志的背景图。</string>
     <string name="mdblist_account_title">账户</string>
     <string name="mdblist_account_subtitle">您的 MDBList 用户名。选择以刷新。</string>
     <string name="mdblist_plan_title">方案</string>
@@ -3479,7 +3481,11 @@
     <string name="playback_net_device_memory_auto">此设备有 %1$s 内存。应用最多预先缓冲 %2$d MB，内存不足时会减少。</string>
     <string name="playback_net_native_memory_sub">让应用为此设备设定缓冲大小并保存在原生内存中，跳转更快。开启后还会为此设备设置下方的缓冲和网络值。</string>
     <string name="playback_buffer_custom_desc">使用下方的值，而不是应用自己的值。关闭时：若开启“ExoPlayer 原生内存”，应用会在为此设备选定的大小内缓冲 15 至 45 秒；若未开启，则使用 Media3 的标准缓冲。</string>
-    <string name="playback_buffer_seconds_hint">%1$d MB 可容纳约 %2$d 秒的 4K 原盘 (80 Mbit/s)。设置更长也没有区别。</string>
+    <string name="playback_buffer_ahead">预先缓冲</string>
+    <string name="playback_buffer_ahead_sub">在当前位置之前准备好多少影片内容。应用会一直保持补满。服务器不稳定时多一些更有帮助；上限是此设备的内存。</string>
+    <string name="playback_buffer_ahead_reach">此设备可容纳约 %2$d 秒的 4K 原盘和 %3$d 秒的网络文件（上次播放时有 %1$d MB 可用）。</string>
+    <string name="playback_buffer_ahead_over_remux">超过此设备能容纳的 4K 原盘时长（约 %1$d 秒）。较轻的影片仍会用到。</string>
+    <string name="playback_buffer_remux_cannot_fill">在此设备上 4K 原盘无法填满此值（约可容纳 %1$d 秒）：内存满时开始播放。</string>
     <string name="playback_buffer_back_fitted">保留在“目标缓冲大小”之内。在 %1$d MB 下，应用最多保留约 %2$d 秒 (80 Mbit/s 时为 %3$d MB)，确保至少还有 5 秒预先缓冲。</string>
     <string name="playback_buffer_back_fitted_none">保留在“目标缓冲大小”之内。在 %1$d MB 下没有空间，因此应用改为保留 5 秒预先缓冲。</string>
     <string name="playback_buffer_managed_desc">根据播放开始时此设备的可用内存设置缓冲，并在内存不足时缩小。关闭后可自行选择“目标缓冲大小”：内存不足时应用会保留你选的大小，若设备内存真的耗尽，Android 可能会关闭播放器。在小内存设备上，更大的值可能导致播放卡顿。</string>

@@ -1018,6 +1018,8 @@
     <string name="layout_trailer_logo_sub">Afișează logo-ul titlului peste trailerul redat într-un card.</string>
     <string name="layout_preset_extra_large">Foarte mare</string>
     <string name="layout_custom_poster_screen_tv_recommendations">Recomandări TV</string>
+    <string name="layout_addon_landscape_backdrop_logo">Fundal cu logo pe rândurile peisaj ale add-onurilor</string>
+    <string name="layout_addon_landscape_backdrop_logo_sub">Rândurile pe care un add-on le afișează deja în format peisaj folosesc propriile imagini. Când este activat, și acolo se folosește fundalul cu logo-ul titlului.</string>
     <string name="mdblist_account_title">Cont</string>
     <string name="mdblist_account_subtitle">Numele tău de utilizator MDBList. Selectează pentru reîmprospătare.</string>
     <string name="mdblist_plan_title">Plan</string>
@@ -1080,7 +1082,11 @@
     <string name="playback_net_device_memory_auto">Acest dispozitiv are %1$s de memorie. Aplicația pune în buffer până la %2$d MB în avans, mai puțin când memoria e puțină.</string>
     <string name="playback_net_native_memory_sub">Lasă aplicația să dimensioneze bufferul pentru acest dispozitiv și să-l țină în memoria nativă, cu derulare mai rapidă. Activarea setează și valorile de buffer și rețea de mai jos pentru acest dispozitiv.</string>
     <string name="playback_buffer_custom_desc">Folosește valorile de mai jos în locul celor ale aplicației. Dezactivat: cu Memorie nativă ExoPlayer activată, aplicația pune în buffer între 15 și 45 s în dimensiunea aleasă pentru acest dispozitiv; fără ea, bufferul standard Media3.</string>
-    <string name="playback_buffer_seconds_hint">La %1$d MB, acesta ține circa %2$d s dintr-un remux 4K (80 Mbit/s). Valorile mai lungi nu schimbă nimic.</string>
+    <string name="playback_buffer_ahead">Buffer înainte</string>
+    <string name="playback_buffer_ahead_sub">Cât din film se ține pregătit înaintea locului unde ești. Aplicația îl completează tot timpul. Mai mult ajută la servere instabile; limita este memoria acestui dispozitiv.</string>
+    <string name="playback_buffer_ahead_reach">Acest dispozitiv ține circa %2$d s dintr-un remux 4K și %3$d s dintr-un fișier web (%1$d MB liberi la ultima redare).</string>
+    <string name="playback_buffer_ahead_over_remux">Mai mult decât poate ține acest dispozitiv pentru un remux 4K (circa %1$d s). Filmele mai ușoare îl folosesc în continuare.</string>
+    <string name="playback_buffer_remux_cannot_fill">Un remux 4K nu poate umple asta pe acest dispozitiv (încap circa %1$d s): redarea pornește când memoria e plină.</string>
     <string name="playback_buffer_back_fitted">Păstrat în „Dimensiune buffer țintă”. La %1$d MB aplicația păstrează până la circa %2$d s din el (%3$d MB la 80 Mbit/s), ca să rămână cel puțin 5 s în avans.</string>
     <string name="playback_buffer_back_fitted_none">Păstrat în „Dimensiune buffer țintă”. La %1$d MB nu mai are loc, așa că aplicația păstrează în schimb 5 s în avans.</string>
     <string name="playback_buffer_managed_desc">Stabilește bufferul după memoria liberă a dispozitivului la pornirea redării și îl micșorează când memoria e puțină. Dezactivează pentru a alege singur „Dimensiune buffer țintă”: aplicația păstrează atunci dimensiunea ta când memoria scade, iar dacă dispozitivul rămâne cu adevărat fără memorie, Android poate închide playerul. Pe dispozitivele mici, o dimensiune mai mare poate face redarea sacadată.</string>
