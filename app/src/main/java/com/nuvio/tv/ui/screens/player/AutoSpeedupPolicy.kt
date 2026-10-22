@@ -91,6 +91,21 @@ internal class AutoSpeedupPolicy(
     private var trialHeavy = false
     private var presetPending = false
 
+    /**
+     * The start is set again (the real server behind the link turned out to be known) while it is still the first
+     * judged start: true when it changed.
+     */
+    fun restartStart(start: Int): Boolean {
+        val stillFirst = presetPending || (trialHeavy && trialStartMs >= 0L && peakKept <= 1)
+        if (!stillFirst) return false
+        val to = start.coerceIn(1, minOf(maxDownloads, roomCap))
+        if (to == downloads) return false
+        downloads = to
+        presetPending = true
+        triedAny = true
+        return true
+    }
+
     /** Starts the stream on [start] downloads before the first byte, judged on the first samples like a remux start. */
     fun preset(start: Int) {
         if (start <= 1) return
@@ -420,11 +435,16 @@ internal class AutoSpeedupPolicy(
             val known = perDownloadBps > 0L && fileBitrate > 0L
             val want = when {
                 known -> ((fileBitrate / 8 * START_SINGLE_ENOUGH_PERCENT / 100 + perDownloadBps - 1) / perDownloadBps).toInt()
-                fileBitrate >= START_THREE_BPS -> 3
+                fileBitrate >= START_THREE_BPS -> if (smallBox) SMALL_BOX_HEAVY_START else 3
                 fileBitrate >= START_TWO_BPS -> 2
                 else -> 1
             }
-            val cap = if (smallBox) smallBoxStartCap(pieceBytes, if (known) maxDownloads else START_MAX)
+            val smallMost = when {
+                known -> maxDownloads
+                fileBitrate >= START_THREE_BPS -> SMALL_BOX_HEAVY_START
+                else -> START_MAX
+            }
+            val cap = if (smallBox) smallBoxStartCap(pieceBytes, smallMost)
                 else if (known) maxDownloads else START_MAX
             return minOf(want, cap, maxDownloads).coerceAtLeast(1)
         }
@@ -437,6 +457,8 @@ internal class AutoSpeedupPolicy(
         }
 
         const val SMALL_BOX_START_BYTES = 48L * MB
+        /** A remux on a 2 GB box from a server not measured yet: five 8 MB downloads fit [SMALL_BOX_START_BYTES]. */
+        const val SMALL_BOX_HEAVY_START = 5
         const val START_TWO_BPS = 40_000_000L
         const val START_THREE_BPS = 60_000_000L
         const val START_MAX = 3

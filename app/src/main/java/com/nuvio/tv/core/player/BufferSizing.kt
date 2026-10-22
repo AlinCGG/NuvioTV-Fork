@@ -123,8 +123,12 @@ object BufferSizing {
             aheadBytes = maxOf(aheadBytes, minOf(officialAheadBytes, maxBufferMs.toLong() * rate / 1000L))
         }
         val backBytes = minOf(targetBytes / 3, targetBytes - aheadBytes).coerceAtLeast(0L)
-        return backBufferMs.toLong().coerceAtMost(backBytes * 1000L / rate).toInt()
+        val keptMs = backBufferMs.toLong().coerceAtMost(backBytes * 1000L / rate).toInt()
+        // Cut by memory to less than one 10 s skip back, it is never used: that memory serves the buffer ahead instead.
+        return if (keptMs < backBufferMs && keptMs < MIN_USEFUL_BACK_MS) 0 else keptMs
     }
+
+    const val MIN_USEFUL_BACK_MS = 10_000
 
     /** Bytes [backBufferMs] holds at [bytesPerSecond]. */
     fun backBufferBytes(backBufferMs: Int, bytesPerSecond: Long): Long {

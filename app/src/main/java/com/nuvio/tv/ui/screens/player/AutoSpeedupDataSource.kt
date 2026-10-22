@@ -30,7 +30,8 @@ internal class AutoSpeedupDataSource(
     private val received: AtomicLong,
     private val onMultiClosed: () -> Unit = {},
     private val multiOpen: AtomicInteger = AtomicInteger(),
-    private val onFirstByte: (Long) -> Unit = {}
+    private val onFirstByte: (Long) -> Unit = {},
+    private val onOpened: (String?) -> Unit = {}
 ) : DataSource {
     private class Pending(val multi: Boolean, val atRead: Long, val source: DataSource, val opened: Future<*>)
 
@@ -58,6 +59,7 @@ internal class AutoSpeedupDataSource(
         val startNs = System.nanoTime()
         val length = source.open(dataSpec)
         if (!wantMulti) onFirstByte((System.nanoTime() - startNs) / 1_000_000L)
+        onOpened(source.uri?.toString())
         setMulti(wantMulti)
         return length
     }
@@ -167,10 +169,12 @@ internal class AutoSpeedupDataSource(
         private val received: AtomicLong,
         private val onMultiClosed: () -> Unit = {},
         private val multiOpen: AtomicInteger = AtomicInteger(),
-        private val onFirstByte: (Long) -> Unit = {}
+        private val onFirstByte: (Long) -> Unit = {},
+        private val onOpened: (String?) -> Unit = {}
     ) : DataSource.Factory {
         override fun createDataSource(): DataSource =
-            AutoSpeedupDataSource(single, multi, pieceBytes, downloads, received, onMultiClosed, multiOpen, onFirstByte)
+            AutoSpeedupDataSource(single, multi, pieceBytes, downloads, received, onMultiClosed, multiOpen, onFirstByte,
+                onOpened)
     }
 
     companion object {

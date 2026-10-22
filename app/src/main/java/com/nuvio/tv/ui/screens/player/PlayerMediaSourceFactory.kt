@@ -577,7 +577,8 @@ internal class PlayerMediaSourceFactory(
             received = AutoSpeedup.received,
             onMultiClosed = ParallelRangeDataSource::releaseRetainedSessionIfIdle,
             multiOpen = AutoSpeedup.multiOpen,
-            onFirstByte = AutoSpeedup::onFirstByte
+            onFirstByte = AutoSpeedup::onFirstByte,
+            onOpened = AutoSpeedup::onResolved
         )
     }
 

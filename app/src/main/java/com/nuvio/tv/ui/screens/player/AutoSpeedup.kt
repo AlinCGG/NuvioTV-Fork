@@ -239,6 +239,35 @@ internal object AutoSpeedup {
     @Volatile
     private var remembered: HostSpeeds.Entry? = null
 
+    /** The server the link really reads from (after an add-on's redirect), once the first request has opened. */
+    @Volatile
+    private var serverKey: String? = null
+
+    @Volatile
+    private var guessedBps = 0L
+
+    /**
+     * The first request found the server behind the link. An add-on (stremthru, Comet) can hand out files from
+     * different services, so what that server delivered before replaces what was learnt under the add-on's address,
+     * and a start still being judged is set to it.
+     */
+    fun onResolved(resolvedUrl: String?) {
+        val key = HostSpeeds.keyOf(resolvedUrl) ?: return
+        if (key == serverKey || policy == null) return
+        serverKey = key
+        if (key == hostKey) return
+        val known = HostSpeeds.get(key) ?: return
+        val p = policy ?: return
+        p.knownPerDownloadBps = known.perDownloadBps
+        val start = if (guessedBps > 0L) {
+            AutoSpeedupPolicy.startDownloads(guessedBps, limits.maxDownloads, pieceBytes, limits.smallBox, known.perDownloadBps)
+        } else 0
+        val restarted = start > 1 && p.restartStart(start)
+        Log.i(TAG, "AUTO_SPEEDUP: server $key behind $hostKey perDownloadKbps=${known.perDownloadBps * 8 / 1000}" +
+            if (restarted) " start downloads=$start" else "")
+        if (restarted) noteRequests()
+    }
+
     /**
      * A new stream starts on one download; the same stream again (a subtitle reload) keeps what it learnt. What the
      * same server delivered before ([HostSpeeds]) picks the piece size at once and the downloads a heavy film starts on.
@@ -249,6 +278,7 @@ internal object AutoSpeedup {
         limits = limitsFor(totalRamBytes)
         url = streamUrl
         hostKey = HostSpeeds.keyOf(streamUrl)
+        serverKey = null
         remembered = hostKey?.let { HostSpeeds.get(it) }
         received.set(0L)
         roomReadAtMs = Long.MIN_VALUE
@@ -275,6 +305,7 @@ internal object AutoSpeedup {
                     "downloads=${known.downloads} firstByteMs=${known.firstByteMs}")
             }
             val guessed = if (hintUrl == streamUrl) hintBps else 0L
+            guessedBps = guessed
             if (guessed >= AutoSpeedupPolicy.START_THREE_BPS && limits.maxDownloads > 1) {
                 if (known == null || known.firstByteMs < 0L) {
                     // No first byte timed yet: the smaller piece, which the slow servers it suits less still carry.
@@ -294,17 +325,20 @@ internal object AutoSpeedup {
     fun end() {
         val p = policy
         val wasOn = p != null
-        val key = hostKey
-        if (p != null && key != null && p.measuredPerDownloadBps > 0L) {
+        val keys = listOfNotNull(serverKey, hostKey).distinct()
+        if (p != null && keys.isNotEmpty() && p.measuredPerDownloadBps > 0L) {
             val entry = HostSpeeds.Entry(p.measuredPerDownloadBps, p.peakKept.coerceAtLeast(1),
                 if (firstByteMs >= 0L) firstByteMs else remembered?.firstByteMs ?: -1L, System.currentTimeMillis())
-            HostSpeeds.put(key, entry)
-            Log.i(TAG, "AUTO_SPEEDUP: saved host=$key perDownloadKbps=${entry.perDownloadBps * 8 / 1000} " +
-                "downloads=${entry.downloads}")
+            // The real server's entry is what the next film from it starts on; the add-on's is only a first guess.
+            keys.forEach { HostSpeeds.put(it, entry) }
+            Log.i(TAG, "AUTO_SPEEDUP: saved host=${keys.joinToString("+")} " +
+                "perDownloadKbps=${entry.perDownloadBps * 8 / 1000} downloads=${entry.downloads}")
         }
         policy = null
         url = null
         hostKey = null
+        serverKey = null
+        guessedBps = 0L
         remembered = null
         if (wasOn) ParallelRangeDataSource.releaseRetainedSessionIfIdle()
     }

@@ -2452,7 +2452,11 @@ private fun PlayerRuntimeController.sampleAutoSpeedup(player: Player, positionMs
         roomBytes = roomBytes,
         lowMemory = free?.lowMemory == true
     )
-    AutoSpeedup.updateReadAhead(roomBytes)
+    // The thumbnails' memory floor only holds the read-ahead back while their screen holds the film; once it plays,
+    // the buffer comes first and thumbnails decode only with the memory that is left.
+    AutoSpeedup.updateReadAhead(roomBytes) {
+        if (player.playWhenReady) 0L else com.nuvio.tv.core.player.thumbnail.SeekThumbnails.memoryFloorBytes()
+    }
     // A guessed start runs several downloads before the first sample; their memory comes off the buffer as usual.
     if (keeper != null && keeper.lentBytes == 0L && AutoSpeedup.downloads > 1) keeper.setLentBytes(AutoSpeedup.lentBytes())
     val before = AutoSpeedup.downloads
