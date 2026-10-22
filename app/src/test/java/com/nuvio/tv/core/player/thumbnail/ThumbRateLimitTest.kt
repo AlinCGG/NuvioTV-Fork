@@ -35,14 +35,14 @@ class ThumbRateLimitTest {
         fun waits(latched: Boolean, sinceHitMs: Long?, playing: Boolean, closed: Boolean = false) =
             ThumbRateLimit.waitsForPlayback(latched, sinceHitMs?.let { t - it } ?: 0L, t, playing, closed)
 
-        assertTrue(waits(latched = true, sinceHitMs = 120_000L, playing = true))
-        assertTrue(waits(latched = false, sinceHitMs = 59_999L, playing = true))
-        assertFalse(waits(latched = false, sinceHitMs = 60_000L, playing = true))
+        assertTrue(waits(latched = true, sinceHitMs = 180_000L, playing = true))
+        assertTrue(waits(latched = false, sinceHitMs = 119_999L, playing = true))
+        assertFalse(waits(latched = false, sinceHitMs = 120_000L, playing = true))
         assertFalse(waits(latched = false, sinceHitMs = null, playing = true))
 
         // Paused or held on the generating screen: playback reads nothing, so the latch alone never clears.
         assertTrue(waits(latched = true, sinceHitMs = 10_000L, playing = false))
-        assertFalse(waits(latched = true, sinceHitMs = 60_000L, playing = false))
+        assertFalse(waits(latched = true, sinceHitMs = 120_000L, playing = false))
         assertFalse(waits(latched = true, sinceHitMs = null, playing = false))
 
         assertFalse(waits(latched = true, sinceHitMs = 1_000L, playing = false, closed = true))

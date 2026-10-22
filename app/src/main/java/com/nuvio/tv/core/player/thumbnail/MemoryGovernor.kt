@@ -318,6 +318,17 @@ internal object MemoryGovernor {
         return GovernorVerdict(true, "ok avail=${mem.availableMb} swapFree=${mem.swapFreeMb}${if (funded) " funded" else ""}")
     }
 
+    /**
+     * MemAvailable a coverage pass needs for its next decode: the floor it is held to plus a cold decoder's charge.
+     * A small box decodes 4K only against a playback reserve, so the funded floor applies there.
+     */
+    fun coverageFloorBytes(fourK: Boolean): Long = coverageFloorMb(fourK, lowRam, isStrongBox) * MB
+
+    internal fun coverageFloorMb(fourK: Boolean, lowRam: Boolean, strongBox: Boolean): Long {
+        val tier = if (fourK) DecodeTier.SW_4K else DecodeTier.SW_UP_TO_1080P
+        return decodeFloorMb(funded = fourK && !strongBox, lowRam = lowRam) + tier.rssMb
+    }
+
     private fun decodeFloorMb(funded: Boolean, lowRam: Boolean): Long = when {
         funded -> if (lowRam) FUNDED_FLOOR_LOW_RAM_MB else FUNDED_FLOOR_DEFAULT_MB
         else -> if (lowRam) FLOOR_LOW_RAM_MB else FLOOR_DEFAULT_MB

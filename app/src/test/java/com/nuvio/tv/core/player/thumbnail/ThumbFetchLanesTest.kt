@@ -9,16 +9,37 @@ class ThumbFetchLanesTest {
     private fun lanes(phase: FetchPhase, budget: Int = ThumbFetchLanes.MAX, small: Boolean = false, rl: Boolean = false) =
         ThumbFetchLanes.limit(phase, rl, small, budget)
 
-    @Test fun otherServersFetchEightBeforePlayAndThreeWhilePlaying() {
+    @Test fun otherServersFetchEightBeforePlayAndFourWhilePlaying() {
         assertEquals(8, lanes(FetchPhase.GENERATING))
         assertEquals(8, lanes(FetchPhase.PLAYER_CLOSED))
-        assertEquals(3, lanes(FetchPhase.PLAYBACK))
+        assertEquals(4, lanes(FetchPhase.PLAYBACK))
+    }
+
+    @Test fun torboxFetchesFourWithPlaybackHeldOrClosedAndThreeWhilePlaying() {
+        fun tb(phase: FetchPhase, budget: Int = ThumbFetchLanes.MAX, small: Boolean = false) =
+            ThumbFetchLanes.limit(phase, false, small, budget, torBox = true)
+        assertEquals(4, tb(FetchPhase.GENERATING))
+        assertEquals(4, tb(FetchPhase.PLAYER_CLOSED))
+        assertEquals(3, tb(FetchPhase.PLAYBACK))
+        assertEquals(2, tb(FetchPhase.PLAYBACK, budget = 2))
+        assertEquals(1, tb(FetchPhase.PLAYBACK, small = true))
+        assertEquals(2, tb(FetchPhase.GENERATING, small = true))
+    }
+
+    @Test fun aServerThatRefusedLatelyGetsOneWhilePlaying() {
+        fun refused(phase: FetchPhase, torBox: Boolean = false) =
+            ThumbFetchLanes.limit(phase, false, false, ThumbFetchLanes.MAX, torBox = torBox, refused = true)
+        assertEquals(1, refused(FetchPhase.PLAYBACK))
+        assertEquals(8, refused(FetchPhase.GENERATING))
+        assertEquals(8, refused(FetchPhase.PLAYER_CLOSED))
+        // TorBox's account total and the ledger step it back instead.
+        assertEquals(3, refused(FetchPhase.PLAYBACK, torBox = true))
     }
 
     @Test fun theLedgerBudgetCapsEveryPhase() {
         assertEquals(4, lanes(FetchPhase.GENERATING, budget = 4))
         assertEquals(4, lanes(FetchPhase.PLAYER_CLOSED, budget = 4))
-        assertEquals(3, lanes(FetchPhase.PLAYBACK, budget = 4))
+        assertEquals(4, lanes(FetchPhase.PLAYBACK, budget = 4))
         assertEquals(2, lanes(FetchPhase.PLAYBACK, budget = 2))
         assertEquals(1, lanes(FetchPhase.GENERATING, budget = 1))
         assertEquals(8, lanes(FetchPhase.GENERATING, budget = ConnectionLedger.UNLIMITED))
@@ -39,9 +60,9 @@ class ThumbFetchLanesTest {
 
     @Test fun alwaysBetweenOneAndMax() {
         for (phase in FetchPhase.values()) for (rl in listOf(false, true)) for (small in listOf(false, true)) {
-            for (budget in -1..10) {
-                val n = ThumbFetchLanes.limit(phase, rl, small, budget)
-                assertTrue("$phase $rl $small $budget -> $n", n in 1..ThumbFetchLanes.MAX)
+            for (budget in -1..10) for (tb in listOf(false, true)) for (refused in listOf(false, true)) {
+                val n = ThumbFetchLanes.limit(phase, rl, small, budget, tb, refused)
+                assertTrue("$phase $rl $small $budget $tb $refused -> $n", n in 1..ThumbFetchLanes.MAX)
             }
         }
     }

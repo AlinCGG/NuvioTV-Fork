@@ -246,4 +246,12 @@ class CopyChoiceTest {
         assertNotNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "\u2b07 Film"))
         assertNotNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "Film (download)"))
     }
+
+    @Test fun aSmallerBoxWaitsForTheCopyLookBeforeDecodingThe4KFilm() {
+        assertTrue(CopyChoice.ownPassWaitsForLook(strongBox = false, looking = true, sinceStartMs = 0L))
+        assertTrue(CopyChoice.ownPassWaitsForLook(false, true, CopyChoice.LOOK_HOLD_MS - 1))
+        assertFalse(CopyChoice.ownPassWaitsForLook(false, true, CopyChoice.LOOK_HOLD_MS))
+        assertFalse(CopyChoice.ownPassWaitsForLook(false, looking = false, sinceStartMs = 0L))
+        assertFalse(CopyChoice.ownPassWaitsForLook(strongBox = true, looking = true, sinceStartMs = 0L))
+    }
 }

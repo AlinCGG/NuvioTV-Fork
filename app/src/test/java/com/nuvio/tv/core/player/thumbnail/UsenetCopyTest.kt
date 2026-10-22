@@ -55,15 +55,47 @@ class UsenetCopyTest {
         assertEquals(4, UsenetCopy.pictureFor(pal.getValue(3), 3))
     }
 
+    private fun fetches(
+        screenUp: Boolean = false, playing: Boolean = true, serverCap: Int = 8, smallBox: Boolean = false,
+        rateLimited: Boolean = false, torBox: Boolean = false, refused: Boolean = false,
+        headroom: Int = ThumbFetchLanes.MAX,
+    ) = UsenetCopy.fetches(screenUp, playing, serverCap, smallBox, rateLimited, torBox, refused, headroom)
+
     @Test
-    fun severalCopyPicturesAtOnceOnlyBehindTheGeneratingScreen() {
-        assertEquals(1, UsenetCopy.fetches(screenUp = false, playing = false, serverCap = 7, smallBox = false, rateLimited = false))
-        assertEquals(1, UsenetCopy.fetches(screenUp = true, playing = true, serverCap = 7, smallBox = false, rateLimited = false))
-        assertEquals(4, UsenetCopy.fetches(screenUp = true, playing = false, serverCap = 7, smallBox = false, rateLimited = false))
-        assertEquals(3, UsenetCopy.fetches(screenUp = true, playing = false, serverCap = 3, smallBox = false, rateLimited = false))
-        assertEquals(2, UsenetCopy.fetches(screenUp = true, playing = false, serverCap = 7, smallBox = true, rateLimited = false))
-        assertEquals(1, UsenetCopy.fetches(screenUp = true, playing = false, serverCap = 1, smallBox = false, rateLimited = false))
+    fun behindTheGeneratingScreenTorBoxTakesFourAndOthersWhatTheLedgerAllows() {
+        assertEquals(8, fetches(screenUp = true, playing = false))
+        assertEquals(4, fetches(screenUp = true, playing = false, torBox = true))
+        assertEquals(3, fetches(screenUp = true, playing = false, serverCap = 3))
+        assertEquals(2, fetches(screenUp = true, playing = false, smallBox = true))
+        assertEquals(1, fetches(screenUp = true, playing = false, serverCap = 1))
+        // Playback's buffer is not read while the screen holds it.
+        assertEquals(8, fetches(screenUp = true, playing = false, headroom = 0))
+    }
+
+    @Test
+    fun whilePlayingFourOnServersThatDidNotRefuseAndThreeOnTorBox() {
+        assertEquals(4, fetches())
+        assertEquals(4, fetches(screenUp = true, playing = true))
+        assertEquals(4, fetches(playing = false))
+        assertEquals(3, fetches(torBox = true))
+        assertEquals(1, fetches(refused = true))
+        assertEquals(3, fetches(torBox = true, refused = true))
+        assertEquals(2, fetches(serverCap = 2))
+        assertEquals(2, fetches(torBox = true, serverCap = 2))
+        assertEquals(1, fetches(smallBox = true))
+    }
+
+    @Test
+    fun whilePlayingTheBufferCapsTheLanes() {
+        assertEquals(2, fetches(headroom = 2))
+        assertEquals(1, fetches(headroom = 0))
+        assertEquals(3, fetches(torBox = true, headroom = 5))
+    }
+
+    @Test
+    fun aRateLimitMeansOneCopyPictureAtATime() {
         // A server that answered "too many requests" in the last half hour gets one at a time.
-        assertEquals(1, UsenetCopy.fetches(screenUp = true, playing = false, serverCap = 7, smallBox = false, rateLimited = true))
+        assertEquals(1, fetches(screenUp = true, playing = false, rateLimited = true))
+        assertEquals(1, fetches(rateLimited = true))
     }
 }

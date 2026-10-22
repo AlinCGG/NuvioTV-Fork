@@ -6,25 +6,36 @@ internal enum class FetchPhase { GENERATING, PLAYBACK, PLAYER_CLOSED }
 /** How many keyframes are fetched at once. Decoding has its own lanes ([ThumbDecodeLanes]). */
 internal object ThumbFetchLanes {
     const val MAX = 8
-    private const val PLAYBACK_MAX = 3
+    const val PLAYBACK_MAX = 4
+    /** TorBox while playing: its account total is shared with playback's downloads. */
+    const val TORBOX_PLAYBACK_MAX = 3
+    /** TorBox with playback held or closed: more lanes only made each read slower. */
+    const val TORBOX_MAX = 4
     private const val SMALL_BOX_4K_MAX = 2
 
     /**
      * [ledgerCap] is the most thumbnail requests the server's [ConnectionLedger] entry allows at once; the ledger also
      * holds each request until playback leaves it room. A rate limit or dropped connection seen in the session means
-     * one at a time from then on.
+     * one at a time from then on, and so does a server other than TorBox that [refused] lately while playing.
      */
     fun limit(
         phase: FetchPhase,
         rateLimited: Boolean,
         smallBox4K: Boolean,
         ledgerCap: Int = MAX,
+        torBox: Boolean = false,
+        refused: Boolean = false,
     ): Int {
         if (rateLimited) return 1
         val lanes = when (phase) {
-            FetchPhase.PLAYER_CLOSED, FetchPhase.GENERATING -> MAX
+            FetchPhase.PLAYER_CLOSED, FetchPhase.GENERATING -> if (torBox) TORBOX_MAX else MAX
             // Small boxes pace 4K decodes while playing: a second fetch would only wait.
-            FetchPhase.PLAYBACK -> if (smallBox4K) 1 else PLAYBACK_MAX
+            FetchPhase.PLAYBACK -> when {
+                smallBox4K -> 1
+                torBox -> TORBOX_PLAYBACK_MAX
+                refused -> 1
+                else -> PLAYBACK_MAX
+            }
         }
         val capped = minOf(lanes, ledgerCap)
         return (if (smallBox4K) minOf(capped, SMALL_BOX_4K_MAX) else capped).coerceIn(1, MAX)

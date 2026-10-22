@@ -17,6 +17,11 @@ import kotlin.concurrent.withLock
 /** Which server or service counts a request's connections: TorBox counts per account, anything else per host. */
 internal object LedgerKey {
     const val TORBOX = "torbox"
+    /** Requests one TorBox account carries at once, playback's and the thumbnails' together, without refusals. */
+    const val TORBOX_TOTAL = 8
+
+    /** The known total for [key]'s requests, null where it is learned from refusals. */
+    fun knownTotal(key: String?): Int? = if (key == TORBOX) TORBOX_TOTAL else null
 
     fun of(url: String?): String? {
         val host = url?.let { RateLimitedHosts.hostOf(it) } ?: return null
@@ -35,7 +40,9 @@ internal enum class Refusal { TOO_MANY, UNAVAILABLE, CONNECTION }
  * Thumbnail connections one server allows on top of playback's, kept as a level ([extra]) relative to playback. One
  * more after a run of clean fetches that used what they had while playback could spare it. A refusal soon after a step
  * up goes back to the level before it; a clear one keeps that level as the server's [cap], tried once more after
- * [RETEST_AFTER_MS]. Anything else only slows this session. With a known total playback's count comes off it.
+ * [RETEST_AFTER_MS]. Anything else only slows this session. With a known total playback's count comes off it, and
+ * while playback runs its whole setting stays reserved: it never waits, so a thumbnail in a gap between its downloads
+ * would put the total over.
  */
 internal class ConnectionBudget(
     private val knownTotal: Int?,
@@ -96,7 +103,8 @@ internal class ConnectionBudget(
      * with one, never none while playback is [quiet] (paused or yielding), since it is not loading then.
      */
     fun thumbSlots(playback: Int, live: Int, quiet: Boolean, generating: Boolean): Int {
-        val room = playback.coerceAtLeast(1) + level(playback, generating) - live.coerceAtLeast(0)
+        val inUse = if (knownTotal != null && !quiet) maxOf(playback.coerceAtLeast(1), live) else live.coerceAtLeast(0)
+        val room = playback.coerceAtLeast(1) + level(playback, generating) - inUse
         return maxOf(room, if (knownTotal == null || quiet) 1 else 0)
     }
 
@@ -211,6 +219,10 @@ internal class ConnectionLedger(
         const val HEALTHY_AHEAD_MS = 30_000L
         /** A reset of an idle stream as playback resumes is not the server refusing. */
         const val AFTER_YIELD_QUIET_MS = 10_000L
+        /** After "too many requests" on a server, playback's or a thumbnail's, thumbnails leave it alone this long. */
+        const val REFUSAL_QUIET_MS = ThumbRateLimit.PLAYBACK_QUIET_MS
+        /** A server that said "too many requests" this long ago still counts as having refused. */
+        const val REFUSED_LATELY_MS = RateLimitedHosts.TTL_MS
         /** Answer for a request with no host: no limit from the ledger. */
         const val UNLIMITED = Int.MAX_VALUE
         private const val POLL_MS = 200L
@@ -262,6 +274,9 @@ internal class ConnectionLedger(
         var streams = 0
         var thumbs = 0
         var playbackPeak = 0
+        /** Playback's download count on this server as it plays, null until one is noted. */
+        var downloads: Int? = null
+        var tooManyAtMs = Long.MIN_VALUE
         var budget: ConnectionBudget? = null
     }
 
@@ -295,7 +310,56 @@ internal class ConnectionLedger(
     /** A new playback: its connection setting (1 without parallel connections); what it used before no longer counts. */
     fun notePlaybackConnections(n: Int) {
         playbackConnections = n.coerceAtLeast(1)
-        lock.withLock { for (e in entries.values) e.playbackPeak = e.playback }
+        lock.withLock {
+            for (e in entries.values) {
+                e.playbackPeak = e.playback
+                e.downloads = null
+            }
+        }
+    }
+
+    /**
+     * Playback's download count on [url]'s server changed while it plays ([n] at once, e.g. after a speed-up step).
+     * The thumbnails' room on a server with a known total follows it at once; what playback used before no longer
+     * counts beyond [n].
+     */
+    fun notePlaybackDownloads(url: String?, n: Int) {
+        val key = LedgerKey.of(url) ?: return
+        val count = n.coerceAtLeast(1)
+        lock.withLock {
+            val e = entry(key)
+            if (e.downloads == count) return
+            e.downloads = count
+            e.playbackPeak = minOf(e.playback, count)
+            freed.signalAll()
+        }
+    }
+
+    /**
+     * How many of [wanted] playback downloads fit on [url]'s server next to the thumbnail requests in use now:
+     * [wanted] where the server has no known total, else what the total leaves, never below 1. Playback still never
+     * waits; this only lets it ask for fewer.
+     */
+    fun playbackRoom(url: String?, wanted: Int): Int {
+        val want = wanted.coerceAtLeast(1)
+        val key = LedgerKey.of(url) ?: return want
+        val total = LedgerKey.knownTotal(key) ?: return want
+        return lock.withLock { minOf(want, total - (entries[key]?.thumbs ?: 0)).coerceAtLeast(1) }
+    }
+
+    /** Ms left of [REFUSAL_QUIET_MS] after the last "too many requests" on [url]'s server, 0 when none. */
+    fun refusalQuietMs(url: String?): Long {
+        val key = LedgerKey.of(url) ?: return 0L
+        val at = lock.withLock { entries[key]?.tooManyAtMs } ?: return 0L
+        if (at == Long.MIN_VALUE) return 0L
+        return (at + REFUSAL_QUIET_MS - clock()).coerceAtLeast(0L)
+    }
+
+    /** [url]'s server said "too many requests", to playback or a thumbnail, within [REFUSED_LATELY_MS]. */
+    fun refusedLately(url: String?): Boolean {
+        val key = LedgerKey.of(url) ?: return false
+        val at = lock.withLock { entries[key]?.tooManyAtMs } ?: return false
+        return at != Long.MIN_VALUE && clock() - at < REFUSED_LATELY_MS
     }
 
     /** The stream playback is on; its troubles count against that server only. */
@@ -337,6 +401,36 @@ internal class ConnectionLedger(
             val e = entries[key] ?: return
             val b = e.budget ?: return
             if (b.playbackTrouble(null, atMs, now, playbackOf(e), yielding(now))) stepped(key, e, b, "playback trouble soon after a step up")
+        }
+    }
+
+    /**
+     * Thumbnail requests to plan for on [url]'s server now: as [thumbnailCap] while playback is paused or yields,
+     * else with playback's whole setting counted as in use, so the number does not jump with gaps between its
+     * downloads. The ledger still holds each request until there is room.
+     */
+    fun thumbnailRoom(url: String?): Int {
+        val key = LedgerKey.of(url) ?: return UNLIMITED
+        return lock.withLock {
+            val e = entry(key)
+            val now = clock()
+            val b = budgetOf(key, e)
+            persist(key, b)
+            val yielding = yielding(now)
+            val quiet = yielding || now < quietUntilMs
+            val live = e.playback - if (yielding) e.streams else 0
+            b.thumbSlots(playbackOf(e), if (quiet) live else maxOf(playbackOf(e), live), quiet, yielding)
+        }
+    }
+
+    /** For the log: [url]'s server's total when known, playback's count and the requests in use. */
+    fun budgetNote(url: String?): String {
+        val key = LedgerKey.of(url) ?: return "not counted"
+        return lock.withLock {
+            val e = entries[key]
+            val playback = e?.let { playbackOf(it) } ?: playbackConnections
+            (LedgerKey.knownTotal(key)?.let { "budget=$it " } ?: "") + "playback=$playback " +
+                "in use ${e?.playback ?: 0}+${e?.thumbs ?: 0}"
         }
     }
 
@@ -404,11 +498,13 @@ internal class ConnectionLedger(
 
     private fun entry(key: String): Entry = entries.getOrPut(key) { Entry() }
 
-    private fun playbackOf(e: Entry): Int = maxOf(playbackConnections, e.playbackPeak)
+    private fun playbackOf(e: Entry): Int = maxOf(e.downloads ?: playbackConnections, e.playbackPeak)
 
+    /** A known total starts from it each run; only levels learned from refusals are kept between runs. */
     private fun budgetOf(key: String, e: Entry): ConnectionBudget = e.budget ?: run {
+        val total = LedgerKey.knownTotal(key)
         val wall = wallClock()
-        ConnectionBudget(null, ConnectionMemory.decode(remembered[key], wall), wall)
+        ConnectionBudget(total, if (total != null) null else ConnectionMemory.decode(remembered[key], wall), wall)
     }.also { e.budget = it }
 
     private fun slotsLocked(key: String, e: Entry): Int {
@@ -443,9 +539,19 @@ internal class ConnectionLedger(
     }
 
     private fun persist(key: String, b: ConnectionBudget) {
+        if (LedgerKey.knownTotal(key) != null) return
         val m = memory ?: return
         val r = b.toSave(clock(), wallClock()) ?: return
         runCatching { m.save(key, ConnectionMemory.encode(r)) }
+    }
+
+    private fun tooMany(key: String, e: Entry, now: Long, who: String) {
+        val quietBefore = e.tooManyAtMs != Long.MIN_VALUE && now - e.tooManyAtMs < REFUSAL_QUIET_MS
+        e.tooManyAtMs = now
+        if (quietBefore) return
+        val label = if (key == LedgerKey.TORBOX) "TorBox" else "server"
+        Log.i(TAG, "$label: too many requests ($who) - thumbnails wait ${REFUSAL_QUIET_MS / 1000} s " +
+            "(in use playback ${e.playback}, thumbnails ${e.thumbs})")
     }
 
     private fun stepped(key: String, e: Entry, b: ConnectionBudget, why: String) {
@@ -503,10 +609,19 @@ internal class ConnectionLedger(
                     val k = key ?: return
                     val e = entries[k] ?: return
                     val now = clock()
+                    if (refusal == Refusal.TOO_MANY) {
+                        tooMany(k, e, now, if (kind == Kind.THUMBNAIL) "a thumbnail" else "playback")
+                    }
                     if (kind == Kind.THUMBNAIL) {
                         val b = budgetOf(k, e)
                         if (b.refused(refusal, startedAtMs, now, playbackOf(e), yielding(now))) {
                             stepped(k, e, b, "thumbnail request turned away (${refusal.name.lowercase()})")
+                        }
+                    } else if (refusal == Refusal.TOO_MANY) {
+                        // Playback's and the thumbnails' requests count against the same limit.
+                        val b = budgetOf(k, e)
+                        if (b.refused(refusal, startedAtMs, now, playbackOf(e), yielding(now))) {
+                            stepped(k, e, b, "playback turned away (too_many)")
                         }
                     } else if (!troubleIgnored(now)) {
                         val b = e.budget ?: return

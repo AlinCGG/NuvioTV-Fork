@@ -8,8 +8,6 @@ internal object UsenetCopy {
     const val STALL_MS = 20_000L
     /** The scrub rested this long: that spot is a stop, not a step. */
     const val SCRUB_STOP_MS = 700L
-    /** Copy pictures fetched at once behind the generating screen, at most. */
-    const val SCREEN_FETCHES = 4
 
     /**
      * The copy's [order] with the slots the generating screen counts first (copy slots serving an own slot on every
@@ -26,13 +24,19 @@ internal object UsenetCopy {
         if (stride > 1) served.firstOrNull { it % stride == 0 } ?: served[0] else served[0]
 
     /**
-     * Copy pictures fetched at once: one while playback runs, without the generating screen, or when the server
-     * [rateLimited] us lately; else as many as generating would use on that server ([serverCap]), up to [SCREEN_FETCHES].
+     * Copy pictures fetched at once, by the same server rules as the title's own ([ThumbFetchLanes.limit]): behind the
+     * generating screen as generating would use, otherwise as while playing. [serverCap]: what the ledger leaves now.
+     * [headroom]: lanes playback's buffer allows ([PlaybackHeadroom]); none still plans one, the pass waits for it.
      */
-    fun fetches(screenUp: Boolean, playing: Boolean, serverCap: Int, smallBox: Boolean, rateLimited: Boolean): Int =
-        if (!screenUp || playing) 1
-        else ThumbFetchLanes.limit(FetchPhase.GENERATING, rateLimited, smallBox4K = smallBox, ledgerCap = serverCap)
-            .coerceAtMost(SCREEN_FETCHES)
+    fun fetches(
+        screenUp: Boolean, playing: Boolean, serverCap: Int, smallBox: Boolean, rateLimited: Boolean,
+        torBox: Boolean = false, refused: Boolean = false, headroom: Int = ThumbFetchLanes.MAX,
+    ): Int {
+        val phase = if (screenUp && !playing) FetchPhase.GENERATING else FetchPhase.PLAYBACK
+        val lanes = ThumbFetchLanes.limit(phase, rateLimited, smallBox4K = smallBox, ledgerCap = serverCap,
+            torBox = torBox, refused = refused)
+        return if (phase == FetchPhase.PLAYBACK) minOf(lanes, headroom.coerceAtLeast(1)) else lanes
+    }
 
     /** Why the copy is given up, null while it may go on. [sinceProgressMs]: since its last thumbnail, null while none is being made. */
     fun giveUp(confirmed: Boolean, sinceStartMs: Long, sinceProgressMs: Long?): String? = when {

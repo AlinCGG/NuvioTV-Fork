@@ -22,7 +22,7 @@ internal object ThumbRateLimit {
         return (FIRST_BACKOFF_MS shl (hitsInRow - 1).coerceAtMost(20)).coerceAtMost(MAX_BACKOFF_MS)
     }
 
-    const val PLAYBACK_QUIET_MS = 60_000L
+    const val PLAYBACK_QUIET_MS = 120_000L
     /** A depth clamp with no new hit for this long is left over from an earlier title or a server that calmed down. */
     const val STALE_CLAMP_MS = 10 * 60_000L
 

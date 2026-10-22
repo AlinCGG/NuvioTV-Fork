@@ -42,7 +42,7 @@ internal object NextEpisodeThumbs {
     private const val PACE_SMALL_MS = 3_000L
     private const val PACE_STRONG_MS = 500L
     private const val PACE_STRONG_4K_MS = 2_000L
-    private const val PLAYBACK_429_QUIET_MS = 60_000L
+    private const val PLAYBACK_429_QUIET_MS = ThumbRateLimit.PLAYBACK_QUIET_MS
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
     @Volatile private var job: Job? = null

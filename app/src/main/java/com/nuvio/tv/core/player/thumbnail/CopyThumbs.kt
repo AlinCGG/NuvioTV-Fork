@@ -76,8 +76,10 @@ internal class CopySet(val store: ThumbStore, val ratio: Double, val slotCount: 
  * store of their own (same title, keyed by the copy's length and the picture size, never the copy file's own store),
  * fitted to the 4K title's picture size and taken at the keyframes nearest to where a 4K seek lands. The session checks them against its own pictures and copies them over as another release.
  *
- * One request at a time, only while playback can spare it, at background priority; on small boxes behind the
- * dropped-frame [pacer] while playing. Behind the generating screen ([screenUp], playback held) several at once.
+ * Requests only while playback can spare them, at background priority, a few at once by server
+ * ([UsenetCopy.fetches]) and none while playback's buffer runs low ([PlaybackHeadroom]); on small boxes one at a time
+ * behind the dropped-frame [pacer] while playing. Behind the generating screen ([screenUp], playback held) more at
+ * once.
  */
 internal class CopyPass(
     private val context: Context,
@@ -105,7 +107,7 @@ internal class CopyPass(
         const val FULL_AHEAD_MS = 14_000L
         const val QUIET_AFTER_STALL_MS = 60_000L
         const val TROUBLE_WINDOW_MS = 20_000L
-        const val PLAYBACK_429_QUIET_MS = 60_000L
+        const val PLAYBACK_429_QUIET_MS = ThumbRateLimit.PLAYBACK_QUIET_MS
         const val PACE_PAUSED_MS = 150L
         const val PACE_STRONG_PLAYING_MS = 300L
         const val SMALL_MEM_FRAMES = 8
@@ -156,6 +158,9 @@ internal class CopyPass(
     private var quietUntil = 0L
     private var lastPlaying = false
     private var stopWhy: String? = null
+    private val headroom = PlaybackHeadroom()
+    @Volatile private var ledgerUrl: String? = null
+    private var lanesLogged = ""
 
     fun start() {
         seenStallAt = lastStallAtMs()
@@ -316,6 +321,7 @@ internal class CopyPass(
             Log.i(TAG, "${offer.label}: not used - a Usenet stream")
             return Outcome.UNUSABLE
         }
+        ledgerUrl = link.url
         if (!awaitReady(null, host)) return Outcome.STOP
         val r = HttpRangeReader(link.url, link.headers, thumbnailHttpClient(link.headers),
             slotWaitMs = ConnectionLedger.START_SLOT_WAIT_MS)
@@ -324,6 +330,7 @@ internal class CopyPass(
             val t0 = SystemClock.elapsedRealtime()
             val head = request(host) { r.read(0, MkvIndexReader.HEAD_BYTES) }
             val fileLength = r.totalLength
+            ledgerUrl = r.resolvedUrl
             // A Usenet title may borrow the same release from elsewhere, never through another Usenet stream.
             if (own.usenet) {
                 if (SlowStartServer.isUsenet(r.resolvedUrl)) throw Unusable("a Usenet stream")
@@ -452,10 +459,10 @@ internal class CopyPass(
                             Log.i(TAG, "byte limit reached (${bytesRead() / (1024 * 1024)} MB)")
                             break@work
                         }
-                        val lanes = UsenetCopy.fetches(screenUp(), lastPlaying, ConnectionLedger.app.thumbnailCap(r.resolvedUrl),
-                            smallBox, rateLimited = RateLimitedHosts.appSession.contains(r.resolvedUrl))
+                        val lanes = lanes(r.resolvedUrl, smallBox)
                         if (lanes == 1 && pending.size > 1 && !refused.get()) {
-                            // Back to one at a time (the screen went down): the queued pictures are fetched again later.
+                            // Back to one at a time (the screen went down, or playback's buffer ran low): the queued
+                            // pictures are fetched again later.
                             for (f in pending.asReversed()) {
                                 f.result.cancel()
                                 attempts[f.kf] = ((attempts[f.kf] ?: 1) - 1).coerceAtLeast(0)
@@ -465,7 +472,8 @@ internal class CopyPass(
                             pending.clear()
                             r.cancel()
                         }
-                        while (!refused.get() && pending.size < lanes && bytesRead() < MAX_BYTES) {
+                        while (!refused.get() && pending.size < lanes && bytesRead() < MAX_BYTES &&
+                            (!lastPlaying || pending.size < headroom.lanes.coerceAtLeast(1))) {
                             val retried = again.isNotEmpty()
                             val m = if (retried) again.first() else order.getOrNull(next) ?: break
                             val kf = kfOf[m]
@@ -559,6 +567,25 @@ internal class CopyPass(
     }
 
     private fun slotUs(slot: Int): Long = slot.toLong() * SPACING_MS * 1000L
+
+    private fun lanes(url: String, smallBox: Boolean): Int {
+        val ledger = ConnectionLedger.app
+        val screen = screenUp() && !lastPlaying
+        val n = UsenetCopy.fetches(screenUp(), lastPlaying, ledger.thumbnailRoom(url), smallBox,
+            rateLimited = RateLimitedHosts.appSession.contains(url), torBox = LedgerKey.of(url) == LedgerKey.TORBOX,
+            refused = ledger.refusedLately(url), headroom = headroom.lanes)
+        val key = "$n/$screen/$lastPlaying"
+        if (key != lanesLogged) {
+            lanesLogged = key
+            val where = when {
+                screen -> "generating screen"
+                lastPlaying -> "playing, ${headroom.why}"
+                else -> "paused"
+            }
+            Log.i(TAG, "lanes=$n ${ledger.budgetNote(url)} ($where)")
+        }
+        return n
+    }
 
     private fun pace(playing: Boolean): Long = when {
         !playing -> if (screenUp()) 0L else PACE_PAUSED_MS
@@ -667,13 +694,20 @@ internal class CopyPass(
             val playback429 = ThumbRateLimit.playbackClampedNow() ||
                 (ParallelRangeDataSource.hudClampLastHitAtMs > 0 &&
                     SystemClock.uptimeMillis() - ParallelRangeDataSource.hudClampLastHitAtMs < PLAYBACK_429_QUIET_MS)
+            val refusalQuietMs = ConnectionLedger.app.refusalQuietMs(ledgerUrl)
+            if (s != null && headroom.note(now, s.playing, s.buffering, s.loading, s.aheadMs, s.toEnd)) {
+                Log.i(TAG, if (headroom.lanes == 0) "lanes=0 (paused: ${headroom.why})"
+                    else "lanes up to ${headroom.lanes} (${headroom.why})")
+            }
             var memory = false
             val why = when {
                 now < quietUntil -> "a quiet minute after a playback stall"
                 s?.failed == true -> "a playback error"
                 playback429 -> "playback was rate limited"
+                refusalQuietMs > 0L -> "the server to calm down after too many requests"
                 s == null -> null
                 s.buffering -> "playback buffering"
+                s.playing && headroom.lanes == 0 -> "playback's buffer to recover"
                 s.playing && !(s.aheadMs >= ConnectionLedger.HEALTHY_AHEAD_MS || s.toEnd ||
                     (s.aheadMs >= FULL_AHEAD_MS && !s.loading)) -> "a healthy playback buffer"
                 pacer != null && s.playing && !synchronized(pacer) { pacer.allows(settleTarget = false) } ->

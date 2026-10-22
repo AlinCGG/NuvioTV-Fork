@@ -131,4 +131,11 @@ class ThumbPolicyTest {
         assertEquals(1836L, MemoryGovernor.parseVmSizeMb(status))
         assertEquals(null, MemoryGovernor.parseVmSizeMb("Name: x"))
     }
+
+    @Test fun coverageFloorIsTheDecodeFloorPlusAColdDecoder() {
+        assertEquals(235L, MemoryGovernor.coverageFloorMb(fourK = false, lowRam = true, strongBox = false))
+        assertEquals(180L, MemoryGovernor.coverageFloorMb(fourK = true, lowRam = true, strongBox = false))
+        assertEquals(335L, MemoryGovernor.coverageFloorMb(fourK = false, lowRam = false, strongBox = true))
+        assertEquals(380L, MemoryGovernor.coverageFloorMb(fourK = true, lowRam = false, strongBox = true))
+    }
 }

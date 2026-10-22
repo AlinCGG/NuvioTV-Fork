@@ -43,7 +43,16 @@ internal class CopyOffer(
 internal object CopyChoice {
     /** Copies checked by pictures before falling back to the 4K file. */
     const val MAX_TRIES = 2
+    /** How long a smaller box's own 4K pass waits while the copy pass is still looking for a copy. */
+    const val LOOK_HOLD_MS = 90_000L
     private val CONTAINERS = setOf("mkv", "mp4", "m4v")
+
+    /**
+     * A smaller box decodes the 4K film itself only when no copy will do: while the copy pass is still [looking] its
+     * own pass waits, up to [LOOK_HOLD_MS] after the copy pass started. A strong box carries on meanwhile.
+     */
+    fun ownPassWaitsForLook(strongBox: Boolean, looking: Boolean, sinceStartMs: Long): Boolean =
+        !strongBox && looking && sinceStartMs < LOOK_HOLD_MS
     private val HEIGHTS = listOf(1080, 720)
 
     enum class Edition(val word: Regex) {

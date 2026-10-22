@@ -41,7 +41,17 @@ class ConnectionBudgetTest {
         assertEquals(3, b.thumbSlots(playback = 1, live = 1, quiet = false, generating = false))
         assertEquals(2, b.thumbSlots(playback = 2, live = 2, quiet = false, generating = false))
         assertEquals(0, b.thumbSlots(playback = 4, live = 4, quiet = false, generating = false))
-        assertEquals(4, b.thumbSlots(playback = 4, live = 0, quiet = false, generating = false))
+        assertEquals(0, b.thumbSlots(playback = 4, live = 0, quiet = false, generating = false))
+        assertEquals(4, b.thumbSlots(playback = 4, live = 0, quiet = true, generating = false))
+    }
+
+    @Test fun aKnownTotalKeepsPlaybacksWholeSettingWhilePlaying() {
+        val b = ConnectionBudget(knownTotal = 8)
+        assertEquals(3, b.thumbSlots(playback = 5, live = 2, quiet = false, generating = false))
+        assertEquals(3, b.thumbSlots(playback = 5, live = 5, quiet = false, generating = false))
+        assertEquals(2, b.thumbSlots(playback = 5, live = 6, quiet = false, generating = false))
+        assertEquals(6, b.thumbSlots(playback = 5, live = 2, quiet = true, generating = false))
+        assertEquals(0, b.thumbSlots(playback = 8, live = 8, quiet = false, generating = false))
     }
 
     @Test fun torboxNeverNoneWhilePausedOrGenerating() {

@@ -272,6 +272,9 @@ object SeekThumbnails {
 
     fun thumbFor(positionMs: Long): Bitmap? = shownFor(positionMs)?.bitmap
 
+    /** MemAvailable the coverage pass needs while it is generating, else 0. Any thread. */
+    fun memoryFloorBytes(): Long = session?.memoryFloorBytes() ?: 0L
+
     fun pausesPlaybackWhileScrubbing(): Boolean = server != null || session != null
 
     internal fun isCurrentOrStarting(identity: String): Boolean =
@@ -428,6 +431,7 @@ object SeekThumbnails {
         val durationMs: Long,
         val failed: Boolean = false,
         val playWhenReady: Boolean = isPlaying,
+        val loading: Boolean = false,
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -667,6 +671,10 @@ object SeekThumbnails {
         /** The server rate limited this session, or answered 429 to an earlier one recently. */
         @Volatile private var sourceRateLimited = fetchRateLimited
         private val fetchRamp = FetchRamp(limitedFromStart = fetchRateLimited)
+        /** Fetch lanes playback's buffer allows while the film plays. Worker only. */
+        private val headroom = PlaybackHeadroom()
+        private var lanesLogged = ""
+        private var refusalQuietLogged = false
         private val decoderLanes = Array(ThumbDecodeLanes.MAX) { DecoderLane() }
         private val decodeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(ThumbDecodeLanes.MAX))
         /** Keyframe -> its decode under way or done and not stored yet. Worker only. */
@@ -1519,6 +1527,17 @@ object SeekThumbnails {
                     delay(1_000L)
                     continue
                 }
+                val refusalQuietMs = ConnectionLedger.app.refusalQuietMs(reader?.resolvedUrl ?: source.url)
+                if (refusalQuietMs > 0L) {
+                    if (!refusalQuietLogged) {
+                        refusalQuietLogged = true
+                        Log.i(TAG, "paused: the server said too many requests - " +
+                            "${refusalQuietMs / 1000} s before the next fetch")
+                    }
+                    delay(1_000L)
+                    continue
+                }
+                refusalQuietLogged = false
                 lastPositionMs = ps.positionMs
                 lastSampledPlaying = ps.isPlaying
                 val small4K = fourK && !MemoryGovernor.isStrongBox
@@ -1538,6 +1557,11 @@ object SeekThumbnails {
                 decodeOpen = true
                 if (priority == 0 || !ps.isPlaying) return true
                 if (priority > 0 && prioritySlot >= 0 && prioritySlot != entryPriority) return false
+                if (headroom.lanes == 0) {
+                    anchorAhead = -1L
+                    delay(1_000L)
+                    continue
+                }
                 val ahead = ps.bufferedMs - ps.positionMs
                 val toEnd = ps.durationMs > 0 && ps.bufferedMs >= ps.durationMs - 1_000L
                 if (anchorAhead < 0 || kotlin.math.abs(ahead - anchorAhead) > PLATEAU_JITTER_MS) {
@@ -1808,12 +1832,31 @@ object SeekThumbnails {
             else -> FetchPhase.PLAYBACK
         }
 
-        private fun fetchLimit(): Int = MediaServerThumbs.fetchLimit(onDemand, fetchRamp.limit(ThumbFetchLanes.limit(
-            phase = phase(),
-            rateLimited = fetchRateLimited,
-            smallBox4K = fourK && !MemoryGovernor.isStrongBox,
-            ledgerCap = ConnectionLedger.app.thumbnailCap(reader?.resolvedUrl ?: source.url),
-        )))
+        /** Never below 1: with no lanes left by playback's buffer, the gates hold the coverage pass instead. */
+        private fun fetchLimit(): Int {
+            val url = reader?.resolvedUrl ?: source.url
+            val ledger = ConnectionLedger.app
+            val phase = phase()
+            val n = MediaServerThumbs.fetchLimit(onDemand, fetchRamp.limit(ThumbFetchLanes.limit(
+                phase = phase,
+                rateLimited = fetchRateLimited,
+                smallBox4K = fourK && !MemoryGovernor.isStrongBox,
+                ledgerCap = ledger.thumbnailRoom(url),
+                torBox = LedgerKey.of(url) == LedgerKey.TORBOX,
+                refused = ledger.refusedLately(url),
+            )))
+            val bufferLimits = phase == FetchPhase.PLAYBACK && lastSampledPlaying
+            val held = bufferLimits && headroom.lanes == 0
+            val limit = if (bufferLimits) minOf(n, headroom.lanes.coerceAtLeast(1)) else n
+            val key = if (held) "0" else "$limit/$phase"
+            if (key != lanesLogged) {
+                lanesLogged = key
+                Log.i(TAG, if (held) "lanes=0 (paused: ${headroom.why})"
+                    else "lanes=$limit ${ledger.budgetNote(url)} (${phase.name.lowercase()}" +
+                        (if (bufferLimits) ", ${headroom.why})" else ")"))
+            }
+            return limit
+        }
 
         /** Remembers the host that answered 429, and lets a held generating screen start playback. */
         private fun noteRateLimited(e: RateLimitedException) {
@@ -2478,8 +2521,17 @@ object SeekThumbnails {
         private fun copyHoldsLattice(): Boolean {
             val c = copy ?: return false
             if (usenet) return usenetCopyHolds(c)
-            if (!c.filling || prepareStage in 1..4 || borrow?.failed == true) return false
+            if (prepareStage in 1..4 || borrow?.failed == true) return false
             val now = SystemClock.elapsedRealtime()
+            if (!c.filling) {
+                val waits = CopyChoice.ownPassWaitsForLook(MemoryGovernor.isStrongBox,
+                    c.state == CopyPass.State.LOOKING, now - copyStartedAt)
+                if (!waits && c.state == CopyPass.State.LOOKING && !copyLookReleased && !MemoryGovernor.isStrongBox) {
+                    copyLookReleased = true
+                    Log.i(COPY_TAG, "no copy found in ${CopyChoice.LOOK_HOLD_MS / 1000} s - the 4K pass carries on")
+                }
+                return waits
+            }
             if (c.made != copyHoldMade || copyHoldSince == 0L) {
                 copyHoldMade = c.made
                 copyHoldSince = now
@@ -2498,6 +2550,7 @@ object SeekThumbnails {
         private var copyHoldMade = -1
         private var copyHoldSince = 0L
         private var copyHoldReleased = false
+        private var copyLookReleased = false
         /** When the Usenet title's copy last made a thumbnail, or started making them; 0 while it makes none. */
         private var copyProgressAt = 0L
         /** The scrub stop (its last step's time) already read from the Usenet stream. */
@@ -2964,6 +3017,8 @@ object SeekThumbnails {
                 healthy = ConnectionLedger.healthy(ps.isPlaying, ps.buffering, ps.bufferedMs - ps.positionMs, toEnd),
                 quiet = !ps.isPlaying && !ps.buffering,
             )
+            if (headroom.note(SystemClock.elapsedRealtime(), ps.isPlaying, ps.buffering, ps.loading,
+                    ps.bufferedMs - ps.positionMs, toEnd)) fetchLimit()
             val playing = reader?.resolvedUrl ?: source.url
             if (ps.failed) ledger.playbackTrouble(SystemClock.elapsedRealtime(), playing)
             val stallAt = runCatching { reserveProvider()?.lastStallRealtimeMs }.getOrNull() ?: 0L
@@ -3244,6 +3299,9 @@ object SeekThumbnails {
             }
         }
 
+        fun memoryFloorBytes(): Long =
+            if (ended || stoppedExternally || latticeFinished) 0L else MemoryGovernor.coverageFloorBytes(fourK)
+
         fun progressPercent(): Int? {
             if (!fourK || MemoryGovernor.isStrongBox || ended || latticeFinished) return null
             val total = latticeTotal
@@ -3261,6 +3319,7 @@ object SeekThumbnails {
                 durationMs = if (p.duration == C.TIME_UNSET) 0L else p.duration,
                 failed = ConnectionLedger.sourceTrouble(p.playerError?.errorCode),
                 playWhenReady = p.playWhenReady,
+                loading = p.isLoading,
             )
         }
 
