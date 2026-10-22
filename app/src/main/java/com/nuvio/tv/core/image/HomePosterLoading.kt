@@ -101,11 +101,9 @@ fun homePosterDiskDecodeSlots(totalRamBytes: Long, lowRamDevice: Boolean, cores:
     else -> 3
 }
 
-/** Boxes above 3 GB hold several rows more of decoded posters; smaller boxes keep the heap-based budget. */
+/** Force the large artwork cache ceiling for all devices. */
 fun homeArtworkMemoryCacheBytes(heapBudgetBytes: Long, totalRamBytes: Long): Long =
-    if (totalRamBytes > LARGE_MEMORY_BOX_TOTAL_BYTES) {
-        maxOf(heapBudgetBytes, minOf(LARGE_BOX_ARTWORK_CACHE_BYTES, totalRamBytes / 16))
-    } else heapBudgetBytes
+    maxOf(heapBudgetBytes, LARGE_BOX_ARTWORK_CACHE_BYTES)
 
 /** Idle memory warming takes at most a third of the poster partition, so it cannot evict what is on screen. */
 fun homePosterMemoryWarmBudget(posterPartitionBytes: Long): Long = (posterPartitionBytes / 3).coerceAtLeast(0)
